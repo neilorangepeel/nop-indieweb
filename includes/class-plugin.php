@@ -51,6 +51,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_patterns' ] );
 		add_action( 'init', [ $this, 'register_templates' ] );
+		add_action( 'after_setup_theme', [ $this, 'ensure_post_format_support' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
@@ -66,6 +67,29 @@ class Plugin {
 		// get_single_template() doesn't include single-post-format-{format} by default,
 		// so block templates with that slug are never matched during real requests.
 		add_filter( 'single_template_hierarchy', [ $this, 'inject_post_format_template' ] );
+	}
+
+	public function ensure_post_format_support(): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] );
+
+		$needed = [];
+		if ( ! empty( $settings['swarm']['enabled'] ) ) {
+			$needed[] = 'status';
+		}
+
+		$needed = apply_filters( 'nop_indieweb_required_post_formats', $needed );
+
+		if ( ! $needed ) {
+			return;
+		}
+
+		$supported = get_theme_support( 'post-formats' );
+		$supported = is_array( $supported ) && isset( $supported[0] ) ? $supported[0] : [];
+
+		$missing = array_diff( $needed, $supported );
+		if ( $missing ) {
+			add_theme_support( 'post-formats', array_unique( array_merge( $supported, $missing ) ) );
+		}
 	}
 
 	public function inject_post_format_template( array $templates ): array {
