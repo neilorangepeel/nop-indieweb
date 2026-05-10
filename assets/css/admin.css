@@ -75,34 +75,27 @@
 
 /* ── Nav tabs ───────────────────────────────────────────────────────────────── */
 
+/*
+ * WP floats .nav-tab left, which breaks inline group labels.
+ * Converting the wrapper to flex restores document-order rendering
+ * while keeping the active-tab border-bottom trick intact.
+ */
 .nop-nav-tabs {
-	margin-top: 20px;
+	margin-top:  20px;
+	display:     flex;
+	align-items: flex-end;
+	flex-wrap:   wrap;
 }
 
-/* Flex so the service icon and label text share a single alignment axis. */
 .nop-nav-tabs .nav-tab {
-	display:     inline-flex;
-	align-items: center;
-	gap:         0.3em;
+	float:        none; /* ignored inside flex, but explicit */
+	display:      inline-flex;
+	align-items:  center;
+	gap:          0.3em;
+	margin-left:  0;
+	margin-right: 0.5em;
 }
 
-/* Section labels — "Site" / "Services" — appear inline before each group. */
-.nop-nav-group-label {
-	display:        inline-block;
-	font-size:      10px;
-	font-weight:    700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color:          var(--nop-text-muted);
-	padding:        0 6px 0 14px;
-	vertical-align: middle;
-	line-height:    34px;
-	opacity:        0.6;
-}
-
-.nop-nav-group-label:first-child {
-	padding-left: 0;
-}
 
 .nop-tab-icon {
 	width:       0.9em;

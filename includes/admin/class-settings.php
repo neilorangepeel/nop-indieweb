@@ -29,8 +29,8 @@ class Settings {
 			'semantic'  => 'Microformats',
 		],
 		'Services' => [
-			'swarm'    => 'Swarm',
 			'entries'  => 'Entries',
+			'swarm'    => 'Swarm',
 			'mastodon' => 'Mastodon',
 			'bluesky'  => 'Bluesky',
 		],
@@ -228,8 +228,7 @@ class Settings {
 			<?php $this->render_setup_guide(); ?>
 
 			<nav class="nav-tab-wrapper nop-nav-tabs" aria-label="Settings sections">
-				<?php foreach ( self::TAB_GROUPS as $group => $tabs ) : ?>
-					<span class="nop-nav-group-label"><?php echo esc_html( $group ); ?></span>
+				<?php foreach ( self::TAB_GROUPS as $tabs ) : ?>
 					<?php foreach ( $tabs as $slug => $label ) : ?>
 						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
 						<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
@@ -257,12 +256,12 @@ class Settings {
 					<?php $this->render_tab_semantic(); ?>
 				</div>
 
-				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
-					<?php $this->render_tab_swarm(); ?>
-				</div>
-
 				<div id="nop-tab-entries" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_entries(); ?>
+				</div>
+
+				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_swarm(); ?>
 				</div>
 
 				<div id="nop-tab-mastodon" class="nop-tab-panel" hidden>
@@ -285,19 +284,33 @@ class Settings {
 	// ——— Setup guide —————————————————————————————————————————————————————————
 
 	private function render_setup_guide(): void {
-		$swarm   = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
-		$is_live = ( $swarm['post_status'] ?? 'draft' ) === 'publish';
+		$swarm     = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
+		$mastodon  = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
+		$bluesky   = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky'] ?? [];
 
-		$has_checkin = ! empty( get_posts( [
+		$swarm_configured    = ! empty( $swarm['enabled'] );
+		$mastodon_configured = ! empty( $mastodon['enabled'] ) && ! empty( $mastodon['instance'] ) && ! empty( $mastodon['access_token'] );
+		$bluesky_configured  = ! empty( $bluesky['enabled'] ) && ! empty( $bluesky['handle'] ) && ! empty( $bluesky['app_password'] );
+
+		// Step 1: any IndieWeb post exists
+		$has_post = ! empty( get_posts( [
 			'post_type'      => 'post',
 			'post_status'    => 'any',
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
-			'meta_query'     => [ [ 'key' => 'nop_indieweb_service', 'value' => 'swarm' ] ],
+			'meta_query'     => [ [ 'key' => 'nop_indieweb_service', 'compare' => 'EXISTS' ] ],
 		] ) );
 
-		if ( $has_checkin && $is_live ) {
+		// Step 2: any service is publishing live
+		$swarm_live = $swarm_configured && ( $swarm['post_status'] ?? 'draft' ) === 'publish';
+		$is_live    = $swarm_live || $mastodon_configured || $bluesky_configured;
+
+		// Step 3: at least one syndicator connected (outbound)
+		$has_syndication = $mastodon_configured || $bluesky_configured;
+
+		// Hide guide once the essentials are done
+		if ( $has_post && $is_live && $has_syndication ) {
 			return;
 		}
 
@@ -306,16 +319,22 @@ class Settings {
 
 		$steps = [
 			[
-				'done'  => $has_checkin,
-				'label' => 'Connect OwnYourSwarm',
-				'body'  => 'Visit <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">ownyourswarm.p3k.io</a>, enter your site URL — it will discover your Micropub endpoint automatically via IndieAuth and walk you through authorising. Your endpoint is <code>' . esc_html( $micropub_url ) . '</code>.',
+				'done'  => $has_post,
+				'label' => 'Publish your first IndieWeb post',
+				'body'  => 'Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> to post location checkins, or enable Mastodon or Bluesky in their tabs to start syndicating. Your Micropub endpoint is <code>' . esc_html( $micropub_url ) . '</code>.',
 				'link'  => [ 'href' => $debug_url, 'text' => 'Test with the Debug panel' ],
 			],
 			[
 				'done'  => $is_live,
 				'label' => 'Go live',
-				'body'  => 'Once you\'re happy with the setup, change <strong>Post Status</strong> from Draft to <strong>Published</strong> in the Swarm tab.',
+				'body'  => 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Swarm tab, or enable Mastodon or Bluesky to start syndicating.',
 				'link'  => [ 'href' => '#nop-tab-swarm', 'text' => 'Open Swarm tab' ],
+			],
+			[
+				'done'  => $has_syndication,
+				'label' => 'Connect Mastodon or Bluesky',
+				'body'  => 'Add your credentials in the Mastodon or Bluesky tabs to syndicate posts outward automatically. Once connected, you can set up <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> to receive posts back to your site too.',
+				'link'  => [ 'href' => '#nop-tab-mastodon', 'text' => 'Open Mastodon tab' ],
 			],
 		];
 		?>
