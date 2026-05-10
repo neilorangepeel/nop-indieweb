@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/checkin-card",
+	"title": "Checkin Card",
+	"description": "Displays venue, map link, syndication links, and photos for an IndieWeb checkin post.",
+	"category": "theme",
+	"icon": "location",
+	"keywords": ["checkin", "swarm", "foursquare", "indieweb", "location"],
+	"editorScript": "file:./editor.js",
+	"style": "file:./style.css",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": {
+			"background": true,
+			"text": true
+		},
+		"spacing": {
+			"padding": true
+		}
+	}
+}
