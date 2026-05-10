@@ -132,6 +132,10 @@ class Settings {
 					   <?php if ( ! $tab_enabled ) : ?>title="<?php echo esc_attr( ucfirst( $slug ) ); ?> is disabled"<?php endif; ?>>
 						<?php if ( 'swarm' === $slug ) : ?>
 							<?php echo $this->swarm_bee_svg(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php elseif ( 'indieauth' === $slug ) : ?>
+							<?php echo $this->indieauth_svg(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+						<?php elseif ( 'semantic' === $slug ) : ?>
+							<?php echo $this->microformats_svg(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						<?php endif; ?>
 						<?php echo esc_html( $label ); ?>
 					</a>
@@ -569,7 +573,24 @@ class Settings {
 		<?php
 	}
 
-	// ——— Swarm bee icon ——————————————————————————————————————————————————————
+	// ——— Tab icons ———————————————————————————————————————————————————————————
+
+	private function indieauth_svg(): string {
+		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"'
+			. ' class="nop-tab-icon"'
+			. ' aria-hidden="true" focusable="false">'
+			. '<path fill="#CC0081" d="M74 24a16 16 0 0 1 15.8 13.5l10 64.2a2 2 0 0 1-2 2.3H67.2V79.2a6 6 0 1 0-6 0V104H30.5a2 2 0 0 1-2-2.3l9.6-64A16 16 0 0 1 54 24h20Zm-9.8 20a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/>'
+			. '</svg>';
+	}
+
+	private function microformats_svg(): string {
+		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"'
+			. ' class="nop-tab-icon"'
+			. ' aria-hidden="true" focusable="false">'
+			. '<rect width="128" height="128" rx="6" fill="#BB5500"/>'
+			. '<text x="64" y="85" font-family="Georgia,\'Times New Roman\',serif" font-size="62" font-weight="bold" fill="#fff" text-anchor="middle">&#956;f</text>'
+			. '</svg>';
+	}
 
 	private function swarm_bee_svg(): string {
 		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 80"'
