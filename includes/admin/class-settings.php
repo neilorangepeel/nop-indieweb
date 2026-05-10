@@ -518,7 +518,6 @@ class Settings {
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Post Defaults</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">
@@ -617,7 +616,6 @@ class Settings {
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Media</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Photos</th>
@@ -661,7 +659,6 @@ class Settings {
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Post Defaults</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">
@@ -761,7 +758,6 @@ class Settings {
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Media</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Photos</th>
@@ -786,7 +782,6 @@ class Settings {
 		$prefix   = self::OPTION_KEY . '[syndicators][mastodon]';
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
 		?>
-		<h2>Mastodon</h2>
 		<p>Syndicates posts to your Mastodon account when you publish. Requires an access token from your instance.</p>
 		<p><a href="https://docs.joinmastodon.org/client/token/" target="_blank" rel="noopener">How to create an access token →</a></p>
 
@@ -917,7 +912,6 @@ class Settings {
 		$prefix   = self::OPTION_KEY . '[syndicators][bluesky]';
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky'] ?? [];
 		?>
-		<h2>Bluesky</h2>
 		<p>Syndicates posts to your Bluesky account when you publish. Uses an app password — never your main password.</p>
 		<p><a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">Create an app password →</a></p>
 
@@ -1061,7 +1055,6 @@ class Settings {
 			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
 		?>
 
-		<h3 class="nop-section-heading">Microformats2</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Markup</th>
