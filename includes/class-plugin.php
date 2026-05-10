@@ -18,6 +18,7 @@ use NOP\IndieWeb\Admin\Syndication_Panel;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
 use NOP\IndieWeb\Syndication\Syndication_Manager;
+use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 
 /**
  * Bootstraps the plugin. Single entry point — everything is wired here.
@@ -51,6 +52,7 @@ class Plugin {
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services ) )->register();
 		( new Token_Endpoint() )->register();
+		( new Webmention_Endpoint() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
 		( new MF2_Endpoint() )->register();
@@ -219,12 +221,14 @@ HTML,
 
 	public function output_link_tags(): void {
 		printf( "<link rel=\"micropub\" href=\"%s\">\n",               esc_url( rest_url( 'nop-indieweb/v1/micropub' ) ) );
+		printf( "<link rel=\"webmention\" href=\"%s\">\n",             esc_url( rest_url( 'nop-indieweb/v1/webmention' ) ) );
 		printf( "<link rel=\"authorization_endpoint\" href=\"%s\">\n", esc_url( Auth_Endpoint::url() ) );
 		printf( "<link rel=\"token_endpoint\" href=\"%s\">\n",         esc_url( rest_url( 'nop-indieweb/v1/token' ) ) );
 	}
 
 	public function output_link_headers(): void {
 		header( sprintf( 'Link: <%s>; rel="micropub"',               rest_url( 'nop-indieweb/v1/micropub' ) ), false );
+		header( sprintf( 'Link: <%s>; rel="webmention"',             rest_url( 'nop-indieweb/v1/webmention' ) ), false );
 		header( sprintf( 'Link: <%s>; rel="authorization_endpoint"', Auth_Endpoint::url() ),                  false );
 		header( sprintf( 'Link: <%s>; rel="token_endpoint"',         rest_url( 'nop-indieweb/v1/token' ) ),  false );
 	}
