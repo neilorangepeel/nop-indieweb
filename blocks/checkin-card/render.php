@@ -45,11 +45,16 @@ if ( ! $venue_name ) {
 	return;
 }
 
-$lat              = get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
-$lng              = get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+$lat              = get_post_meta( $post_id, 'nop_indieweb_venue_lat',        true );
+$lng              = get_post_meta( $post_id, 'nop_indieweb_venue_lng',        true );
+$venue_locality   = get_post_meta( $post_id, 'nop_indieweb_venue_locality',   true );
+$venue_country    = get_post_meta( $post_id, 'nop_indieweb_venue_country',    true );
 $venue_categories = get_post_meta( $post_id, 'nop_indieweb_venue_categories', true );
-$syndication      = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
-$service          = get_post_meta( $post_id, 'nop_indieweb_service', true );
+$syndication      = get_post_meta( $post_id, 'nop_indieweb_syndication',      true );
+$service          = get_post_meta( $post_id, 'nop_indieweb_service',          true );
+
+$location_parts   = array_filter( [ $venue_locality, $venue_country ] );
+$location_line    = implode( ', ', $location_parts );
 
 $syndication      = is_array( $syndication ) ? array_filter( $syndication ) : [];
 $venue_categories = is_array( $venue_categories ) ? array_filter( $venue_categories ) : [];
@@ -72,6 +77,19 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 
 	<?php // Hidden p-name for microformats2 h-card completeness (venue name is visible in page title). ?>
 	<data class="p-name" value="<?php echo esc_attr( $venue_name ); ?>"></data>
+
+	<?php // ── Location (locality + country) ─────────────────────────────────── ?>
+	<?php if ( $location_line ) : ?>
+	<p class="nop-checkin-location"><?php
+		if ( $venue_locality ) {
+			printf( '<span class="p-locality">%s</span>', esc_html( $venue_locality ) );
+			if ( $venue_country ) { echo ', '; }
+		}
+		if ( $venue_country ) {
+			printf( '<span class="p-country-name">%s</span>', esc_html( $venue_country ) );
+		}
+	?></p>
+	<?php endif; ?>
 
 	<?php // ── Venue categories ──────────────────────────────────────────────── ?>
 	<?php if ( $venue_categories ) : ?>

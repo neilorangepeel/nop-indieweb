@@ -21,9 +21,14 @@
 
 		edit: function ( props ) {
 			var postId = useSelect( function ( select ) {
-				// core/editor is only populated in the post editor, not the site editor.
 				var store = select( 'core/editor' );
-				return ( store && store.getCurrentPostId ) ? store.getCurrentPostId() : null;
+				if ( ! store ) { return null; }
+				var type = store.getCurrentPostType ? store.getCurrentPostType() : null;
+				var id   = store.getCurrentPostId   ? store.getCurrentPostId()   : null;
+				// The site editor reports the template as the "current post" with a
+				// string slug ID (e.g. "theme//slug"), not a numeric post ID.
+				// Only pass post_id for actual posts so the integer validation passes.
+				return ( type === 'post' && typeof id === 'number' && id > 0 ) ? id : null;
 			}, [] );
 
 			return el( SSR, {
