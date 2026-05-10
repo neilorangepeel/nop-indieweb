@@ -22,14 +22,18 @@ class Settings {
 	private const OPTION_KEY = 'nop_indieweb_settings';
 	private const PAGE_SLUG  = 'nop-indieweb-settings';
 
-	private const TABS = [
-		'general'   => 'General',
-		'indieauth' => 'IndieAuth',
-		'swarm'     => 'Swarm',
-		'note'      => 'Notes',
-		'mastodon'  => 'Mastodon',
-		'bluesky'   => 'Bluesky',
-		'semantic'  => 'Microformats',
+	private const TAB_GROUPS = [
+		'Site' => [
+			'general'   => 'General',
+			'indieauth' => 'IndieAuth',
+			'semantic'  => 'Microformats',
+		],
+		'Services' => [
+			'swarm'    => 'Swarm',
+			'entries'  => 'Entries',
+			'mastodon' => 'Mastodon',
+			'bluesky'  => 'Bluesky',
+		],
 	];
 
 	public function register(): void {
@@ -171,25 +175,41 @@ class Settings {
 		$clean['services']['swarm']['post_tags']       = sanitize_text_field( $input['services']['swarm']['post_tags'] ?? 'Swarm' );
 		$clean['services']['swarm']['sideload_photos'] = ! empty( $input['services']['swarm']['sideload_photos'] );
 
-		// — Note ——————————————————————————————————————————————————————————————————
-		$clean['services']['note']['enabled']         = ! empty( $input['services']['note']['enabled'] );
-		$clean['services']['note']['post_status']     = in_array( $input['services']['note']['post_status'] ?? '', $valid_statuses, true )
-			? $input['services']['note']['post_status']
+		// — Entries ———————————————————————————————————————————————————————————————
+		$clean['services']['entries']['enabled']         = ! empty( $input['services']['entries']['enabled'] );
+		$clean['services']['entries']['post_status']     = in_array( $input['services']['entries']['post_status'] ?? '', $valid_statuses, true )
+			? $input['services']['entries']['post_status']
 			: 'publish';
-		$clean['services']['note']['post_format']     = sanitize_key( $input['services']['note']['post_format'] ?? 'status' );
-		$clean['services']['note']['post_category']   = sanitize_text_field( $input['services']['note']['post_category'] ?? 'Notes' );
-		$clean['services']['note']['post_tags']       = sanitize_text_field( $input['services']['note']['post_tags'] ?? '' );
-		$clean['services']['note']['sideload_photos'] = ! empty( $input['services']['note']['sideload_photos'] );
+		$clean['services']['entries']['post_format']     = sanitize_key( $input['services']['entries']['post_format'] ?? 'status' );
+		$clean['services']['entries']['post_category']   = sanitize_text_field( $input['services']['entries']['post_category'] ?? 'Notes' );
+		$clean['services']['entries']['post_tags']       = sanitize_text_field( $input['services']['entries']['post_tags'] ?? '' );
+		$clean['services']['entries']['sideload_photos'] = ! empty( $input['services']['entries']['sideload_photos'] );
 
 		// — Mastodon ——————————————————————————————————————————————————————————————
 		$clean['syndicators']['mastodon']['enabled']      = ! empty( $input['syndicators']['mastodon']['enabled'] );
 		$clean['syndicators']['mastodon']['instance']     = esc_url_raw( $input['syndicators']['mastodon']['instance'] ?? '' );
 		$clean['syndicators']['mastodon']['access_token'] = sanitize_text_field( $input['syndicators']['mastodon']['access_token'] ?? '' );
+		// Inbound defaults (posts received from Mastodon via Bridgy)
+		$clean['syndicators']['mastodon']['post_status']     = in_array( $input['syndicators']['mastodon']['post_status'] ?? '', $valid_statuses, true )
+			? $input['syndicators']['mastodon']['post_status']
+			: 'publish';
+		$clean['syndicators']['mastodon']['post_format']     = sanitize_key( $input['syndicators']['mastodon']['post_format'] ?? 'status' );
+		$clean['syndicators']['mastodon']['post_category']   = sanitize_text_field( $input['syndicators']['mastodon']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['mastodon']['post_tags']       = sanitize_text_field( $input['syndicators']['mastodon']['post_tags'] ?? '' );
+		$clean['syndicators']['mastodon']['sideload_photos'] = ! empty( $input['syndicators']['mastodon']['sideload_photos'] );
 
 		// — Bluesky ———————————————————————————————————————————————————————————————
 		$clean['syndicators']['bluesky']['enabled']      = ! empty( $input['syndicators']['bluesky']['enabled'] );
 		$clean['syndicators']['bluesky']['handle']       = sanitize_text_field( $input['syndicators']['bluesky']['handle'] ?? '' );
 		$clean['syndicators']['bluesky']['app_password'] = sanitize_text_field( $input['syndicators']['bluesky']['app_password'] ?? '' );
+		// Inbound defaults (posts received from Bluesky via Bridgy)
+		$clean['syndicators']['bluesky']['post_status']     = in_array( $input['syndicators']['bluesky']['post_status'] ?? '', $valid_statuses, true )
+			? $input['syndicators']['bluesky']['post_status']
+			: 'publish';
+		$clean['syndicators']['bluesky']['post_format']     = sanitize_key( $input['syndicators']['bluesky']['post_format'] ?? 'status' );
+		$clean['syndicators']['bluesky']['post_category']   = sanitize_text_field( $input['syndicators']['bluesky']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['bluesky']['post_tags']       = sanitize_text_field( $input['syndicators']['bluesky']['post_tags'] ?? '' );
+		$clean['syndicators']['bluesky']['sideload_photos'] = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
 
 		return $clean;
 	}
@@ -208,19 +228,17 @@ class Settings {
 			<?php $this->render_setup_guide(); ?>
 
 			<nav class="nav-tab-wrapper nop-nav-tabs" aria-label="Settings sections">
-				<?php foreach ( self::TABS as $slug => $label ) : ?>
-					<?php
-					$tab_enabled = true;
-					if ( 'swarm' === $slug ) {
-						$tab_enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm']['enabled'] ?? true;
-					}
-					?>
-					<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
-					   class="nav-tab<?php echo ! $tab_enabled ? ' nop-tab--inactive' : ''; ?>"
-					   data-tab="<?php echo esc_attr( $slug ); ?>"
-					   <?php if ( ! $tab_enabled ) : ?>title="<?php echo esc_attr( ucfirst( $slug ) ); ?> is disabled"<?php endif; ?>>
-						<?php echo esc_html( $label ); ?>
-					</a>
+				<?php foreach ( self::TAB_GROUPS as $group => $tabs ) : ?>
+					<span class="nop-nav-group-label"><?php echo esc_html( $group ); ?></span>
+					<?php foreach ( $tabs as $slug => $label ) : ?>
+						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
+						<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
+						   class="nav-tab<?php echo ! $tab_enabled ? ' nop-tab--inactive' : ''; ?>"
+						   data-tab="<?php echo esc_attr( $slug ); ?>"
+						   <?php if ( ! $tab_enabled ) : ?>title="<?php echo esc_attr( $label ); ?> is disabled"<?php endif; ?>>
+							<?php echo esc_html( $label ); ?>
+						</a>
+					<?php endforeach; ?>
 				<?php endforeach; ?>
 			</nav>
 
@@ -235,12 +253,16 @@ class Settings {
 					<?php $this->render_tab_indieauth(); ?>
 				</div>
 
+				<div id="nop-tab-semantic" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_semantic(); ?>
+				</div>
+
 				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_swarm(); ?>
 				</div>
 
-				<div id="nop-tab-note" class="nop-tab-panel" hidden>
-					<?php $this->render_tab_note(); ?>
+				<div id="nop-tab-entries" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_entries(); ?>
 				</div>
 
 				<div id="nop-tab-mastodon" class="nop-tab-panel" hidden>
@@ -249,10 +271,6 @@ class Settings {
 
 				<div id="nop-tab-bluesky" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_bluesky(); ?>
-				</div>
-
-				<div id="nop-tab-semantic" class="nop-tab-panel" hidden>
-					<?php $this->render_tab_semantic(); ?>
 				</div>
 
 				<div class="nop-settings-footer">
@@ -323,6 +341,16 @@ class Settings {
 			</ol>
 		</div>
 		<?php
+	}
+
+	private function is_tab_enabled( string $slug ): bool {
+		return match( $slug ) {
+			'swarm'    => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm']['enabled'] ?? true ),
+			'entries'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries']['enabled'] ?? true ),
+			'mastodon' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon']['enabled'] ?? false ),
+			'bluesky'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky']['enabled'] ?? false ),
+			default    => true,
+		};
 	}
 
 	// ——— Tab: General ————————————————————————————————————————————————————————
@@ -592,9 +620,9 @@ class Settings {
 
 	// ——— Tab: Notes ——————————————————————————————————————————————————————————
 
-	private function render_tab_note(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['note'] ?? [];
-		$prefix   = self::OPTION_KEY . '[services][note]';
+	private function render_tab_entries(): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
+		$prefix   = self::OPTION_KEY . '[services][entries]';
 
 		$theme_formats = get_theme_support( 'post-formats' );
 		$formats       = is_array( $theme_formats )
@@ -608,7 +636,7 @@ class Settings {
 					<label>
 						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
 						       <?php checked( $settings['enabled'] ?? true ); ?>>
-						Accept notes from <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> (Mastodon &amp; Bluesky → your site)
+						Accept generic Micropub posts — catch-all for any h-entry not handled by a named service
 					</label>
 				</td>
 			</tr>
@@ -783,6 +811,86 @@ class Settings {
 			<span class="nop-test-result" style="margin-left:8px;"></span>
 		</p>
 		<?php endif; ?>
+
+		<h3 class="nop-section-heading">Inbound Defaults</h3>
+		<p class="description" style="margin: 6px 0 16px;">Applied to posts received from Mastodon via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a>.</p>
+		<?php
+		$theme_formats  = get_theme_support( 'post-formats' );
+		$formats        = is_array( $theme_formats ) ? array_merge( [ 'standard' ], $theme_formats[0] ?? [] ) : [ 'standard' ];
+		$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
+		$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
+		$all_tags       = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
+		?>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop_mastodon_in_status">Status</label></th>
+				<td>
+					<select id="nop_mastodon_in_status" name="<?php echo "{$prefix}[post_status]"; ?>">
+						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+								<?php echo esc_html( $label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php if ( count( $formats ) > 1 ) : ?>
+			<tr>
+				<th scope="row"><label for="nop_mastodon_in_format">Format</label></th>
+				<td>
+					<select id="nop_mastodon_in_format" name="<?php echo "{$prefix}[post_format]"; ?>">
+						<?php foreach ( $formats as $format ) : ?>
+							<option value="<?php echo esc_attr( $format ); ?>" <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
+								<?php echo esc_html( ucfirst( $format ) ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php endif; ?>
+			<tr>
+				<th scope="row"><label for="nop-mastodon-in-category">Category</label></th>
+				<td>
+					<div class="nop-token-field"
+					     data-input-id="nop-mastodon-in-category"
+					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
+						<div class="nop-token-field__tokens" aria-live="polite"></div>
+						<input type="text" id="nop-mastodon-in-category" class="nop-token-field__input"
+						       placeholder="Add category…" autocomplete="off" aria-label="Category name">
+						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
+						<input type="hidden" name="<?php echo "{$prefix}[post_category]"; ?>"
+						       value="<?php echo esc_attr( $settings['post_category'] ?? 'Notes' ); ?>">
+					</div>
+					<p class="description">Created automatically if it doesn't exist.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="nop-mastodon-in-tags">Tags</label></th>
+				<td>
+					<div class="nop-token-field"
+					     data-input-id="nop-mastodon-in-tags"
+					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
+						<div class="nop-token-field__tokens" aria-live="polite"></div>
+						<input type="text" id="nop-mastodon-in-tags" class="nop-token-field__input"
+						       placeholder="Add tags…" autocomplete="off" aria-label="Tag name">
+						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
+						<input type="hidden" name="<?php echo "{$prefix}[post_tags]"; ?>"
+						       value="<?php echo esc_attr( $settings['post_tags'] ?? '' ); ?>">
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Photos</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
+						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
+						Save photos to your media library
+					</label>
+				</td>
+			</tr>
+		</table>
 		<?php
 	}
 
@@ -834,6 +942,86 @@ class Settings {
 			<span class="nop-test-result" style="margin-left:8px;"></span>
 		</p>
 		<?php endif; ?>
+
+		<h3 class="nop-section-heading">Inbound Defaults</h3>
+		<p class="description" style="margin: 6px 0 16px;">Applied to posts received from Bluesky via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a>.</p>
+		<?php
+		$theme_formats  = get_theme_support( 'post-formats' );
+		$formats        = is_array( $theme_formats ) ? array_merge( [ 'standard' ], $theme_formats[0] ?? [] ) : [ 'standard' ];
+		$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
+		$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
+		$all_tags       = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
+		?>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop_bluesky_in_status">Status</label></th>
+				<td>
+					<select id="nop_bluesky_in_status" name="<?php echo "{$prefix}[post_status]"; ?>">
+						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+								<?php echo esc_html( $label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php if ( count( $formats ) > 1 ) : ?>
+			<tr>
+				<th scope="row"><label for="nop_bluesky_in_format">Format</label></th>
+				<td>
+					<select id="nop_bluesky_in_format" name="<?php echo "{$prefix}[post_format]"; ?>">
+						<?php foreach ( $formats as $format ) : ?>
+							<option value="<?php echo esc_attr( $format ); ?>" <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
+								<?php echo esc_html( ucfirst( $format ) ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php endif; ?>
+			<tr>
+				<th scope="row"><label for="nop-bluesky-in-category">Category</label></th>
+				<td>
+					<div class="nop-token-field"
+					     data-input-id="nop-bluesky-in-category"
+					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
+						<div class="nop-token-field__tokens" aria-live="polite"></div>
+						<input type="text" id="nop-bluesky-in-category" class="nop-token-field__input"
+						       placeholder="Add category…" autocomplete="off" aria-label="Category name">
+						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
+						<input type="hidden" name="<?php echo "{$prefix}[post_category]"; ?>"
+						       value="<?php echo esc_attr( $settings['post_category'] ?? 'Notes' ); ?>">
+					</div>
+					<p class="description">Created automatically if it doesn't exist.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="nop-bluesky-in-tags">Tags</label></th>
+				<td>
+					<div class="nop-token-field"
+					     data-input-id="nop-bluesky-in-tags"
+					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
+						<div class="nop-token-field__tokens" aria-live="polite"></div>
+						<input type="text" id="nop-bluesky-in-tags" class="nop-token-field__input"
+						       placeholder="Add tags…" autocomplete="off" aria-label="Tag name">
+						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
+						<input type="hidden" name="<?php echo "{$prefix}[post_tags]"; ?>"
+						       value="<?php echo esc_attr( $settings['post_tags'] ?? '' ); ?>">
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Photos</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
+						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
+						Save photos to your media library
+					</label>
+				</td>
+			</tr>
+		</table>
 		<?php
 	}
 

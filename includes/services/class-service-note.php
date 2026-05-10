@@ -7,17 +7,14 @@ namespace NOP\IndieWeb\Services;
  * Handles generic h-entry Micropub posts — notes, short-form content, and
  * posts arriving via Bridgy from Mastodon or Bluesky (PESOS direction).
  *
- * Bridgy payload shape:
- *   properties.url[0]         → canonical URL on the remote platform
- *   properties.content[0]     → post content (string or {'html':…,'value':…})
- *   properties.published[0]   → ISO 8601 timestamp
- *   properties.syndication[]  → syndication URLs (usually the same as url[0])
- *   properties.photo[]        → photo URLs (optional)
+ * Platform detection: source URL is matched against the configured Mastodon
+ * instance and known Bluesky domains. Matched platforms use their own tab's
+ * inbound settings; unknown sources fall back to the Entries catch-all.
  */
 class Note extends Service_Base {
 
-	public function get_name(): string { return 'Note'; }
-	public function get_slug(): string { return 'note'; }
+	public function get_name(): string { return 'Entries'; }
+	public function get_slug(): string { return 'entries'; }
 
 	/**
 	 * Matches any h-entry that isn't a Swarm checkin.
@@ -58,6 +55,7 @@ class Note extends Service_Base {
 			'content'     => sanitize_textarea_field( $content ),
 			'published'   => sanitize_text_field( $props['published'][0] ?? '' ),
 			'source_url'  => $source_url,
+			'platform'    => $this->detect_platform( $source_url ),
 			'syndication' => $syndication,
 			'photos'      => array_map(
 				'esc_url_raw',
@@ -68,7 +66,7 @@ class Note extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings    = $this->get_settings();
+		$settings    = $this->get_inbound_settings( $parsed['platform'] );
 		$post_status = $settings['post_status'] ?? 'publish';
 
 		$post_date     = '';
@@ -123,7 +121,8 @@ class Note extends Service_Base {
 	}
 
 	public function get_post_format( array $parsed ): string {
-		return $this->get_settings()['post_format'] ?? 'status';
+		$settings = $this->get_inbound_settings( $parsed['platform'] );
+		return $settings['post_format'] ?? 'status';
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
@@ -131,7 +130,7 @@ class Note extends Service_Base {
 			return;
 		}
 
-		$settings = $this->get_settings();
+		$settings = $this->get_inbound_settings( $parsed['platform'] );
 		$ids      = [];
 
 		if ( ! empty( $settings['sideload_photos'] ) ) {
@@ -149,6 +148,39 @@ class Note extends Service_Base {
 				'post_content' => rtrim( $post->post_content ) . "\n\n" . $photo_blocks,
 			] );
 		}
+	}
+
+	/**
+	 * Identifies which platform a source URL belongs to so inbound settings
+	 * can be read from that platform's tab rather than the Entries catch-all.
+	 */
+	private function detect_platform( string $source_url ): string {
+		if ( ! $source_url ) {
+			return 'entries';
+		}
+
+		if ( str_contains( $source_url, 'bsky.app' ) || str_contains( $source_url, 'bsky.social' ) ) {
+			return 'bluesky';
+		}
+
+		$instance = rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' ), '/' );
+		if ( $instance && str_starts_with( $source_url, $instance ) ) {
+			return 'mastodon';
+		}
+
+		return 'entries';
+	}
+
+	/**
+	 * Returns inbound post settings for the detected platform.
+	 * Mastodon and Bluesky read from their own syndicator config;
+	 * anything else falls back to the Entries service settings.
+	 */
+	private function get_inbound_settings( string $platform ): array {
+		if ( in_array( $platform, [ 'mastodon', 'bluesky' ], true ) ) {
+			return \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
+		}
+		return $this->get_settings();
 	}
 
 	private function ensure_category( string $name ): int {

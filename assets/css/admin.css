@@ -86,6 +86,24 @@
 	gap:         0.3em;
 }
 
+/* Section labels — "Site" / "Services" — appear inline before each group. */
+.nop-nav-group-label {
+	display:        inline-block;
+	font-size:      10px;
+	font-weight:    700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color:          var(--nop-text-muted);
+	padding:        0 6px 0 14px;
+	vertical-align: middle;
+	line-height:    34px;
+	opacity:        0.6;
+}
+
+.nop-nav-group-label:first-child {
+	padding-left: 0;
+}
+
 .nop-tab-icon {
 	width:       0.9em;
 	height:      0.9em;
