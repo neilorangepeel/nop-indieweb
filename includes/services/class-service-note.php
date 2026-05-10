@@ -123,7 +123,7 @@ class Note extends Service_Base {
 	}
 
 	public function get_post_format( array $parsed ): string {
-		return 'status';
+		return $this->get_settings()['post_format'] ?? 'status';
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
@@ -131,9 +131,14 @@ class Note extends Service_Base {
 			return;
 		}
 
-		$ids = $this->sideload_photos( $parsed['photos'], $post_id );
-		if ( $ids ) {
-			update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+		$settings = $this->get_settings();
+		$ids      = [];
+
+		if ( ! empty( $settings['sideload_photos'] ) ) {
+			$ids = $this->sideload_photos( $parsed['photos'], $post_id );
+			if ( $ids ) {
+				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+			}
 		}
 
 		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'] );
