@@ -73,6 +73,32 @@ class Settings {
 			} else {
 				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
 			}
+		} elseif ( 'bluesky' === $service ) {
+			$handle   = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
+			$password = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.app_password', '' );
+
+			if ( ! $handle || ! $password ) {
+				wp_send_json_error( 'Not configured.' );
+			}
+
+			$response = wp_remote_post( 'https://bsky.social/xrpc/com.atproto.server.createSession', [
+				'headers' => [ 'Content-Type' => 'application/json' ],
+				'body'    => wp_json_encode( [ 'identifier' => $handle, 'password' => $password ] ),
+				'timeout' => 10,
+			] );
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error( $response->get_error_message() );
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( 200 === $code && isset( $body['handle'] ) ) {
+				wp_send_json_success( 'Connected as @' . $body['handle'] );
+			} else {
+				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['message'] ?? 'Unknown error' ) );
+			}
 		} else {
 			wp_send_json_error( 'Unknown service.' );
 		}
@@ -640,6 +666,16 @@ class Settings {
 				</td>
 			</tr>
 		</table>
+
+		<?php if ( ! empty( $settings['app_password'] ) && ! empty( $settings['handle'] ) ) : ?>
+		<p>
+			<button type="button" class="button nop-test-connection" data-service="bluesky"
+			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
+				Test connection
+			</button>
+			<span class="nop-test-result" style="margin-left:8px;"></span>
+		</p>
+		<?php endif; ?>
 		<?php
 	}
 
