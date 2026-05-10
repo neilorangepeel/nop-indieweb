@@ -37,6 +37,18 @@
 	font-size: 13px;
 }
 
+/* Syndication targets — compact checkbox list matching native WP sidebar density */
+.nop-syndication-targets {
+	display:        flex;
+	flex-direction: column;
+	gap:            4px;
+	padding-bottom: 4px;
+}
+
+.nop-syndication-targets .components-checkbox-control {
+	margin-bottom: 0;
+}
+
 /* Photo thumbnails */
 .nop-panel-photos {
 	display:    flex;

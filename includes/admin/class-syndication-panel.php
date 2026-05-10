@@ -39,6 +39,13 @@ class Syndication_Panel {
 			true
 		);
 
+		wp_enqueue_style(
+			'nop-indieweb-checkin-panel',
+			$base . 'checkin-panel.css',
+			[],
+			$ver
+		);
+
 		wp_localize_script( 'nop-indieweb-syndication-panel', 'nopIndiewebSyndication', [
 			'syndicators' => $syndicators,
 		] );

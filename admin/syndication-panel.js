@@ -56,7 +56,7 @@
 		}
 
 		return el( Panel, { name: 'nop-indieweb-syndication', title: __( 'Syndicate to', 'nop-indieweb' ) },
-			el( 'div', { className: 'nop-panel-fields' },
+			el( 'div', { className: 'nop-syndication-targets' },
 				syndicators.map( function ( syndicator ) {
 					return el( CheckboxControl, {
 						key:                     syndicator.slug,
