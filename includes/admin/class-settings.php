@@ -925,7 +925,7 @@ class Settings {
 			<tr>
 				<th scope="row">Sync now</th>
 				<td>
-					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=nop_indieweb_sync_now&platform=mastodon' ), 'nop_indieweb_sync_mastodon' ) ); ?>"
+					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'mastodon', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_mastodon' ) ); ?>"
 					   class="button">Import from Mastodon now</a>
 				</td>
 			</tr>
@@ -1079,7 +1079,7 @@ class Settings {
 			<tr>
 				<th scope="row">Sync now</th>
 				<td>
-					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=nop_indieweb_sync_now&platform=bluesky' ), 'nop_indieweb_sync_bluesky' ) ); ?>"
+					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'bluesky', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_bluesky' ) ); ?>"
 					   class="button">Import from Bluesky now</a>
 				</td>
 			</tr>

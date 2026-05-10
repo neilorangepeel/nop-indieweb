@@ -31,7 +31,7 @@ class Feed_Importer {
 
 	public function register(): void {
 		add_action( 'nop_indieweb_import_feeds', [ $this, 'run' ] );
-		add_action( 'admin_post_nop_indieweb_sync_now', [ $this, 'handle_sync_now' ] );
+		add_action( 'admin_init', [ $this, 'handle_sync_now' ] );
 
 		if ( ! wp_next_scheduled( 'nop_indieweb_import_feeds' ) ) {
 			wp_schedule_event( time(), 'hourly', 'nop_indieweb_import_feeds' );
@@ -46,11 +46,15 @@ class Feed_Importer {
 	// ── Manual sync ────────────────────────────────────────────────────────────
 
 	public function handle_sync_now(): void {
+		if ( ! isset( $_GET['nop_indieweb_sync'] ) ) {
+			return;
+		}
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Forbidden', 403 );
 		}
 
-		$platform = sanitize_key( $_GET['platform'] ?? 'all' );
+		$platform = sanitize_key( $_GET['nop_indieweb_sync'] );
 		check_admin_referer( "nop_indieweb_sync_{$platform}" );
 
 		if ( 'mastodon' === $platform ) {
@@ -62,8 +66,8 @@ class Feed_Importer {
 		}
 
 		wp_safe_redirect( add_query_arg(
-			[ 'page' => 'nop-indieweb', 'nop_synced' => $platform ],
-			admin_url( 'admin.php' )
+			'nop_synced', $platform,
+			admin_url( 'options-general.php?page=nop-indieweb-settings' )
 		) );
 		exit;
 	}
