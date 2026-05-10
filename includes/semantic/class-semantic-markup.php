@@ -28,6 +28,7 @@ class Semantic_Markup {
 		add_filter( 'body_class',   [ $this, 'add_hentry_class' ] );
 		add_filter( 'render_block', [ $this, 'inject_block_classes' ], 10, 2 );
 		add_action( 'wp_head',      [ $this, 'output_alternate_link' ] );
+		add_action( 'wp_footer',    [ $this, 'output_syndication_links' ] );
 	}
 
 	public function add_hentry_class( array $classes ): array {
@@ -57,6 +58,19 @@ class Semantic_Markup {
 			"<link rel=\"alternate\" type=\"application/mf2+json\" href=\"%s\">\n",
 			esc_url( rest_url( "nop-indieweb/v1/mf2/{$post_id}" ) )
 		);
+	}
+
+	public function output_syndication_links(): void {
+		if ( ! $this->is_active() ) {
+			return;
+		}
+		$urls = get_post_meta( get_queried_object_id(), 'nop_indieweb_syndication', true );
+		if ( ! is_array( $urls ) || empty( $urls ) ) {
+			return;
+		}
+		foreach ( $urls as $url ) {
+			printf( "<a class=\"u-syndication\" href=\"%s\" hidden></a>\n", esc_url( $url ) );
+		}
 	}
 
 	private function is_active(): bool {
