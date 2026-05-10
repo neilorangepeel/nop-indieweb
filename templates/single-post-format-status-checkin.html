@@ -1,16 +1,32 @@
-<!-- wp:template-part {"slug":"header"} /-->
+<!-- wp:template-part {"slug":"header","theme":"neilorangepeel"} /-->
 
 <!-- wp:group {"tagName":"main","align":"wide","style":{"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
 <main class="wp-block-group alignwide">
 
-	<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
-	<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--30)">
+	<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|20"}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--40)">
 
-		<!-- wp:post-title {"level":1} /-->
+		<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
+		<div class="wp-block-group">
 
-		<!-- wp:group {"style":{"spacing":{"blockGap":"4px","margin":{"top":"var:preset|spacing|20"}}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap"}} -->
-		<div class="wp-block-group has-small-font-size" style="margin-top:var(--wp--preset--spacing--20)">
-			<!-- wp:post-date /-->
+			<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.1em","textTransform":"uppercase"}}} -->
+			<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Checked in</p>
+			<!-- /wp:paragraph -->
+
+			<!-- wp:heading {"level":1,"style":{"typography":{"fontStyle":"normal","fontWeight":"800","letterSpacing":"-0.02em","lineHeight":"1.1"}},"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_name"}}}}} -->
+			<h1 class="wp-block-heading" style="font-style:normal;font-weight:800;line-height:1.1;letter-spacing:-0.02em">The Crown Bar</h1>
+			<!-- /wp:heading -->
+
+		</div>
+		<!-- /wp:group -->
+
+		<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}},"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_address"}}}}} -->
+		<p class="has-text-color" style="color:#6b7280">46 Great Victoria Street</p>
+		<!-- /wp:paragraph -->
+
+		<!-- wp:group {"style":{"spacing":{"blockGap":"4px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap"}} -->
+		<div class="wp-block-group has-small-font-size">
+			<!-- wp:post-date {"format":"j F Y, g:i a","isLink":false} /-->
 			<!-- wp:paragraph -->
 			<p>·</p>
 			<!-- /wp:paragraph -->
@@ -21,9 +37,14 @@
 	</div>
 	<!-- /wp:group -->
 
-	<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
-	<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50)">
+	<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40"}}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
 		<!-- wp:post-content {"align":"wide","layout":{"type":"constrained","contentSize":"800px"}} /-->
+	</div>
+	<!-- /wp:group -->
+
+	<!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group" style="padding-top:0;padding-bottom:var(--wp--preset--spacing--50)">
 		<!-- wp:nop-indieweb/checkin-meta /-->
 	</div>
 	<!-- /wp:group -->
@@ -46,4 +67,4 @@
 </main>
 <!-- /wp:group -->
 
-<!-- wp:template-part {"slug":"footer"} /-->
+<!-- wp:template-part {"slug":"footer","theme":"neilorangepeel"} /-->

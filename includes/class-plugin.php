@@ -7,6 +7,8 @@ use NOP\IndieWeb\Micropub\Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
 use NOP\IndieWeb\Post_Meta\Block_Bindings;
 use NOP\IndieWeb\Services\Swarm;
+use NOP\IndieWeb\Semantic\Semantic_Markup;
+use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Post_Filter;
 use NOP\IndieWeb\Admin\Debug;
@@ -43,6 +45,8 @@ class Plugin {
 		( new Endpoint( $services ) )->register();
 		( new Token_Endpoint() )->register();
 		( new Post_Filter() )->register();
+		( new Semantic_Markup() )->register();
+		( new MF2_Endpoint() )->register();
 
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_patterns' ] );
@@ -140,8 +144,8 @@ class Plugin {
 
 <!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
-<!-- wp:paragraph {"style":{"typography":{"fontSize":"0.6875rem","textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"},"color":{"text":"#6b7280"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Venue</p>
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Venue</p>
 <!-- /wp:paragraph -->
 <!-- wp:heading {"level":2,"style":{"typography":{"fontWeight":"700","lineHeight":"1.2"}},"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_name"}}}}} -->
 <h2 class="wp-block-heading" style="font-weight:700;line-height:1.2">The Crown Bar</h2>
@@ -151,8 +155,8 @@ class Plugin {
 
 <!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
-<!-- wp:paragraph {"style":{"typography":{"fontSize":"0.6875rem","textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"},"color":{"text":"#6b7280"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Address</p>
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Address</p>
 <!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_address"}}}}} -->
 <p>46 Great Victoria Street</p>
@@ -162,14 +166,12 @@ class Plugin {
 
 <!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
-<!-- wp:paragraph {"style":{"typography":{"fontSize":"0.6875rem","textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"},"color":{"text":"#6b7280"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Date</p>
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Date</p>
 <!-- /wp:paragraph -->
 <!-- wp:post-date {"format":"j F Y, g:i a","isLink":false} /-->
 </div>
 <!-- /wp:group -->
-
-<!-- wp:post-content {"layout":{"type":"constrained"}} /-->
 
 <!-- wp:separator {"opacity":"css"} -->
 <hr class="wp-block-separator has-css-opacity"/>

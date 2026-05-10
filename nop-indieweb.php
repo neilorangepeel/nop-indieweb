@@ -36,6 +36,8 @@ require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-swarm.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
+require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';
+require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-mf2-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-debug.php';

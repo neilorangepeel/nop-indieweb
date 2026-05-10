@@ -26,6 +26,7 @@ class Settings {
 		'general'   => 'General',
 		'indieauth' => 'IndieAuth',
 		'swarm'     => 'Swarm',
+		'semantic'  => 'Semantic Web',
 	];
 
 	public function register(): void {
@@ -84,7 +85,10 @@ class Settings {
 		unset( $clean['secret_token'] );
 
 		// — General ———————————————————————————————————————————————————————————
-		$clean['debug_mode'] = ! empty( $input['debug_mode'] );
+		$clean['debug_mode']  = ! empty( $input['debug_mode'] );
+
+		// — Semantic Web ——————————————————————————————————————————————————————
+		$clean['mf2_enabled'] = ! empty( $input['mf2_enabled'] );
 
 		// — Swarm —————————————————————————————————————————————————————————————
 		$valid_statuses = [ 'publish', 'draft', 'private' ];
@@ -147,6 +151,10 @@ class Settings {
 
 				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_swarm(); ?>
+				</div>
+
+				<div id="nop-tab-semantic" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_semantic(); ?>
 				</div>
 
 				<div class="nop-settings-footer">
@@ -477,6 +485,83 @@ class Settings {
 					<p class="description">
 						Protects against Swarm CDN changes or account deletion.
 						Disable if you see timeouts on slow hosting.
+					</p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	// ——— Tab: Semantic Web ——————————————————————————————————————————————————
+
+	private function render_tab_semantic(): void {
+		$enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'mf2_enabled', true );
+		$name    = self::OPTION_KEY . '[mf2_enabled]';
+
+		$example_post = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_key'       => 'nop_indieweb_service',
+		] );
+		$mf2_url = $example_post
+			? esc_url( rest_url( 'nop-indieweb/v1/mf2/' . $example_post[0] ) )
+			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
+		?>
+
+		<h3 class="nop-section-heading">Microformats2</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Markup</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo $name; ?>" value="1" <?php checked( $enabled ); ?>>
+						Add microformats2 markup to IndieWeb posts
+					</label>
+					<p class="description">
+						Injected at render time — nothing is stored in your database.
+						Deactivating the plugin removes it automatically.
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">What gets added</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">HTML layer</th>
+				<td>
+					<ul class="nop-mf2-list">
+						<li><code>h-entry</code> — added to <code>&lt;body&gt;</code> on IndieWeb posts</li>
+						<li><code>dt-published</code> — added to the <code>&lt;time&gt;</code> element in the post date block</li>
+						<li><code>e-content</code> — added to the post content block wrapper</li>
+						<li><code>p-checkin h-card</code> — venue details rendered by the checkin-meta block</li>
+						<li><code>u-syndication</code> — checkin links in the checkin-meta block</li>
+						<li><code>u-url</code> — post permalink in the checkin-meta block</li>
+					</ul>
+					<p class="description">These allow basic parsers like webmention.io to read your post structure from HTML.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">JSON layer</th>
+				<td>
+					<p>
+						Structured mf2 JSON is generated directly from post meta — no HTML parsing — and served at:
+					</p>
+					<div class="nop-url-copy-row">
+						<code class="nop-url-display">
+							<a href="<?php echo $mf2_url; ?>" target="_blank" rel="noopener"><?php echo $mf2_url; ?></a>
+						</code>
+						<button type="button" class="button button-secondary nop-copy-btn"
+						        data-copy="<?php echo esc_attr( $mf2_url ); ?>">Copy</button>
+					</div>
+					<p class="description">
+						Advertised via <code>&lt;link rel="alternate" type="application/mf2+json"&gt;</code> in <code>&lt;head&gt;</code>.
+						Services like <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> and
+						<a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> that support <code>rel=alternate</code>
+						use this for richer, more accurate data.
 					</p>
 				</td>
 			</tr>

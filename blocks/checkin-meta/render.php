@@ -47,6 +47,7 @@ if ( ! $venue_name ) {
 
 $lat              = get_post_meta( $post_id, 'nop_indieweb_venue_lat',        true );
 $lng              = get_post_meta( $post_id, 'nop_indieweb_venue_lng',        true );
+$venue_address    = get_post_meta( $post_id, 'nop_indieweb_venue_address',    true );
 $venue_locality   = get_post_meta( $post_id, 'nop_indieweb_venue_locality',   true );
 $venue_country    = get_post_meta( $post_id, 'nop_indieweb_venue_country',    true );
 $venue_categories = get_post_meta( $post_id, 'nop_indieweb_venue_categories', true );
@@ -70,13 +71,17 @@ $is_editor = (
 );
 
 $wrapper_attrs = get_block_wrapper_attributes( [
-	'class' => 'nop-checkin-meta p-location h-card' . ( $is_editor ? ' nop-checkin-meta--editor' : '' ),
+	'class' => 'nop-checkin-meta p-checkin h-card' . ( $is_editor ? ' nop-checkin-meta--editor' : '' ),
 ] );
 ?>
 <div <?php echo $wrapper_attrs; ?>>
 
-	<?php // Hidden p-name for microformats2 h-card completeness (venue name is visible in page title). ?>
+	<?php // Hidden mf2 properties — data elements are parsed by mf2 parsers but not visible to users. ?>
 	<data class="p-name" value="<?php echo esc_attr( $venue_name ); ?>"></data>
+	<?php if ( $venue_address ) : ?>
+	<data class="p-street-address" value="<?php echo esc_attr( $venue_address ); ?>"></data>
+	<?php endif; ?>
+	<a class="u-url" href="<?php echo esc_url( get_permalink( $post_id ) ); ?>" hidden>permalink</a>
 
 	<?php // ── Location (locality + country) ─────────────────────────────────── ?>
 	<?php if ( $location_line ) : ?>
