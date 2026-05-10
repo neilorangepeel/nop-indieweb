@@ -1,0 +1,54 @@
+/*
+ * Venue panel — block editor sidebar styles.
+ * Follows native WP editor panel spacing and typography conventions.
+ */
+
+/* Outer wrapper — adds top gap between the TextControl and the rows below */
+.nop-panel-fields {
+	display:        flex;
+	flex-direction: column;
+	gap:            12px;
+}
+
+/* Read-only key/value rows */
+.nop-panel-row {
+	display:        flex;
+	flex-direction: column;
+	gap:            2px;
+}
+
+.nop-panel-label {
+	font-size:      11px;
+	font-weight:    600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color:          #757575;
+	line-height:    1.4;
+}
+
+.nop-panel-value {
+	font-size:   13px;
+	color:       #1d2327;
+	line-height: 1.4;
+}
+
+/* ExternalLink inside a row sits directly under the value */
+.nop-panel-row a.components-external-link {
+	font-size: 13px;
+}
+
+/* Photo thumbnails */
+.nop-panel-photos {
+	display:    flex;
+	gap:        4px;
+	flex-wrap:  wrap;
+	margin-top: 4px;
+}
+
+.nop-panel-photo {
+	width:         48px;
+	height:        48px;
+	object-fit:    cover;
+	border-radius: 2px;
+	display:       block;
+}

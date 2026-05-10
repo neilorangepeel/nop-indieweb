@@ -1,8 +1,8 @@
 /**
- * Checkin Card block — editor.
+ * Checkin Meta block — editor.
  *
- * Uses ServerSideRender so the editor shows the live card (venue, photos,
- * map link) exactly as the frontend renders it.
+ * Uses ServerSideRender so the editor shows the live checkin metadata
+ * exactly as the frontend renders it.
  *
  * InspectorControls intentionally live in a PHP meta box rather than here —
  * in WP 6.x the block canvas is an <iframe> and React portals from inside
@@ -17,7 +17,7 @@
 	var SSR      = ssr.default || ssr;
 	var useSelect = data.useSelect;
 
-	blocks.registerBlockType( 'nop-indieweb/checkin-card', {
+	blocks.registerBlockType( 'nop-indieweb/checkin-meta', {
 
 		edit: function ( props ) {
 			var postId = useSelect( function ( select ) {
@@ -32,7 +32,7 @@
 			}, [] );
 
 			return el( SSR, {
-				block:        'nop-indieweb/checkin-card',
+				block:        'nop-indieweb/checkin-meta',
 				attributes:   props.attributes,
 				urlQueryArgs: postId ? { post_id: postId } : {},
 			} );

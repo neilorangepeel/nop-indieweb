@@ -50,6 +50,11 @@ class Registry {
 		];
 
 		return [
+			// ── Post kind ────────────────────────────────────────────────────────
+			'nop_indieweb_post_kind'        => array_merge( $string, [
+				'description' => 'Explicit post kind (e.g. checkin, workout, note). Drives template selection.',
+			] ),
+
 			// ── Service provenance ───────────────────────────────────────────────
 			'nop_indieweb_service'          => array_merge( $string, [
 				'description' => 'Source service slug (e.g. swarm).',

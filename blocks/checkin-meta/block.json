@@ -1,9 +1,9 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "nop-indieweb/checkin-card",
-	"title": "Checkin Info",
-	"description": "Displays venue categories, map link, and syndication for an IndieWeb checkin post.",
+	"name": "nop-indieweb/checkin-meta",
+	"title": "Checkin Meta",
+	"description": "Outputs venue location, categories, map link, syndication URLs, and service attribution for a checkin post.",
 	"category": "theme",
 	"icon": "location",
 	"keywords": ["checkin", "swarm", "foursquare", "indieweb", "location"],

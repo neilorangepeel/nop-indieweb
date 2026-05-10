@@ -134,7 +134,7 @@ class Swarm extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>{$note}</p>\n<!-- /wp:paragraph -->"
 			: '';
 		// Photos are injected as real image blocks in after_insert() once sideloading completes.
-		// The checkin-card block lives in the template, not in post content.
+		// The checkin-meta block lives in the template, not in post content.
 
 		$args = [
 			'post_title'   => $title,
@@ -167,6 +167,10 @@ class Swarm extends Service_Base {
 
 	public function get_meta( array $parsed ): array {
 		return [
+			// Post kind — explicit, drives template selection.
+			'nop_indieweb_post_kind'        => 'checkin',
+			'nop_indieweb_service'          => 'swarm',
+
 			// Venue identity
 			'nop_indieweb_venue_name'       => $parsed['venue_name'],
 			'nop_indieweb_venue_url'        => $parsed['venue_url'],
