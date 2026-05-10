@@ -66,18 +66,21 @@ abstract class Service_Base {
 		}
 
 		$post_args = $this->map_to_post( $parsed );
+
+		// Include service meta in meta_input so it is committed before
+		// wp_after_insert_post fires — the syndication manager reads
+		// nop_indieweb_service to decide whether to skip the post.
+		$post_args['meta_input'] = array_merge(
+			$this->get_meta( $parsed ),
+			[ 'nop_indieweb_service' => $this->get_slug() ]
+		);
+
 		$post_args = apply_filters( 'nop_indieweb_before_post_insert', $post_args, $parsed, $this );
 
 		$post_id = wp_insert_post( $post_args, true );
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
-
-		foreach ( $this->get_meta( $parsed ) as $key => $value ) {
-			update_post_meta( $post_id, $key, $value );
-		}
-
-		update_post_meta( $post_id, 'nop_indieweb_service', $this->get_slug() );
 
 		$format = $this->get_post_format( $parsed );
 		if ( $format && 'standard' !== $format ) {
