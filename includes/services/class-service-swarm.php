@@ -254,46 +254,6 @@ class Swarm extends Service_Base {
 		}
 	}
 
-	private function build_photo_blocks( array $ids, array $urls ): string {
-		if ( $ids ) {
-			if ( 1 === count( $ids ) ) {
-				$src = wp_get_attachment_url( $ids[0] );
-				return sprintf(
-					"<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
-					$ids[0], esc_url( $src ), $ids[0]
-				);
-			}
-			$inner = '';
-			foreach ( $ids as $id ) {
-				$src    = wp_get_attachment_url( $id );
-				$inner .= sprintf(
-					"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
-					$id, esc_url( $src ), $id
-				);
-			}
-			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
-		}
-
-		if ( $urls ) {
-			if ( 1 === count( $urls ) ) {
-				return sprintf(
-					"<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
-					esc_url( $urls[0] )
-				);
-			}
-			$inner = '';
-			foreach ( $urls as $url ) {
-				$inner .= sprintf(
-					"\n<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
-					esc_url( $url )
-				);
-			}
-			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
-		}
-
-		return '';
-	}
-
 	public function get_post_format( array $parsed ): string {
 		return $this->get_settings()['post_format'] ?? 'status';
 	}

@@ -124,6 +124,10 @@ class Registry {
 
 			// ── Syndication ──────────────────────────────────────────────────────
 			// Stored separately so we can query it directly without deserializing the array.
+			'nop_indieweb_source_url'       => array_merge( $string, [
+				'label'       => __( 'Source URL', 'nop-indieweb' ),
+				'description' => 'Canonical URL on the originating platform (used for duplicate detection on inbound notes).',
+			] ),
 			'nop_indieweb_checkin_url'      => array_merge( $string, [
 				'label'       => __( 'Checkin URL', 'nop-indieweb' ),
 				'description' => 'Swarm checkin permalink (unique per checkin, used for duplicate detection).',

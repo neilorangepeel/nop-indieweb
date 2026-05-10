@@ -35,6 +35,14 @@ abstract class Service_Base {
 	}
 
 	/**
+	 * The post meta key used to store and query the dedup value.
+	 * Override in subclasses that use a different meta field.
+	 */
+	protected function get_dedup_meta_key(): string {
+		return 'nop_indieweb_checkin_url';
+	}
+
+	/**
 	 * Called after the post, meta, and format have all been saved.
 	 * Override in a service for post-creation work (photo sideloading, etc.).
 	 */
@@ -50,7 +58,7 @@ abstract class Service_Base {
 		// This handles OwnYourSwarm retries on network failure.
 		$dedup_key = $this->get_dedup_key( $parsed );
 		if ( $dedup_key ) {
-			$existing = $this->find_by_dedup_key( $dedup_key );
+			$existing = $this->find_by_dedup_key( $dedup_key, $this->get_dedup_meta_key() );
 			if ( $existing ) {
 				\NOP\IndieWeb\nop_indieweb_log( "Duplicate detected ({$dedup_key}) — returning existing post {$existing}" );
 				return $existing;
@@ -122,10 +130,7 @@ abstract class Service_Base {
 		return $attachment_ids;
 	}
 
-	/**
-	 * Looks up an existing post by the dedup key stored in nop_indieweb_checkin_url meta.
-	 */
-	private function find_by_dedup_key( string $key ): ?int {
+	private function find_by_dedup_key( string $key, string $meta_key ): ?int {
 		$posts = get_posts( [
 			'post_type'      => 'post',
 			'post_status'    => 'any',
@@ -133,11 +138,55 @@ abstract class Service_Base {
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
 			'meta_query'     => [ [
-				'key'   => 'nop_indieweb_checkin_url',
+				'key'   => $meta_key,
 				'value' => $key,
 			] ],
 		] );
 		return ! empty( $posts ) ? (int) $posts[0] : null;
+	}
+
+	/**
+	 * Builds WordPress image/gallery block markup from sideloaded attachment IDs or fallback URLs.
+	 * Pass $ids when photos have been sideloaded; pass $urls as a fallback for remote references.
+	 */
+	protected function build_photo_blocks( array $ids, array $urls ): string {
+		if ( $ids ) {
+			if ( 1 === count( $ids ) ) {
+				$src = wp_get_attachment_url( $ids[0] );
+				return sprintf(
+					"<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+					$ids[0], esc_url( $src ), $ids[0]
+				);
+			}
+			$inner = '';
+			foreach ( $ids as $id ) {
+				$src    = wp_get_attachment_url( $id );
+				$inner .= sprintf(
+					"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+					$id, esc_url( $src ), $id
+				);
+			}
+			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
+		}
+
+		if ( $urls ) {
+			if ( 1 === count( $urls ) ) {
+				return sprintf(
+					"<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $urls[0] )
+				);
+			}
+			$inner = '';
+			foreach ( $urls as $url ) {
+				$inner .= sprintf(
+					"\n<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $url )
+				);
+			}
+			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
+		}
+
+		return '';
 	}
 
 	protected function get_settings(): array {

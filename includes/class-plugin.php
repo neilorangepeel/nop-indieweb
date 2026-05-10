@@ -7,6 +7,7 @@ use NOP\IndieWeb\Micropub\Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
 use NOP\IndieWeb\Post_Meta\Block_Bindings;
 use NOP\IndieWeb\Services\Swarm;
+use NOP\IndieWeb\Services\Note;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
@@ -40,6 +41,7 @@ class Plugin {
 	public function boot(): void {
 		$services = apply_filters( 'nop_indieweb_register_services', [
 			new Swarm(),
+			new Note(),
 		] );
 
 		$syndication_manager = new Syndication_Manager();
