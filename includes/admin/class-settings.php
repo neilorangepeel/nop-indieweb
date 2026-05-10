@@ -26,7 +26,7 @@ class Settings {
 		'general'   => 'General',
 		'indieauth' => 'IndieAuth',
 		'swarm'     => 'Swarm',
-		'semantic'  => 'Semantic Web',
+		'semantic'  => 'Microformats',
 	];
 
 	public function register(): void {
