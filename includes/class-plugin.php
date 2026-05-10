@@ -18,6 +18,7 @@ use NOP\IndieWeb\Admin\Syndication_Panel;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
 use NOP\IndieWeb\Syndication\Syndication_Manager;
+use NOP\IndieWeb\Importer\Feed_Importer;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 
 /**
@@ -40,13 +41,15 @@ class Plugin {
 	private function __construct() {}
 
 	public function boot(): void {
+		$note     = new Note();
 		$services = apply_filters( 'nop_indieweb_register_services', [
 			new Swarm(),
-			new Note(),
+			$note,
 		] );
 
 		$syndication_manager = new Syndication_Manager();
 		$syndication_manager->register();
+		( new Feed_Importer( $note ) )->register();
 
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();

@@ -196,7 +196,8 @@ class Settings {
 		$clean['syndicators']['mastodon']['post_format']     = sanitize_key( $input['syndicators']['mastodon']['post_format'] ?? 'status' );
 		$clean['syndicators']['mastodon']['post_category']   = sanitize_text_field( $input['syndicators']['mastodon']['post_category'] ?? 'Notes' );
 		$clean['syndicators']['mastodon']['post_tags']       = sanitize_text_field( $input['syndicators']['mastodon']['post_tags'] ?? '' );
-		$clean['syndicators']['mastodon']['sideload_photos'] = ! empty( $input['syndicators']['mastodon']['sideload_photos'] );
+		$clean['syndicators']['mastodon']['sideload_photos']  = ! empty( $input['syndicators']['mastodon']['sideload_photos'] );
+		$clean['syndicators']['mastodon']['import_enabled']   = ! empty( $input['syndicators']['mastodon']['import_enabled'] );
 
 		// — Bluesky ———————————————————————————————————————————————————————————————
 		$clean['syndicators']['bluesky']['enabled']      = ! empty( $input['syndicators']['bluesky']['enabled'] );
@@ -209,7 +210,8 @@ class Settings {
 		$clean['syndicators']['bluesky']['post_format']     = sanitize_key( $input['syndicators']['bluesky']['post_format'] ?? 'status' );
 		$clean['syndicators']['bluesky']['post_category']   = sanitize_text_field( $input['syndicators']['bluesky']['post_category'] ?? 'Notes' );
 		$clean['syndicators']['bluesky']['post_tags']       = sanitize_text_field( $input['syndicators']['bluesky']['post_tags'] ?? '' );
-		$clean['syndicators']['bluesky']['sideload_photos'] = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
+		$clean['syndicators']['bluesky']['sideload_photos']  = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
+		$clean['syndicators']['bluesky']['import_enabled']   = ! empty( $input['syndicators']['bluesky']['import_enabled'] );
 
 		return $clean;
 	}
@@ -905,6 +907,30 @@ class Settings {
 				</td>
 			</tr>
 		</table>
+
+		<h3 class="nop-section-heading">Import</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Import posts</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
+						Automatically import your Mastodon posts as WordPress entries (hourly)
+					</label>
+					<p class="description">Replies and boosts are excluded. Posts already published from WordPress are skipped.</p>
+				</td>
+			</tr>
+			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
+			<tr>
+				<th scope="row">Sync now</th>
+				<td>
+					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=nop_indieweb_sync_now&platform=mastodon' ), 'nop_indieweb_sync_mastodon' ) ); ?>"
+					   class="button">Import from Mastodon now</a>
+				</td>
+			</tr>
+			<?php endif; ?>
+		</table>
 		<?php
 	}
 
@@ -1034,6 +1060,30 @@ class Settings {
 					</label>
 				</td>
 			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Import</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Import posts</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
+						Automatically import your Bluesky posts as WordPress entries (hourly)
+					</label>
+					<p class="description">Replies and reposts are excluded. Posts already published from WordPress are skipped.</p>
+				</td>
+			</tr>
+			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
+			<tr>
+				<th scope="row">Sync now</th>
+				<td>
+					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=nop_indieweb_sync_now&platform=bluesky' ), 'nop_indieweb_sync_bluesky' ) ); ?>"
+					   class="button">Import from Bluesky now</a>
+				</td>
+			</tr>
+			<?php endif; ?>
 		</table>
 		<?php
 	}
