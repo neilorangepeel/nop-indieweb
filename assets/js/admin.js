@@ -72,6 +72,39 @@
 			} );
 		} );
 
+		// ── Test connection buttons ───────────────────────────────────────────────
+
+		document.querySelectorAll( '.nop-test-connection' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				var result  = btn.parentNode.querySelector( '.nop-test-result' );
+				var service = btn.dataset.service;
+				var nonce   = btn.dataset.nonce;
+
+				btn.disabled    = true;
+				result.style.color = '';
+				result.textContent = 'Testing…';
+
+				var body = new FormData();
+				body.append( 'action',  'nop_test_connection' );
+				body.append( 'service', service );
+				body.append( '_ajax_nonce', nonce );
+
+				fetch( ajaxurl, { method: 'POST', body: body } )
+					.then( function ( r ) { return r.json(); } )
+					.then( function ( data ) {
+						result.textContent = data.data;
+						result.style.color = data.success ? 'green' : '#b32d2e';
+					} )
+					.catch( function () {
+						result.textContent = 'Request failed.';
+						result.style.color = '#b32d2e';
+					} )
+					.finally( function () {
+						btn.disabled = false;
+					} );
+			} );
+		} );
+
 		// ── Token fields ──────────────────────────────────────────────────────────
 
 		document.querySelectorAll( '.nop-token-field' ).forEach( initTokenField );

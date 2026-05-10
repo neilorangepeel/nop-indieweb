@@ -36,6 +36,46 @@ class Settings {
 		add_action( 'admin_init',            [ $this, 'register_settings' ] );
 		add_action( 'admin_init',            [ $this, 'maybe_handle_revoke' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+		add_action( 'wp_ajax_nop_test_connection', [ $this, 'ajax_test_connection' ] );
+	}
+
+	public function ajax_test_connection(): void {
+		check_ajax_referer( 'nop_test_connection' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		$service = sanitize_key( $_POST['service'] ?? '' );
+
+		if ( 'mastodon' === $service ) {
+			$instance = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' );
+			$token    = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.access_token', '' );
+
+			if ( ! $instance || ! $token ) {
+				wp_send_json_error( 'Not configured.' );
+			}
+
+			$response = wp_remote_get( rtrim( $instance, '/' ) . '/api/v1/accounts/verify_credentials', [
+				'headers' => [ 'Authorization' => 'Bearer ' . $token ],
+				'timeout' => 10,
+			] );
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error( $response->get_error_message() );
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( 200 === $code && isset( $body['acct'] ) ) {
+				wp_send_json_success( 'Connected as @' . $body['acct'] );
+			} else {
+				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
+			}
+		} else {
+			wp_send_json_error( 'Unknown service.' );
+		}
 	}
 
 	public function add_page(): void {
@@ -549,6 +589,16 @@ class Settings {
 				</td>
 			</tr>
 		</table>
+
+		<?php if ( ! empty( $settings['access_token'] ) && ! empty( $settings['instance'] ) ) : ?>
+		<p>
+			<button type="button" class="button nop-test-connection" data-service="mastodon"
+			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
+				Test connection
+			</button>
+			<span class="nop-test-result" style="margin-left:8px;"></span>
+		</p>
+		<?php endif; ?>
 		<?php
 	}
 
