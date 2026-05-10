@@ -161,6 +161,7 @@ class Plugin {
 
 	public function register_blocks(): void {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 	}
 
 	public function register_patterns(): void {

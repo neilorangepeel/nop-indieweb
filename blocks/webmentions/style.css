@@ -1,0 +1,125 @@
+.nop-webmentions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--preset--spacing--40, 1.5rem);
+}
+
+/* ── Label ─────────────────────────────────────────────────────────────── */
+
+.nop-webmentions__label {
+	margin: 0 0 0.5rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--wp--preset--color--accent-6, #6b7280);
+}
+
+/* ── Avatar shared ──────────────────────────────────────────────────────── */
+
+.nop-webmentions__avatar-link {
+	display: block;
+	line-height: 0;
+	text-decoration: none;
+	border-radius: 50%;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.nop-webmentions__avatar {
+	display: block;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.nop-webmentions__avatar--fallback {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--wp--preset--color--accent-6, #9ca3af);
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.8125rem;
+}
+
+/* ── Facepile ───────────────────────────────────────────────────────────── */
+
+.nop-webmentions__facepile {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.nop-webmentions__facepile .nop-webmentions__avatar,
+.nop-webmentions__facepile .nop-webmentions__avatar--fallback,
+.nop-webmentions__facepile .nop-webmentions__avatar--placeholder {
+	width: 32px;
+	height: 32px;
+}
+
+.nop-webmentions__avatar--placeholder {
+	display: block;
+	border-radius: 50%;
+	background: var(--wp--preset--color--accent-6, #e5e7eb);
+	opacity: 0.4;
+}
+
+/* ── Replies ────────────────────────────────────────────────────────────── */
+
+.nop-webmentions__replies {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--preset--spacing--30, 1rem);
+}
+
+.nop-webmentions__reply {
+	display: flex;
+	gap: 0.75rem;
+	align-items: flex-start;
+}
+
+.nop-webmentions__reply .nop-webmentions__avatar,
+.nop-webmentions__reply .nop-webmentions__avatar--fallback {
+	width: 40px;
+	height: 40px;
+}
+
+.nop-webmentions__reply-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nop-webmentions__reply-meta {
+	margin: 0 0 0.25rem;
+	font-size: 0.875rem;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.375rem;
+	align-items: baseline;
+}
+
+.nop-webmentions__reply-meta a {
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.nop-webmentions__reply-meta a:hover {
+	text-decoration: underline;
+}
+
+.nop-webmentions__reply-date {
+	color: var(--wp--preset--color--accent-6, #6b7280);
+	font-size: 0.75rem;
+}
+
+.nop-webmentions__reply-content {
+	margin: 0;
+	font-size: 0.9375rem;
+}
+
+.nop-webmentions__reply-content p {
+	margin: 0;
+}
