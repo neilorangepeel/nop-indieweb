@@ -216,12 +216,8 @@ class Swarm extends Service_Base {
 			$ids = $this->sideload_photos( $parsed['photos'], $post_id );
 			if ( $ids ) {
 				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+				$this->set_photo_alt_text( $ids, $parsed );
 			}
-		}
-
-		// Set first sideloaded photo as the featured image if none is set yet.
-		if ( $ids && ! get_post_thumbnail_id( $post_id ) ) {
-			set_post_thumbnail( $post_id, $ids[0] );
 		}
 
 		// Inject real image/gallery blocks into post content so photos are
@@ -233,6 +229,28 @@ class Swarm extends Service_Base {
 				'ID'           => $post_id,
 				'post_content' => rtrim( $post->post_content ) . "\n\n" . $photo_blocks,
 			] );
+		}
+	}
+
+	private function set_photo_alt_text( array $ids, array $parsed ): void {
+		$venue    = trim( $parsed['venue_name']     ?? '' );
+		$locality = trim( $parsed['venue_locality'] ?? '' );
+		$cats     = is_array( $parsed['venue_categories'] ?? null ) ? $parsed['venue_categories'] : [];
+		$category = $cats ? $cats[0] : '';
+
+		if ( $venue && $category && $locality ) {
+			$alt = sprintf( 'Photo taken at %s, a %s in %s', $venue, $category, $locality );
+		} elseif ( $venue && $locality ) {
+			$alt = sprintf( 'Photo taken at %s, %s', $venue, $locality );
+		} elseif ( $venue ) {
+			$alt = sprintf( 'Photo taken at %s', $venue );
+		} else {
+			$alt = 'Photo from a checkin';
+		}
+
+		foreach ( $ids as $attachment_id ) {
+			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
+			update_post_meta( $attachment_id, '_nop_alt_needs_review', '1' );
 		}
 	}
 
