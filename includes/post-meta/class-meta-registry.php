@@ -132,6 +132,10 @@ class Registry {
 				'label'       => __( 'Syndication URLs', 'nop-indieweb' ),
 				'description' => 'All syndication URLs for this post.',
 			] ),
+			'nop_indieweb_syndicate_to'     => array_merge( $array, [
+				'label'       => __( 'Syndicate To', 'nop-indieweb' ),
+				'description' => 'Platform slugs to syndicate to on publish (editor selection).',
+			] ),
 
 			// ── Photos ───────────────────────────────────────────────────────────
 			// CDN URLs are always stored as a permanent record even when photos are sideloaded.

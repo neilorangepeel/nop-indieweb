@@ -26,6 +26,8 @@ class Settings {
 		'general'   => 'General',
 		'indieauth' => 'IndieAuth',
 		'swarm'     => 'Swarm',
+		'mastodon'  => 'Mastodon',
+		'bluesky'   => 'Bluesky',
 		'semantic'  => 'Microformats',
 	];
 
@@ -102,6 +104,16 @@ class Settings {
 		$clean['services']['swarm']['post_tags']       = sanitize_text_field( $input['services']['swarm']['post_tags'] ?? 'Swarm' );
 		$clean['services']['swarm']['sideload_photos'] = ! empty( $input['services']['swarm']['sideload_photos'] );
 
+		// — Mastodon ——————————————————————————————————————————————————————————————
+		$clean['syndicators']['mastodon']['enabled']      = ! empty( $input['syndicators']['mastodon']['enabled'] );
+		$clean['syndicators']['mastodon']['instance']     = esc_url_raw( $input['syndicators']['mastodon']['instance'] ?? '' );
+		$clean['syndicators']['mastodon']['access_token'] = sanitize_text_field( $input['syndicators']['mastodon']['access_token'] ?? '' );
+
+		// — Bluesky ———————————————————————————————————————————————————————————————
+		$clean['syndicators']['bluesky']['enabled']      = ! empty( $input['syndicators']['bluesky']['enabled'] );
+		$clean['syndicators']['bluesky']['handle']       = sanitize_text_field( $input['syndicators']['bluesky']['handle'] ?? '' );
+		$clean['syndicators']['bluesky']['app_password'] = sanitize_text_field( $input['syndicators']['bluesky']['app_password'] ?? '' );
+
 		return $clean;
 	}
 
@@ -148,6 +160,14 @@ class Settings {
 
 				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_swarm(); ?>
+				</div>
+
+				<div id="nop-tab-mastodon" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_mastodon(); ?>
+				</div>
+
+				<div id="nop-tab-bluesky" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_bluesky(); ?>
 				</div>
 
 				<div id="nop-tab-semantic" class="nop-tab-panel" hidden>
@@ -490,6 +510,89 @@ class Settings {
 	}
 
 	// ——— Tab: Semantic Web ——————————————————————————————————————————————————
+
+	private function render_tab_mastodon(): void {
+		$prefix   = self::OPTION_KEY . '[syndicators][mastodon]';
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
+		?>
+		<h2>Mastodon</h2>
+		<p>Syndicates posts to your Mastodon account when you publish. Requires an access token from your instance.</p>
+		<p><a href="https://docs.joinmastodon.org/client/token/" target="_blank" rel="noopener">How to create an access token →</a></p>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Enable</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						       <?php checked( $settings['enabled'] ?? false ); ?>>
+						Syndicate posts to Mastodon on publish
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="mastodon-instance">Instance URL</label></th>
+				<td>
+					<input type="url" id="mastodon-instance" name="<?php echo "{$prefix}[instance]"; ?>"
+					       value="<?php echo esc_attr( $settings['instance'] ?? '' ); ?>"
+					       class="regular-text" placeholder="https://mastodon.social">
+					<p class="description">Your Mastodon instance URL (e.g. https://mastodon.social).</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="mastodon-token">Access Token</label></th>
+				<td>
+					<input type="password" id="mastodon-token" name="<?php echo "{$prefix}[access_token]"; ?>"
+					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
+					       class="regular-text" autocomplete="off">
+					<p class="description">From your Mastodon instance: Preferences → Development → New Application. Needs <code>write:statuses</code> scope.</p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	private function render_tab_bluesky(): void {
+		$prefix   = self::OPTION_KEY . '[syndicators][bluesky]';
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky'] ?? [];
+		?>
+		<h2>Bluesky</h2>
+		<p>Syndicates posts to your Bluesky account when you publish. Uses an app password — never your main password.</p>
+		<p><a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">Create an app password →</a></p>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Enable</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						       <?php checked( $settings['enabled'] ?? false ); ?>>
+						Syndicate posts to Bluesky on publish
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="bluesky-handle">Handle</label></th>
+				<td>
+					<input type="text" id="bluesky-handle" name="<?php echo "{$prefix}[handle]"; ?>"
+					       value="<?php echo esc_attr( $settings['handle'] ?? '' ); ?>"
+					       class="regular-text" placeholder="neilorangepeel.com">
+					<p class="description">Your Bluesky handle — either <code>you.bsky.social</code> or your custom domain handle.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="bluesky-password">App Password</label></th>
+				<td>
+					<input type="password" id="bluesky-password" name="<?php echo "{$prefix}[app_password]"; ?>"
+					       value="<?php echo esc_attr( $settings['app_password'] ?? '' ); ?>"
+					       class="regular-text" autocomplete="off">
+					<p class="description">From Bluesky: Settings → Privacy and Security → App Passwords.</p>
+				</td>
+			</tr>
+		</table>
+		<?php $this->render_save_button(); ?>
+		<?php
+	}
 
 	private function render_tab_semantic(): void {
 		$enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'mf2_enabled', true );

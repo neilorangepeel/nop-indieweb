@@ -9,9 +9,22 @@ function nop_indieweb_endpoint_url(): string {
 }
 
 // Retrieves a single value from the plugin's settings array.
+// Supports dot notation for nested keys: 'syndicators.mastodon.enabled'.
 function nop_indieweb_get_option( string $key, mixed $default = null ): mixed {
 	$options = get_option( 'nop_indieweb_settings', [] );
-	return $options[ $key ] ?? $default;
+
+	if ( ! str_contains( $key, '.' ) ) {
+		return $options[ $key ] ?? $default;
+	}
+
+	$current = $options;
+	foreach ( explode( '.', $key ) as $segment ) {
+		if ( ! is_array( $current ) || ! array_key_exists( $segment, $current ) ) {
+			return $default;
+		}
+		$current = $current[ $segment ];
+	}
+	return $current;
 }
 
 // Saves a single value into the plugin's settings array.

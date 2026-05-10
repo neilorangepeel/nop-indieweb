@@ -13,8 +13,10 @@ use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Post_Filter;
 use NOP\IndieWeb\Admin\Debug;
 use NOP\IndieWeb\Admin\Checkin_Metabox;
+use NOP\IndieWeb\Admin\Syndication_Panel;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
+use NOP\IndieWeb\Syndication\Syndication_Manager;
 
 /**
  * Bootstraps the plugin. Single entry point — everything is wired here.
@@ -40,6 +42,9 @@ class Plugin {
 			new Swarm(),
 		] );
 
+		$syndication_manager = new Syndication_Manager();
+		$syndication_manager->register();
+
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services ) )->register();
@@ -58,6 +63,7 @@ class Plugin {
 			( new Auth_Endpoint() )->register();
 			( new Debug( $services ) )->register();
 			( new Checkin_Metabox() )->register();
+			( new Syndication_Panel( $syndication_manager ) )->register();
 		}
 
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );

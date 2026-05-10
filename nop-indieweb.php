@@ -38,10 +38,15 @@ require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-mf2-endpoint.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-base.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-mastodon.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-bluesky.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-debug.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-checkin-metabox.php';
+require_once NOP_INDIEWEB_DIR . 'includes/admin/class-syndication-panel.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 // Create the tokens table on activation and on every load if the schema is stale.
