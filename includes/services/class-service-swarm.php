@@ -219,6 +219,11 @@ class Swarm extends Service_Base {
 			}
 		}
 
+		// Set first sideloaded photo as the featured image if none is set yet.
+		if ( $ids && ! get_post_thumbnail_id( $post_id ) ) {
+			set_post_thumbnail( $post_id, $ids[0] );
+		}
+
 		// Inject real image/gallery blocks into post content so photos are
 		// first-class WordPress content rather than meta-stored CDN references.
 		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'] );

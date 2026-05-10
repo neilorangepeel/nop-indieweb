@@ -26,6 +26,19 @@ class Checkin_Metabox {
 			return;
 		}
 
+		// Only load for checkin posts — no point registering the plugin on unrelated posts.
+		// Default to not enqueuing when post ID is undetermined (e.g. new post screen).
+		global $post;
+		$post_id = $post->ID ?? 0;
+		if ( ! $post_id ) {
+			return;
+		}
+		$kind      = get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		$has_venue = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+		if ( 'checkin' !== $kind && ! $has_venue ) {
+			return;
+		}
+
 		$base = NOP_INDIEWEB_URL . 'admin/';
 		$ver  = NOP_INDIEWEB_VERSION;
 
