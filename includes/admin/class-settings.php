@@ -590,7 +590,6 @@ class Settings {
 				</td>
 			</tr>
 		</table>
-		<?php $this->render_save_button(); ?>
 		<?php
 	}
 

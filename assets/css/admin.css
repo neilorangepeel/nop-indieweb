@@ -117,10 +117,15 @@
 /* ── Tab panels ─────────────────────────────────────────────────────────────── */
 
 .nop-tab-panel {
+	display: block;
 	background: var(--nop-surface);
 	border: 1px solid var(--nop-border);
 	border-top: none;
 	padding: 16px 24px 20px;
+}
+
+.nop-tab-panel[hidden] {
+	display: none !important;
 }
 
 .nop-tab-panel .form-table {
