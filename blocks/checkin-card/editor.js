@@ -21,7 +21,9 @@
 
 		edit: function ( props ) {
 			var postId = useSelect( function ( select ) {
-				return select( 'core/editor' ).getCurrentPostId();
+				// core/editor is only populated in the post editor, not the site editor.
+				var store = select( 'core/editor' );
+				return ( store && store.getCurrentPostId ) ? store.getCurrentPostId() : null;
 			}, [] );
 
 			return el( SSR, {

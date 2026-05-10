@@ -51,7 +51,8 @@ class Block_Bindings {
 		register_block_bindings_source( 'nop-indieweb/post-meta', [
 			'label'              => 'IndieWeb Post Meta',
 			'get_value_callback' => [ $this, 'get_value' ],
-			'uses_context'       => [ 'postId', 'postType' ],
+			// Block context (postId, postType) is declared in block.json usesContext —
+			// register_block_bindings_source() does not accept uses_context.
 		] );
 	}
 

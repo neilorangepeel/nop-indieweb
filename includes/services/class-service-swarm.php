@@ -129,13 +129,12 @@ class Swarm extends Service_Base {
 
 		$tags = array_filter( array_map( 'trim', explode( ',', $settings['post_tags'] ?? 'Swarm' ) ) );
 
-		// Wrap the note in a paragraph block and append the checkin card so the
-		// block editor shows the venue, photos, and map link without extra setup.
 		$note   = trim( $parsed['content'] );
 		$blocks = $note
-			? "<!-- wp:paragraph -->\n<p>{$note}</p>\n<!-- /wp:paragraph -->\n\n"
+			? "<!-- wp:paragraph -->\n<p>{$note}</p>\n<!-- /wp:paragraph -->"
 			: '';
-		$blocks .= '<!-- wp:nop-indieweb/checkin-card /-->';
+		// Photos are injected as real image blocks in after_insert() once sideloading completes.
+		// The checkin-card block lives in the template, not in post content.
 
 		$args = [
 			'post_title'   => $title,
@@ -204,17 +203,68 @@ class Swarm extends Service_Base {
 	protected function after_insert( int $post_id, array $parsed ): void {
 		$settings = $this->get_settings();
 
-		if ( empty( $settings['sideload_photos'] ) || ! $parsed['photos'] ) {
+		if ( ! $parsed['photos'] ) {
 			return;
 		}
 
-		$ids = $this->sideload_photos( $parsed['photos'], $post_id );
-		if ( $ids ) {
-			// Store attachment IDs alongside the CDN URLs — the block renderer
-			// uses local IDs when available (responsive images, proper alt text, etc.)
-			// and falls back to CDN URLs for posts imported before sideloading was enabled.
-			update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+		$ids = [];
+		if ( ! empty( $settings['sideload_photos'] ) ) {
+			$ids = $this->sideload_photos( $parsed['photos'], $post_id );
+			if ( $ids ) {
+				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+			}
 		}
+
+		// Inject real image/gallery blocks into post content so photos are
+		// first-class WordPress content rather than meta-stored CDN references.
+		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'] );
+		if ( $photo_blocks ) {
+			$post = get_post( $post_id );
+			wp_update_post( [
+				'ID'           => $post_id,
+				'post_content' => rtrim( $post->post_content ) . "\n\n" . $photo_blocks,
+			] );
+		}
+	}
+
+	private function build_photo_blocks( array $ids, array $urls ): string {
+		if ( $ids ) {
+			if ( 1 === count( $ids ) ) {
+				$src = wp_get_attachment_url( $ids[0] );
+				return sprintf(
+					"<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+					$ids[0], esc_url( $src ), $ids[0]
+				);
+			}
+			$inner = '';
+			foreach ( $ids as $id ) {
+				$src    = wp_get_attachment_url( $id );
+				$inner .= sprintf(
+					"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+					$id, esc_url( $src ), $id
+				);
+			}
+			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
+		}
+
+		if ( $urls ) {
+			if ( 1 === count( $urls ) ) {
+				return sprintf(
+					"<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $urls[0] )
+				);
+			}
+			$inner = '';
+			foreach ( $urls as $url ) {
+				$inner .= sprintf(
+					"\n<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $url )
+				);
+			}
+			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
+		}
+
+		return '';
 	}
 
 	public function get_post_format( array $parsed ): string {

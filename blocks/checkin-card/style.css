@@ -1,165 +1,92 @@
 /*
- * Checkin Card block — front-end styles.
+ * Checkin meta block — front-end styles.
  *
- * Design: compact memory-card / location-stamp aesthetic.
- * A left accent stripe anchors the card; information is layered
- * clearly from venue → location → map → photos → source.
- *
- * Theme overrides:
- *   --nop-checkin-accent   : left stripe + pill colour (default: link blue)
- *   --nop-checkin-bg       : card background (default: white)
- *   --nop-checkin-radius   : corner rounding (default: 6px)
+ * Rendered as native page content below the post body, not as a card.
+ * A single top rule visually separates it from the post content above.
+ * All colours inherit from the theme; no separate background or shadow.
  */
 
-.nop-checkin-card {
-	--nop-checkin-accent: #2271b1;
-	--nop-checkin-bg:     #fff;
-	--nop-checkin-radius: 6px;
-	--nop-checkin-muted:  #646970;
-	--nop-checkin-border: #e0e0e0;
-
-	background:    var(--nop-checkin-bg);
-	border-left:   4px solid var(--nop-checkin-accent);
-	border-radius: 0 var(--nop-checkin-radius) var(--nop-checkin-radius) 0;
-	box-shadow:    0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 8px rgba(0, 0, 0, 0.04);
-	padding:       16px 20px 12px;
-	max-width:     420px;
-	margin:        1.5em 0;
-	font-size:     0.9375em;
-	line-height:   1.5;
-}
-
-/* ── Venue name + location ────────────────────────────────────────────────── */
-
-.nop-checkin-venue {
-	margin: 0;
-}
-
-.nop-checkin-venue .p-name {
-	display:      block;
-	font-size:    1.05em;
-	font-weight:  700;
-	line-height:  1.3;
-	color:        inherit;
-	text-decoration: none;
-}
-
-.nop-checkin-venue a.p-name:hover {
-	color:           var(--nop-checkin-accent);
-	text-decoration: none;
-}
-
-.nop-checkin-location {
-	display:    block;
-	font-size:  0.825em;
-	color:      var(--nop-checkin-muted);
-	margin-top: 2px;
+.nop-checkin-meta {
+	margin:      2em 0 0;
+	padding-top: 1.25em;
+	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
+	font-size:   0.875em;
+	line-height: 1.6;
+	color:       var(--wp--preset--color--contrast, inherit);
 }
 
 /* ── Venue category pills ─────────────────────────────────────────────────── */
 
 .nop-checkin-categories {
-	display:     flex;
-	flex-wrap:   wrap;
-	gap:         4px;
-	margin:      8px 0 0;
-	padding:     0;
-	list-style:  none;
+	display:    flex;
+	flex-wrap:  wrap;
+	gap:        5px;
+	margin:     0 0 0.75em;
+	padding:    0;
 }
 
 .nop-checkin-category {
 	display:        inline-block;
-	font-size:      10px;
+	font-size:      0.75em;
 	font-weight:    600;
 	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	padding:        2px 7px;
-	border:         1px solid color-mix(in srgb, var(--nop-checkin-accent) 30%, transparent);
-	color:          var(--nop-checkin-accent);
-	border-radius:  10px;
+	letter-spacing: 0.05em;
+	padding:        2px 8px;
+	border:         1px solid currentColor;
+	border-radius:  2em;
+	color:          var(--wp--preset--color--contrast, #1d2327);
+	opacity:        0.55;
 	line-height:    1.6;
 }
 
 /* ── Map link ─────────────────────────────────────────────────────────────── */
 
 .nop-checkin-map {
-	margin:      12px 0 0;
-	padding-top: 10px;
-	border-top:  1px solid var(--nop-checkin-border);
-	font-size:   0.875em;
-	color:       var(--nop-checkin-muted);
+	margin: 0 0 0.4em;
 }
 
 .nop-checkin-map a {
-	color:           var(--nop-checkin-accent);
-	text-decoration: none;
-	font-weight:     500;
+	color:           inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .nop-checkin-map a:hover {
-	text-decoration: underline;
+	opacity: 0.7;
 }
 
 /* ── Syndication ──────────────────────────────────────────────────────────── */
 
 .nop-checkin-syndication {
-	margin:      8px 0 0;
-	font-size:   0.8125em;
-	color:       var(--nop-checkin-muted);
+	margin: 0 0 0.4em;
 }
 
 .nop-checkin-syndication a {
-	color:           var(--nop-checkin-accent);
-	text-decoration: none;
+	color:           inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .nop-checkin-syndication a:hover {
-	text-decoration: underline;
+	opacity: 0.7;
 }
 
-/* ── Photos ───────────────────────────────────────────────────────────────── */
-
-.nop-checkin-photos {
-	margin:        14px -20px 0 -20px; /* bleed to card edges */
-	overflow:      hidden;
-}
-
-.nop-checkin-photos img {
-	display:    block;
-	width:      100%;
-	height:     auto;
-	margin-top: 2px;
-}
-
-.nop-checkin-photos img:first-child {
-	margin-top: 0;
-}
-
-/* ── Source / attribution footer ─────────────────────────────────────────── */
+/* ── Source attribution ───────────────────────────────────────────────────── */
 
 .nop-checkin-source {
-	margin:      10px 0 0;
-	padding-top: 8px;
-	border-top:  1px solid var(--nop-checkin-border);
-	font-size:   0.75em;
-	color:       var(--nop-checkin-muted);
-	opacity:     0.8;
+	margin:  0;
+	opacity: 0.5;
 }
 
 /* ── Preview state (template editor — no real post) ──────────────────────── */
 
-.nop-checkin-card--preview {
-	opacity: 0.6;
+.nop-checkin-meta--preview {
+	opacity: 0.5;
 }
 
 /* ── Editor state — disable link navigation inside the canvas iframe ─────── */
-/*
- * In WP 6.x the block canvas runs inside an <iframe>. Clicking a venue or
- * map link navigates the iframe to an external URL; Foursquare's
- * X-Frame-Options: SAMEORIGIN then crashes the frame. pointer-events: none
- * neutralises all links for the editor preview without affecting the front-end.
- */
-.nop-checkin-card--editor a {
+
+.nop-checkin-meta--editor a {
 	pointer-events: none;
 	cursor:         default;
 }
