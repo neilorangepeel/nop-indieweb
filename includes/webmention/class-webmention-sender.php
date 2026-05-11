@@ -41,7 +41,8 @@ class Webmention_Sender {
 		$source = get_permalink( $post_id );
 		$home   = home_url();
 		$urls   = $this->extract_links( $post->post_content );
-		$sent   = (array) get_post_meta( $post_id, 'nop_indieweb_webmentions_sent', true );
+		$meta = get_post_meta( $post_id, 'nop_indieweb_webmentions_sent', true );
+		$sent = is_array( $meta ) ? $meta : [];
 
 		foreach ( $urls as $target ) {
 			if ( in_array( $target, $sent, true ) ) {
@@ -110,8 +111,10 @@ class Webmention_Sender {
 
 	/**
 	 * Parses a Link header for a webmention rel.
-	 * Handles comma-separated entries and space-separated rel values.
+	 * Handles comma-separated entries, space-separated rel values,
+	 * and both quoted (rel="webmention") and unquoted (rel=webmention) forms.
 	 * Example: <https://webmention.io/example.com/webmention>; rel="webmention"
+	 * Example: </test/1/webmention>; rel=webmention
 	 */
 	private function endpoint_from_link_header( string $header, string $base ): ?string {
 		if ( ! $header ) {
@@ -121,7 +124,8 @@ class Webmention_Sender {
 			if ( ! preg_match( '/<([^>]+)>/', $part, $url_m ) ) {
 				continue;
 			}
-			if ( ! preg_match( '/rel=["\']([^"\']+)["\']/', $part, $rel_m ) ) {
+			// Match both rel="value" and rel=value (HTTP spec allows either).
+			if ( ! preg_match( '/\brel=["\']?([^"\'\s,;>]+)["\']?/', $part, $rel_m ) ) {
 				continue;
 			}
 			if ( in_array( 'webmention', preg_split( '/\s+/', $rel_m[1] ), true ) ) {
