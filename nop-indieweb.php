@@ -4,7 +4,9 @@
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication for neilorangepeel.com.
  * Version:     0.2.0
- * Author:      Neil Hainworth
+ * Requires at least: 6.7
+ * Requires PHP:      8.0
+ * Author:      Neil Hainsworth
  * Author URI:  https://neilorangepeel.com
  * License:     GPL-2.0-or-later
  * Text Domain: nop-indieweb
@@ -70,5 +72,22 @@ register_activation_hook( __FILE__, function () {
 
 add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\IndieAuth\Token_Store::maybe_create_table();
+	\NOP\IndieWeb\maybe_migrate_profile_urls();
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
+
+/**
+ * One-time migration: moves nop_indieweb_mastodon_profile_url and
+ * nop_indieweb_pixelfed_profile_url standalone options into the plugin
+ * settings array so all data lives in one place.
+ */
+function maybe_migrate_profile_urls(): void {
+	foreach ( [ 'mastodon', 'pixelfed' ] as $platform ) {
+		$legacy_key = "nop_indieweb_{$platform}_profile_url";
+		$url        = (string) get_option( $legacy_key, '' );
+		if ( $url ) {
+			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.profile_url", $url );
+			delete_option( $legacy_key );
+		}
+	}
+}

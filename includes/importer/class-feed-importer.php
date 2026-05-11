@@ -19,9 +19,15 @@ use NOP\IndieWeb\Services\Letterboxd;
  *     to skip posts that originated on WordPress and were then syndicated out.
  *
  * Cursor tracking:
- *   - Mastodon: stores the highest status ID seen in nop_indieweb_mastodon_import_last_id.
+ *   - Mastodon/Pixelfed: stores the highest status ID seen per-platform inside
+ *     the plugin settings (syndicators.{platform}.import_last_id).
  *   - Bluesky/Letterboxd: always fetches the latest batch; deduplication via
  *     nop_indieweb_source_url skips already-imported posts.
+ *
+ * Profile URLs:
+ *   - Mastodon/Pixelfed return the canonical profile URL from verify_credentials.
+ *     Stored as syndicators.{platform}.profile_url inside the plugin settings so
+ *     it's surfaced as a rel="me" link without a separate options row.
  */
 class Feed_Importer {
 
@@ -43,9 +49,9 @@ class Feed_Importer {
 	}
 
 	public function run(): void {
-		$this->import_mastodon();
+		$this->import_mastodon_api( 'mastodon' );
+		$this->import_mastodon_api( 'pixelfed' );
 		$this->import_bluesky();
-		$this->import_pixelfed();
 		$this->import_letterboxd();
 	}
 
@@ -63,12 +69,10 @@ class Feed_Importer {
 		$platform = sanitize_key( $_GET['nop_indieweb_sync'] );
 		check_admin_referer( "nop_indieweb_sync_{$platform}" );
 
-		if ( 'mastodon' === $platform ) {
-			$this->import_mastodon();
+		if ( in_array( $platform, [ 'mastodon', 'pixelfed' ], true ) ) {
+			$this->import_mastodon_api( $platform );
 		} elseif ( 'bluesky' === $platform ) {
 			$this->import_bluesky();
-		} elseif ( 'pixelfed' === $platform ) {
-			$this->import_pixelfed();
 		} elseif ( 'letterboxd' === $platform ) {
 			$this->import_letterboxd();
 		} else {
@@ -82,10 +86,14 @@ class Feed_Importer {
 		exit;
 	}
 
-	// ── Mastodon ────────────────────────────────────────────────────────────────
+	// ── Mastodon-API platforms (Mastodon + Pixelfed) ───────────────────────────
 
-	private function import_mastodon(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
+	/**
+	 * Imports from any platform that speaks the Mastodon API — currently Mastodon
+	 * and Pixelfed. Both use the same verify_credentials + statuses endpoints.
+	 */
+	private function import_mastodon_api( string $platform ): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
 		if ( empty( $settings['import_enabled'] ) ) {
 			return;
 		}
@@ -101,12 +109,13 @@ class Feed_Importer {
 			return;
 		}
 
+		// Cache the canonical profile URL so Plugin::get_me_urls() can emit it as rel="me".
 		if ( ! empty( $me['url'] ) ) {
-			update_option( 'nop_indieweb_mastodon_profile_url', esc_url_raw( $me['url'] ) );
+			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.profile_url", esc_url_raw( $me['url'] ) );
 		}
 
-		$last_id  = (string) get_option( 'nop_indieweb_mastodon_import_last_id', '' );
-		$params   = array_filter( [
+		$last_id = (string) \NOP\IndieWeb\nop_indieweb_get_option( "syndicators.{$platform}.import_last_id", '' );
+		$params  = array_filter( [
 			'limit'           => 40,
 			'since_id'        => $last_id,
 			'exclude_reblogs' => 'true',
@@ -116,7 +125,7 @@ class Feed_Importer {
 		$statuses     = $this->api_get( $statuses_url, $token );
 
 		// Token may lack read:statuses scope; fall back to unauthenticated for public accounts.
-		if ( null === $statuses ) {
+		if ( null === $statuses && 'mastodon' === $platform ) {
 			$response = wp_remote_get( $statuses_url, [ 'timeout' => 15 ] );
 			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
 				$data     = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -140,7 +149,7 @@ class Feed_Importer {
 			}
 
 			$this->note->handle( $this->mastodon_to_payload( $status ) );
-			update_option( 'nop_indieweb_mastodon_import_last_id', $status['id'] );
+			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
 		}
 	}
 
@@ -168,57 +177,6 @@ class Feed_Importer {
 		];
 	}
 
-	// ── Pixelfed ────────────────────────────────────────────────────────────────
-
-	private function import_pixelfed(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed'] ?? [];
-		if ( empty( $settings['import_enabled'] ) ) {
-			return;
-		}
-
-		$instance = rtrim( (string) ( $settings['instance'] ?? '' ), '/' );
-		$token    = (string) ( $settings['access_token'] ?? '' );
-		if ( ! $instance || ! $token ) {
-			return;
-		}
-
-		$me = $this->api_get( "{$instance}/api/v1/accounts/verify_credentials", $token );
-		if ( ! is_array( $me ) || empty( $me['id'] ) ) {
-			return;
-		}
-
-		if ( ! empty( $me['url'] ) ) {
-			update_option( 'nop_indieweb_pixelfed_profile_url', esc_url_raw( $me['url'] ) );
-		}
-
-		$last_id = (string) get_option( 'nop_indieweb_pixelfed_import_last_id', '' );
-		$params  = array_filter( [
-			'limit'           => 40,
-			'since_id'        => $last_id,
-			'exclude_reblogs' => 'true',
-		] );
-
-		$statuses = $this->api_get( "{$instance}/api/v1/accounts/{$me['id']}/statuses?" . http_build_query( $params ), $token );
-
-		if ( ! is_array( $statuses ) || empty( $statuses ) ) {
-			return;
-		}
-
-		foreach ( array_reverse( $statuses ) as $status ) {
-			if ( ! empty( $status['in_reply_to_id'] ) ) {
-				continue;
-			}
-
-			$url = $status['url'] ?? '';
-			if ( ! $url || $this->was_syndicated_from_wordpress( $url ) ) {
-				continue;
-			}
-
-			$this->note->handle( $this->mastodon_to_payload( $status ) );
-			update_option( 'nop_indieweb_pixelfed_import_last_id', $status['id'] );
-		}
-	}
-
 	// ── Bluesky ─────────────────────────────────────────────────────────────────
 
 	private function import_bluesky(): void {
@@ -227,25 +185,29 @@ class Feed_Importer {
 			return;
 		}
 
-		$handle   = (string) ( $settings['handle'] ?? '' );
-		$password = (string) ( $settings['app_password'] ?? '' );
-		if ( ! $handle || ! $password ) {
+		$handle = (string) ( $settings['handle'] ?? '' );
+		if ( ! $handle ) {
 			return;
 		}
 
-		$session = $this->bluesky_session( $handle, $password );
-		if ( ! $session ) {
+		// Resolve handle to DID using the public AppView — no credentials needed.
+		$resolve = wp_remote_get(
+			'https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?' . http_build_query( [ 'handle' => $handle ] ),
+			[ 'timeout' => 15 ]
+		);
+
+		if ( is_wp_error( $resolve ) || 200 !== wp_remote_retrieve_response_code( $resolve ) ) {
 			return;
 		}
 
-		$did    = $session['did'];
-		$params = [
-			'actor' => $did,
-			'limit' => 25,
-		];
+		$identity = json_decode( wp_remote_retrieve_body( $resolve ), true );
+		$did      = $identity['did'] ?? '';
+		if ( ! $did ) {
+			return;
+		}
 
 		$response = wp_remote_get(
-			'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?' . http_build_query( $params ),
+			'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?' . http_build_query( [ 'actor' => $did, 'limit' => 25 ] ),
 			[ 'timeout' => 15 ]
 		);
 
@@ -320,23 +282,6 @@ class Feed_Importer {
 		return "https://bsky.app/profile/{$did}/post/{$rkey}";
 	}
 
-	private function bluesky_session( string $handle, string $password ): ?array {
-		$response = wp_remote_post(
-			'https://bsky.social/xrpc/com.atproto.server.createSession',
-			[
-				'headers' => [ 'Content-Type' => 'application/json' ],
-				'body'    => wp_json_encode( [ 'identifier' => $handle, 'password' => $password ] ),
-				'timeout' => 15,
-			]
-		);
-
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			return null;
-		}
-
-		return json_decode( wp_remote_retrieve_body( $response ), true );
-	}
-
 	// ── Letterboxd ──────────────────────────────────────────────────────────────
 
 	private function import_letterboxd(): void {
@@ -359,7 +304,10 @@ class Feed_Importer {
 			return;
 		}
 
-		$xml = @simplexml_load_string( wp_remote_retrieve_body( $response ) );
+		libxml_use_internal_errors( true );
+		$xml = simplexml_load_string( wp_remote_retrieve_body( $response ) );
+		libxml_clear_errors();
+
 		if ( ! $xml ) {
 			return;
 		}

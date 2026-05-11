@@ -69,7 +69,7 @@ class Plugin {
 
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
-		( new Endpoint( $services ) )->register();
+		( new Endpoint( $services, $syndication_manager ) )->register();
 		( new Media_Endpoint() )->register();
 		( new Token_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
@@ -165,53 +165,62 @@ class Plugin {
 	public function register_templates(): void {
 		$dir = NOP_INDIEWEB_DIR . 'templates/';
 
-		register_block_template( 'nop-indieweb//single-post-format-status', [
-			'title'       => __( 'Single – Status Post', 'nop-indieweb' ),
-			'description' => __( 'Displays a single status-format post. Themes can override this template.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status.html' ),
-		] );
+		$templates = [
+			'nop-indieweb//single-post-format-status' => [
+				'title'       => __( 'Single – Status Post', 'nop-indieweb' ),
+				'description' => __( 'Displays a single status-format post. Themes can override this template.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status.html',
+			],
+			'nop-indieweb//single-post-format-status-checkin' => [
+				'title'       => __( 'Single – Status: Checkin', 'nop-indieweb' ),
+				'description' => __( 'Displays a checkin post with venue, map, and syndication metadata. Themes can override this template.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-checkin.html',
+			],
+			'nop-indieweb//single-post-format-status-note' => [
+				'title'       => __( 'Single – Status: Note', 'nop-indieweb' ),
+				'description' => __( 'Displays an imported social post (Mastodon, Bluesky) with platform attribution and source link.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-note.html',
+			],
+			'nop-indieweb//single-post-format-status-bookmark' => [
+				'title'       => __( 'Single – Status: Bookmark', 'nop-indieweb' ),
+				'description' => __( 'Displays a bookmark post with the bookmarked URL.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-bookmark.html',
+			],
+			'nop-indieweb//single-post-format-status-reply' => [
+				'title'       => __( 'Single – Status: Reply', 'nop-indieweb' ),
+				'description' => __( 'Displays a reply post with the URL being replied to.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-reply.html',
+			],
+			'nop-indieweb//single-post-format-status-like' => [
+				'title'       => __( 'Single – Status: Like', 'nop-indieweb' ),
+				'description' => __( 'Displays a like post with the liked URL.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-like.html',
+			],
+			'nop-indieweb//single-post-format-status-repost' => [
+				'title'       => __( 'Single – Status: Repost', 'nop-indieweb' ),
+				'description' => __( 'Displays a repost with the reposted URL.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-repost.html',
+			],
+			'nop-indieweb//single-post-format-status-rsvp' => [
+				'title'       => __( 'Single – Status: RSVP', 'nop-indieweb' ),
+				'description' => __( 'Displays an RSVP post with the event URL and response.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status-rsvp.html',
+			],
+		];
 
-		register_block_template( 'nop-indieweb//single-post-format-status-checkin', [
-			'title'       => __( 'Single – Status: Checkin', 'nop-indieweb' ),
-			'description' => __( 'Displays a checkin post with venue, map, and syndication metadata. Themes can override this template.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-checkin.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-note', [
-			'title'       => __( 'Single – Status: Note', 'nop-indieweb' ),
-			'description' => __( 'Displays an imported social post (Mastodon, Bluesky) with platform attribution and source link.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-note.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-bookmark', [
-			'title'       => __( 'Single – Status: Bookmark', 'nop-indieweb' ),
-			'description' => __( 'Displays a bookmark post with the bookmarked URL.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-bookmark.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-reply', [
-			'title'       => __( 'Single – Status: Reply', 'nop-indieweb' ),
-			'description' => __( 'Displays a reply post with the URL being replied to.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-reply.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-like', [
-			'title'       => __( 'Single – Status: Like', 'nop-indieweb' ),
-			'description' => __( 'Displays a like post with the liked URL.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-like.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-repost', [
-			'title'       => __( 'Single – Status: Repost', 'nop-indieweb' ),
-			'description' => __( 'Displays a repost with the reposted URL.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-repost.html' ),
-		] );
-
-		register_block_template( 'nop-indieweb//single-post-format-status-rsvp', [
-			'title'       => __( 'Single – Status: RSVP', 'nop-indieweb' ),
-			'description' => __( 'Displays an RSVP post with the event URL and response.', 'nop-indieweb' ),
-			'content'     => file_get_contents( $dir . 'single-post-format-status-rsvp.html' ),
-		] );
+		foreach ( $templates as $id => $template ) {
+			$path = $dir . $template['file'];
+			if ( ! is_readable( $path ) ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( "NOP IndieWeb: template file missing: {$path}", E_USER_WARNING );
+				continue;
+			}
+			register_block_template( $id, [
+				'title'       => $template['title'],
+				'description' => $template['description'],
+				'content'     => file_get_contents( $path ),
+			] );
+		}
 	}
 
 	public function register_blocks(): void {
@@ -310,7 +319,7 @@ HTML,
 			$urls[] = esc_url_raw( $url );
 		}
 
-		$mastodon_url = (string) get_option( 'nop_indieweb_mastodon_profile_url', '' );
+		$mastodon_url = (string) nop_indieweb_get_option( 'syndicators.mastodon.profile_url', '' );
 		if ( $mastodon_url ) {
 			$urls[] = $mastodon_url;
 		}
@@ -320,7 +329,7 @@ HTML,
 			$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
 		}
 
-		$pixelfed_url = (string) get_option( 'nop_indieweb_pixelfed_profile_url', '' );
+		$pixelfed_url = (string) nop_indieweb_get_option( 'syndicators.pixelfed.profile_url', '' );
 		if ( $pixelfed_url ) {
 			$urls[] = $pixelfed_url;
 		}

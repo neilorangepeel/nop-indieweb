@@ -28,9 +28,25 @@ function nop_indieweb_get_option( string $key, mixed $default = null ): mixed {
 }
 
 // Saves a single value into the plugin's settings array.
+// Supports dot notation for nested keys: 'syndicators.mastodon.profile_url'.
 function nop_indieweb_update_option( string $key, mixed $value ): bool {
-	$options         = get_option( 'nop_indieweb_settings', [] );
-	$options[ $key ] = $value;
+	$options = get_option( 'nop_indieweb_settings', [] );
+
+	if ( ! str_contains( $key, '.' ) ) {
+		$options[ $key ] = $value;
+		return update_option( 'nop_indieweb_settings', $options );
+	}
+
+	$segments = explode( '.', $key );
+	$cursor   = &$options;
+	foreach ( array_slice( $segments, 0, -1 ) as $segment ) {
+		if ( ! isset( $cursor[ $segment ] ) || ! is_array( $cursor[ $segment ] ) ) {
+			$cursor[ $segment ] = [];
+		}
+		$cursor = &$cursor[ $segment ];
+	}
+	$cursor[ end( $segments ) ] = $value;
+
 	return update_option( 'nop_indieweb_settings', $options );
 }
 

@@ -8,13 +8,16 @@ use WP_REST_Response;
 use WP_Error;
 use NOP\IndieWeb\Services\Service_Base;
 use NOP\IndieWeb\Micropub\Media_Endpoint;
+use NOP\IndieWeb\Syndication\Syndication_Manager;
 
 class Endpoint {
 
 	private array $services;
+	private ?Syndication_Manager $syndication_manager;
 
-	public function __construct( array $services ) {
-		$this->services = $services;
+	public function __construct( array $services, ?Syndication_Manager $syndication_manager = null ) {
+		$this->services             = $services;
+		$this->syndication_manager  = $syndication_manager;
 	}
 
 	public function register(): void {
@@ -42,9 +45,17 @@ class Endpoint {
 		$q = $request->get_param( 'q' );
 
 		if ( 'config' === $q ) {
+			$syndicate_to = [];
+			if ( $this->syndication_manager ) {
+				$syndicate_to = array_map(
+					fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'] ],
+					$this->syndication_manager->get_panel_data()
+				);
+			}
+
 			return new WP_REST_Response( [
 				'media-endpoint' => Media_Endpoint::url(),
-				'syndicate-to'   => [],
+				'syndicate-to'   => $syndicate_to,
 				'post-types'     => [ [ 'type' => 'entry', 'name' => 'Post' ] ],
 			], 200 );
 		}
@@ -219,15 +230,14 @@ class Endpoint {
 
 		$delete = $payload['delete'] ?? [];
 		if ( is_array( $delete ) && $delete ) {
-			if ( is_string( array_key_first( $delete ) === 0 ? $delete[0] : '' ) && isset( $delete[0] ) ) {
-				// Indexed array of property names — delete the whole property.
-				foreach ( $delete as $prop ) {
-					$this->apply_delete_prop( $post_id, (string) $prop, $args );
-				}
-			} else {
-				// Associative — delete specific values from a property.
+			// Spec: string keys = delete specific values; integer keys = delete whole property.
+			if ( is_string( array_key_first( $delete ) ) ) {
 				foreach ( $delete as $prop => $values ) {
 					$this->apply_delete_values( $post_id, (string) $prop, (array) $values );
+				}
+			} else {
+				foreach ( $delete as $prop ) {
+					$this->apply_delete_prop( $post_id, (string) $prop, $args );
 				}
 			}
 		}

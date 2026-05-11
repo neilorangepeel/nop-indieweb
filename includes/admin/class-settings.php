@@ -411,8 +411,8 @@ class Settings {
 			[
 				'done'  => $is_live,
 				'label' => 'Go live',
-				'body'  => 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Swarm tab, or enable Mastodon or Bluesky to start syndicating.',
-				'link'  => [ 'href' => '#nop-tab-swarm', 'text' => 'Open Swarm tab' ],
+				'body'  => 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Posts tab, or enable Mastodon or Bluesky to start syndicating.',
+				'link'  => [ 'href' => '#nop-tab-post-kinds', 'text' => 'Open Posts tab' ],
 			],
 			[
 				'done'  => $has_syndication,
