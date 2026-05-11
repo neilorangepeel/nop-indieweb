@@ -18,9 +18,13 @@
 		<p class="has-accent-4-color has-text-color" style="font-size:0.6875rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Bookmark</p>
 		<!-- /wp:paragraph -->
 
-		<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_bookmark_of"}}}}} -->
-		<p><a href="#">bookmarked url</a></p>
-		<!-- /wp:paragraph -->
+		<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->
+		<div class="wp-block-buttons">
+			<!-- wp:button {"className":"is-style-outline","metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"nop_indieweb_bookmark_of"}}}}} -->
+			<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="https://example.com/article-worth-reading" target="_blank" rel="noopener">View Bookmark →</a></div>
+			<!-- /wp:button -->
+		</div>
+		<!-- /wp:buttons -->
 
 	</div>
 	<!-- /wp:group -->

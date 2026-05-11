@@ -110,9 +110,7 @@ class Swarm extends Service_Base {
 		// payloads) — avoids WordPress scheduling the post as 'future'.
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
-		$title = $parsed['venue_name']
-			? sprintf( 'Checked in at %s', $parsed['venue_name'] )
-			: 'Checked in';
+		$title = $parsed['venue_name'] ?: 'Checked in';
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Checkin' );
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );

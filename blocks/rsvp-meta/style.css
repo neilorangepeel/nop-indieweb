@@ -1,0 +1,83 @@
+/* ── RSVP Meta block ─────────────────────────────────────────────────────────── */
+
+.nop-rsvp-meta {
+	margin:      1.5em 0 0;
+	padding-top: 1.25em;
+	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
+}
+
+/* ── Status line ─────────────────────────────────────────────────────────────── */
+
+.nop-rsvp-meta__status {
+	margin: 0 0 0.5em;
+}
+
+.nop-rsvp-meta__event {
+	font-size: 0.875em;
+	color:     var(--wp--preset--color--contrast-2, #6b7280);
+	margin:    0;
+}
+
+.nop-rsvp-meta__event a {
+	color:                   inherit;
+	text-decoration:         underline;
+	text-underline-offset:   2px;
+	word-break:              break-all;
+}
+
+/* ── Badge ───────────────────────────────────────────────────────────────────── */
+
+.nop-rsvp-badge {
+	display:        inline-flex;
+	align-items:    center;
+	font-size:      0.8125em;
+	font-weight:    600;
+	padding:        3px 10px;
+	border-radius:  2em;
+	border:         1.5px solid var(--rsvp-color, #6b7280);
+	color:          var(--rsvp-color, #6b7280);
+	letter-spacing: 0.01em;
+}
+
+/* ── Interactive picker (editor only) ────────────────────────────────────────── */
+
+.nop-rsvp-picker {
+	display:    flex;
+	gap:        0.5em;
+	flex-wrap:  wrap;
+	margin-bottom: 0.75em;
+}
+
+.nop-rsvp-option {
+	cursor:         pointer;
+	font-size:      0.8125em;
+	font-weight:    600;
+	padding:        4px 12px;
+	border-radius:  2em;
+	border:         1.5px solid var(--rsvp-color, #6b7280);
+	color:          var(--rsvp-color, #6b7280);
+	background:     transparent;
+	transition:     background 0.15s, color 0.15s;
+	letter-spacing: 0.01em;
+}
+
+.nop-rsvp-option:hover {
+	background: color-mix(in srgb, var(--rsvp-color, #6b7280) 12%, transparent);
+}
+
+.nop-rsvp-option.is-active {
+	background: var(--rsvp-color, #6b7280);
+	color:      #fff;
+}
+
+/* ── Placeholder state ───────────────────────────────────────────────────────── */
+
+.nop-rsvp-meta--placeholder {
+	opacity: 0.4;
+}
+
+/* ── Preview state ───────────────────────────────────────────────────────────── */
+
+.nop-rsvp-meta--preview {
+	opacity: 0.5;
+}

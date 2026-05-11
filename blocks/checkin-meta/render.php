@@ -22,12 +22,17 @@ if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-meta nop-checkin-meta--preview' ] );
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
-		<p class="nop-checkin-venue-link">
-			<a href="#" onclick="return false;">View on foursquare.com</a>
+		<p class="nop-checkin-address p-street-address">46 Great Victoria Street</p>
+		<p class="nop-checkin-location">
+			<span class="p-locality">Belfast</span>,
+			<span class="p-country-name">United Kingdom</span>
 		</p>
 		<p class="nop-checkin-categories">
 			<span class="nop-checkin-category p-category">Bar</span>
 			<span class="nop-checkin-category p-category">Pub</span>
+		</p>
+		<p class="nop-checkin-venue-link">
+			<a href="#" onclick="return false;">View on foursquare.com</a>
 		</p>
 		<p class="nop-checkin-map">
 			<a href="#" onclick="return false;">View on OpenStreetMap</a>
@@ -82,10 +87,12 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 
 	<?php // Hidden mf2 properties — data elements are parsed by mf2 parsers but not visible to users. ?>
 	<data class="p-name" value="<?php echo esc_attr( $venue_name ); ?>"></data>
-	<?php if ( $venue_address ) : ?>
-	<data class="p-street-address" value="<?php echo esc_attr( $venue_address ); ?>"></data>
-	<?php endif; ?>
 	<a class="u-url" href="<?php echo esc_url( get_permalink( $post_id ) ); ?>" hidden>permalink</a>
+
+	<?php // ── Street address ────────────────────────────────────────────────── ?>
+	<?php if ( $venue_address ) : ?>
+	<p class="nop-checkin-address p-street-address"><?php echo esc_html( $venue_address ); ?></p>
+	<?php endif; ?>
 
 	<?php // ── Location (locality + country) ─────────────────────────────────── ?>
 	<?php if ( $location_line ) : ?>

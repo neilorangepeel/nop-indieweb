@@ -15,6 +15,13 @@
 	color:       var(--wp--preset--color--contrast, inherit);
 }
 
+/* ── Street address ───────────────────────────────────────────────────────── */
+
+.nop-checkin-address {
+	margin:  0 0 0.25em;
+	opacity: 0.65;
+}
+
 /* ── Location line (locality, country) ───────────────────────────────────── */
 
 .nop-checkin-location {
