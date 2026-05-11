@@ -19,7 +19,9 @@ use NOP\IndieWeb\Services\Note;
  *
  * Cursor tracking:
  *   - Mastodon: stores the highest status ID seen in nop_indieweb_mastodon_import_last_id.
- *   - Bluesky:  stores the cursor string in nop_indieweb_bluesky_import_cursor.
+ *   - Bluesky:  always fetches the latest 25 posts; deduplication (nop_indieweb_source_url)
+ *     skips posts already imported. The getAuthorFeed cursor paginates backwards, so
+ *     saving it would fetch progressively older content rather than new posts.
  */
 class Feed_Importer {
 
@@ -89,6 +91,10 @@ class Feed_Importer {
 		$me = $this->api_get( "{$instance}/api/v1/accounts/verify_credentials", $token );
 		if ( ! is_array( $me ) || empty( $me['id'] ) ) {
 			return;
+		}
+
+		if ( ! empty( $me['url'] ) ) {
+			update_option( 'nop_indieweb_mastodon_profile_url', esc_url_raw( $me['url'] ) );
 		}
 
 		$last_id  = (string) get_option( 'nop_indieweb_mastodon_import_last_id', '' );
@@ -174,12 +180,10 @@ class Feed_Importer {
 		}
 
 		$did    = $session['did'];
-		$cursor = (string) get_option( 'nop_indieweb_bluesky_import_cursor', '' );
-		$params = array_filter( [
-			'actor'  => $did,
-			'limit'  => 25,
-			'cursor' => $cursor,
-		] );
+		$params = [
+			'actor' => $did,
+			'limit' => 25,
+		];
 
 		$response = wp_remote_get(
 			'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?' . http_build_query( $params ),
@@ -196,8 +200,6 @@ class Feed_Importer {
 		if ( empty( $feed ) ) {
 			return;
 		}
-
-		$new_cursor = $body['cursor'] ?? '';
 
 		foreach ( array_reverse( $feed ) as $item ) {
 			// Skip reposts.
@@ -219,10 +221,6 @@ class Feed_Importer {
 			}
 
 			$this->note->handle( $this->bluesky_to_payload( $post, $url ) );
-		}
-
-		if ( $new_cursor ) {
-			update_option( 'nop_indieweb_bluesky_import_cursor', $new_cursor );
 		}
 	}
 

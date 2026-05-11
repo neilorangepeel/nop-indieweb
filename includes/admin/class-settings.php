@@ -74,6 +74,9 @@ class Settings {
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 			if ( 200 === $code && isset( $body['acct'] ) ) {
+				if ( ! empty( $body['url'] ) ) {
+					update_option( 'nop_indieweb_mastodon_profile_url', esc_url_raw( $body['url'] ) );
+				}
 				wp_send_json_success( 'Connected as @' . $body['acct'] );
 			} else {
 				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
@@ -499,13 +502,11 @@ class Settings {
 	// ——— Tab: Swarm ——————————————————————————————————————————————————————————
 
 	private function render_tab_swarm(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
-		$prefix   = self::OPTION_KEY . '[services][swarm]';
-
-		$theme_formats = get_theme_support( 'post-formats' );
-		$formats       = is_array( $theme_formats )
-			? array_merge( [ 'standard' ], $theme_formats[0] ?? [] )
-			: [ 'standard' ];
+		$settings       = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
+		$prefix         = self::OPTION_KEY . '[services][swarm]';
+		$formats        = $this->get_formats();
+		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		?>
 		<table class="form-table" role="presentation">
 			<tr>
@@ -567,26 +568,15 @@ class Settings {
 					<label for="nop-swarm-category-input">Category</label>
 				</th>
 				<td>
-					<?php
-					$category_value = $settings['post_category'] ?? 'Checkin';
-					$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-					$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
-					?>
-					<div class="nop-token-field"
-					     data-input-id="nop-swarm-category-input"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-swarm-category-input"
-						       class="nop-token-field__input"
-						       placeholder="Add category…"
-						       autocomplete="off"
-						       aria-label="Category name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden"
-						       name="<?php echo "{$prefix}[post_category]"; ?>"
-						       value="<?php echo esc_attr( $category_value ); ?>">
-					</div>
-					<p class="description">Created automatically if it doesn't exist.</p>
+					<?php $this->render_token_field(
+						'nop-swarm-category-input',
+						"{$prefix}[post_category]",
+						$settings['post_category'] ?? 'Checkin',
+						$category_names,
+						'Add category…',
+						'Category name',
+						'Created automatically if it doesn\'t exist.'
+					); ?>
 				</td>
 			</tr>
 			<tr>
@@ -594,26 +584,15 @@ class Settings {
 					<label for="nop-swarm-tags-input">Tags</label>
 				</th>
 				<td>
-					<?php
-					$tags_value = $settings['post_tags'] ?? 'Swarm';
-					$all_tags   = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-					$tag_names  = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
-					?>
-					<div class="nop-token-field"
-					     data-input-id="nop-swarm-tags-input"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-swarm-tags-input"
-						       class="nop-token-field__input"
-						       placeholder="Add tags…"
-						       autocomplete="off"
-						       aria-label="Tag name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden"
-						       name="<?php echo "{$prefix}[post_tags]"; ?>"
-						       value="<?php echo esc_attr( $tags_value ); ?>">
-					</div>
-					<p class="description">New tags are created automatically.</p>
+					<?php $this->render_token_field(
+						'nop-swarm-tags-input',
+						"{$prefix}[post_tags]",
+						$settings['post_tags'] ?? 'Swarm',
+						$tag_names,
+						'Add tags…',
+						'Tag name',
+						'New tags are created automatically.'
+					); ?>
 				</td>
 			</tr>
 		</table>
@@ -640,13 +619,11 @@ class Settings {
 	// ——— Tab: Notes ——————————————————————————————————————————————————————————
 
 	private function render_tab_entries(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
-		$prefix   = self::OPTION_KEY . '[services][entries]';
-
-		$theme_formats = get_theme_support( 'post-formats' );
-		$formats       = is_array( $theme_formats )
-			? array_merge( [ 'standard' ], $theme_formats[0] ?? [] )
-			: [ 'standard' ];
+		$settings       = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
+		$prefix         = self::OPTION_KEY . '[services][entries]';
+		$formats        = $this->get_formats();
+		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		?>
 		<table class="form-table" role="presentation">
 			<tr>
@@ -709,26 +686,15 @@ class Settings {
 					<label for="nop-note-category-input">Category</label>
 				</th>
 				<td>
-					<?php
-					$category_value = $settings['post_category'] ?? 'Notes';
-					$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-					$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
-					?>
-					<div class="nop-token-field"
-					     data-input-id="nop-note-category-input"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-note-category-input"
-						       class="nop-token-field__input"
-						       placeholder="Add category…"
-						       autocomplete="off"
-						       aria-label="Category name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden"
-						       name="<?php echo "{$prefix}[post_category]"; ?>"
-						       value="<?php echo esc_attr( $category_value ); ?>">
-					</div>
-					<p class="description">Created automatically if it doesn't exist.</p>
+					<?php $this->render_token_field(
+						'nop-note-category-input',
+						"{$prefix}[post_category]",
+						$settings['post_category'] ?? 'Notes',
+						$category_names,
+						'Add category…',
+						'Category name',
+						'Created automatically if it doesn\'t exist.'
+					); ?>
 				</td>
 			</tr>
 			<tr>
@@ -736,26 +702,15 @@ class Settings {
 					<label for="nop-note-tags-input">Tags</label>
 				</th>
 				<td>
-					<?php
-					$tags_value = $settings['post_tags'] ?? '';
-					$all_tags   = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-					$tag_names  = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
-					?>
-					<div class="nop-token-field"
-					     data-input-id="nop-note-tags-input"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-note-tags-input"
-						       class="nop-token-field__input"
-						       placeholder="Add tags…"
-						       autocomplete="off"
-						       aria-label="Tag name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden"
-						       name="<?php echo "{$prefix}[post_tags]"; ?>"
-						       value="<?php echo esc_attr( $tags_value ); ?>">
-					</div>
-					<p class="description">New tags are created automatically.</p>
+					<?php $this->render_token_field(
+						'nop-note-tags-input',
+						"{$prefix}[post_tags]",
+						$settings['post_tags'] ?? '',
+						$tag_names,
+						'Add tags…',
+						'Tag name',
+						'New tags are created automatically.'
+					); ?>
 				</td>
 			</tr>
 		</table>
@@ -813,7 +768,7 @@ class Settings {
 					<input type="password" id="mastodon-token" name="<?php echo "{$prefix}[access_token]"; ?>"
 					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
 					       class="regular-text" autocomplete="off">
-					<p class="description">From your Mastodon instance: Preferences → Development → New Application. Needs <code>write:statuses</code> scope.</p>
+					<p class="description">From your Mastodon instance: Preferences → Development → New Application. Needs <code>write:statuses read:statuses</code> scopes.</p>
 				</td>
 			</tr>
 		</table>
@@ -828,85 +783,7 @@ class Settings {
 		</p>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 16px;">Applied to posts received from Mastodon via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a>.</p>
-		<?php
-		$theme_formats  = get_theme_support( 'post-formats' );
-		$formats        = is_array( $theme_formats ) ? array_merge( [ 'standard' ], $theme_formats[0] ?? [] ) : [ 'standard' ];
-		$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-		$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
-		$all_tags       = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
-		?>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><label for="nop_mastodon_in_status">Status</label></th>
-				<td>
-					<select id="nop_mastodon_in_status" name="<?php echo "{$prefix}[post_status]"; ?>">
-						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php if ( count( $formats ) > 1 ) : ?>
-			<tr>
-				<th scope="row"><label for="nop_mastodon_in_format">Format</label></th>
-				<td>
-					<select id="nop_mastodon_in_format" name="<?php echo "{$prefix}[post_format]"; ?>">
-						<?php foreach ( $formats as $format ) : ?>
-							<option value="<?php echo esc_attr( $format ); ?>" <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
-								<?php echo esc_html( ucfirst( $format ) ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php endif; ?>
-			<tr>
-				<th scope="row"><label for="nop-mastodon-in-category">Category</label></th>
-				<td>
-					<div class="nop-token-field"
-					     data-input-id="nop-mastodon-in-category"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-mastodon-in-category" class="nop-token-field__input"
-						       placeholder="Add category…" autocomplete="off" aria-label="Category name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden" name="<?php echo "{$prefix}[post_category]"; ?>"
-						       value="<?php echo esc_attr( $settings['post_category'] ?? 'Notes' ); ?>">
-					</div>
-					<p class="description">Created automatically if it doesn't exist.</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="nop-mastodon-in-tags">Tags</label></th>
-				<td>
-					<div class="nop-token-field"
-					     data-input-id="nop-mastodon-in-tags"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-mastodon-in-tags" class="nop-token-field__input"
-						       placeholder="Add tags…" autocomplete="off" aria-label="Tag name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden" name="<?php echo "{$prefix}[post_tags]"; ?>"
-						       value="<?php echo esc_attr( $settings['post_tags'] ?? '' ); ?>">
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Photos</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-						Save photos to your media library
-					</label>
-				</td>
-			</tr>
-		</table>
+		<?php $this->render_inbound_defaults( 'mastodon', $prefix, $settings ); ?>
 
 		<h3 class="nop-section-heading">Import</h3>
 		<table class="form-table" role="presentation">
@@ -982,85 +859,7 @@ class Settings {
 		</p>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 16px;">Applied to posts received from Bluesky via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a>.</p>
-		<?php
-		$theme_formats  = get_theme_support( 'post-formats' );
-		$formats        = is_array( $theme_formats ) ? array_merge( [ 'standard' ], $theme_formats[0] ?? [] ) : [ 'standard' ];
-		$all_categories = get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-		$category_names = array_values( array_map( fn( $c ) => $c->name, $all_categories ) );
-		$all_tags       = get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, $all_tags ) );
-		?>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><label for="nop_bluesky_in_status">Status</label></th>
-				<td>
-					<select id="nop_bluesky_in_status" name="<?php echo "{$prefix}[post_status]"; ?>">
-						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php if ( count( $formats ) > 1 ) : ?>
-			<tr>
-				<th scope="row"><label for="nop_bluesky_in_format">Format</label></th>
-				<td>
-					<select id="nop_bluesky_in_format" name="<?php echo "{$prefix}[post_format]"; ?>">
-						<?php foreach ( $formats as $format ) : ?>
-							<option value="<?php echo esc_attr( $format ); ?>" <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
-								<?php echo esc_html( ucfirst( $format ) ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php endif; ?>
-			<tr>
-				<th scope="row"><label for="nop-bluesky-in-category">Category</label></th>
-				<td>
-					<div class="nop-token-field"
-					     data-input-id="nop-bluesky-in-category"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $category_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-bluesky-in-category" class="nop-token-field__input"
-						       placeholder="Add category…" autocomplete="off" aria-label="Category name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden" name="<?php echo "{$prefix}[post_category]"; ?>"
-						       value="<?php echo esc_attr( $settings['post_category'] ?? 'Notes' ); ?>">
-					</div>
-					<p class="description">Created automatically if it doesn't exist.</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="nop-bluesky-in-tags">Tags</label></th>
-				<td>
-					<div class="nop-token-field"
-					     data-input-id="nop-bluesky-in-tags"
-					     data-suggestions="<?php echo esc_attr( wp_json_encode( $tag_names ) ); ?>">
-						<div class="nop-token-field__tokens" aria-live="polite"></div>
-						<input type="text" id="nop-bluesky-in-tags" class="nop-token-field__input"
-						       placeholder="Add tags…" autocomplete="off" aria-label="Tag name">
-						<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
-						<input type="hidden" name="<?php echo "{$prefix}[post_tags]"; ?>"
-						       value="<?php echo esc_attr( $settings['post_tags'] ?? '' ); ?>">
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Photos</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-						Save photos to your media library
-					</label>
-				</td>
-			</tr>
-		</table>
+		<?php $this->render_inbound_defaults( 'bluesky', $prefix, $settings ); ?>
 
 		<h3 class="nop-section-heading">Import</h3>
 		<table class="form-table" role="presentation">
@@ -1156,6 +955,126 @@ class Settings {
 						<a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> that support <code>rel=alternate</code>
 						use this for richer, more accurate data.
 					</p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	// ——— Shared rendering helpers ————————————————————————————————————————————
+
+	private function get_formats(): array {
+		$theme_formats = get_theme_support( 'post-formats' );
+		return is_array( $theme_formats )
+			? array_merge( [ 'standard' ], $theme_formats[0] ?? [] )
+			: [ 'standard' ];
+	}
+
+	private function render_token_field(
+		string $id,
+		string $name,
+		string $value,
+		array $suggestions,
+		string $placeholder,
+		string $aria_label,
+		?string $description = null
+	): void {
+		?>
+		<div class="nop-token-field"
+		     data-input-id="<?php echo esc_attr( $id ); ?>"
+		     data-suggestions="<?php echo esc_attr( wp_json_encode( $suggestions ) ); ?>">
+			<div class="nop-token-field__tokens" aria-live="polite"></div>
+			<input type="text" id="<?php echo esc_attr( $id ); ?>"
+			       class="nop-token-field__input"
+			       placeholder="<?php echo esc_attr( $placeholder ); ?>"
+			       autocomplete="off"
+			       aria-label="<?php echo esc_attr( $aria_label ); ?>">
+			<ul class="nop-token-field__suggestions" role="listbox" hidden></ul>
+			<input type="hidden"
+			       name="<?php echo esc_attr( $name ); ?>"
+			       value="<?php echo esc_attr( $value ); ?>">
+		</div>
+		<?php if ( $description ) : ?>
+		<p class="description"><?php echo wp_kses_post( $description ); ?></p>
+		<?php endif; ?>
+		<?php
+	}
+
+	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
+		$formats        = $this->get_formats();
+		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		?>
+		<h3 class="nop-section-heading">Inbound Defaults</h3>
+		<p class="description" style="margin: 6px 0 16px;">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-status">Status</label></th>
+				<td>
+					<select id="nop-<?php echo esc_attr( $slug ); ?>-in-status"
+					        name="<?php echo esc_attr( "{$name_prefix}[post_status]" ); ?>">
+						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>"
+							        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+								<?php echo esc_html( $label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php if ( count( $formats ) > 1 ) : ?>
+			<tr>
+				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-format">Format</label></th>
+				<td>
+					<select id="nop-<?php echo esc_attr( $slug ); ?>-in-format"
+					        name="<?php echo esc_attr( "{$name_prefix}[post_format]" ); ?>">
+						<?php foreach ( $formats as $format ) : ?>
+							<option value="<?php echo esc_attr( $format ); ?>"
+							        <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
+								<?php echo esc_html( ucfirst( $format ) ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<?php endif; ?>
+			<tr>
+				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-category">Category</label></th>
+				<td>
+					<?php $this->render_token_field(
+						"nop-{$slug}-in-category",
+						"{$name_prefix}[post_category]",
+						$settings['post_category'] ?? 'Notes',
+						$category_names,
+						'Add category…',
+						'Category name',
+						'Created automatically if it doesn\'t exist.'
+					); ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-tags">Tags</label></th>
+				<td>
+					<?php $this->render_token_field(
+						"nop-{$slug}-in-tags",
+						"{$name_prefix}[post_tags]",
+						$settings['post_tags'] ?? '',
+						$tag_names,
+						'Add tags…',
+						'Tag name'
+					); ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Photos</th>
+				<td>
+					<label>
+						<input type="checkbox"
+						       name="<?php echo esc_attr( "{$name_prefix}[sideload_photos]" ); ?>"
+						       value="1"
+						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
+						Save photos to your media library
+					</label>
 				</td>
 			</tr>
 		</table>

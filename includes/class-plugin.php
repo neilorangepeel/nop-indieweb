@@ -235,6 +235,10 @@ HTML,
 		printf( "<link rel=\"webmention\" href=\"%s\">\n",             esc_url( rest_url( 'nop-indieweb/v1/webmention' ) ) );
 		printf( "<link rel=\"authorization_endpoint\" href=\"%s\">\n", esc_url( Auth_Endpoint::url() ) );
 		printf( "<link rel=\"token_endpoint\" href=\"%s\">\n",         esc_url( rest_url( 'nop-indieweb/v1/token' ) ) );
+
+		foreach ( $this->get_me_urls() as $url ) {
+			printf( "<link rel=\"me\" href=\"%s\">\n", esc_url( $url ) );
+		}
 	}
 
 	public function output_link_headers(): void {
@@ -242,5 +246,25 @@ HTML,
 		header( sprintf( 'Link: <%s>; rel="webmention"',             rest_url( 'nop-indieweb/v1/webmention' ) ), false );
 		header( sprintf( 'Link: <%s>; rel="authorization_endpoint"', Auth_Endpoint::url() ),                  false );
 		header( sprintf( 'Link: <%s>; rel="token_endpoint"',         rest_url( 'nop-indieweb/v1/token' ) ),  false );
+
+		foreach ( $this->get_me_urls() as $url ) {
+			header( sprintf( 'Link: <%s>; rel="me"', $url ), false );
+		}
+	}
+
+	private function get_me_urls(): array {
+		$urls = [];
+
+		$mastodon_url = (string) get_option( 'nop_indieweb_mastodon_profile_url', '' );
+		if ( $mastodon_url ) {
+			$urls[] = $mastodon_url;
+		}
+
+		$bluesky_handle = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
+		if ( $bluesky_handle ) {
+			$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
+		}
+
+		return $urls;
 	}
 }
