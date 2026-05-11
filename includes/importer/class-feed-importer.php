@@ -151,6 +151,8 @@ class Feed_Importer {
 			$this->note->handle( $this->mastodon_to_payload( $status ) );
 			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
 		}
+
+		\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_at", gmdate( 'c' ) );
 	}
 
 	private function mastodon_to_payload( array $status ): array {
@@ -243,6 +245,8 @@ class Feed_Importer {
 
 			$this->note->handle( $this->bluesky_to_payload( $post, $url ) );
 		}
+
+		\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.bluesky.import_last_at', gmdate( 'c' ) );
 	}
 
 	private function bluesky_to_payload( array $post, string $url ): array {
@@ -343,6 +347,8 @@ class Feed_Importer {
 				],
 			] );
 		}
+
+		\NOP\IndieWeb\nop_indieweb_update_option( 'services.letterboxd.import_last_at', gmdate( 'c' ) );
 	}
 
 	/**

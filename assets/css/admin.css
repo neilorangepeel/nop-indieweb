@@ -108,6 +108,29 @@
 	flex-shrink: 0;
 }
 
+/* ── Advanced tab (right-aligned, de-emphasised) ────────────────────────────── */
+
+/*
+ * margin-left: auto pushes the Advanced tab to the far right of the flex
+ * nav. The lower opacity signals "this is technical, not everyday" without
+ * hiding it entirely.
+ */
+
+.nop-tab--advanced {
+	margin-left: auto;
+	opacity:     0.82;
+}
+
+.nop-tab--advanced:hover,
+.nop-tab--advanced.nav-tab-active {
+	opacity: 1;
+}
+
+/* Small gap before the first tab of the Content group */
+.nop-tab--group-start {
+	margin-left: 1em;
+}
+
 /* ── Inactive service tab ───────────────────────────────────────────────────── */
 
 /*
@@ -119,15 +142,15 @@
 
 .nop-tab--inactive {
 	color: var(--nop-text-muted) !important;
-	opacity: 0.55;
+	opacity: 0.75;
 }
 
 .nop-tab--inactive:hover {
-	opacity: 0.8;
+	opacity: 0.9;
 }
 
 .nop-tab--inactive.nav-tab-active {
-	opacity: 0.7;
+	opacity: 1;
 }
 
 /* ── Tab panels ─────────────────────────────────────────────────────────────── */
@@ -334,6 +357,78 @@
 	text-decoration: underline;
 }
 
+/* ── Network status cards (Overview tab) ───────────────────────────────────── */
+
+.nop-network-cards {
+	display:               grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap:                   10px;
+	margin:                12px 0 20px;
+}
+
+.nop-network-card {
+	display:        flex;
+	flex-direction: column;
+	gap:            4px;
+	padding:        12px 14px;
+	background:     var(--nop-surface);
+	border:         1px solid var(--nop-border);
+	border-left:    3px solid var(--nop-border); /* overridden inline for active */
+	border-radius:  var(--nop-radius);
+	font-size:      12px;
+	line-height:    1.4;
+}
+
+.nop-network-card--active {
+	border-left-width: 3px; /* colour set inline */
+}
+
+.nop-network-card--inactive {
+	opacity: 0.7;
+}
+
+.nop-network-card__header {
+	display:     flex;
+	align-items: center;
+	gap:         6px;
+}
+
+.nop-network-card__dot {
+	flex-shrink:   0;
+	width:         8px;
+	height:        8px;
+	border-radius: 50%;
+}
+
+.nop-network-card__name {
+	font-size:   13px;
+	font-weight: 600;
+	color:       #1d2327;
+}
+
+.nop-network-card__status {
+	margin: 0;
+	color:  var(--nop-text-muted);
+}
+
+.nop-network-card__actions,
+.nop-network-card__last {
+	margin: 0;
+	color:  var(--nop-text-muted);
+}
+
+.nop-network-card__link {
+	margin-top: 4px;
+}
+
+/* ── Overview stat line ─────────────────────────────────────────────────────── */
+
+.nop-overview-stat {
+	font-size:   13px;
+	margin:      8px 0 20px;
+	color:       #1d2327;
+}
+
 /* ── Token field (category / tag picker) ────────────────────────────────────── */
 
 /*
@@ -351,7 +446,7 @@
 	background: var(--nop-surface);
 	border: 1px solid var(--nop-border);
 	border-radius: var(--nop-radius);
-	min-height: 34px;
+	min-height: 40px; /* matches WP 7.0 form-control height; looks fine on 6.x too */
 	max-width: 25em;
 	cursor: text;
 	position: relative;
