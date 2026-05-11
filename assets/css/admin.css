@@ -485,7 +485,6 @@
 .nop-kinds-table {
 	border-collapse: collapse;
 	width:           100%;
-	max-width:       760px;
 	font-size:       13px;
 }
 
@@ -524,9 +523,14 @@
 	text-align: center;
 }
 
-/* Status column: enough for the select */
-.nop-kinds-table td:nth-child(3) {
+/* Status and Format columns: fixed width for the selects */
+.nop-kinds-table td:nth-child(3),
+.nop-kinds-table th:nth-child(3) {
 	width: 130px;
+}
+
+.nop-kinds-table__format {
+	width: 120px;
 }
 
 /* Micropub property badge inside Kind column */

@@ -974,7 +974,7 @@ class Settings {
 					<th scope="col">Source</th>
 					<th scope="col">Enable</th>
 					<th scope="col">Status</th>
-					<?php if ( $show_format ) : ?><th scope="col">Format</th><?php endif; ?>
+					<?php if ( $show_format ) : ?><th scope="col" class="nop-kinds-table__format">Format</th><?php endif; ?>
 					<th scope="col">Category</th>
 					<th scope="col">Tags</th>
 					<th scope="col" class="nop-kinds-table__enable">Photos</th>
@@ -1008,7 +1008,7 @@ class Settings {
 						</select>
 					</td>
 					<?php if ( $show_format ) : ?>
-					<td>
+					<td class="nop-kinds-table__format">
 						<select name="<?php echo esc_attr( "{$prefix}[post_format]" ); ?>">
 							<?php foreach ( $formats as $format ) : ?>
 								<option value="<?php echo esc_attr( $format ); ?>"
