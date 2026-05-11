@@ -8,5 +8,6 @@
 	"supports": { "html": false, "multiple": true },
 	"usesContext": [ "postId", "postType", "queryId" ],
 	"render": "file:./render.php",
+	"editorScript": "file:./editor.js",
 	"style": "file:./style.css"
 }
