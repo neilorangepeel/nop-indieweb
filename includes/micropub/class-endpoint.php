@@ -7,6 +7,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use NOP\IndieWeb\Services\Service_Base;
+use NOP\IndieWeb\Micropub\Media_Endpoint;
 
 class Endpoint {
 
@@ -42,7 +43,7 @@ class Endpoint {
 
 		if ( 'config' === $q ) {
 			return new WP_REST_Response( [
-				'media-endpoint' => null,
+				'media-endpoint' => Media_Endpoint::url(),
 				'syndicate-to'   => [],
 				'post-types'     => [ [ 'type' => 'entry', 'name' => 'Post' ] ],
 			], 200 );
@@ -123,9 +124,7 @@ class Endpoint {
 		}
 
 		if ( 'update' === $action ) {
-			// Full update support is Phase 2. Acknowledge per spec (200 OK).
-			\NOP\IndieWeb\nop_indieweb_log( 'Micropub update action received — not yet implemented', $payload['url'] ?? '' );
-			return new WP_REST_Response( null, 200 );
+			return $this->handle_update( $payload );
 		}
 
 		// Default: create.
@@ -190,6 +189,103 @@ class Endpoint {
 
 		\NOP\IndieWeb\nop_indieweb_log( "Micropub delete: trashed post {$post_id}", $url );
 		return new WP_REST_Response( null, 200 );
+	}
+
+	/**
+	 * Handles a Micropub update action.
+	 * Spec: https://micropub.spec.indieweb.org/#update
+	 * Update requests are always JSON — form-encoded is not supported by the spec.
+	 */
+	private function handle_update( array $payload ): WP_REST_Response|WP_Error {
+		$url = $payload['url'] ?? '';
+		if ( ! $url ) {
+			return new WP_Error( 'nop_indieweb_missing_url', 'No URL provided for update action.', [ 'status' => 400 ] );
+		}
+
+		$post_id = url_to_postid( $url );
+		if ( ! $post_id ) {
+			return new WP_Error( 'nop_indieweb_not_found', 'No post found at that URL.', [ 'status' => 400 ] );
+		}
+
+		$args = [];
+
+		foreach ( (array) ( $payload['replace'] ?? [] ) as $prop => $values ) {
+			$this->apply_replace( $post_id, $prop, (array) $values, $args );
+		}
+
+		foreach ( (array) ( $payload['add'] ?? [] ) as $prop => $values ) {
+			$this->apply_add( $post_id, $prop, (array) $values );
+		}
+
+		$delete = $payload['delete'] ?? [];
+		if ( is_array( $delete ) && $delete ) {
+			if ( is_string( array_key_first( $delete ) === 0 ? $delete[0] : '' ) && isset( $delete[0] ) ) {
+				// Indexed array of property names — delete the whole property.
+				foreach ( $delete as $prop ) {
+					$this->apply_delete_prop( $post_id, (string) $prop, $args );
+				}
+			} else {
+				// Associative — delete specific values from a property.
+				foreach ( $delete as $prop => $values ) {
+					$this->apply_delete_values( $post_id, (string) $prop, (array) $values );
+				}
+			}
+		}
+
+		if ( $args ) {
+			$args['ID'] = $post_id;
+			wp_update_post( wp_slash( $args ) );
+		}
+
+		\NOP\IndieWeb\nop_indieweb_log( "Micropub update: post {$post_id}", $payload );
+		return new WP_REST_Response( null, 200 );
+	}
+
+	private function apply_replace( int $post_id, string $prop, array $values, array &$args ): void {
+		match( $prop ) {
+			'content'     => $args['post_content'] = $values[0] ?? '',
+			'name'        => $args['post_title']   = $values[0] ?? '',
+			'post-status' => $args['post_status']  = sanitize_key( $values[0] ?? '' ),
+			'published'   => $this->apply_date( $values[0] ?? '', $args ),
+			'syndication' => update_post_meta( $post_id, 'nop_indieweb_syndication', array_map( 'esc_url_raw', $values ) ),
+			default       => null,
+		};
+	}
+
+	private function apply_add( int $post_id, string $prop, array $values ): void {
+		match( $prop ) {
+			'syndication' => $this->merge_meta( $post_id, 'nop_indieweb_syndication', array_map( 'esc_url_raw', $values ) ),
+			default       => null,
+		};
+	}
+
+	private function apply_delete_prop( int $post_id, string $prop, array &$args ): void {
+		match( $prop ) {
+			'name'        => $args['post_title'] = '',
+			'syndication' => delete_post_meta( $post_id, 'nop_indieweb_syndication' ),
+			default       => null,
+		};
+	}
+
+	private function apply_delete_values( int $post_id, string $prop, array $values ): void {
+		if ( 'syndication' === $prop ) {
+			$existing = (array) get_post_meta( $post_id, 'nop_indieweb_syndication', true );
+			update_post_meta( $post_id, 'nop_indieweb_syndication', array_values( array_diff( $existing, $values ) ) );
+		}
+	}
+
+	private function apply_date( string $published, array &$args ): void {
+		$ts = $published ? strtotime( $published ) : 0;
+		if ( ! $ts ) {
+			return;
+		}
+		$args['post_date']     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
+		$args['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+	}
+
+	private function merge_meta( int $post_id, string $key, array $values ): void {
+		$existing = (array) get_post_meta( $post_id, $key, true );
+		update_post_meta( $post_id, $key, array_values( array_unique( array_merge( $existing, $values ) ) ) );
 	}
 
 	private function resolve_service( array $payload ): ?Service_Base {

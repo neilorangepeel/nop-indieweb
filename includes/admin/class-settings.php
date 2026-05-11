@@ -193,6 +193,7 @@ class Settings {
 
 		// — General ———————————————————————————————————————————————————————————
 		$clean['debug_mode']  = ! empty( $input['debug_mode'] );
+		$clean['me_urls']     = sanitize_textarea_field( $input['me_urls'] ?? '' );
 
 		// — Semantic Web ——————————————————————————————————————————————————————
 		$clean['mf2_enabled'] = ! empty( $input['mf2_enabled'] );
@@ -472,6 +473,21 @@ class Settings {
 					<p class="description">
 						Protected via IndieAuth. See the <a href="#nop-tab-indieauth" class="nop-setup-link">IndieAuth tab</a> to manage active sessions.
 					</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Identity (rel=me)</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-me-urls">Profile URLs</label></th>
+				<td>
+					<textarea id="nop-me-urls"
+					          name="<?php echo self::OPTION_KEY; ?>[me_urls]"
+					          rows="5"
+					          class="large-text code"
+					          placeholder="https://github.com/yourusername&#10;https://linkedin.com/in/yourusername"><?php echo esc_textarea( \NOP\IndieWeb\nop_indieweb_get_option( 'me_urls', '' ) ); ?></textarea>
+					<p class="description">One URL per line. Each is output as <code>&lt;link rel="me"&gt;</code> — used by IndieAuth and identity consolidation services like <a href="https://indielogin.com" target="_blank" rel="noopener">IndieLogin</a>. Mastodon, Bluesky, and Pixelfed are added automatically when configured.</p>
 				</td>
 			</tr>
 		</table>
@@ -995,7 +1011,7 @@ class Settings {
 					<input type="password" id="pixelfed-token" name="<?php echo "{$prefix}[access_token]"; ?>"
 					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
 					       class="regular-text" autocomplete="off">
-					<p class="description">From your Pixelfed instance: Settings → Applications → Create App. Needs <code>read write</code> scopes.</p>
+					<p class="description">From your Pixelfed instance: Settings → Applications → Create New Token.</p>
 				</td>
 			</tr>
 		</table>

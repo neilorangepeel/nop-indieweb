@@ -48,6 +48,9 @@ class Request {
 			'url'        => esc_url_raw( $body['url'] ?? '' ),
 			'type'       => $body['type'] ?? [ 'h-entry' ],
 			'properties' => $body['properties'] ?? [],
+			'replace'    => $body['replace'] ?? [],
+			'add'        => $body['add'] ?? [],
+			'delete'     => $body['delete'] ?? [],
 		];
 	}
 

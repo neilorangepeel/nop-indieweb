@@ -4,6 +4,7 @@ declare( strict_types=1 );
 namespace NOP\IndieWeb;
 
 use NOP\IndieWeb\Micropub\Endpoint;
+use NOP\IndieWeb\Micropub\Media_Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
 use NOP\IndieWeb\Post_Meta\Block_Bindings;
 use NOP\IndieWeb\Services\Swarm;
@@ -57,6 +58,7 @@ class Plugin {
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services ) )->register();
+		( new Media_Endpoint() )->register();
 		( new Token_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
@@ -259,12 +261,18 @@ HTML,
 	private function get_me_urls(): array {
 		$urls = [];
 
+		// Custom profile URLs from Settings → General → Identity.
+		$custom = nop_indieweb_get_option( 'me_urls', '' );
+		foreach ( array_filter( array_map( 'trim', explode( "\n", $custom ) ) ) as $url ) {
+			$urls[] = esc_url_raw( $url );
+		}
+
 		$mastodon_url = (string) get_option( 'nop_indieweb_mastodon_profile_url', '' );
 		if ( $mastodon_url ) {
 			$urls[] = $mastodon_url;
 		}
 
-		$bluesky_handle = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
+		$bluesky_handle = (string) nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
 		if ( $bluesky_handle ) {
 			$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
 		}
@@ -274,6 +282,6 @@ HTML,
 			$urls[] = $pixelfed_url;
 		}
 
-		return $urls;
+		return array_values( array_unique( array_filter( $urls ) ) );
 	}
 }
