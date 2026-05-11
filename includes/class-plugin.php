@@ -21,6 +21,7 @@ use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Post_Filter;
 use NOP\IndieWeb\Admin\Debug;
 use NOP\IndieWeb\Admin\Checkin_Metabox;
+use NOP\IndieWeb\Admin\Post_Kinds_Panel;
 use NOP\IndieWeb\Admin\Syndication_Panel;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
@@ -87,6 +88,7 @@ class Plugin {
 			( new Auth_Endpoint() )->register();
 			( new Debug( $services ) )->register();
 			( new Checkin_Metabox() )->register();
+			( new Post_Kinds_Panel() )->register();
 			( new Syndication_Panel( $syndication_manager ) )->register();
 		}
 
