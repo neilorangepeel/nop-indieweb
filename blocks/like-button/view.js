@@ -11,7 +11,7 @@
 
 		// Live region announces async state changes to screen readers.
 		var statusEl = document.createElement( 'span' );
-		statusEl.className = 'screen-reader-text';
+		statusEl.className = 'nop-like-button__status';
 		statusEl.setAttribute( 'role', 'status' );
 		statusEl.setAttribute( 'aria-live', 'polite' );
 		el.appendChild( statusEl );
@@ -25,6 +25,13 @@
 			btn.disabled = true;
 			btn.classList.add( 'is-animating' );
 			statusEl.textContent = '';
+
+			// Optimistically increment the count before the API responds.
+			var previousCount    = parseInt( countEl.textContent, 10 ) || 0;
+			var optimisticCount  = previousCount + 1;
+			countEl.textContent  = optimisticCount;
+			countEl.setAttribute( 'aria-label', optimisticCount + ' likes' );
+			countEl.hidden = false;
 
 			fetch( el.dataset.endpoint, {
 				method: 'POST',
@@ -40,6 +47,7 @@
 					btn.setAttribute( 'aria-pressed', 'true' );
 					btn.querySelector( '.nop-like-button__label' ).textContent = 'Liked';
 
+					// Correct the optimistic count with the authoritative server value.
 					if ( typeof data.count === 'number' ) {
 						countEl.textContent = data.count;
 						countEl.setAttribute( 'aria-label', data.count + ' likes' );
@@ -47,8 +55,12 @@
 					}
 				} )
 				.catch( function () {
+					// Roll back the optimistic update so the UI stays truthful.
 					btn.disabled = false;
 					btn.classList.remove( 'is-animating' );
+					countEl.textContent = previousCount;
+					countEl.setAttribute( 'aria-label', previousCount + ' likes' );
+					countEl.hidden = previousCount === 0;
 					statusEl.textContent = 'Could not save like. Please try again.';
 				} );
 		} );

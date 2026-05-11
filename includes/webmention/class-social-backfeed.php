@@ -35,7 +35,9 @@ class Social_Backfeed {
 			}
 			$seen = $this->get_known_platform_ids( $post_id );
 			foreach ( $urls as $url ) {
-				if ( $this->is_mastodon_url( $url ) ) {
+				if ( $this->is_pixelfed_url( $url ) ) {
+					$this->backfeed_pixelfed( $post_id, $url, $seen );
+				} elseif ( $this->is_mastodon_url( $url ) ) {
 					$this->backfeed_mastodon( $post_id, $url, $seen );
 				} elseif ( $this->is_bluesky_url( $url ) ) {
 					$this->backfeed_bluesky( $post_id, $url, $seen );
@@ -48,7 +50,7 @@ class Social_Backfeed {
 	// Mastodon
 	// -------------------------------------------------------------------------
 
-	private function backfeed_mastodon( int $post_id, string $post_url, array &$seen ): void {
+	private function backfeed_mastodon( int $post_id, string $post_url, array &$seen, string $platform = 'mastodon' ): void {
 		if ( ! preg_match( '#^(https?://[^/]+)/@[^/]+/(\d+)$#', $post_url, $m ) ) {
 			return;
 		}
@@ -62,12 +64,12 @@ class Social_Backfeed {
 		$favourers = $this->fetch_json( "{$base}/favourited_by", $token );
 		if ( is_array( $favourers ) ) {
 			foreach ( $favourers as $account ) {
-				$pid = 'mastodon_like_' . ( $account['id'] ?? '' );
+				$pid = "{$platform}_like_" . ( $account['id'] ?? '' );
 				if ( isset( $seen[ $pid ] ) || empty( $account['id'] ) ) {
 					continue;
 				}
 				$this->store_interaction( $post_id, [
-					'platform'      => 'mastodon',
+					'platform'      => $platform,
 					'type'          => 'like',
 					'platform_id'   => $pid,
 					'source'        => $post_url,
@@ -85,12 +87,12 @@ class Social_Backfeed {
 		$boosters = $this->fetch_json( "{$base}/reblogged_by", $token );
 		if ( is_array( $boosters ) ) {
 			foreach ( $boosters as $account ) {
-				$pid = 'mastodon_repost_' . ( $account['id'] ?? '' );
+				$pid = "{$platform}_repost_" . ( $account['id'] ?? '' );
 				if ( isset( $seen[ $pid ] ) || empty( $account['id'] ) ) {
 					continue;
 				}
 				$this->store_interaction( $post_id, [
-					'platform'      => 'mastodon',
+					'platform'      => $platform,
 					'type'          => 'repost',
 					'platform_id'   => $pid,
 					'source'        => $post_url,
@@ -108,13 +110,13 @@ class Social_Backfeed {
 		$context = $this->fetch_json( "{$base}/context", $token );
 		if ( $context && is_array( $context['descendants'] ?? null ) ) {
 			foreach ( $context['descendants'] as $status ) {
-				$pid = 'mastodon_reply_' . ( $status['id'] ?? '' );
+				$pid = "{$platform}_reply_" . ( $status['id'] ?? '' );
 				if ( isset( $seen[ $pid ] ) || empty( $status['id'] ) ) {
 					continue;
 				}
 				$account = $status['account'] ?? [];
 				$this->store_interaction( $post_id, [
-					'platform'      => 'mastodon',
+					'platform'      => $platform,
 					'type'          => 'reply',
 					'platform_id'   => $pid,
 					'source'        => $status['url'] ?? ( $status['uri'] ?? $post_url ),
@@ -127,6 +129,19 @@ class Social_Backfeed {
 				], $seen );
 			}
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Pixelfed (Mastodon-compatible API)
+	// -------------------------------------------------------------------------
+
+	private function backfeed_pixelfed( int $post_id, string $post_url, array &$seen ): void {
+		// Pixelfed URLs: /p/username/id → normalise to /@username/id for the API.
+		$normalised = preg_replace( '#/p/([^/]+)/(\d+)$#', '/@$1/$2', $post_url );
+		if ( ! $normalised || $normalised === $post_url ) {
+			return;
+		}
+		$this->backfeed_mastodon( $post_id, $normalised, $seen, 'pixelfed' );
 	}
 
 	private function mastodon_access_token(): string {
@@ -317,6 +332,10 @@ class Social_Backfeed {
 			$post_id
 		) );
 		return array_flip( $rows ?: [] );
+	}
+
+	private function is_pixelfed_url( string $url ): bool {
+		return (bool) preg_match( '#/p/[^/]+/\d+$#', $url );
 	}
 
 	private function is_mastodon_url( string $url ): bool {

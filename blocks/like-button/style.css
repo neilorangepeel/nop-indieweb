@@ -75,6 +75,19 @@
 	animation: nop-like-pop 350ms ease forwards;
 }
 
+/* Visually hidden live region — injected by view.js for error announcements.
+   Defined here so it works regardless of whether the theme ships this class. */
+.nop-like-button__status {
+	position:   absolute;
+	width:      1px;
+	height:     1px;
+	padding:    0;
+	overflow:   hidden;
+	clip:       rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border:     0;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.nop-like-button__btn,
 	.nop-like-button__icon {

@@ -22,7 +22,8 @@ class Debug {
 
 	public function register(): void {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
-		add_action( 'admin_post_nop_indieweb_test_payload', [ $this, 'handle_test_post' ] );
+		add_action( 'admin_post_nop_indieweb_test_payload',   [ $this, 'handle_test_post' ] );
+		add_action( 'admin_post_nop_indieweb_backfeed_sync',  [ $this, 'handle_backfeed_sync' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
@@ -59,6 +60,21 @@ class Debug {
 			'page'         => 'nop-indieweb-debug',
 			'test_result'  => $post_id ? 'success' : 'error',
 			'test_post_id' => $post_id,
+		], admin_url( 'options-general.php' ) ) );
+		exit;
+	}
+
+	public function handle_backfeed_sync(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized.' );
+		}
+		check_admin_referer( 'nop_indieweb_backfeed_sync' );
+
+		( new \NOP\IndieWeb\Webmention\Social_Backfeed() )->run();
+
+		wp_safe_redirect( add_query_arg( [
+			'page'            => 'nop-indieweb-debug',
+			'backfeed_result' => 'success',
 		], admin_url( 'options-general.php' ) ) );
 		exit;
 	}
@@ -112,6 +128,17 @@ class Debug {
 				<?php wp_nonce_field( 'nop_indieweb_test_payload' ); ?>
 				<input type="hidden" name="action" value="nop_indieweb_test_payload">
 				<?php submit_button( 'Fire Test Swarm Checkin', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h2>Social Backfeed</h2>
+			<p>Polls Mastodon, Bluesky, and Pixelfed for new interactions on all syndicated posts. Runs automatically once per hour via WP-Cron.</p>
+			<?php if ( 'success' === sanitize_key( $_GET['backfeed_result'] ?? '' ) ) : ?>
+			<div class="notice notice-success is-dismissible"><p>Backfeed sync complete.</p></div>
+			<?php endif; ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'nop_indieweb_backfeed_sync' ); ?>
+				<input type="hidden" name="action" value="nop_indieweb_backfeed_sync">
+				<?php submit_button( 'Sync Now', 'secondary', 'submit', false ); ?>
 			</form>
 
 			<h2>cURL Example</h2>

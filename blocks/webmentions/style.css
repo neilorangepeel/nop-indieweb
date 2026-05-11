@@ -85,6 +85,11 @@
 	color: rgba(0, 110, 215, 0.9);
 }
 
+.nop-webmentions__via--pixelfed {
+	background: rgba(225, 48, 108, 0.1);
+	color: rgba(190, 28, 80, 0.9);
+}
+
 /* ── Overflow bubble ─────────────────────────────────────────────────────────── */
 
 .nop-webmentions__overflow {

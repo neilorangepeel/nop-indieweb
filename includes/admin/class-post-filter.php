@@ -14,8 +14,10 @@ use WP_Query;
 class Post_Filter {
 
 	public function register(): void {
-		add_action( 'restrict_manage_posts', [ $this, 'render_dropdown' ] );
-		add_action( 'parse_query',           [ $this, 'apply_filter' ] );
+		add_action( 'restrict_manage_posts',   [ $this, 'render_dropdown' ] );
+		add_action( 'parse_query',             [ $this, 'apply_filter' ] );
+		add_filter( 'manage_posts_columns',    [ $this, 'add_kind_column' ] );
+		add_action( 'manage_posts_custom_column', [ $this, 'render_kind_column' ], 10, 2 );
 	}
 
 	public function render_dropdown( string $post_type ): void {
@@ -42,6 +44,37 @@ class Post_Filter {
 			);
 		}
 		echo "</select>";
+	}
+
+	public function add_kind_column( array $columns ): array {
+		$out = [];
+		foreach ( $columns as $key => $label ) {
+			$out[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$out['nop_post_kind'] = 'Kind';
+			}
+		}
+		return $out;
+	}
+
+	public function render_kind_column( string $column, int $post_id ): void {
+		if ( 'nop_post_kind' !== $column ) {
+			return;
+		}
+		static $labels = [
+			'note'     => 'Note',
+			'bookmark' => 'Bookmark',
+			'like'     => 'Like',
+			'reply'    => 'Reply',
+			'repost'   => 'Repost',
+			'rsvp'     => 'RSVP',
+		];
+		$kind = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		if ( $kind ) {
+			printf( '<span class="nop-kind-badge">%s</span>', esc_html( $labels[ $kind ] ?? ucfirst( $kind ) ) );
+		} else {
+			echo '<span class="nop-kind-badge nop-kind-badge--none">—</span>';
+		}
 	}
 
 	public function apply_filter( WP_Query $query ): void {
