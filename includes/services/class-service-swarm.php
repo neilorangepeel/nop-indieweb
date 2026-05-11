@@ -155,16 +155,6 @@ class Swarm extends Service_Base {
 		return $args;
 	}
 
-	private function ensure_category( string $name ): int {
-		$slug = sanitize_title( $name );
-		$term = get_term_by( 'slug', $slug, 'category' );
-		if ( $term instanceof \WP_Term ) {
-			return $term->term_id;
-		}
-		$result = wp_insert_term( $name, 'category' );
-		return is_wp_error( $result ) ? 0 : (int) $result['term_id'];
-	}
-
 	public function get_meta( array $parsed ): array {
 		return [
 			// Post kind — explicit, drives template selection.

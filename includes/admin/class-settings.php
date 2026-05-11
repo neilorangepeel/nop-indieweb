@@ -28,6 +28,7 @@ class Settings {
 			'indieauth'    => 'IndieAuth',
 			'semantic'     => 'Microformats',
 			'webmentions'  => 'Webmentions',
+			'post-kinds'   => 'Post Kinds',
 		],
 		'Services' => [
 			'entries'     => 'Entries',
@@ -261,6 +262,15 @@ class Settings {
 		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
 		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
 
+		// — Post Kinds ————————————————————————————————————————————————————————————
+		foreach ( [ 'bookmark', 'reply', 'like', 'repost', 'rsvp' ] as $kind ) {
+			$clean['services'][ $kind ]['enabled']       = ! empty( $input['services'][ $kind ]['enabled'] );
+			$clean['services'][ $kind ]['post_status']   = in_array( $input['services'][ $kind ]['post_status'] ?? '', $valid_statuses, true )
+				? $input['services'][ $kind ]['post_status']
+				: 'publish';
+			$clean['services'][ $kind ]['post_category'] = sanitize_text_field( $input['services'][ $kind ]['post_category'] ?? '' );
+		}
+
 		// — Webmentions ——————————————————————————————————————————————————————————
 		$valid_approval = [ 'bridgy_only', 'auto_all', 'manual_all' ];
 
@@ -350,6 +360,10 @@ class Settings {
 
 				<div id="nop-tab-webmentions" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_webmentions(); ?>
+				</div>
+
+				<div id="nop-tab-post-kinds" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_post_kinds(); ?>
 				</div>
 
 				<div class="nop-settings-footer">
@@ -1163,6 +1177,67 @@ class Settings {
 			</tr>
 		</table>
 		<?php
+	}
+
+	// ——— Tab: Post Kinds ————————————————————————————————————————————————————
+
+	private function render_tab_post_kinds(): void {
+		$kinds = [
+			'bookmark' => [ 'label' => 'Bookmark',  'default_category' => 'Bookmarks', 'description' => 'Creates a post from a Micropub <code>bookmark-of</code> property.' ],
+			'reply'    => [ 'label' => 'Reply',     'default_category' => 'Replies',   'description' => 'Creates a post from a Micropub <code>in-reply-to</code> property.' ],
+			'like'     => [ 'label' => 'Like',      'default_category' => 'Likes',     'description' => 'Creates a post from a Micropub <code>like-of</code> property.' ],
+			'repost'   => [ 'label' => 'Repost',    'default_category' => 'Reposts',   'description' => 'Creates a post from a Micropub <code>repost-of</code> property.' ],
+			'rsvp'     => [ 'label' => 'RSVP',      'default_category' => 'RSVPs',     'description' => 'Creates a post from a Micropub <code>in-reply-to</code> + <code>rsvp</code> property pair.' ],
+		];
+
+		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+
+		foreach ( $kinds as $slug => $kind ) :
+			$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )[ $slug ] ?? [];
+			$prefix   = self::OPTION_KEY . "[services][{$slug}]";
+			?>
+			<h3 class="nop-section-heading"><?php echo esc_html( $kind['label'] ); ?></h3>
+			<p class="description" style="margin: -8px 0 12px;"><?php echo wp_kses_post( $kind['description'] ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row">Enable</th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+							       <?php checked( $settings['enabled'] ?? true ); ?>>
+							Accept <?php echo esc_html( strtolower( $kind['label'] ) ); ?> posts via Micropub
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-status">Status</label></th>
+					<td>
+						<select id="nop-<?php echo esc_attr( $slug ); ?>-status" name="<?php echo "{$prefix}[post_status]"; ?>">
+							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>"
+								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+									<?php echo esc_html( $label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-category">Category</label></th>
+					<td>
+						<?php $this->render_token_field(
+							"nop-{$slug}-category",
+							"{$prefix}[post_category]",
+							$settings['post_category'] ?? $kind['default_category'],
+							$category_names,
+							'Add category…',
+							'Category name',
+							'Created automatically if it doesn\'t exist.'
+						); ?>
+					</td>
+				</tr>
+			</table>
+		<?php endforeach;
 	}
 
 	// ——— Tab: Webmentions ———————————————————————————————————————————————————

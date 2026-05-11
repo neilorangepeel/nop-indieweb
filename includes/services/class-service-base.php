@@ -200,4 +200,25 @@ abstract class Service_Base {
 	public function is_enabled(): bool {
 		return (bool) ( $this->get_settings()['enabled'] ?? true );
 	}
+
+	/**
+	 * Finds or creates a category by name and returns its term ID.
+	 */
+	protected function ensure_category( string $name ): int {
+		$slug = sanitize_title( $name );
+		$term = get_term_by( 'slug', $slug, 'category' );
+		if ( $term instanceof \WP_Term ) {
+			return $term->term_id;
+		}
+		$result = wp_insert_term( $name, 'category' );
+		return is_wp_error( $result ) ? 0 : (int) $result['term_id'];
+	}
+
+	/**
+	 * Builds a readable title from a URL: extracts the hostname.
+	 * Falls back to the raw URL if parsing fails.
+	 */
+	protected function domain_from_url( string $url ): string {
+		return wp_parse_url( $url, PHP_URL_HOST ) ?: $url;
+	}
 }

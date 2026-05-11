@@ -10,6 +10,11 @@ use NOP\IndieWeb\Post_Meta\Block_Bindings;
 use NOP\IndieWeb\Services\Swarm;
 use NOP\IndieWeb\Services\Note;
 use NOP\IndieWeb\Services\Letterboxd;
+use NOP\IndieWeb\Services\Bookmark;
+use NOP\IndieWeb\Services\Reply;
+use NOP\IndieWeb\Services\Like;
+use NOP\IndieWeb\Services\Repost;
+use NOP\IndieWeb\Services\RSVP;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
@@ -46,8 +51,14 @@ class Plugin {
 	public function boot(): void {
 		$note       = new Note();
 		$letterboxd = new Letterboxd();
+		// RSVP must appear before Reply — both match in-reply-to and RSVP is the more specific case.
 		$services   = apply_filters( 'nop_indieweb_register_services', [
 			new Swarm(),
+			new Bookmark(),
+			new RSVP(),
+			new Reply(),
+			new Like(),
+			new Repost(),
 			$note,
 		] );
 
@@ -168,6 +179,36 @@ class Plugin {
 			'title'       => __( 'Single – Status: Note', 'nop-indieweb' ),
 			'description' => __( 'Displays an imported social post (Mastodon, Bluesky) with platform attribution and source link.', 'nop-indieweb' ),
 			'content'     => file_get_contents( $dir . 'single-post-format-status-note.html' ),
+		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-bookmark', [
+			'title'       => __( 'Single – Status: Bookmark', 'nop-indieweb' ),
+			'description' => __( 'Displays a bookmark post with the bookmarked URL.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-bookmark.html' ),
+		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-reply', [
+			'title'       => __( 'Single – Status: Reply', 'nop-indieweb' ),
+			'description' => __( 'Displays a reply post with the URL being replied to.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-reply.html' ),
+		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-like', [
+			'title'       => __( 'Single – Status: Like', 'nop-indieweb' ),
+			'description' => __( 'Displays a like post with the liked URL.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-like.html' ),
+		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-repost', [
+			'title'       => __( 'Single – Status: Repost', 'nop-indieweb' ),
+			'description' => __( 'Displays a repost with the reposted URL.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-repost.html' ),
+		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-rsvp', [
+			'title'       => __( 'Single – Status: RSVP', 'nop-indieweb' ),
+			'description' => __( 'Displays an RSVP post with the event URL and response.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-rsvp.html' ),
 		] );
 	}
 

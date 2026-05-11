@@ -145,6 +145,28 @@ class Registry {
 				'description' => 'Platform slugs to syndicate to on publish (editor selection).',
 			] ),
 
+			// ── Post kinds ──────────────────────────────────────────────────────────
+			'nop_indieweb_bookmark_of' => array_merge( $string, [
+				'label'       => __( 'Bookmark Of', 'nop-indieweb' ),
+				'description' => 'URL this post is bookmarking (u-bookmark-of).',
+			] ),
+			'nop_indieweb_in_reply_to' => array_merge( $string, [
+				'label'       => __( 'In Reply To', 'nop-indieweb' ),
+				'description' => 'URL this post is replying to (u-in-reply-to).',
+			] ),
+			'nop_indieweb_like_of'     => array_merge( $string, [
+				'label'       => __( 'Like Of', 'nop-indieweb' ),
+				'description' => 'URL this post is liking (u-like-of).',
+			] ),
+			'nop_indieweb_repost_of'   => array_merge( $string, [
+				'label'       => __( 'Repost Of', 'nop-indieweb' ),
+				'description' => 'URL this post is reposting (u-repost-of).',
+			] ),
+			'nop_indieweb_rsvp'        => array_merge( $string, [
+				'label'       => __( 'RSVP', 'nop-indieweb' ),
+				'description' => 'RSVP value: yes, no, maybe, or interested (p-rsvp).',
+			] ),
+
 			// ── Film / watch ─────────────────────────────────────────────────────
 			'nop_indieweb_film_title'   => array_merge( $string, [
 				'label'       => __( 'Film Title', 'nop-indieweb' ),

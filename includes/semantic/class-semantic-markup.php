@@ -30,6 +30,7 @@ class Semantic_Markup {
 		add_filter( 'render_block', [ $this, 'inject_block_classes' ], 10, 2 );
 		add_action( 'wp_head',      [ $this, 'output_alternate_link' ] );
 		add_action( 'wp_footer',    [ $this, 'output_syndication_links' ] );
+		add_action( 'wp_footer',    [ $this, 'output_kind_links' ] );
 	}
 
 	public function add_hentry_class( array $classes ): array {
@@ -84,6 +85,37 @@ class Semantic_Markup {
 		}
 		foreach ( $urls as $url ) {
 			printf( "<a class=\"u-syndication\" href=\"%s\" hidden></a>\n", esc_url( $url ) );
+		}
+	}
+
+	public function output_kind_links(): void {
+		if ( ! $this->is_active() ) {
+			return;
+		}
+		$post_id = get_queried_object_id();
+		$kind    = get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+
+		$url_kinds = [
+			'bookmark' => [ 'nop_indieweb_bookmark_of', 'u-bookmark-of' ],
+			'reply'    => [ 'nop_indieweb_in_reply_to', 'u-in-reply-to' ],
+			'rsvp'     => [ 'nop_indieweb_in_reply_to', 'u-in-reply-to' ],
+			'like'     => [ 'nop_indieweb_like_of',     'u-like-of'     ],
+			'repost'   => [ 'nop_indieweb_repost_of',   'u-repost-of'   ],
+		];
+
+		if ( isset( $url_kinds[ $kind ] ) ) {
+			[ $meta_key, $rel ] = $url_kinds[ $kind ];
+			$url = get_post_meta( $post_id, $meta_key, true );
+			if ( $url ) {
+				printf( "<a class=\"%s\" href=\"%s\" hidden></a>\n", esc_attr( $rel ), esc_url( $url ) );
+			}
+		}
+
+		if ( 'rsvp' === $kind ) {
+			$rsvp = get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
+			if ( $rsvp ) {
+				printf( "<data class=\"p-rsvp\" value=\"%s\" hidden></data>\n", esc_attr( $rsvp ) );
+			}
 		}
 	}
 
