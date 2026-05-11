@@ -73,7 +73,6 @@ class Debug {
 		$test_result  = sanitize_key( $_GET['test_result'] ?? '' );
 		$test_post_id = absint( $_GET['test_post_id'] ?? 0 );
 		$endpoint     = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
-		$token        = \NOP\IndieWeb\nop_indieweb_get_option( 'secret_token', 'YOUR_TOKEN_HERE' );
 		?>
 		<div class="wrap nop-indieweb-debug">
 			<h1>IndieWeb Debug</h1>
@@ -116,8 +115,11 @@ class Debug {
 			</form>
 
 			<h2>cURL Example</h2>
-			<p>Test the endpoint directly from your terminal:</p>
-			<pre class="nop-payload-dump"><?php echo esc_html( $this->build_curl_example( $endpoint, $token ) ); ?></pre>
+			<p>
+				Test the endpoint directly from your terminal. Replace <code>YOUR_TOKEN</code> with a token
+				issued from the <a href="options-general.php?page=nop-indieweb-settings#nop-tab-indieauth">IndieAuth tab</a>.
+			</p>
+			<pre class="nop-payload-dump"><?php echo esc_html( $this->build_curl_example( $endpoint ) ); ?></pre>
 
 			<h2>Last Received Payload</h2>
 			<?php if ( $last_payload ) : ?>
@@ -160,10 +162,10 @@ class Debug {
 		];
 	}
 
-	private function build_curl_example( string $endpoint, string $token ): string {
+	private function build_curl_example( string $endpoint ): string {
 		return <<<EOT
 curl -X POST "{$endpoint}" \
-  -H "Authorization: Bearer {$token}" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "type": ["h-entry"],

@@ -24,7 +24,9 @@ abstract class Service_Base {
 	abstract public function parse( array $payload ): array;
 	abstract public function map_to_post( array $parsed ): array;
 	abstract public function get_meta( array $parsed ): array;
-	abstract public function get_post_format( array $parsed ): string;
+	public function get_post_format( array $parsed ): string {
+		return 'status';
+	}
 
 	/**
 	 * Returns a string that uniquely identifies this payload for duplicate detection.
@@ -190,6 +192,46 @@ abstract class Service_Base {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Parses a published timestamp into [ local_date, gmt_date ] strings for wp_insert_post.
+	 * Pass $guard_future = true to discard timestamps more than 60 s in the future
+	 * (protects against OwnYourSwarm timezone drift scheduling posts as 'future').
+	 *
+	 * @return array{ 0: string, 1: string }  [ post_date, post_date_gmt ] — both empty on failure.
+	 */
+	protected function parse_post_date( string $published, bool $guard_future = false ): array {
+		if ( ! $published ) {
+			return [ '', '' ];
+		}
+		$ts = strtotime( $published );
+		if ( ! $ts ) {
+			return [ '', '' ];
+		}
+		if ( $guard_future && $ts > ( time() + 60 ) ) {
+			return [ '', '' ];
+		}
+		return [
+			get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) ),
+			gmdate( 'Y-m-d H:i:s', $ts ),
+		];
+	}
+
+	/**
+	 * Resolves a comma-separated category setting string into an array of category IDs.
+	 * Categories that don't exist yet are created.
+	 */
+	protected function category_ids_from_setting( string $csv, string $default = '' ): array {
+		$names = array_filter( array_map( 'trim', explode( ',', $csv ?: $default ) ) );
+		return array_values( array_filter( array_map( [ $this, 'ensure_category' ], $names ) ) );
+	}
+
+	/**
+	 * Resolves a comma-separated tags setting string into an array of tag names.
+	 */
+	protected function tags_from_setting( string $csv ): array {
+		return array_filter( array_map( 'trim', explode( ',', $csv ) ) );
 	}
 
 	protected function get_settings(): array {

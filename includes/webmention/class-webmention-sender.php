@@ -41,6 +41,17 @@ class Webmention_Sender {
 		$source = get_permalink( $post_id );
 		$home   = home_url();
 		$urls   = $this->extract_links( $post->post_content );
+
+		// Also notify URLs referenced in post-kind meta — these may not appear in
+		// post_content (e.g. a like-of target is stored only in meta, not in the body).
+		foreach ( [ 'nop_indieweb_in_reply_to', 'nop_indieweb_bookmark_of', 'nop_indieweb_like_of', 'nop_indieweb_repost_of' ] as $meta_key ) {
+			$meta_url = (string) get_post_meta( $post_id, $meta_key, true );
+			if ( $meta_url ) {
+				$urls[] = $meta_url;
+			}
+		}
+		$urls = array_unique( $urls );
+
 		$meta = get_post_meta( $post_id, 'nop_indieweb_webmentions_sent', true );
 		$sent = is_array( $meta ) ? $meta : [];
 
@@ -79,6 +90,11 @@ class Webmention_Sender {
 	 * Discovers the webmention endpoint for a target URL.
 	 * Sends HEAD first (faster, no body transfer); falls back to GET
 	 * to parse HTML <link rel="webmention"> or <a rel="webmention">.
+	 *
+	 * GET always follows HEAD when no link header is found: HEAD cannot return
+	 * a body, so the only way to check for an HTML <link> declaration is to
+	 * fetch the full document. A successful HEAD with no link header is not a
+	 * signal that no endpoint exists — it just means it isn't in the headers.
 	 */
 	private function discover_endpoint( string $target ): ?string {
 		$response = wp_remote_head( $target, [ 'timeout' => 10, 'redirection' => 5 ] );

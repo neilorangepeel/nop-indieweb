@@ -31,17 +31,8 @@ class Reply extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings      = $this->get_settings();
-		$post_date     = '';
-		$post_date_gmt = '';
-
-		if ( $parsed['published'] ) {
-			$ts = strtotime( $parsed['published'] );
-			if ( $ts ) {
-				$post_date     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
-				$post_date_gmt = gmdate( 'Y-m-d H:i:s', $ts );
-			}
-		}
+		$settings                    = $this->get_settings();
+		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'] );
 
 		$date   = $post_date ? wp_date( 'j M Y', strtotime( $post_date ) ) : wp_date( 'j M Y' );
 		$domain = $this->domain_from_url( $parsed['in_reply_to'] );
@@ -50,8 +41,7 @@ class Reply extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_names = array_filter( array_map( 'trim', explode( ',', $settings['post_category'] ?? 'Replies' ) ) );
-		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Replies' );
 
 		$args = [
 			'post_title'   => "{$date} · Reply to {$domain}",
@@ -78,7 +68,4 @@ class Reply extends Service_Base {
 		];
 	}
 
-	public function get_post_format( array $parsed ): string {
-		return 'status';
-	}
 }

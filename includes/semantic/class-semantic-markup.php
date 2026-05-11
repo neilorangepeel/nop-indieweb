@@ -121,8 +121,7 @@ class Semantic_Markup {
 
 	private function is_active(): bool {
 		if ( null === $this->is_active ) {
-			$this->is_active = is_singular( 'post' )
-				&& (bool) get_post_meta( get_queried_object_id(), 'nop_indieweb_service', true );
+			$this->is_active = is_singular( 'post' );
 		}
 		return $this->is_active;
 	}

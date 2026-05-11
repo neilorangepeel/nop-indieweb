@@ -27,24 +27,14 @@ class Repost extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings      = $this->get_settings();
-		$post_date     = '';
-		$post_date_gmt = '';
-
-		if ( $parsed['published'] ) {
-			$ts = strtotime( $parsed['published'] );
-			if ( $ts ) {
-				$post_date     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
-				$post_date_gmt = gmdate( 'Y-m-d H:i:s', $ts );
-			}
-		}
+		$settings                    = $this->get_settings();
+		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'] );
 
 		$blocks = $parsed['content']
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_names = array_filter( array_map( 'trim', explode( ',', $settings['post_category'] ?? 'Reposts' ) ) );
-		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Reposts' );
 
 		$args = [
 			'post_title'   => 'Reposted · ' . $this->domain_from_url( $parsed['repost_of'] ),
@@ -69,10 +59,6 @@ class Repost extends Service_Base {
 			'nop_indieweb_post_kind' => 'repost',
 			'nop_indieweb_repost_of' => $parsed['repost_of'],
 		];
-	}
-
-	public function get_post_format( array $parsed ): string {
-		return 'status';
 	}
 
 	protected function get_dedup_key( array $parsed ): ?string {

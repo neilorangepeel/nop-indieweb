@@ -104,30 +104,18 @@ class Swarm extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings    = $this->get_settings();
-		$post_status = $settings['post_status'] ?? 'publish';
+		$settings = $this->get_settings();
 
-		// Use the Swarm checkin timestamp as the post date.
-		// Drop it if it's more than 60 seconds in the future (timezone mismatch in test
+		// Drop timestamps more than 60 s in the future (timezone mismatch in test
 		// payloads) — avoids WordPress scheduling the post as 'future'.
-		$post_date     = '';
-		$post_date_gmt = '';
-		if ( $parsed['published'] ) {
-			$timestamp = strtotime( $parsed['published'] );
-			if ( $timestamp && $timestamp <= ( time() + 60 ) ) {
-				$post_date     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $timestamp ) );
-				$post_date_gmt = gmdate( 'Y-m-d H:i:s', $timestamp );
-			}
-		}
+		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
 		$title = $parsed['venue_name']
 			? sprintf( 'Checked in at %s', $parsed['venue_name'] )
 			: 'Checked in';
 
-		$category_names = array_filter( array_map( 'trim', explode( ',', $settings['post_category'] ?? 'Checkin' ) ) );
-		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
-
-		$tags = array_filter( array_map( 'trim', explode( ',', $settings['post_tags'] ?? 'Swarm' ) ) );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Checkin' );
+		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );
 
 		$note   = trim( $parsed['content'] );
 		$blocks = $note
@@ -139,7 +127,7 @@ class Swarm extends Service_Base {
 		$args = [
 			'post_title'   => $title,
 			'post_content' => $blocks,
-			'post_status'  => $post_status,
+			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',
 			'tags_input'   => $tags,
 		];

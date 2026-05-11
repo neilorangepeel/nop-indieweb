@@ -45,30 +45,19 @@ class Letterboxd extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings    = $this->get_settings();
-		$post_status = $settings['post_status'] ?? 'publish';
-
-		$post_date     = '';
-		$post_date_gmt = '';
-		if ( $parsed['watch_date'] ) {
-			$ts = strtotime( $parsed['watch_date'] );
-			if ( $ts && $ts <= ( time() + 60 ) ) {
-				$post_date     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
-				$post_date_gmt = gmdate( 'Y-m-d H:i:s', $ts );
-			}
-		}
+		$settings                    = $this->get_settings();
+		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['watch_date'], true );
 
 		$blocks = $parsed['content']
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_names = array_filter( array_map( 'trim', explode( ',', $settings['post_category'] ?? 'Films' ) ) );
-		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Films' );
 
 		$args = [
 			'post_title'   => $parsed['film_title'] ? 'Watched · ' . $parsed['film_title'] : 'Watched a film',
 			'post_content' => $blocks,
-			'post_status'  => $post_status,
+			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',
 		];
 

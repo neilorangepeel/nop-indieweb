@@ -66,33 +66,21 @@ class Note extends Service_Base {
 	}
 
 	public function map_to_post( array $parsed ): array {
-		$settings    = $this->get_inbound_settings( $parsed['platform'] );
-		$post_status = $settings['post_status'] ?? 'publish';
-
-		$post_date     = '';
-		$post_date_gmt = '';
-		if ( $parsed['published'] ) {
-			$timestamp = strtotime( $parsed['published'] );
-			if ( $timestamp && $timestamp <= ( time() + 60 ) ) {
-				$post_date     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $timestamp ) );
-				$post_date_gmt = gmdate( 'Y-m-d H:i:s', $timestamp );
-			}
-		}
+		$settings                    = $this->get_inbound_settings( $parsed['platform'] );
+		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
 		$content = trim( $parsed['content'] );
 		$blocks  = $content
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $content ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_names = array_filter( array_map( 'trim', explode( ',', $settings['post_category'] ?? 'Notes' ) ) );
-		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
-
-		$tags = array_filter( array_map( 'trim', explode( ',', $settings['post_tags'] ?? '' ) ) );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Notes' );
+		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
 
 		$args = [
 			'post_title'   => $this->generate_title( $content, $post_date ),
 			'post_content' => $blocks,
-			'post_status'  => $post_status,
+			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',
 		];
 
