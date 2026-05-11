@@ -334,6 +334,10 @@ class Settings {
 					<?php $this->render_tab_pixelfed(); ?>
 				</div>
 
+				<div id="nop-tab-letterboxd" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_letterboxd(); ?>
+				</div>
+
 				<div class="nop-settings-footer">
 					<?php submit_button( 'Save Changes', 'primary', 'submit', false ); ?>
 				</div>
