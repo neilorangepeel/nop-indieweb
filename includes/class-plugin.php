@@ -126,8 +126,18 @@ class Plugin {
 
 	public function inject_post_format_template( array $templates ): array {
 		$post   = get_queried_object();
-		$format = $post instanceof \WP_Post ? get_post_format( $post ) : '';
+		if ( ! $post instanceof \WP_Post ) {
+			return $templates;
+		}
+
+		$format = get_post_format( $post );
+
+		// Standard-format posts with a specific post kind get their own template slug.
 		if ( ! $format ) {
+			$kind = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
+			if ( $kind ) {
+				array_unshift( $templates, "single-{$kind}" );
+			}
 			return $templates;
 		}
 
@@ -206,6 +216,11 @@ class Plugin {
 				'description' => __( 'Displays an RSVP post with the event URL and response.', 'nop-indieweb' ),
 				'file'        => 'single-post-format-status-rsvp.html',
 			],
+			'nop-indieweb//single-watch' => [
+				'title'       => __( 'Single – Film Diary Entry', 'nop-indieweb' ),
+				'description' => __( 'Displays a Letterboxd film diary entry with star rating, poster, watch date, and review.', 'nop-indieweb' ),
+				'file'        => 'single-watch.html',
+			],
 		];
 
 		foreach ( $templates as $id => $template ) {
@@ -227,6 +242,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );
 	}
 
 	public function register_patterns(): void {

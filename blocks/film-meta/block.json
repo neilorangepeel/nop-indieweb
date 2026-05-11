@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/film-meta",
+	"title": "Film Meta",
+	"description": "Star rating, watch date, and Letterboxd attribution for a film diary entry. The rating is editable by clicking the stars directly in the block editor.",
+	"category": "theme",
+	"icon": "star-filled",
+	"keywords": ["film", "letterboxd", "rating", "stars", "watch", "movie"],
+	"editorScript": "file:./editor.js",
+	"style": "file:./style.css",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"spacing": {
+			"margin": true
+		}
+	}
+}

@@ -1,0 +1,166 @@
+/*
+ * Film Meta block — front-end and editor styles.
+ *
+ * The star-picker (editor) and star-display (frontend) share the same
+ * glyph and colour rules. The picker adds invisible hit zones on top
+ * to enable half-star selection without a library.
+ */
+
+/* ── Block wrapper ───────────────────────────────────────────────────────────── */
+
+.nop-film-meta {
+	margin:      2em 0 0;
+	padding-top: 1.25em;
+	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
+	font-size:   0.875em;
+	line-height: 1.6;
+}
+
+/* ── Film poster ─────────────────────────────────────────────────────────────── */
+
+.nop-film-meta__poster {
+	display:       block;
+	width:         auto;
+	max-height:    220px;
+	margin-bottom: 1em;
+	border-radius: 4px;
+	box-shadow:    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Rating container ────────────────────────────────────────────────────────── */
+
+.nop-film-meta__rating {
+	display:     flex;
+	align-items: center;
+	gap:         0.5em;
+	margin-bottom: 0.5em;
+}
+
+.nop-film-meta__rating-value {
+	font-size:   0.8em;
+	color:       var(--wp--preset--color--contrast-2, #6b7280);
+	font-weight: 500;
+}
+
+/* ── Static star display (frontend render.php) ───────────────────────────────── */
+
+.nop-film-stars {
+	display:    inline-flex;
+	gap:        0.05em;
+	line-height: 1;
+}
+
+.nop-film-star {
+	font-size: 1.5em;
+	display:   inline-block;
+}
+
+.nop-film-star.is-full {
+	color: #f59f00;
+}
+
+/* Half star: left half gold, right half muted — using background-clip on the glyph */
+.nop-film-star.is-half {
+	background:              linear-gradient(to right, #f59f00 50%, #d4d4d8 50%);
+	-webkit-background-clip: text;
+	background-clip:         text;
+	color:                   transparent;
+}
+
+.nop-film-star.is-empty {
+	color: #d4d4d8;
+}
+
+/* ── Interactive star picker (editor only) ───────────────────────────────────── */
+
+.nop-film-star-picker {
+	display:    inline-flex;
+	gap:        0.05em;
+	line-height: 1;
+	cursor:      pointer;
+}
+
+.nop-film-star-group {
+	position: relative;
+	display:  inline-block;
+}
+
+/* Invisible hit zones — positioned over the glyph, split left/right */
+.nop-film-star-zone {
+	position: absolute;
+	top:      0;
+	bottom:   0;
+	width:    50%;
+	z-index:  1;
+}
+
+.nop-film-star-zone--left  { left:  0; }
+.nop-film-star-zone--right { right: 0; }
+
+/* The ★ glyph — pointer-events off so clicks pass through to the zones */
+.nop-film-star-glyph {
+	display:        block;
+	font-size:      1.5em;
+	pointer-events: none;
+	user-select:    none;
+}
+
+.nop-film-star-glyph.is-full {
+	color: #f59f00;
+}
+
+.nop-film-star-glyph.is-half {
+	background:              linear-gradient(to right, #f59f00 50%, #d4d4d8 50%);
+	-webkit-background-clip: text;
+	background-clip:         text;
+	color:                   transparent;
+}
+
+.nop-film-star-glyph.is-empty {
+	color: #d4d4d8;
+}
+
+/* ── Meta row (date · rewatch · source) ──────────────────────────────────────── */
+
+.nop-film-meta__row {
+	display:     flex;
+	flex-wrap:   wrap;
+	align-items: center;
+	gap:         0 0.75em;
+	color:       var(--wp--preset--color--contrast-2, #6b7280);
+	font-size:   0.875em;
+}
+
+.nop-film-meta__rewatch {
+	display:        inline-block;
+	font-size:      0.75em;
+	font-weight:    600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding:        1px 7px;
+	border:         1px solid currentColor;
+	border-radius:  2em;
+	opacity:        0.65;
+}
+
+.nop-film-meta__source {
+	color:           inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.nop-film-meta__source:hover {
+	opacity: 0.7;
+}
+
+/* ── Preview state (template editor — no real post) ──────────────────────────── */
+
+.nop-film-meta--preview {
+	opacity: 0.5;
+}
+
+/* ── Placeholder state (entity not yet loaded) ───────────────────────────────── */
+
+.nop-film-meta--placeholder {
+	opacity: 0.4;
+}
