@@ -98,10 +98,17 @@ class Feed_Importer {
 			'exclude_reblogs' => 'true',
 		] );
 
-		$statuses = $this->api_get(
-			"{$instance}/api/v1/accounts/{$me['id']}/statuses?" . http_build_query( $params ),
-			$token
-		);
+		$statuses_url = "{$instance}/api/v1/accounts/{$me['id']}/statuses?" . http_build_query( $params );
+		$statuses     = $this->api_get( $statuses_url, $token );
+
+		// Token may lack read:statuses scope; fall back to unauthenticated for public accounts.
+		if ( null === $statuses ) {
+			$response = wp_remote_get( $statuses_url, [ 'timeout' => 15 ] );
+			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+				$data     = json_decode( wp_remote_retrieve_body( $response ), true );
+				$statuses = is_array( $data ) ? $data : null;
+			}
+		}
 
 		if ( ! is_array( $statuses ) || empty( $statuses ) ) {
 			return;
