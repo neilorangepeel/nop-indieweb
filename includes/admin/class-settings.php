@@ -33,6 +33,7 @@ class Settings {
 			'swarm'    => 'Swarm',
 			'mastodon' => 'Mastodon',
 			'bluesky'  => 'Bluesky',
+			'pixelfed' => 'Pixelfed',
 		],
 	];
 
@@ -76,6 +77,34 @@ class Settings {
 			if ( 200 === $code && isset( $body['acct'] ) ) {
 				if ( ! empty( $body['url'] ) ) {
 					update_option( 'nop_indieweb_mastodon_profile_url', esc_url_raw( $body['url'] ) );
+				}
+				wp_send_json_success( 'Connected as @' . $body['acct'] );
+			} else {
+				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
+			}
+		} elseif ( 'pixelfed' === $service ) {
+			$instance = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.instance', '' );
+			$token    = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.access_token', '' );
+
+			if ( ! $instance || ! $token ) {
+				wp_send_json_error( 'Not configured.' );
+			}
+
+			$response = wp_remote_get( rtrim( $instance, '/' ) . '/api/v1/accounts/verify_credentials', [
+				'headers' => [ 'Authorization' => 'Bearer ' . $token ],
+				'timeout' => 10,
+			] );
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error( $response->get_error_message() );
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( 200 === $code && isset( $body['acct'] ) ) {
+				if ( ! empty( $body['url'] ) ) {
+					update_option( 'nop_indieweb_pixelfed_profile_url', esc_url_raw( $body['url'] ) );
 				}
 				wp_send_json_success( 'Connected as @' . $body['acct'] );
 			} else {
@@ -216,6 +245,19 @@ class Settings {
 		$clean['syndicators']['bluesky']['sideload_photos']  = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
 		$clean['syndicators']['bluesky']['import_enabled']   = ! empty( $input['syndicators']['bluesky']['import_enabled'] );
 
+		// — Pixelfed ——————————————————————————————————————————————————————————————
+		$clean['syndicators']['pixelfed']['enabled']      = ! empty( $input['syndicators']['pixelfed']['enabled'] );
+		$clean['syndicators']['pixelfed']['instance']     = esc_url_raw( $input['syndicators']['pixelfed']['instance'] ?? '' );
+		$clean['syndicators']['pixelfed']['access_token'] = sanitize_text_field( $input['syndicators']['pixelfed']['access_token'] ?? '' );
+		$clean['syndicators']['pixelfed']['post_status']     = in_array( $input['syndicators']['pixelfed']['post_status'] ?? '', $valid_statuses, true )
+			? $input['syndicators']['pixelfed']['post_status']
+			: 'publish';
+		$clean['syndicators']['pixelfed']['post_format']     = sanitize_key( $input['syndicators']['pixelfed']['post_format'] ?? 'status' );
+		$clean['syndicators']['pixelfed']['post_category']   = sanitize_text_field( $input['syndicators']['pixelfed']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['pixelfed']['post_tags']       = sanitize_text_field( $input['syndicators']['pixelfed']['post_tags'] ?? '' );
+		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
+		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
+
 		return $clean;
 	}
 
@@ -275,6 +317,10 @@ class Settings {
 
 				<div id="nop-tab-bluesky" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_bluesky(); ?>
+				</div>
+
+				<div id="nop-tab-pixelfed" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_pixelfed(); ?>
 				</div>
 
 				<div class="nop-settings-footer">
@@ -373,6 +419,7 @@ class Settings {
 			'entries'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries']['enabled'] ?? true ),
 			'mastodon' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon']['enabled'] ?? false ),
 			'bluesky'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky']['enabled'] ?? false ),
+			'pixelfed' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed']['enabled'] ?? false ),
 			default    => true,
 		};
 	}
@@ -880,6 +927,81 @@ class Settings {
 				<td>
 					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'bluesky', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_bluesky' ) ); ?>"
 					   class="button">Import from Bluesky now</a>
+				</td>
+			</tr>
+			<?php endif; ?>
+		</table>
+		<?php
+	}
+
+	private function render_tab_pixelfed(): void {
+		$prefix   = self::OPTION_KEY . '[syndicators][pixelfed]';
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed'] ?? [];
+		?>
+		<p>Syndicates posts to your Pixelfed account when you publish. Pixelfed uses the same API as Mastodon — create an access token from your instance's developer settings.</p>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Enable</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						       <?php checked( $settings['enabled'] ?? false ); ?>>
+						Syndicate posts to Pixelfed on publish
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="pixelfed-instance">Instance URL</label></th>
+				<td>
+					<input type="url" id="pixelfed-instance" name="<?php echo "{$prefix}[instance]"; ?>"
+					       value="<?php echo esc_attr( $settings['instance'] ?? '' ); ?>"
+					       class="regular-text" placeholder="https://pixelfed.social">
+					<p class="description">Your Pixelfed instance URL (e.g. https://pixelfed.social).</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="pixelfed-token">Access Token</label></th>
+				<td>
+					<input type="password" id="pixelfed-token" name="<?php echo "{$prefix}[access_token]"; ?>"
+					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
+					       class="regular-text" autocomplete="off">
+					<p class="description">From your Pixelfed instance: Settings → Applications → Create App. Needs <code>read write</code> scopes.</p>
+				</td>
+			</tr>
+		</table>
+
+		<?php if ( ! empty( $settings['access_token'] ) && ! empty( $settings['instance'] ) ) : ?>
+		<p>
+			<button type="button" class="button nop-test-connection" data-service="pixelfed"
+			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
+				Test connection
+			</button>
+			<span class="nop-test-result" style="margin-left:8px;"></span>
+		</p>
+		<?php endif; ?>
+
+		<?php $this->render_inbound_defaults( 'pixelfed', $prefix, $settings ); ?>
+
+		<h3 class="nop-section-heading">Import</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Import posts</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
+						Automatically import your Pixelfed posts as WordPress entries (hourly)
+					</label>
+					<p class="description">Replies and boosts are excluded. Posts already published from WordPress are skipped.</p>
+				</td>
+			</tr>
+			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
+			<tr>
+				<th scope="row">Sync now</th>
+				<td>
+					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'pixelfed', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_pixelfed' ) ); ?>"
+					   class="button">Import from Pixelfed now</a>
 				</td>
 			</tr>
 			<?php endif; ?>

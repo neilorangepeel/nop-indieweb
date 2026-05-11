@@ -12,6 +12,7 @@ class Syndication_Manager {
 		$this->syndicators = apply_filters( 'nop_indieweb_register_syndicators', [
 			new Syndicator_Mastodon(),
 			new Syndicator_Bluesky(),
+			new Syndicator_Pixelfed(),
 		] );
 	}
 

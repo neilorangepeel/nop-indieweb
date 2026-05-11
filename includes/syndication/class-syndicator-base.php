@@ -65,4 +65,76 @@ abstract class Syndicator_Base {
 
 		return $text . $url_part;
 	}
+
+	/**
+	 * Uploads the post's featured image to a Mastodon-compatible /api/v2/media endpoint.
+	 * Returns the media attachment ID string, or null if no thumbnail or upload fails.
+	 */
+	protected function upload_featured_image( int $post_id, string $instance, string $token ): ?string {
+		$thumbnail_id = get_post_thumbnail_id( $post_id );
+		if ( ! $thumbnail_id ) {
+			return null;
+		}
+
+		$image = wp_get_attachment_image_src( $thumbnail_id, 'large' );
+		if ( ! $image ) {
+			return null;
+		}
+
+		$file_data = $this->fetch_image( $image[0] );
+		if ( ! $file_data ) {
+			return null;
+		}
+
+		$boundary = wp_generate_password( 24, false );
+		$body     = "--{$boundary}\r\n"
+			. "Content-Disposition: form-data; name=\"file\"; filename=\"image\"\r\n"
+			. "Content-Type: {$file_data['mime']}\r\n\r\n"
+			. $file_data['data'] . "\r\n"
+			. "--{$boundary}--";
+
+		$response = wp_remote_post(
+			rtrim( $instance, '/' ) . '/api/v2/media',
+			[
+				'headers' => [
+					'Authorization' => 'Bearer ' . $token,
+					'Content-Type'  => "multipart/form-data; boundary={$boundary}",
+				],
+				'body'    => $body,
+				'timeout' => 30,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return null;
+		}
+
+		$code   = wp_remote_retrieve_response_code( $response );
+		$result = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		// 200 = ready immediately, 202 = processing (still usable for the status).
+		if ( in_array( $code, [ 200, 202 ], true ) && isset( $result['id'] ) ) {
+			return (string) $result['id'];
+		}
+
+		return null;
+	}
+
+	protected function fetch_image( string $url ): ?array {
+		$response = wp_remote_get( $url, [ 'timeout' => 15 ] );
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return null;
+		}
+
+		$mime = strtok( wp_remote_retrieve_header( $response, 'content-type' ), ';' );
+
+		if ( ! in_array( $mime, [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ], true ) ) {
+			return null;
+		}
+
+		return [
+			'mime' => $mime,
+			'data' => wp_remote_retrieve_body( $response ),
+		];
+	}
 }

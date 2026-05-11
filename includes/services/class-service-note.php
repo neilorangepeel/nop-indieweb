@@ -164,9 +164,14 @@ class Note extends Service_Base {
 			return 'bluesky';
 		}
 
-		$instance = rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' ), '/' );
-		if ( $instance && str_starts_with( $source_url, $instance ) ) {
+		$mastodon_instance = rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' ), '/' );
+		if ( $mastodon_instance && str_starts_with( $source_url, $mastodon_instance ) ) {
 			return 'mastodon';
+		}
+
+		$pixelfed_instance = rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.instance', '' ), '/' );
+		if ( $pixelfed_instance && str_starts_with( $source_url, $pixelfed_instance ) ) {
+			return 'pixelfed';
 		}
 
 		return 'entries';
@@ -178,7 +183,7 @@ class Note extends Service_Base {
 	 * anything else falls back to the Entries service settings.
 	 */
 	private function get_inbound_settings( string $platform ): array {
-		if ( in_array( $platform, [ 'mastodon', 'bluesky' ], true ) ) {
+		if ( in_array( $platform, [ 'mastodon', 'bluesky', 'pixelfed' ], true ) ) {
 			return \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
 		}
 		return $this->get_settings();

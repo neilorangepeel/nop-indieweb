@@ -265,6 +265,11 @@ HTML,
 			$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
 		}
 
+		$pixelfed_url = (string) get_option( 'nop_indieweb_pixelfed_profile_url', '' );
+		if ( $pixelfed_url ) {
+			$urls[] = $pixelfed_url;
+		}
+
 		return $urls;
 	}
 }

@@ -43,6 +43,7 @@ class Feed_Importer {
 	public function run(): void {
 		$this->import_mastodon();
 		$this->import_bluesky();
+		$this->import_pixelfed();
 	}
 
 	// ── Manual sync ────────────────────────────────────────────────────────────
@@ -63,6 +64,8 @@ class Feed_Importer {
 			$this->import_mastodon();
 		} elseif ( 'bluesky' === $platform ) {
 			$this->import_bluesky();
+		} elseif ( 'pixelfed' === $platform ) {
+			$this->import_pixelfed();
 		} else {
 			$this->run();
 		}
@@ -158,6 +161,57 @@ class Feed_Importer {
 				'photo'       => $photos,
 			],
 		];
+	}
+
+	// ── Pixelfed ────────────────────────────────────────────────────────────────
+
+	private function import_pixelfed(): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed'] ?? [];
+		if ( empty( $settings['import_enabled'] ) ) {
+			return;
+		}
+
+		$instance = rtrim( (string) ( $settings['instance'] ?? '' ), '/' );
+		$token    = (string) ( $settings['access_token'] ?? '' );
+		if ( ! $instance || ! $token ) {
+			return;
+		}
+
+		$me = $this->api_get( "{$instance}/api/v1/accounts/verify_credentials", $token );
+		if ( ! is_array( $me ) || empty( $me['id'] ) ) {
+			return;
+		}
+
+		if ( ! empty( $me['url'] ) ) {
+			update_option( 'nop_indieweb_pixelfed_profile_url', esc_url_raw( $me['url'] ) );
+		}
+
+		$last_id = (string) get_option( 'nop_indieweb_pixelfed_import_last_id', '' );
+		$params  = array_filter( [
+			'limit'           => 40,
+			'since_id'        => $last_id,
+			'exclude_reblogs' => 'true',
+		] );
+
+		$statuses = $this->api_get( "{$instance}/api/v1/accounts/{$me['id']}/statuses?" . http_build_query( $params ), $token );
+
+		if ( ! is_array( $statuses ) || empty( $statuses ) ) {
+			return;
+		}
+
+		foreach ( array_reverse( $statuses ) as $status ) {
+			if ( ! empty( $status['in_reply_to_id'] ) ) {
+				continue;
+			}
+
+			$url = $status['url'] ?? '';
+			if ( ! $url || $this->was_syndicated_from_wordpress( $url ) ) {
+				continue;
+			}
+
+			$this->note->handle( $this->mastodon_to_payload( $status ) );
+			update_option( 'nop_indieweb_pixelfed_import_last_id', $status['id'] );
+		}
 	}
 
 	// ── Bluesky ─────────────────────────────────────────────────────────────────

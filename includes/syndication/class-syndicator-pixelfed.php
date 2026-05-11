@@ -3,17 +3,17 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Syndication;
 
-class Syndicator_Mastodon extends Syndicator_Base {
+class Syndicator_Pixelfed extends Syndicator_Base {
 
-	public function slug(): string  { return 'mastodon'; }
-	public function label(): string { return 'Mastodon'; }
+	public function slug(): string  { return 'pixelfed'; }
+	public function label(): string { return 'Pixelfed'; }
 
 	private function instance(): string {
-		return rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' ), '/' );
+		return rtrim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.instance', '' ), '/' );
 	}
 
 	private function access_token(): string {
-		return (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.access_token', '' );
+		return (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.access_token', '' );
 	}
 
 	protected function is_configured(): bool {
@@ -26,7 +26,7 @@ class Syndicator_Mastodon extends Syndicator_Base {
 	}
 
 	protected function do_syndicate( int $post_id ): ?string {
-		$status = $this->build_status_text( $post_id, 500 );
+		$status = $this->build_status_text( $post_id, 2000 );
 		$body   = [ 'status' => $status ];
 
 		$media_id = $this->upload_featured_image( $post_id, $this->instance(), $this->access_token() );
