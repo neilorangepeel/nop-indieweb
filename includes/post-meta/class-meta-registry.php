@@ -59,7 +59,11 @@ class Registry {
 			// ── Service provenance ───────────────────────────────────────────────
 			'nop_indieweb_service'          => array_merge( $string, [
 				'label'       => __( 'Service', 'nop-indieweb' ),
-				'description' => 'Source service slug (e.g. swarm).',
+				'description' => 'Source service slug (e.g. swarm, entries).',
+			] ),
+			'nop_indieweb_platform'         => array_merge( $string, [
+				'label'       => __( 'Platform', 'nop-indieweb' ),
+				'description' => 'Source social platform slug (mastodon, bluesky, entries).',
 			] ),
 
 			// ── Venue identity ───────────────────────────────────────────────────

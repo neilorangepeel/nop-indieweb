@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/post-source",
+	"title": "Post Source",
+	"description": "Displays the originating platform and source URL for an imported social post, plus any outbound syndication links.",
+	"category": "theme",
+	"icon": "share-alt",
+	"editorScript": "file:./editor.js",
+	"style": "file:./style.css",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"spacing": { "margin": true }
+	}
+}

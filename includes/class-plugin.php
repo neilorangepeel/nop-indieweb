@@ -157,11 +157,18 @@ class Plugin {
 			'description' => __( 'Displays a checkin post with venue, map, and syndication metadata. Themes can override this template.', 'nop-indieweb' ),
 			'content'     => file_get_contents( $dir . 'single-post-format-status-checkin.html' ),
 		] );
+
+		register_block_template( 'nop-indieweb//single-post-format-status-note', [
+			'title'       => __( 'Single – Status: Note', 'nop-indieweb' ),
+			'description' => __( 'Displays an imported social post (Mastodon, Bluesky) with platform attribution and source link.', 'nop-indieweb' ),
+			'content'     => file_get_contents( $dir . 'single-post-format-status-note.html' ),
+		] );
 	}
 
 	public function register_blocks(): void {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
 	}
 
 	public function register_patterns(): void {

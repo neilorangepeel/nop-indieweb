@@ -1,0 +1,28 @@
+.nop-post-source {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem 1rem;
+	font-size: var(--wp--preset--font-size--small, 0.875rem);
+	color: var(--wp--preset--color--accent-5, #6b7280);
+}
+
+.nop-post-source__item {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.nop-post-source__label {
+	color: var(--wp--preset--color--accent-5, #6b7280);
+}
+
+.nop-post-source__link {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.nop-post-source__link:hover {
+	color: var(--wp--preset--color--contrast, #111);
+}

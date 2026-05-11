@@ -113,6 +113,7 @@ class Note extends Service_Base {
 	public function get_meta( array $parsed ): array {
 		return [
 			'nop_indieweb_post_kind'   => 'note',
+			'nop_indieweb_platform'    => $parsed['platform'],
 			'nop_indieweb_source_url'  => $parsed['source_url'],
 			'nop_indieweb_syndication' => $parsed['syndication'],
 			'nop_indieweb_photos'      => $parsed['photos'],
