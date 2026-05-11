@@ -24,9 +24,10 @@ class Settings {
 
 	private const TAB_GROUPS = [
 		'Site' => [
-			'general'   => 'General',
-			'indieauth' => 'IndieAuth',
-			'semantic'  => 'Microformats',
+			'general'      => 'General',
+			'indieauth'    => 'IndieAuth',
+			'semantic'     => 'Microformats',
+			'webmentions'  => 'Webmentions',
 		],
 		'Services' => [
 			'entries'     => 'Entries',
@@ -259,6 +260,14 @@ class Settings {
 		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
 		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
 
+		// — Webmentions ——————————————————————————————————————————————————————————
+		$valid_approval = [ 'bridgy_only', 'auto_all', 'manual_all' ];
+
+		$clean['webmentions']['receive_enabled'] = ! empty( $input['webmentions']['receive_enabled'] );
+		$clean['webmentions']['approval']        = in_array( $input['webmentions']['approval'] ?? '', $valid_approval, true )
+			? $input['webmentions']['approval']
+			: 'bridgy_only';
+
 		// — Letterboxd ————————————————————————————————————————————————————————————
 		$clean['services']['letterboxd']['import_enabled']  = ! empty( $input['services']['letterboxd']['import_enabled'] );
 		$clean['services']['letterboxd']['username']        = sanitize_text_field( $input['services']['letterboxd']['username'] ?? '' );
@@ -336,6 +345,10 @@ class Settings {
 
 				<div id="nop-tab-letterboxd" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_letterboxd(); ?>
+				</div>
+
+				<div id="nop-tab-webmentions" class="nop-tab-panel" hidden>
+					<?php $this->render_tab_webmentions(); ?>
 				</div>
 
 				<div class="nop-settings-footer">
@@ -1130,6 +1143,55 @@ class Settings {
 						       <?php checked( $settings['sideload_poster'] ?? true ); ?>>
 						Save film poster to your media library and set as featured image
 					</label>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	// ——— Tab: Webmentions ———————————————————————————————————————————————————
+
+	private function render_tab_webmentions(): void {
+		$settings        = \NOP\IndieWeb\nop_indieweb_get_option( 'webmentions', [] );
+		$prefix          = self::OPTION_KEY . '[webmentions]';
+		$receive_enabled = $settings['receive_enabled'] ?? true;
+		$approval        = $settings['approval'] ?? 'bridgy_only';
+		$endpoint_url    = esc_url( rest_url( 'nop-indieweb/v1/webmention' ) );
+		?>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Endpoint</th>
+				<td>
+					<div class="nop-url-copy-row">
+						<code class="nop-url-display">
+							<a href="<?php echo $endpoint_url; ?>" target="_blank" rel="noopener"><?php echo $endpoint_url; ?></a>
+						</code>
+						<button type="button" class="button button-secondary nop-copy-btn"
+						        data-copy="<?php echo esc_attr( $endpoint_url ); ?>">Copy</button>
+					</div>
+					<p class="description">Advertised via <code>&lt;link rel="webmention"&gt;</code> and <code>Link</code> header on every page.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Receive</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[receive_enabled]"; ?>" value="1"
+						       <?php checked( $receive_enabled ); ?>>
+						Accept incoming webmentions
+					</label>
+					<p class="description">Uncheck to stop accepting new webmentions. Existing ones are kept.</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="nop-webmention-approval">Approval</label></th>
+				<td>
+					<select id="nop-webmention-approval" name="<?php echo "{$prefix}[approval]"; ?>">
+						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>>Auto-approve Bridgy, hold everything else</option>
+						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>>Auto-approve all</option>
+						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>>Hold all for manual review</option>
+					</select>
+					<p class="description">Held webmentions appear in <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) ); ?>">Comments → Webmentions</a> awaiting approval.</p>
 				</td>
 			</tr>
 		</table>

@@ -26,8 +26,8 @@ namespace NOP\IndieWeb\Webmention;
  *   webmention_author_photo — avatar URL from the source mf2
  *   webmention_original_url — canonical post URL on the originating platform
  *
- * Webmentions from brid.gy are auto-approved; all others are held for
- * moderation (comment_approved = 0) so the site owner can review them first.
+ * Approval strategy is configurable via Settings → IndieWeb → Webmentions:
+ * bridgy_only (default), auto_all, or manual_all.
  */
 class Webmention_Endpoint {
 
@@ -62,6 +62,11 @@ class Webmention_Endpoint {
 	}
 
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$receive_enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'webmentions', [] )['receive_enabled'] ?? true;
+		if ( ! $receive_enabled ) {
+			return new \WP_Error( 'webmentions_disabled', 'Webmentions are not accepted.', [ 'status' => 403 ] );
+		}
+
 		$source = $request->get_param( 'source' );
 		$target = $request->get_param( 'target' );
 
@@ -164,8 +169,12 @@ class Webmention_Endpoint {
 	}
 
 	private function insert_webmention( int $post_id, string $source, string $target, array $parsed ): int|\WP_Error {
-		// Auto-approve Bridgy; hold everything else for manual review.
-		$approved = str_contains( $source, 'brid.gy' ) ? 1 : 0;
+		$approval = \NOP\IndieWeb\nop_indieweb_get_option( 'webmentions', [] )['approval'] ?? 'bridgy_only';
+		$approved = match( $approval ) {
+			'auto_all'   => 1,
+			'manual_all' => 0,
+			default      => str_contains( $source, 'brid.gy' ) ? 1 : 0,
+		};
 
 		$comment_id = wp_insert_comment( wp_slash( [
 			'comment_post_ID'      => $post_id,
