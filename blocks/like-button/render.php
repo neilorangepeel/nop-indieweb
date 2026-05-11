@@ -46,7 +46,9 @@ $wrapper = get_block_wrapper_attributes( [
 		<?php echo nop_like_button_icon(); ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
-	<span class="nop-like-button__count" <?php echo 0 === $count ? 'hidden' : ''; ?>>
+	<span class="nop-like-button__count"
+	      aria-label="<?php echo esc_attr( $count . ' likes' ); ?>"
+	      <?php echo 0 === $count ? 'hidden' : ''; ?>>
 		<?php echo esc_html( (string) $count ); ?>
 	</span>
 </div>

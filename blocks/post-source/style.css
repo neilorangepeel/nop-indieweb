@@ -4,7 +4,7 @@
 	align-items: center;
 	gap: 0.25rem 1rem;
 	font-size: var(--wp--preset--font-size--small, 0.875rem);
-	color: var(--wp--preset--color--accent-5, #6b7280);
+	color: var(--wp--preset--color--accent-4, #6b7280);
 }
 
 .nop-post-source__item {
@@ -14,7 +14,7 @@
 }
 
 .nop-post-source__label {
-	color: var(--wp--preset--color--accent-5, #6b7280);
+	color: var(--wp--preset--color--accent-4, #6b7280);
 }
 
 .nop-post-source__link {

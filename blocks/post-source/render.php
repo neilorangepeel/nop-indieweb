@@ -55,7 +55,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 		<span class="nop-post-source__label">Originally posted on</span>
 		<a class="nop-post-source__link u-syndication"
 		   href="<?php echo esc_url( $source_url ); ?>"
-		   target="_blank" rel="noopener me">
+		   target="_blank" rel="noopener noreferrer me">
 			<?php echo esc_html( $platform_labels[ $platform ] ?? ucfirst( $platform ) ); ?>
 		</a>
 	</span>
@@ -68,7 +68,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 			<?php if ( $i > 0 ) : ?><span class="nop-post-source__sep">,</span><?php endif; ?>
 			<a class="nop-post-source__link u-syndication"
 			   href="<?php echo esc_url( $url ); ?>"
-			   target="_blank" rel="noopener me">
+			   target="_blank" rel="noopener noreferrer me">
 				<?php echo esc_html( wp_parse_url( $url, PHP_URL_HOST ) ?? $url ); ?>
 			</a>
 		<?php endforeach; ?>

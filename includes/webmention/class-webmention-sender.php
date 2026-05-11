@@ -16,6 +16,12 @@ class Webmention_Sender {
 	public function register(): void {
 		add_action( 'transition_post_status', [ $this, 'maybe_schedule' ], 10, 3 );
 		add_action( 'nop_indieweb_send_webmentions', [ $this, 'send_for_post' ] );
+
+		// When a visitor replies to a webmention via the comment form, ping the
+		// original source URL so the author is notified on their platform.
+		add_action( 'comment_post', [ $this, 'maybe_ping_webmention_source' ], 10, 2 );
+		add_action( 'transition_comment_status', [ $this, 'maybe_ping_on_approval' ], 10, 3 );
+		add_action( 'nop_indieweb_send_reply_webmention', [ $this, 'send_reply_webmention' ], 10, 2 );
 	}
 
 	public function maybe_schedule( string $new_status, string $old_status, \WP_Post $post ): void {
@@ -181,6 +187,48 @@ class Webmention_Sender {
 		}
 		$path = rtrim( dirname( $parts['path'] ?? '/' ), '/' );
 		return "{$scheme}://{$host}{$path}/{$url}";
+	}
+
+	public function maybe_ping_webmention_source( int $comment_id, int|string $approved ): void {
+		if ( 1 !== (int) $approved ) {
+			return;
+		}
+		$this->ping_source_for_comment( $comment_id );
+	}
+
+	public function maybe_ping_on_approval( string $new_status, string $old_status, \WP_Comment $comment ): void {
+		if ( 'approved' !== $new_status || 'approved' === $old_status ) {
+			return;
+		}
+		$this->ping_source_for_comment( (int) $comment->comment_ID );
+	}
+
+	private function ping_source_for_comment( int $comment_id ): void {
+		$comment = get_comment( $comment_id );
+		if ( ! $comment || 'comment' !== $comment->comment_type ) {
+			return;
+		}
+		$parent_id = (int) $comment->comment_parent;
+		if ( ! $parent_id ) {
+			return;
+		}
+		$parent = get_comment( $parent_id );
+		if ( ! $parent || 'webmention' !== $parent->comment_type ) {
+			return;
+		}
+		$source_url = (string) get_comment_meta( $parent_id, 'webmention_source', true );
+		if ( ! $source_url ) {
+			return;
+		}
+		wp_schedule_single_event( time(), 'nop_indieweb_send_reply_webmention', [ (int) $comment->comment_post_ID, $source_url ] );
+	}
+
+	public function send_reply_webmention( int $post_id, string $target_url ): void {
+		$source   = get_permalink( $post_id );
+		$endpoint = $this->discover_endpoint( $target_url );
+		if ( $endpoint ) {
+			$this->send( $source, $target_url, $endpoint );
+		}
 	}
 
 	private function send( string $source, string $target, string $endpoint ): int {

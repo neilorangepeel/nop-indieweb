@@ -84,6 +84,12 @@
 	text-underline-offset: 2px;
 }
 
+.nop-film-card__title a:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+	border-radius:  2px;
+}
+
 .nop-film-card__rewatch {
 	font-size:   0.75em;
 	opacity:     0.45;
@@ -102,4 +108,14 @@
 
 .nop-film-card--placeholder {
 	opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nop-film-card__poster {
+		transition: none;
+	}
+
+	.nop-film-card:hover .nop-film-card__poster {
+		transform: none;
+	}
 }

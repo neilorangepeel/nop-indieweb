@@ -98,7 +98,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 		<p class="nop-film-card__title">
 			<a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $post_title ); ?></a>
 			<?php if ( $rewatch ) : ?>
-			<span class="nop-film-card__rewatch" title="Rewatch">↩</span>
+			<span class="nop-film-card__rewatch" aria-label="(rewatch)">↩</span>
 			<?php endif; ?>
 		</p>
 

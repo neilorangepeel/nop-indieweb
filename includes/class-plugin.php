@@ -30,6 +30,7 @@ use NOP\IndieWeb\Importer\Feed_Importer;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
+use NOP\IndieWeb\Webmention\Social_Backfeed;
 
 /**
  * Bootstraps the plugin. Single entry point — everything is wired here.
@@ -76,6 +77,7 @@ class Plugin {
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
 		( new Like_Endpoint() )->register();
+		( new Social_Backfeed() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
 		( new MF2_Endpoint() )->register();
@@ -101,6 +103,44 @@ class Plugin {
 		// get_single_template() doesn't include single-post-format-{format} by default,
 		// so block templates with that slug are never matched during real requests.
 		add_filter( 'single_template_hierarchy', [ $this, 'inject_post_format_template' ] );
+
+		// Keep webmentions out of the standard WordPress comments block.
+		// The webmentions block fetches them explicitly with type='webmention',
+		// so it is unaffected. Every other query (comment-template, comment counts,
+		// feeds) will silently exclude them — matching the established IndieWeb pattern
+		// used by the WordPress Webmention plugin and Semantic Linkbacks.
+		add_filter( 'pre_get_comments', [ $this, 'exclude_webmentions_from_default_query' ] );
+		add_filter( 'get_comments_number', [ $this, 'exclude_webmentions_from_count' ], 10, 2 );
+	}
+
+	public function exclude_webmentions_from_default_query( \WP_Comment_Query $query ): void {
+		// Leave admin screens and explicit REST queries alone.
+		if ( is_admin() ) {
+			return;
+		}
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return;
+		}
+		// If the caller already asked for a specific type, respect that.
+		if ( ! empty( $query->query_vars['type'] ) ) {
+			return;
+		}
+		$not_in = (array) ( $query->query_vars['type__not_in'] ?? [] );
+		if ( ! in_array( 'webmention', $not_in, true ) ) {
+			$query->query_vars['type__not_in'] = array_merge( $not_in, [ 'webmention' ] );
+		}
+	}
+
+	public function exclude_webmentions_from_count( int|string $count, int $post_id ): int {
+		if ( is_admin() ) {
+			return (int) $count;
+		}
+		return (int) get_comments( [
+			'post_id'      => $post_id,
+			'type__not_in' => [ 'webmention' ],
+			'status'       => 'approve',
+			'count'        => true,
+		] );
 	}
 
 	public function ensure_post_format_support(): void {

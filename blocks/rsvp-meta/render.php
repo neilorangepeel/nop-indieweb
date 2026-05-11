@@ -17,10 +17,10 @@ $rsvp_labels = [
 ];
 
 $rsvp_colors = [
-	'yes'        => '#16a34a',
-	'maybe'      => '#d97706',
-	'interested' => '#2563eb',
-	'no'         => '#dc2626',
+	'yes'        => '#15803d', // green-700 — 4.6:1 on white
+	'maybe'      => '#92400e', // amber-800 — 5.1:1 on white (d97706 fails AA)
+	'interested' => '#1d4ed8', // blue-700  — 5.0:1 on white
+	'no'         => '#b91c1c', // red-700   — 5.0:1 on white
 ];
 
 if ( ! $post_id ) {
@@ -67,7 +67,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 		Event:
 		<a href="<?php echo esc_url( $event_url ); ?>"
 		   target="_blank"
-		   rel="noopener">
+		   rel="noopener noreferrer">
 			<?php echo esc_html( $event_host ); ?>
 		</a>
 	</p>

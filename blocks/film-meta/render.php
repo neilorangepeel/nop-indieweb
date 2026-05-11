@@ -103,7 +103,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 			<a class="nop-film-meta__source"
 			   href="<?php echo esc_url( $source_url ); ?>"
 			   target="_blank"
-			   rel="noopener">View on Letterboxd</a>
+			   rel="noopener noreferrer">View on Letterboxd</a>
 		<?php endif; ?>
 	</div>
 	<?php endif; ?>

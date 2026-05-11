@@ -119,7 +119,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 	<?php // ── Venue URL (Foursquare / Swarm link) ──────────────────────────── ?>
 	<?php if ( $venue_url ) : ?>
 	<p class="nop-checkin-venue-link">
-		<a href="<?php echo esc_url( $venue_url ); ?>" target="_blank" rel="noopener">
+		<a href="<?php echo esc_url( $venue_url ); ?>" target="_blank" rel="noopener noreferrer">
 			View on <?php echo esc_html( wp_parse_url( $venue_url, PHP_URL_HOST ) ?? 'Foursquare' ); ?>
 		</a>
 	</p>
@@ -128,7 +128,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 	<?php // ── Map link with hidden mf2 geo ──────────────────────────────────── ?>
 	<?php if ( $map_url ) : ?>
 	<p class="nop-checkin-map">
-		<a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener">
+		<a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer">
 			View on OpenStreetMap
 		</a>
 		<data class="p-latitude" value="<?php echo esc_attr( $lat ); ?>"></data>

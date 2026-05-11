@@ -9,9 +9,22 @@
 			return;
 		}
 
+		// Live region announces async state changes to screen readers.
+		var statusEl = document.createElement( 'span' );
+		statusEl.className = 'screen-reader-text';
+		statusEl.setAttribute( 'role', 'status' );
+		statusEl.setAttribute( 'aria-live', 'polite' );
+		el.appendChild( statusEl );
+
+		// Clean up animation class once it finishes so it can replay if needed.
+		btn.addEventListener( 'animationend', function () {
+			btn.classList.remove( 'is-animating' );
+		} );
+
 		btn.addEventListener( 'click', function () {
 			btn.disabled = true;
 			btn.classList.add( 'is-animating' );
+			statusEl.textContent = '';
 
 			fetch( el.dataset.endpoint, {
 				method: 'POST',
@@ -29,13 +42,14 @@
 
 					if ( typeof data.count === 'number' ) {
 						countEl.textContent = data.count;
-						countEl.hidden      = data.count === 0;
+						countEl.setAttribute( 'aria-label', data.count + ' likes' );
+						countEl.hidden = data.count === 0;
 					}
 				} )
 				.catch( function () {
-					// Restore on network failure so the visitor can try again.
 					btn.disabled = false;
 					btn.classList.remove( 'is-animating' );
+					statusEl.textContent = 'Could not save like. Please try again.';
 				} );
 		} );
 	} );

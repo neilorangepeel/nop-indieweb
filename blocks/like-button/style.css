@@ -28,6 +28,11 @@
 	color: hsl( 340 80% 50% );
 }
 
+.nop-like-button__btn:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+}
+
 /* ── Liked state ────────────────────────────────────────────────────────── */
 
 .nop-like-button.is-liked .nop-like-button__btn,
@@ -68,4 +73,15 @@
 
 .nop-like-button__btn.is-animating .nop-like-button__icon {
 	animation: nop-like-pop 350ms ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nop-like-button__btn,
+	.nop-like-button__icon {
+		transition: none;
+	}
+
+	.nop-like-button__btn.is-animating .nop-like-button__icon {
+		animation: none;
+	}
 }
