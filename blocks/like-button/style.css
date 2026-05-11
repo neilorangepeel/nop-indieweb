@@ -1,0 +1,71 @@
+.nop-like-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* ── Button ─────────────────────────────────────────────────────────────── */
+
+.nop-like-button__btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.875rem 0.375rem 0.75rem;
+	background: none;
+	border: 1px solid var(--wp--preset--color--accent-6, #d1d5db);
+	border-radius: 2rem;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: inherit;
+	line-height: 1;
+	transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.nop-like-button__btn:hover:not( :disabled ) {
+	border-color: hsl( 340 80% 60% );
+	color: hsl( 340 80% 50% );
+}
+
+/* ── Liked state ────────────────────────────────────────────────────────── */
+
+.nop-like-button.is-liked .nop-like-button__btn,
+.nop-like-button__btn[aria-pressed="true"] {
+	border-color: hsl( 340 80% 60% );
+	color: hsl( 340 80% 50% );
+	cursor: default;
+}
+
+.nop-like-button.is-liked .nop-like-button__icon {
+	fill: hsl( 340 80% 60% );
+	stroke: hsl( 340 80% 60% );
+}
+
+/* ── Icon ───────────────────────────────────────────────────────────────── */
+
+.nop-like-button__icon {
+	flex-shrink: 0;
+	transition: fill 150ms ease, stroke 150ms ease, transform 200ms ease;
+}
+
+/* ── Count ──────────────────────────────────────────────────────────────── */
+
+.nop-like-button__count {
+	font-size: 0.875rem;
+	font-variant-numeric: tabular-nums;
+	color: var(--wp--preset--color--accent-6, #6b7280);
+}
+
+/* ── Heart pop animation ─────────────────────────────────────────────────── */
+
+@keyframes nop-like-pop {
+	0%   { transform: scale( 1 ); }
+	40%  { transform: scale( 1.35 ); }
+	70%  { transform: scale( 0.9 ); }
+	100% { transform: scale( 1 ); }
+}
+
+.nop-like-button__btn.is-animating .nop-like-button__icon {
+	animation: nop-like-pop 350ms ease forwards;
+}

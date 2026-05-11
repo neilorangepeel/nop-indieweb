@@ -29,6 +29,7 @@ use NOP\IndieWeb\Syndication\Syndication_Manager;
 use NOP\IndieWeb\Importer\Feed_Importer;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Sender;
+use NOP\IndieWeb\Webmention\Like_Endpoint;
 
 /**
  * Bootstraps the plugin. Single entry point — everything is wired here.
@@ -74,6 +75,7 @@ class Plugin {
 		( new Token_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
+		( new Like_Endpoint() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
 		( new MF2_Endpoint() )->register();
@@ -283,6 +285,7 @@ class Plugin {
 	public function register_blocks(): void {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );

@@ -63,6 +63,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/importer/class-feed-importer.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-mf2-parser.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-sender.php';
+require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 // Create the tokens table on activation and on every load if the schema is stale.
