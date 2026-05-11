@@ -35,6 +35,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/micropub/class-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-swarm.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-note.php';
+require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-letterboxd.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';

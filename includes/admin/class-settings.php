@@ -29,11 +29,12 @@ class Settings {
 			'semantic'  => 'Microformats',
 		],
 		'Services' => [
-			'entries'  => 'Entries',
-			'swarm'    => 'Swarm',
-			'mastodon' => 'Mastodon',
-			'bluesky'  => 'Bluesky',
-			'pixelfed' => 'Pixelfed',
+			'entries'     => 'Entries',
+			'swarm'       => 'Swarm',
+			'mastodon'    => 'Mastodon',
+			'bluesky'     => 'Bluesky',
+			'pixelfed'    => 'Pixelfed',
+			'letterboxd'  => 'Letterboxd',
 		],
 	];
 
@@ -258,6 +259,16 @@ class Settings {
 		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
 		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
 
+		// — Letterboxd ————————————————————————————————————————————————————————————
+		$clean['services']['letterboxd']['import_enabled']  = ! empty( $input['services']['letterboxd']['import_enabled'] );
+		$clean['services']['letterboxd']['username']        = sanitize_text_field( $input['services']['letterboxd']['username'] ?? '' );
+		$clean['services']['letterboxd']['post_status']     = in_array( $input['services']['letterboxd']['post_status'] ?? '', $valid_statuses, true )
+			? $input['services']['letterboxd']['post_status']
+			: 'publish';
+		$clean['services']['letterboxd']['post_category']   = sanitize_text_field( $input['services']['letterboxd']['post_category'] ?? 'Films' );
+		$clean['services']['letterboxd']['post_tags']       = sanitize_text_field( $input['services']['letterboxd']['post_tags'] ?? '' );
+		$clean['services']['letterboxd']['sideload_poster'] = ! empty( $input['services']['letterboxd']['sideload_poster'] );
+
 		return $clean;
 	}
 
@@ -419,8 +430,9 @@ class Settings {
 			'entries'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries']['enabled'] ?? true ),
 			'mastodon' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon']['enabled'] ?? false ),
 			'bluesky'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky']['enabled'] ?? false ),
-			'pixelfed' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed']['enabled'] ?? false ),
-			default    => true,
+			'pixelfed'   => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed']['enabled'] ?? false ),
+			'letterboxd' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd']['import_enabled'] ?? false ),
+			default      => true,
 		};
 	}
 
@@ -1005,6 +1017,117 @@ class Settings {
 				</td>
 			</tr>
 			<?php endif; ?>
+		</table>
+		<?php
+	}
+
+	private function render_tab_letterboxd(): void {
+		$prefix   = self::OPTION_KEY . '[services][letterboxd]';
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd'] ?? [];
+		$formats  = $this->get_formats();
+
+		$username = $settings['username'] ?? '';
+		?>
+		<p>Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.</p>
+
+		<h3 class="nop-section-heading">Import</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Import posts</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
+						Automatically import your Letterboxd diary as WordPress posts (hourly)
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="letterboxd-username">Username</label></th>
+				<td>
+					<input type="text" id="letterboxd-username" name="<?php echo "{$prefix}[username]"; ?>"
+					       value="<?php echo esc_attr( $username ); ?>"
+					       class="regular-text" placeholder="your-letterboxd-username">
+					<?php if ( $username ) : ?>
+					<p class="description">
+						Feed: <a href="https://letterboxd.com/<?php echo esc_attr( $username ); ?>/rss/" target="_blank" rel="noopener">
+							letterboxd.com/<?php echo esc_html( $username ); ?>/rss/
+						</a>
+					</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
+			<tr>
+				<th scope="row">Sync now</th>
+				<td>
+					<a href="<?php echo esc_url( wp_nonce_url(
+						add_query_arg( 'nop_indieweb_sync', 'letterboxd', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ),
+						'nop_indieweb_sync_letterboxd'
+					) ); ?>" class="button">Import from Letterboxd now</a>
+				</td>
+			</tr>
+			<?php endif; ?>
+		</table>
+
+		<h3 class="nop-section-heading">Inbound Defaults</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">Post status</th>
+				<td>
+					<select name="<?php echo "{$prefix}[post_status]"; ?>">
+						<?php foreach ( [ 'publish', 'draft', 'private' ] as $status ) : ?>
+							<option value="<?php echo esc_attr( $status ); ?>"
+							        <?php selected( $settings['post_status'] ?? 'publish', $status ); ?>>
+								<?php echo esc_html( ucfirst( $status ) ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="letterboxd-in-category">Category</label></th>
+				<td>
+					<?php
+					$category_names = array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) );
+					$this->render_token_field(
+						'letterboxd-in-category',
+						"{$prefix}[post_category]",
+						$settings['post_category'] ?? 'Films',
+						$category_names,
+						'Add category…',
+						'Category name',
+						'Created automatically if it doesn\'t exist.'
+					);
+					?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="letterboxd-in-tags">Tags</label></th>
+				<td>
+					<?php
+					$tag_names = array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag', 'hide_empty' => false ] ) );
+					$this->render_token_field(
+						'letterboxd-in-tags',
+						"{$prefix}[post_tags]",
+						$settings['post_tags'] ?? '',
+						$tag_names,
+						'Add tags…',
+						'Tag name'
+					);
+					?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">Poster image</th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo "{$prefix}[sideload_poster]"; ?>" value="1"
+						       <?php checked( $settings['sideload_poster'] ?? true ); ?>>
+						Save film poster to your media library and set as featured image
+					</label>
+				</td>
+			</tr>
 		</table>
 		<?php
 	}

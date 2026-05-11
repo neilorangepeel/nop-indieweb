@@ -145,6 +145,32 @@ class Registry {
 				'description' => 'Platform slugs to syndicate to on publish (editor selection).',
 			] ),
 
+			// ── Film / watch ─────────────────────────────────────────────────────
+			'nop_indieweb_film_title'   => array_merge( $string, [
+				'label'       => __( 'Film Title', 'nop-indieweb' ),
+				'description' => 'Title of the watched film.',
+			] ),
+			'nop_indieweb_film_year'    => array_merge( $string, [
+				'label'       => __( 'Film Year', 'nop-indieweb' ),
+				'description' => 'Release year of the film.',
+			] ),
+			'nop_indieweb_film_rating'  => array_merge( $string, [
+				'label'       => __( 'Film Rating', 'nop-indieweb' ),
+				'description' => 'Letterboxd member rating (0.5–5.0).',
+			] ),
+			'nop_indieweb_watch_date'   => array_merge( $string, [
+				'label'       => __( 'Watch Date', 'nop-indieweb' ),
+				'description' => 'ISO date the film was watched.',
+			] ),
+			'nop_indieweb_film_poster'  => array_merge( $string, [
+				'label'       => __( 'Film Poster URL', 'nop-indieweb' ),
+				'description' => 'Remote poster image URL from Letterboxd.',
+			] ),
+			'nop_indieweb_film_rewatch' => array_merge( $string, [
+				'label'       => __( 'Rewatch', 'nop-indieweb' ),
+				'description' => '1 if this is a rewatch, 0 if first viewing.',
+			] ),
+
 			// ── Photos ───────────────────────────────────────────────────────────
 			// CDN URLs are always stored as a permanent record even when photos are sideloaded.
 			'nop_indieweb_photos'           => array_merge( $array, [

@@ -4,31 +4,33 @@ declare( strict_types=1 );
 namespace NOP\IndieWeb\Importer;
 
 use NOP\IndieWeb\Services\Note;
+use NOP\IndieWeb\Services\Letterboxd;
 
 /**
- * Imports posts from Mastodon and Bluesky into WordPress.
+ * Imports posts from Mastodon, Bluesky, Pixelfed, and Letterboxd into WordPress.
  *
  * Runs hourly via WP-Cron and can also be triggered manually from the settings
- * page. Reuses the Note/Entries service to parse, deduplicate, and store posts
- * with the same metadata and format logic as inbound Micropub posts.
+ * page. Reuses service classes to parse, deduplicate, and store posts with the
+ * same metadata and format logic as inbound Micropub posts.
  *
  * Deduplication:
- *   - Note::handle() checks nop_indieweb_source_url (source URL of the post).
+ *   - Service::handle() checks nop_indieweb_source_url (source URL of the post).
  *   - Before that, was_syndicated_from_wordpress() checks nop_indieweb_syndication
  *     to skip posts that originated on WordPress and were then syndicated out.
  *
  * Cursor tracking:
  *   - Mastodon: stores the highest status ID seen in nop_indieweb_mastodon_import_last_id.
- *   - Bluesky:  always fetches the latest 25 posts; deduplication (nop_indieweb_source_url)
- *     skips posts already imported. The getAuthorFeed cursor paginates backwards, so
- *     saving it would fetch progressively older content rather than new posts.
+ *   - Bluesky/Letterboxd: always fetches the latest batch; deduplication via
+ *     nop_indieweb_source_url skips already-imported posts.
  */
 class Feed_Importer {
 
-	private Note $note;
+	private Note       $note;
+	private Letterboxd $letterboxd;
 
-	public function __construct( Note $note ) {
-		$this->note = $note;
+	public function __construct( Note $note, Letterboxd $letterboxd ) {
+		$this->note       = $note;
+		$this->letterboxd = $letterboxd;
 	}
 
 	public function register(): void {
@@ -44,6 +46,7 @@ class Feed_Importer {
 		$this->import_mastodon();
 		$this->import_bluesky();
 		$this->import_pixelfed();
+		$this->import_letterboxd();
 	}
 
 	// ── Manual sync ────────────────────────────────────────────────────────────
@@ -66,6 +69,8 @@ class Feed_Importer {
 			$this->import_bluesky();
 		} elseif ( 'pixelfed' === $platform ) {
 			$this->import_pixelfed();
+		} elseif ( 'letterboxd' === $platform ) {
+			$this->import_letterboxd();
 		} else {
 			$this->run();
 		}
@@ -330,6 +335,90 @@ class Feed_Importer {
 		}
 
 		return json_decode( wp_remote_retrieve_body( $response ), true );
+	}
+
+	// ── Letterboxd ──────────────────────────────────────────────────────────────
+
+	private function import_letterboxd(): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd'] ?? [];
+		if ( empty( $settings['import_enabled'] ) ) {
+			return;
+		}
+
+		$username = trim( (string) ( $settings['username'] ?? '' ) );
+		if ( ! $username ) {
+			return;
+		}
+
+		$response = wp_remote_get(
+			"https://letterboxd.com/{$username}/rss/",
+			[ 'timeout' => 15, 'user-agent' => 'nop-indieweb/1.0 (WordPress)' ]
+		);
+
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return;
+		}
+
+		$xml = @simplexml_load_string( wp_remote_retrieve_body( $response ) );
+		if ( ! $xml ) {
+			return;
+		}
+
+		// Discover namespaces from the document rather than hardcoding URIs.
+		$ns       = $xml->getDocNamespaces( true );
+		$lbxd_ns  = $ns['letterboxd'] ?? 'https://a.ltrbxd.com/';
+		$media_ns = $ns['media']      ?? 'http://search.yahoo.com/mrss/';
+
+		$items = iterator_to_array( $xml->channel->item, false );
+
+		// Process oldest-first so the most recent entry wins on any dedup edge case.
+		foreach ( array_reverse( $items ) as $item ) {
+			$url = (string) ( $item->link ?? $item->guid ?? '' );
+			if ( ! $url || $this->was_syndicated_from_wordpress( $url ) ) {
+				continue;
+			}
+
+			$lbxd  = $item->children( $lbxd_ns );
+			$media = $item->children( $media_ns );
+
+			// Poster from <media:thumbnail url="..."/>.
+			$poster = '';
+			if ( isset( $media->thumbnail ) ) {
+				$attrs  = $media->thumbnail->attributes();
+				$poster = (string) ( $attrs['url'] ?? '' );
+			}
+
+			$this->letterboxd->handle( [
+				'type'       => [ 'h-cite' ],
+				'properties' => [
+					'film_title'  => [ (string) ( $lbxd->filmTitle    ?? '' ) ],
+					'film_year'   => [ (string) ( $lbxd->filmYear     ?? '' ) ],
+					'rating'      => [ (string) ( $lbxd->memberRating ?? '' ) ],
+					'watch_date'  => [ (string) ( $lbxd->watchedDate  ?? '' ) ],
+					'rewatch'     => [ strtolower( (string) ( $lbxd->rewatch ?? '' ) ) === 'yes' ? '1' : '0' ],
+					'content'     => [ $this->extract_letterboxd_review( (string) ( $item->description ?? '' ) ) ],
+					'url'         => [ $url ],
+					'poster'      => [ $poster ],
+				],
+			] );
+		}
+	}
+
+	/**
+	 * Strips the poster image, "Watched on..." lines, and star-rating-only lines
+	 * from a Letterboxd RSS description, leaving just the user's review text.
+	 */
+	private function extract_letterboxd_review( string $html ): string {
+		$html  = preg_replace( '/<img\b[^>]*>/i', '', $html ) ?? $html;
+		$text  = wp_strip_all_tags( $html );
+		$lines = array_filter(
+			array_map( 'trim', explode( "\n", $text ) ),
+			static fn( string $line ): bool =>
+				$line !== ''
+				&& ! str_starts_with( $line, 'Watched' )
+				&& ! preg_match( '/^[★½\s]+$/', $line )
+		);
+		return trim( implode( "\n", $lines ) );
 	}
 
 	// ── Shared helpers ──────────────────────────────────────────────────────────

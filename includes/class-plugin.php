@@ -8,6 +8,7 @@ use NOP\IndieWeb\Post_Meta\Registry;
 use NOP\IndieWeb\Post_Meta\Block_Bindings;
 use NOP\IndieWeb\Services\Swarm;
 use NOP\IndieWeb\Services\Note;
+use NOP\IndieWeb\Services\Letterboxd;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
@@ -42,15 +43,16 @@ class Plugin {
 	private function __construct() {}
 
 	public function boot(): void {
-		$note     = new Note();
-		$services = apply_filters( 'nop_indieweb_register_services', [
+		$note       = new Note();
+		$letterboxd = new Letterboxd();
+		$services   = apply_filters( 'nop_indieweb_register_services', [
 			new Swarm(),
 			$note,
 		] );
 
 		$syndication_manager = new Syndication_Manager();
 		$syndication_manager->register();
-		( new Feed_Importer( $note ) )->register();
+		( new Feed_Importer( $note, $letterboxd ) )->register();
 
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
