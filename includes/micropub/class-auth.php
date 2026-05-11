@@ -16,7 +16,7 @@ use NOP\IndieWeb\IndieAuth\Token_Store;
  */
 class Auth {
 
-	public function verify( WP_REST_Request $request ): true|WP_Error {
+	public function verify( WP_REST_Request $request ): bool|WP_Error {
 		$raw_token = $this->extract_token( $request );
 
 		if ( ! $raw_token ) {
