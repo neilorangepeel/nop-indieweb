@@ -20,6 +20,7 @@ use NOP\IndieWeb\IndieAuth\Token_Endpoint;
 use NOP\IndieWeb\Syndication\Syndication_Manager;
 use NOP\IndieWeb\Importer\Feed_Importer;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
+use NOP\IndieWeb\Webmention\Webmention_Sender;
 
 /**
  * Bootstraps the plugin. Single entry point — everything is wired here.
@@ -56,6 +57,7 @@ class Plugin {
 		( new Endpoint( $services ) )->register();
 		( new Token_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
+		( new Webmention_Sender() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
 		( new MF2_Endpoint() )->register();

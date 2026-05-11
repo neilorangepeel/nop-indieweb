@@ -37,8 +37,10 @@ class Endpoint {
 		] );
 	}
 
-	public function handle_query( WP_REST_Request $request ): WP_REST_Response {
-		if ( 'config' === $request->get_param( 'q' ) ) {
+	public function handle_query( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$q = $request->get_param( 'q' );
+
+		if ( 'config' === $q ) {
 			return new WP_REST_Response( [
 				'media-endpoint' => null,
 				'syndicate-to'   => [],
@@ -46,7 +48,59 @@ class Endpoint {
 			], 200 );
 		}
 
+		if ( 'source' === $q ) {
+			$auth_result = ( new Auth() )->verify( $request );
+			if ( is_wp_error( $auth_result ) ) {
+				return $auth_result;
+			}
+			return $this->handle_source_query( $request );
+		}
+
 		return new WP_REST_Response( [], 200 );
+	}
+
+	/**
+	 * Returns mf2 properties of an existing post by URL.
+	 * Supports an optional properties[] param to return a subset.
+	 * Spec: https://micropub.spec.indieweb.org/#source-content
+	 */
+	private function handle_source_query( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$url = (string) $request->get_param( 'url' );
+		if ( ! $url ) {
+			return new WP_Error( 'nop_indieweb_missing_url', 'url parameter is required.', [ 'status' => 400 ] );
+		}
+
+		$post_id = url_to_postid( $url );
+		if ( ! $post_id ) {
+			return new WP_Error( 'nop_indieweb_not_found', 'No post found at that URL.', [ 'status' => 404 ] );
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error( 'nop_indieweb_not_found', 'Post not found.', [ 'status' => 404 ] );
+		}
+
+		$properties = [
+			'content'   => [ $post->post_content ],
+			'published' => [ get_the_date( 'c', $post ) ],
+			'url'       => [ get_permalink( $post ) ],
+		];
+
+		if ( $post->post_title ) {
+			$properties['name'] = [ $post->post_title ];
+		}
+
+		$syndication = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
+		if ( is_array( $syndication ) && $syndication ) {
+			$properties['syndication'] = $syndication;
+		}
+
+		$requested = $request->get_param( 'properties' );
+		if ( is_array( $requested ) && $requested ) {
+			$properties = array_intersect_key( $properties, array_flip( $requested ) );
+		}
+
+		return new WP_REST_Response( [ 'type' => [ 'h-entry' ], 'properties' => $properties ], 200 );
 	}
 
 	public function handle_post( WP_REST_Request $request ): WP_REST_Response|WP_Error {

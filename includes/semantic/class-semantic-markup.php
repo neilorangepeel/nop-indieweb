@@ -26,6 +26,7 @@ class Semantic_Markup {
 			return;
 		}
 		add_filter( 'body_class',   [ $this, 'add_hentry_class' ] );
+		add_filter( 'body_class',   [ $this, 'add_hfeed_class' ] );
 		add_filter( 'render_block', [ $this, 'inject_block_classes' ], 10, 2 );
 		add_action( 'wp_head',      [ $this, 'output_alternate_link' ] );
 		add_action( 'wp_footer',    [ $this, 'output_syndication_links' ] );
@@ -38,10 +39,23 @@ class Semantic_Markup {
 		return $classes;
 	}
 
+	public function add_hfeed_class( array $classes ): array {
+		if ( is_home() || is_archive() ) {
+			$classes[] = 'h-feed';
+		}
+		return $classes;
+	}
+
 	public function inject_block_classes( string $html, array $block ): string {
+		// h-feed: inject h-entry into archive post loops regardless of singular-post context.
+		if ( 'core/post-template' === $block['blockName'] && ( is_home() || is_archive() ) ) {
+			return $this->inject_hentry_into_post_template( $html );
+		}
+
 		if ( ! $this->is_active() ) {
 			return $html;
 		}
+
 		return match ( $block['blockName'] ) {
 			'core/post-date'    => $this->add_class_to_tag( $html, 'time', 'dt-published' ),
 			'core/post-content' => $this->add_class_to_tag( $html, 'div',  'e-content' ),
@@ -79,6 +93,19 @@ class Semantic_Markup {
 				&& (bool) get_post_meta( get_queried_object_id(), 'nop_indieweb_service', true );
 		}
 		return $this->is_active;
+	}
+
+	/**
+	 * Adds h-entry to each post-template list item so archive pages expose
+	 * individual h-entries within the h-feed body. Matches class="wp-block-post "
+	 * specifically to avoid touching child blocks like wp-block-post-title.
+	 */
+	private function inject_hentry_into_post_template( string $html ): string {
+		return preg_replace(
+			'/class="(wp-block-post\s)/',
+			'class="$1h-entry ',
+			$html
+		) ?? $html;
 	}
 
 	/**
