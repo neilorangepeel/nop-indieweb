@@ -1183,36 +1183,46 @@ class Settings {
 
 	private function render_tab_post_kinds(): void {
 		$kinds = [
-			'bookmark' => [ 'label' => 'Bookmark',  'default_category' => 'Bookmarks', 'description' => 'Creates a post from a Micropub <code>bookmark-of</code> property.' ],
-			'reply'    => [ 'label' => 'Reply',     'default_category' => 'Replies',   'description' => 'Creates a post from a Micropub <code>in-reply-to</code> property.' ],
-			'like'     => [ 'label' => 'Like',      'default_category' => 'Likes',     'description' => 'Creates a post from a Micropub <code>like-of</code> property.' ],
-			'repost'   => [ 'label' => 'Repost',    'default_category' => 'Reposts',   'description' => 'Creates a post from a Micropub <code>repost-of</code> property.' ],
-			'rsvp'     => [ 'label' => 'RSVP',      'default_category' => 'RSVPs',     'description' => 'Creates a post from a Micropub <code>in-reply-to</code> + <code>rsvp</code> property pair.' ],
+			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of',         'default_category' => 'Bookmarks' ],
+			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to',         'default_category' => 'Replies'   ],
+			'like'     => [ 'label' => 'Like',      'micropub' => 'like-of',             'default_category' => 'Likes'     ],
+			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of',           'default_category' => 'Reposts'   ],
+			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp',  'default_category' => 'RSVPs'     ],
 		];
 
 		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-
-		foreach ( $kinds as $slug => $kind ) :
-			$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )[ $slug ] ?? [];
-			$prefix   = self::OPTION_KEY . "[services][{$slug}]";
-			?>
-			<h3 class="nop-section-heading"><?php echo esc_html( $kind['label'] ); ?></h3>
-			<p class="description" style="margin: -8px 0 12px;"><?php echo wp_kses_post( $kind['description'] ); ?></p>
-			<table class="form-table" role="presentation">
+		?>
+		<p class="description" style="margin-bottom:14px;">Each kind maps a Micropub property to a WordPress post. Categories are created automatically if they don't exist.</p>
+		<table class="nop-kinds-table">
+			<thead>
 				<tr>
-					<th scope="row">Enable</th>
-					<td>
-						<label>
-							<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
-							       <?php checked( $settings['enabled'] ?? true ); ?>>
-							Accept <?php echo esc_html( strtolower( $kind['label'] ) ); ?> posts via Micropub
-						</label>
-					</td>
+					<th scope="col">Kind</th>
+					<th scope="col">Enable</th>
+					<th scope="col">Status</th>
+					<th scope="col">Category</th>
 				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $kinds as $slug => $kind ) :
+					$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )[ $slug ] ?? [];
+					$prefix   = self::OPTION_KEY . "[services][{$slug}]";
+				?>
 				<tr>
-					<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-status">Status</label></th>
 					<td>
-						<select id="nop-<?php echo esc_attr( $slug ); ?>-status" name="<?php echo "{$prefix}[post_status]"; ?>">
+						<strong><?php echo esc_html( $kind['label'] ); ?></strong><br>
+						<code class="nop-micropub-prop"><?php echo esc_html( $kind['micropub'] ); ?></code>
+					</td>
+					<td class="nop-kinds-table__enable">
+						<input type="checkbox"
+						       name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>"
+						       value="1"
+						       aria-label="<?php echo esc_attr( sprintf( 'Accept %s posts via Micropub', strtolower( $kind['label'] ) ) ); ?>"
+						       <?php checked( $settings['enabled'] ?? true ); ?>>
+					</td>
+					<td>
+						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>"
+						        id="nop-<?php echo esc_attr( $slug ); ?>-status"
+						        aria-label="<?php echo esc_attr( $kind['label'] ); ?> post status">
 							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>"
 								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
@@ -1221,9 +1231,6 @@ class Settings {
 							<?php endforeach; ?>
 						</select>
 					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-category">Category</label></th>
 					<td>
 						<?php $this->render_token_field(
 							"nop-{$slug}-category",
@@ -1231,13 +1238,14 @@ class Settings {
 							$settings['post_category'] ?? $kind['default_category'],
 							$category_names,
 							'Add category…',
-							'Category name',
-							'Created automatically if it doesn\'t exist.'
+							'Category name'
 						); ?>
 					</td>
 				</tr>
-			</table>
-		<?php endforeach;
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
 	}
 
 	// ——— Tab: Webmentions ———————————————————————————————————————————————————

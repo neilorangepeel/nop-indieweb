@@ -480,6 +480,69 @@
 	color: #fff;
 }
 
+/* ── Post Kinds compact table ───────────────────────────────────────────────── */
+
+.nop-kinds-table {
+	border-collapse: collapse;
+	width:           100%;
+	max-width:       760px;
+	font-size:       13px;
+}
+
+.nop-kinds-table th,
+.nop-kinds-table td {
+	padding:        10px 12px;
+	text-align:     left;
+	vertical-align: middle;
+	border-bottom:  1px solid var(--nop-border-subtle);
+}
+
+.nop-kinds-table thead th {
+	font-weight:     600;
+	font-size:       11px;
+	text-transform:  uppercase;
+	letter-spacing:  0.04em;
+	color:           var(--nop-text-muted);
+	border-bottom:   1px solid var(--nop-border);
+	background:      var(--nop-code-bg);
+	padding-top:     8px;
+	padding-bottom:  8px;
+}
+
+.nop-kinds-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Kind column: fixed width so the other columns breathe */
+.nop-kinds-table td:first-child {
+	width: 160px;
+}
+
+/* Enable column: centred checkbox */
+.nop-kinds-table__enable {
+	width:      60px;
+	text-align: center;
+}
+
+/* Status column: enough for the select */
+.nop-kinds-table td:nth-child(3) {
+	width: 130px;
+}
+
+/* Micropub property badge inside Kind column */
+.nop-micropub-prop {
+	font-size:     11px;
+	color:         var(--nop-text-muted);
+	background:    var(--nop-code-bg);
+	padding:       1px 5px;
+	border-radius: var(--nop-radius);
+}
+
+/* Token field fills the Category column instead of capping at 25em */
+.nop-kinds-table .nop-token-field {
+	max-width: none;
+}
+
 /* ── Debug panel ────────────────────────────────────────────────────────────── */
 
 .nop-payload-dump {
