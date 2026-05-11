@@ -66,7 +66,7 @@ class Letterboxd extends Service_Base {
 		$category_ids   = array_values( array_filter( array_map( [ $this, 'ensure_category' ], $category_names ) ) );
 
 		$args = [
-			'post_title'   => $parsed['film_title'] ?: 'Watched a film',
+			'post_title'   => $parsed['film_title'] ? 'Watched · ' . $parsed['film_title'] : 'Watched a film',
 			'post_content' => $blocks,
 			'post_status'  => $post_status,
 			'post_type'    => 'post',
