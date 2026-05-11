@@ -221,6 +221,48 @@ class Plugin {
 				'description' => __( 'Displays a Letterboxd film diary entry with star rating, poster, watch date, and review.', 'nop-indieweb' ),
 				'file'        => 'single-watch.html',
 			],
+
+			// ── Category archive templates ────────────────────────────────────────────
+			'nop-indieweb//category-films' => [
+				'title'       => __( 'Archive – Film Diary', 'nop-indieweb' ),
+				'description' => __( 'Three-column poster grid for the Films category. Shows poster, star rating, title, and watch date.', 'nop-indieweb' ),
+				'file'        => 'category-films.html',
+			],
+			'nop-indieweb//category-notes' => [
+				'title'       => __( 'Archive – Notes', 'nop-indieweb' ),
+				'description' => __( 'Dense chronological stream for imported social posts. Shows content and platform attribution.', 'nop-indieweb' ),
+				'file'        => 'category-notes.html',
+			],
+			'nop-indieweb//category-checkin' => [
+				'title'       => __( 'Archive – Checkins', 'nop-indieweb' ),
+				'description' => __( 'Venue list for Swarm checkin posts. Shows venue name, locality, and date.', 'nop-indieweb' ),
+				'file'        => 'category-checkin.html',
+			],
+			'nop-indieweb//category-bookmarks' => [
+				'title'       => __( 'Archive – Bookmarks', 'nop-indieweb' ),
+				'description' => __( 'Reading list of bookmarked URLs with optional notes.', 'nop-indieweb' ),
+				'file'        => 'category-bookmarks.html',
+			],
+			'nop-indieweb//category-likes' => [
+				'title'       => __( 'Archive – Likes', 'nop-indieweb' ),
+				'description' => __( 'Compact list of liked posts across the web.', 'nop-indieweb' ),
+				'file'        => 'category-likes.html',
+			],
+			'nop-indieweb//category-reposts' => [
+				'title'       => __( 'Archive – Reposts', 'nop-indieweb' ),
+				'description' => __( 'Compact list of reposted content from Mastodon and Bluesky.', 'nop-indieweb' ),
+				'file'        => 'category-reposts.html',
+			],
+			'nop-indieweb//category-replies' => [
+				'title'       => __( 'Archive – Replies', 'nop-indieweb' ),
+				'description' => __( 'Conversation list showing in-reply-to context and reply content.', 'nop-indieweb' ),
+				'file'        => 'category-replies.html',
+			],
+			'nop-indieweb//category-rsvps' => [
+				'title'       => __( 'Archive – RSVPs', 'nop-indieweb' ),
+				'description' => __( 'Event response list showing RSVP status and event link.', 'nop-indieweb' ),
+				'file'        => 'category-rsvps.html',
+			],
 		];
 
 		foreach ( $templates as $id => $template ) {
@@ -244,6 +286,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
 	}
 
 	public function register_patterns(): void {

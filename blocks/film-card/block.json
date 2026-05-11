@@ -1,0 +1,12 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/film-card",
+	"title": "Film Card",
+	"category": "widgets",
+	"description": "Compact film card for diary archive listings. Shows poster, star rating, title, and watch date.",
+	"supports": { "html": false, "multiple": true },
+	"usesContext": [ "postId", "postType", "queryId" ],
+	"render": "file:./render.php",
+	"style": "file:./style.css"
+}
