@@ -77,7 +77,7 @@ class Settings {
 
 			if ( 200 === $code && isset( $body['acct'] ) ) {
 				if ( ! empty( $body['url'] ) ) {
-					update_option( 'nop_indieweb_mastodon_profile_url', esc_url_raw( $body['url'] ) );
+					\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.mastodon.profile_url', esc_url_raw( $body['url'] ) );
 				}
 				wp_send_json_success( 'Connected as @' . $body['acct'] );
 			} else {
@@ -105,7 +105,7 @@ class Settings {
 
 			if ( 200 === $code && isset( $body['acct'] ) ) {
 				if ( ! empty( $body['url'] ) ) {
-					update_option( 'nop_indieweb_pixelfed_profile_url', esc_url_raw( $body['url'] ) );
+					\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.pixelfed.profile_url', esc_url_raw( $body['url'] ) );
 				}
 				wp_send_json_success( 'Connected as @' . $body['acct'] );
 			} else {
