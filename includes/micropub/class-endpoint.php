@@ -60,6 +60,17 @@ class Endpoint {
 			], 200 );
 		}
 
+		if ( 'syndicate-to' === $q ) {
+			$syndicate_to = [];
+			if ( $this->syndication_manager ) {
+				$syndicate_to = array_map(
+					fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'] ],
+					$this->syndication_manager->get_panel_data()
+				);
+			}
+			return new WP_REST_Response( [ 'syndicate-to' => $syndicate_to ], 200 );
+		}
+
 		if ( 'source' === $q ) {
 			$auth_result = ( new Auth() )->verify( $request );
 			if ( is_wp_error( $auth_result ) ) {

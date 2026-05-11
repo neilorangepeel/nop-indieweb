@@ -24,6 +24,7 @@ class Debug {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
 		add_action( 'admin_post_nop_indieweb_test_payload',   [ $this, 'handle_test_post' ] );
 		add_action( 'admin_post_nop_indieweb_backfeed_sync',  [ $this, 'handle_backfeed_sync' ] );
+		add_action( 'admin_post_nop_indieweb_import_feeds',   [ $this, 'handle_import_feeds' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
@@ -60,6 +61,24 @@ class Debug {
 			'page'         => 'nop-indieweb-debug',
 			'test_result'  => $post_id ? 'success' : 'error',
 			'test_post_id' => $post_id,
+		], admin_url( 'options-general.php' ) ) );
+		exit;
+	}
+
+	public function handle_import_feeds(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized.' );
+		}
+		check_admin_referer( 'nop_indieweb_import_feeds' );
+
+		( new \NOP\IndieWeb\Importer\Feed_Importer(
+			new \NOP\IndieWeb\Services\Note(),
+			new \NOP\IndieWeb\Services\Letterboxd()
+		) )->run();
+
+		wp_safe_redirect( add_query_arg( [
+			'page'          => 'nop-indieweb-debug',
+			'import_result' => 'success',
 		], admin_url( 'options-general.php' ) ) );
 		exit;
 	}
@@ -128,6 +147,17 @@ class Debug {
 				<?php wp_nonce_field( 'nop_indieweb_test_payload' ); ?>
 				<input type="hidden" name="action" value="nop_indieweb_test_payload">
 				<?php submit_button( 'Fire Test Swarm Checkin', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h2>Feed Importer</h2>
+			<p>Imports your own posts from Mastodon, Pixelfed, Bluesky, and Letterboxd into WordPress. Runs automatically once per hour via WP-Cron.</p>
+			<?php if ( 'success' === sanitize_key( $_GET['import_result'] ?? '' ) ) : ?>
+			<div class="notice notice-success is-dismissible"><p>Feed import complete.</p></div>
+			<?php endif; ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'nop_indieweb_import_feeds' ); ?>
+				<input type="hidden" name="action" value="nop_indieweb_import_feeds">
+				<?php submit_button( 'Import Now', 'secondary', 'submit', false ); ?>
 			</form>
 
 			<h2>Social Backfeed</h2>
