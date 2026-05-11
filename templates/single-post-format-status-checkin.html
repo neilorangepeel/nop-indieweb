@@ -21,33 +21,25 @@
 		</div>
 		<!-- /wp:group -->
 
-		<!-- Full address via Block Bindings -->
-		<!-- wp:group {"style":{"color":{"text":"#6b7280"},"spacing":{"blockGap":"0.125rem"}},"layout":{"type":"constrained"}} -->
+		<!-- Full address — stacked paragraphs, each bound to a meta field -->
+		<!-- wp:group {"style":{"color":{"text":"#6b7280"},"spacing":{"blockGap":"0"}},"layout":{"type":"constrained"}} -->
 		<div class="wp-block-group has-text-color" style="color:#6b7280">
 
 			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_address"}}}}} -->
 			<p>46 Great Victoria Street</p>
 			<!-- /wp:paragraph -->
 
-			<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
-			<div class="wp-block-group">
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_locality"}}}}} -->
-				<p>Belfast</p>
-				<!-- /wp:paragraph -->
-				<!-- wp:paragraph -->
-				<p>·</p>
-				<!-- /wp:paragraph -->
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_region"}}}}} -->
-				<p>Northern Ireland</p>
-				<!-- /wp:paragraph -->
-				<!-- wp:paragraph -->
-				<p>·</p>
-				<!-- /wp:paragraph -->
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_postcode"}}}}} -->
-				<p>BT2 7BA</p>
-				<!-- /wp:paragraph -->
-			</div>
-			<!-- /wp:group -->
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_locality"}}}}} -->
+			<p>Belfast</p>
+			<!-- /wp:paragraph -->
+
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_region"}}}}} -->
+			<p>Northern Ireland</p>
+			<!-- /wp:paragraph -->
+
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_postcode"}}}}} -->
+			<p>BT2 7BA</p>
+			<!-- /wp:paragraph -->
 
 			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_country"}}}}} -->
 			<p>United Kingdom</p>
@@ -77,20 +69,7 @@
 	</div>
 	<!-- /wp:group -->
 
-	<!-- Venue URL button (bound to Foursquare / Swarm URL) -->
-	<!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|40"}}},"layout":{"type":"constrained"}} -->
-	<div class="wp-block-group" style="padding-top:0;padding-bottom:var(--wp--preset--spacing--40)">
-		<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->
-		<div class="wp-block-buttons">
-			<!-- wp:button {"style":{"border":{"radius":"4px"}},"className":"is-style-outline","metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_url"}}}}} -->
-			<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#" style="border-radius:4px" target="_blank" rel="noopener">View on Foursquare</a></div>
-			<!-- /wp:button -->
-		</div>
-		<!-- /wp:buttons -->
-	</div>
-	<!-- /wp:group -->
-
-	<!-- Checkin meta: categories, map, syndication -->
+	<!-- Checkin meta: venue URL, categories, map, syndication -->
 	<!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
 	<div class="wp-block-group" style="padding-top:0;padding-bottom:var(--wp--preset--spacing--50)">
 		<!-- wp:nop-indieweb/checkin-meta /-->

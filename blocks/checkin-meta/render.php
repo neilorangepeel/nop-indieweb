@@ -22,6 +22,9 @@ if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-meta nop-checkin-meta--preview' ] );
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
+		<p class="nop-checkin-venue-link">
+			<a href="#" onclick="return false;">View on foursquare.com</a>
+		</p>
 		<p class="nop-checkin-categories">
 			<span class="nop-checkin-category p-category">Bar</span>
 			<span class="nop-checkin-category p-category">Pub</span>
@@ -47,6 +50,7 @@ if ( ! $venue_name ) {
 
 $lat              = get_post_meta( $post_id, 'nop_indieweb_venue_lat',        true );
 $lng              = get_post_meta( $post_id, 'nop_indieweb_venue_lng',        true );
+$venue_url        = get_post_meta( $post_id, 'nop_indieweb_venue_url',        true );
 $venue_address    = get_post_meta( $post_id, 'nop_indieweb_venue_address',    true );
 $venue_locality   = get_post_meta( $post_id, 'nop_indieweb_venue_locality',   true );
 $venue_country    = get_post_meta( $post_id, 'nop_indieweb_venue_country',    true );
@@ -102,6 +106,15 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 		<?php foreach ( $venue_categories as $cat ) : ?>
 			<span class="nop-checkin-category p-category"><?php echo esc_html( $cat ); ?></span>
 		<?php endforeach; ?>
+	</p>
+	<?php endif; ?>
+
+	<?php // ── Venue URL (Foursquare / Swarm link) ──────────────────────────── ?>
+	<?php if ( $venue_url ) : ?>
+	<p class="nop-checkin-venue-link">
+		<a href="<?php echo esc_url( $venue_url ); ?>" target="_blank" rel="noopener">
+			View on <?php echo esc_html( wp_parse_url( $venue_url, PHP_URL_HOST ) ?? 'Foursquare' ); ?>
+		</a>
 	</p>
 	<?php endif; ?>
 
