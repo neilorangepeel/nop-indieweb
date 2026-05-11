@@ -42,6 +42,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-mf2-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-mastodon.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-bluesky.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-pixelfed.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
