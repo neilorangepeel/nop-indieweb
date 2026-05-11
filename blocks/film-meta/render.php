@@ -25,6 +25,7 @@ if ( ! $post_id ) {
 			</span>
 		</div>
 		<div class="nop-film-meta__row">
+			<span class="nop-film-meta__year">2019</span>
 			<span class="nop-film-meta__date">Watched 1 January 2025</span>
 			<a class="nop-film-meta__source" href="#" onclick="return false;">View on Letterboxd</a>
 		</div>
@@ -34,6 +35,7 @@ if ( ! $post_id ) {
 }
 
 $rating     = (float) ( get_post_meta( $post_id, 'nop_indieweb_film_rating',  true ) ?: 0 );
+$film_year  = (string) get_post_meta( $post_id, 'nop_indieweb_film_year',    true );
 $poster_url = (string) get_post_meta( $post_id, 'nop_indieweb_film_poster',   true );
 $watch_date = (string) get_post_meta( $post_id, 'nop_indieweb_watch_date',    true );
 $source_url = (string) get_post_meta( $post_id, 'nop_indieweb_source_url',    true );
@@ -86,8 +88,11 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 		<?php echo $stars_html; ?>
 	</div>
 
-	<?php if ( $date_display || $rewatch || $source_url ) : ?>
+	<?php if ( $film_year || $date_display || $rewatch || $source_url ) : ?>
 	<div class="nop-film-meta__row">
+		<?php if ( $film_year ) : ?>
+			<span class="nop-film-meta__year"><?php echo esc_html( $film_year ); ?></span>
+		<?php endif; ?>
 		<?php if ( $date_display ) : ?>
 			<span class="nop-film-meta__date">Watched <?php echo esc_html( $date_display ); ?></span>
 		<?php endif; ?>

@@ -112,6 +112,7 @@
 			}
 
 			var rating    = parseFloat( meta.nop_indieweb_film_rating || 0 );
+			var filmYear  = String( meta.nop_indieweb_film_year || '' );
 			var watchDate = String( meta.nop_indieweb_watch_date || '' );
 			var rewatch   = meta.nop_indieweb_film_rewatch === '1';
 			var sourceUrl = String( meta.nop_indieweb_source_url || '' );
@@ -125,6 +126,9 @@
 			}
 
 			var metaItems = [];
+			if ( filmYear ) {
+				metaItems.push( el( 'span', { key: 'year', className: 'nop-film-meta__year' }, filmYear ) );
+			}
 			if ( watchDate ) {
 				metaItems.push( el( 'span', { key: 'date', className: 'nop-film-meta__date' },
 					'Watched ' + formatWatchDate( watchDate )

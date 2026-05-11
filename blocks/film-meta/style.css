@@ -131,6 +131,12 @@
 	font-size:   0.875em;
 }
 
+.nop-film-meta__year {
+	font-weight: 500;
+	color:       var(--wp--preset--color--contrast, inherit);
+	opacity:     0.6;
+}
+
 .nop-film-meta__rewatch {
 	display:        inline-block;
 	font-size:      0.75em;
