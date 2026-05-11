@@ -90,7 +90,7 @@ class Note extends Service_Base {
 		$tags = array_filter( array_map( 'trim', explode( ',', $settings['post_tags'] ?? '' ) ) );
 
 		$args = [
-			'post_title'   => '',
+			'post_title'   => $this->generate_title( $content, $post_date ),
 			'post_content' => $blocks,
 			'post_status'  => $post_status,
 			'post_type'    => 'post',
@@ -187,6 +187,13 @@ class Note extends Service_Base {
 			return \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
 		}
 		return $this->get_settings();
+	}
+
+	private function generate_title( string $content, string $post_date ): string {
+		$date  = $post_date ? wp_date( 'j M Y', strtotime( $post_date ) ) : wp_date( 'j M Y' );
+		$words = preg_split( '/\s+/', wp_strip_all_tags( $content ), 6, PREG_SPLIT_NO_EMPTY );
+		$snippet = $words ? implode( ' ', array_slice( $words, 0, 5 ) ) . ( count( $words ) > 5 ? '…' : '' ) : '';
+		return $snippet ? "{$date} · {$snippet}" : $date;
 	}
 
 	private function ensure_category( string $name ): int {
