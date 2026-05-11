@@ -1,7 +1,14 @@
 .nop-like-button {
-	display: inline-flex;
+	display: flex;
+	width: fit-content;
 	align-items: center;
 	gap: 0.5rem;
+}
+
+/* Override constrained-layout margin:auto so the button stays left-aligned. */
+.wp-block-nop-indieweb-like-button.nop-like-button {
+	margin-left: 0 !important;
+	margin-right: auto !important;
 }
 
 /* ── Button ─────────────────────────────────────────────────────────────── */
