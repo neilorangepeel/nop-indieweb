@@ -364,29 +364,22 @@ class Feed_Importer {
 			return;
 		}
 
-		// Discover namespaces from the document rather than hardcoding URIs.
-		$ns       = $xml->getDocNamespaces( true );
-		$lbxd_ns  = $ns['letterboxd'] ?? 'https://a.ltrbxd.com/';
-		$media_ns = $ns['media']      ?? 'http://search.yahoo.com/mrss/';
+		// Discover the letterboxd: namespace URI from the document (it's https://letterboxd.com).
+		$ns      = $xml->getDocNamespaces( true );
+		$lbxd_ns = $ns['letterboxd'] ?? 'https://letterboxd.com';
 
 		$items = iterator_to_array( $xml->channel->item, false );
 
 		// Process oldest-first so the most recent entry wins on any dedup edge case.
 		foreach ( array_reverse( $items ) as $item ) {
-			$url = (string) ( $item->link ?? $item->guid ?? '' );
+			// Use link element as the canonical URL; guid is not always a URL.
+			$url = (string) $item->link;
 			if ( ! $url || $this->was_syndicated_from_wordpress( $url ) ) {
 				continue;
 			}
 
-			$lbxd  = $item->children( $lbxd_ns );
-			$media = $item->children( $media_ns );
-
-			// Poster from <media:thumbnail url="..."/>.
-			$poster = '';
-			if ( isset( $media->thumbnail ) ) {
-				$attrs  = $media->thumbnail->attributes();
-				$poster = (string) ( $attrs['url'] ?? '' );
-			}
+			$lbxd        = $item->children( $lbxd_ns );
+			$description = (string) $item->description;
 
 			$this->letterboxd->handle( [
 				'type'       => [ 'h-cite' ],
@@ -396,12 +389,23 @@ class Feed_Importer {
 					'rating'      => [ (string) ( $lbxd->memberRating ?? '' ) ],
 					'watch_date'  => [ (string) ( $lbxd->watchedDate  ?? '' ) ],
 					'rewatch'     => [ strtolower( (string) ( $lbxd->rewatch ?? '' ) ) === 'yes' ? '1' : '0' ],
-					'content'     => [ $this->extract_letterboxd_review( (string) ( $item->description ?? '' ) ) ],
+					'content'     => [ $this->extract_letterboxd_review( $description ) ],
 					'url'         => [ $url ],
-					'poster'      => [ $poster ],
+					'poster'      => [ $this->extract_letterboxd_poster( $description ) ],
 				],
 			] );
 		}
+	}
+
+	/**
+	 * Extracts the film poster URL from the first <img> in the Letterboxd
+	 * description CDATA. Letterboxd has no media:thumbnail in their feed.
+	 */
+	private function extract_letterboxd_poster( string $html ): string {
+		if ( preg_match( '/<img\b[^>]+\bsrc=["\']([^"\']+)["\']/', $html, $m ) ) {
+			return esc_url_raw( $m[1] );
+		}
+		return '';
 	}
 
 	/**
