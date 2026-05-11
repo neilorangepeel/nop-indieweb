@@ -491,7 +491,7 @@
 
 .nop-kinds-table th,
 .nop-kinds-table td {
-	padding:        10px 12px;
+	padding:        7px 10px;
 	text-align:     left;
 	vertical-align: middle;
 	border-bottom:  1px solid var(--nop-border-subtle);
@@ -505,8 +505,8 @@
 	color:           var(--nop-text-muted);
 	border-bottom:   1px solid var(--nop-border);
 	background:      var(--nop-code-bg);
-	padding-top:     8px;
-	padding-bottom:  8px;
+	padding-top:     6px;
+	padding-bottom:  6px;
 }
 
 .nop-kinds-table tbody tr:last-child td {

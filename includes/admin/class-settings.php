@@ -28,11 +28,9 @@ class Settings {
 			'indieauth'    => 'IndieAuth',
 			'semantic'     => 'Microformats',
 			'webmentions'  => 'Webmentions',
-			'post-kinds'   => 'Post Kinds',
+			'post-kinds'   => 'Posts',
 		],
 		'Services' => [
-			'entries'     => 'Entries',
-			'swarm'       => 'Swarm',
 			'mastodon'    => 'Mastodon',
 			'bluesky'     => 'Bluesky',
 			'pixelfed'    => 'Pixelfed',
@@ -334,14 +332,6 @@ class Settings {
 					<?php $this->render_tab_semantic(); ?>
 				</div>
 
-				<div id="nop-tab-entries" class="nop-tab-panel" hidden>
-					<?php $this->render_tab_entries(); ?>
-				</div>
-
-				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
-					<?php $this->render_tab_swarm(); ?>
-				</div>
-
 				<div id="nop-tab-mastodon" class="nop-tab-panel" hidden>
 					<?php $this->render_tab_mastodon(); ?>
 				</div>
@@ -458,8 +448,6 @@ class Settings {
 
 	private function is_tab_enabled( string $slug ): bool {
 		return match( $slug ) {
-			'swarm'    => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm']['enabled'] ?? true ),
-			'entries'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries']['enabled'] ?? true ),
 			'mastodon' => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon']['enabled'] ?? false ),
 			'bluesky'  => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky']['enabled'] ?? false ),
 			'pixelfed'   => (bool) ( \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed']['enabled'] ?? false ),
@@ -605,239 +593,6 @@ class Settings {
 		<?php
 	}
 
-	// ——— Tab: Swarm ——————————————————————————————————————————————————————————
-
-	private function render_tab_swarm(): void {
-		$settings       = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
-		$prefix         = self::OPTION_KEY . '[services][swarm]';
-		$formats        = $this->get_formats();
-		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		?>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Service</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
-						       <?php checked( $settings['enabled'] ?? true ); ?>>
-						Accept checkins from <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a>
-					</label>
-				</td>
-			</tr>
-		</table>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">
-					<label for="nop_swarm_post_status">Status</label>
-				</th>
-				<td>
-					<select id="nop_swarm_post_status" name="<?php echo "{$prefix}[post_status]"; ?>">
-						<?php
-						foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) {
-							printf(
-								'<option value="%s" %s>%s</option>',
-								esc_attr( $value ),
-								selected( $settings['post_status'] ?? 'publish', $value, false ),
-								esc_html( $label )
-							);
-						}
-						?>
-					</select>
-					<p class="description">Use <strong>Draft</strong> while testing — switch to Published when you're ready to go live.</p>
-				</td>
-			</tr>
-			<?php if ( count( $formats ) > 1 ) : ?>
-			<tr>
-				<th scope="row">
-					<label for="nop_swarm_post_format">Format</label>
-				</th>
-				<td>
-					<select id="nop_swarm_post_format" name="<?php echo "{$prefix}[post_format]"; ?>">
-						<?php
-						foreach ( $formats as $format ) {
-							printf(
-								'<option value="%s" %s>%s</option>',
-								esc_attr( $format ),
-								selected( $settings['post_format'] ?? 'status', $format, false ),
-								esc_html( ucfirst( $format ) )
-							);
-						}
-						?>
-					</select>
-				</td>
-			</tr>
-			<?php endif; ?>
-			<tr>
-				<th scope="row">
-					<label for="nop-swarm-category-input">Category</label>
-				</th>
-				<td>
-					<?php $this->render_token_field(
-						'nop-swarm-category-input',
-						"{$prefix}[post_category]",
-						$settings['post_category'] ?? 'Checkin',
-						$category_names,
-						'Add category…',
-						'Category name',
-						'Created automatically if it doesn\'t exist.'
-					); ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">
-					<label for="nop-swarm-tags-input">Tags</label>
-				</th>
-				<td>
-					<?php $this->render_token_field(
-						'nop-swarm-tags-input',
-						"{$prefix}[post_tags]",
-						$settings['post_tags'] ?? 'Swarm',
-						$tag_names,
-						'Add tags…',
-						'Tag name',
-						'New tags are created automatically.'
-					); ?>
-				</td>
-			</tr>
-		</table>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Photos</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-						Save Swarm photos to your media library
-					</label>
-					<p class="description">
-						Protects against Swarm CDN changes or account deletion.
-						Disable if you see timeouts on slow hosting.
-					</p>
-				</td>
-			</tr>
-		</table>
-		<?php
-	}
-
-	// ——— Tab: Notes ——————————————————————————————————————————————————————————
-
-	private function render_tab_entries(): void {
-		$settings       = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
-		$prefix         = self::OPTION_KEY . '[services][entries]';
-		$formats        = $this->get_formats();
-		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		?>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Service</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
-						       <?php checked( $settings['enabled'] ?? true ); ?>>
-						Accept generic Micropub posts — catch-all for any h-entry not handled by a named service
-					</label>
-				</td>
-			</tr>
-		</table>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">
-					<label for="nop_note_post_status">Status</label>
-				</th>
-				<td>
-					<select id="nop_note_post_status" name="<?php echo "{$prefix}[post_status]"; ?>">
-						<?php
-						foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) {
-							printf(
-								'<option value="%s" %s>%s</option>',
-								esc_attr( $value ),
-								selected( $settings['post_status'] ?? 'publish', $value, false ),
-								esc_html( $label )
-							);
-						}
-						?>
-					</select>
-					<p class="description">Use <strong>Draft</strong> while testing — switch to Published when you're ready to go live.</p>
-				</td>
-			</tr>
-			<?php if ( count( $formats ) > 1 ) : ?>
-			<tr>
-				<th scope="row">
-					<label for="nop_note_post_format">Format</label>
-				</th>
-				<td>
-					<select id="nop_note_post_format" name="<?php echo "{$prefix}[post_format]"; ?>">
-						<?php
-						foreach ( $formats as $format ) {
-							printf(
-								'<option value="%s" %s>%s</option>',
-								esc_attr( $format ),
-								selected( $settings['post_format'] ?? 'status', $format, false ),
-								esc_html( ucfirst( $format ) )
-							);
-						}
-						?>
-					</select>
-					<p class="description">Mastodon and Bluesky posts are short-form — <strong>Status</strong> is recommended.</p>
-				</td>
-			</tr>
-			<?php endif; ?>
-			<tr>
-				<th scope="row">
-					<label for="nop-note-category-input">Category</label>
-				</th>
-				<td>
-					<?php $this->render_token_field(
-						'nop-note-category-input',
-						"{$prefix}[post_category]",
-						$settings['post_category'] ?? 'Notes',
-						$category_names,
-						'Add category…',
-						'Category name',
-						'Created automatically if it doesn\'t exist.'
-					); ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">
-					<label for="nop-note-tags-input">Tags</label>
-				</th>
-				<td>
-					<?php $this->render_token_field(
-						'nop-note-tags-input',
-						"{$prefix}[post_tags]",
-						$settings['post_tags'] ?? '',
-						$tag_names,
-						'Add tags…',
-						'Tag name',
-						'New tags are created automatically.'
-					); ?>
-				</td>
-			</tr>
-		</table>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Photos</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-						Save photos to your media library
-					</label>
-					<p class="description">
-						Protects against remote CDN changes. Disable if you see timeouts on slow hosting.
-					</p>
-				</td>
-			</tr>
-		</table>
-		<?php
-	}
 
 	// ——— Tab: Mastodon ———————————————————————————————————————————————————————
 
@@ -1182,6 +937,123 @@ class Settings {
 	// ——— Tab: Post Kinds ————————————————————————————————————————————————————
 
 	private function render_tab_post_kinds(): void {
+		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+		$formats        = $this->get_formats();
+		$show_format    = count( $formats ) > 1;
+
+		// ── Inbound services (Notes + Checkins) ──────────────────────────────────
+		$services = [
+			'entries' => [
+				'label'            => 'Notes',
+				'source'           => 'Generic Micropub',
+				'prefix'           => self::OPTION_KEY . '[services][entries]',
+				'settings'         => \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [],
+				'default_format'   => 'status',
+				'default_category' => 'Notes',
+				'default_tags'     => '',
+				'photos_title'     => 'Save photos to your media library. Disable if you see timeouts on slow hosting.',
+			],
+			'swarm' => [
+				'label'            => 'Checkins',
+				'source'           => 'OwnYourSwarm',
+				'prefix'           => self::OPTION_KEY . '[services][swarm]',
+				'settings'         => \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [],
+				'default_format'   => 'status',
+				'default_category' => 'Checkin',
+				'default_tags'     => 'Swarm',
+				'photos_title'     => 'Save Swarm photos to your media library. Protects against CDN changes. Disable if you see timeouts.',
+			],
+		];
+		?>
+		<h3 class="nop-section-heading" style="padding-top:0;border-top:none;">Inbound Services</h3>
+		<p class="description" style="margin-bottom:12px;">Posts received via Micropub or OwnYourSwarm.</p>
+		<table class="nop-kinds-table">
+			<thead>
+				<tr>
+					<th scope="col">Source</th>
+					<th scope="col">Enable</th>
+					<th scope="col">Status</th>
+					<?php if ( $show_format ) : ?><th scope="col">Format</th><?php endif; ?>
+					<th scope="col">Category</th>
+					<th scope="col">Tags</th>
+					<th scope="col" class="nop-kinds-table__enable">Photos</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $services as $slug => $service ) :
+					$s      = $service['settings'];
+					$prefix = $service['prefix'];
+				?>
+				<tr>
+					<td>
+						<strong><?php echo esc_html( $service['label'] ); ?></strong><br>
+						<span class="nop-micropub-prop"><?php echo esc_html( $service['source'] ); ?></span>
+					</td>
+					<td class="nop-kinds-table__enable">
+						<input type="checkbox"
+						       name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>"
+						       value="1"
+						       aria-label="Enable <?php echo esc_attr( strtolower( $service['label'] ) ); ?>"
+						       <?php checked( $s['enabled'] ?? true ); ?>>
+					</td>
+					<td>
+						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
+							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>"
+								        <?php selected( $s['post_status'] ?? 'publish', $value ); ?>>
+									<?php echo esc_html( $label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+					<?php if ( $show_format ) : ?>
+					<td>
+						<select name="<?php echo esc_attr( "{$prefix}[post_format]" ); ?>">
+							<?php foreach ( $formats as $format ) : ?>
+								<option value="<?php echo esc_attr( $format ); ?>"
+								        <?php selected( $s['post_format'] ?? $service['default_format'], $format ); ?>>
+									<?php echo esc_html( ucfirst( $format ) ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+					<?php endif; ?>
+					<td>
+						<?php $this->render_token_field(
+							"nop-{$slug}-svc-category",
+							"{$prefix}[post_category]",
+							$s['post_category'] ?? $service['default_category'],
+							$category_names,
+							'Add category…',
+							'Category name'
+						); ?>
+					</td>
+					<td>
+						<?php $this->render_token_field(
+							"nop-{$slug}-svc-tags",
+							"{$prefix}[post_tags]",
+							$s['post_tags'] ?? $service['default_tags'],
+							$tag_names,
+							'Add tags…',
+							'Tag name'
+						); ?>
+					</td>
+					<td class="nop-kinds-table__enable">
+						<input type="checkbox"
+						       name="<?php echo esc_attr( "{$prefix}[sideload_photos]" ); ?>"
+						       value="1"
+						       title="<?php echo esc_attr( $service['photos_title'] ); ?>"
+						       aria-label="<?php echo esc_attr( 'Save photos: ' . strtolower( $service['label'] ) ); ?>"
+						       <?php checked( $s['sideload_photos'] ?? true ); ?>>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<!-- ── Post Kinds ─────────────────────────────────────────────────────── -->
+		<?php
 		$kinds = [
 			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of',         'default_category' => 'Bookmarks' ],
 			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to',         'default_category' => 'Replies'   ],
@@ -1189,10 +1061,9 @@ class Settings {
 			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of',           'default_category' => 'Reposts'   ],
 			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp',  'default_category' => 'RSVPs'     ],
 		];
-
-		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		?>
-		<p class="description" style="margin-bottom:14px;">Each kind maps a Micropub property to a WordPress post. Categories are created automatically if they don't exist.</p>
+		<h3 class="nop-section-heading">Post Kinds</h3>
+		<p class="description" style="margin-bottom:12px;">Micropub property mappings for interaction posts. Categories are created automatically if they don't exist.</p>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
@@ -1221,8 +1092,7 @@ class Settings {
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>"
-						        id="nop-<?php echo esc_attr( $slug ); ?>-status"
-						        aria-label="<?php echo esc_attr( $kind['label'] ); ?> post status">
+						        id="nop-<?php echo esc_attr( $slug ); ?>-status">
 							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>"
 								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
