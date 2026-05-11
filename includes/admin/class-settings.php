@@ -873,63 +873,59 @@ class Settings {
 		</table>
 
 		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Post status</th>
-				<td>
-					<select name="<?php echo "{$prefix}[post_status]"; ?>">
-						<?php foreach ( [ 'publish', 'draft', 'private' ] as $status ) : ?>
-							<option value="<?php echo esc_attr( $status ); ?>"
-							        <?php selected( $settings['post_status'] ?? 'publish', $status ); ?>>
-								<?php echo esc_html( ucfirst( $status ) ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="letterboxd-in-category">Category</label></th>
-				<td>
-					<?php
-					$category_names = array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) );
-					$this->render_token_field(
-						'letterboxd-in-category',
-						"{$prefix}[post_category]",
-						$settings['post_category'] ?? 'Films',
-						$category_names,
-						'Add category…',
-						'Category name',
-						'Created automatically if it doesn\'t exist.'
-					);
-					?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="letterboxd-in-tags">Tags</label></th>
-				<td>
-					<?php
-					$tag_names = array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag', 'hide_empty' => false ] ) );
-					$this->render_token_field(
-						'letterboxd-in-tags',
-						"{$prefix}[post_tags]",
-						$settings['post_tags'] ?? '',
-						$tag_names,
-						'Add tags…',
-						'Tag name'
-					);
-					?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Poster image</th>
-				<td>
-					<label>
+		<p class="description" style="margin: 6px 0 12px;">Applied to posts imported from Letterboxd.</p>
+		<?php
+		$category_names = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag', 'hide_empty' => false ] ) ) );
+		?>
+		<table class="nop-kinds-table">
+			<thead>
+				<tr>
+					<th scope="col" class="nop-kinds-table__status">Status</th>
+					<th scope="col">Category</th>
+					<th scope="col">Tags</th>
+					<th scope="col" class="nop-kinds-table__enable">Poster</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="nop-kinds-table__status">
+						<select name="<?php echo "{$prefix}[post_status]"; ?>">
+							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>"
+								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+									<?php echo esc_html( $label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+					<td>
+						<?php $this->render_token_field(
+							'letterboxd-in-category',
+							"{$prefix}[post_category]",
+							$settings['post_category'] ?? 'Films',
+							$category_names,
+							'Add category…',
+							'Category name'
+						); ?>
+					</td>
+					<td>
+						<?php $this->render_token_field(
+							'letterboxd-in-tags',
+							"{$prefix}[post_tags]",
+							$settings['post_tags'] ?? '',
+							$tag_names,
+							'Add tags…',
+							'Tag name'
+						); ?>
+					</td>
+					<td class="nop-kinds-table__enable">
 						<input type="checkbox" name="<?php echo "{$prefix}[sideload_poster]"; ?>" value="1"
+						       aria-label="Save film poster to media library"
 						       <?php checked( $settings['sideload_poster'] ?? true ); ?>>
-						Save film poster to your media library and set as featured image
-					</label>
-				</td>
-			</tr>
+					</td>
+				</tr>
+			</tbody>
 		</table>
 		<?php
 	}
@@ -1282,81 +1278,75 @@ class Settings {
 
 	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
 		$formats        = $this->get_formats();
+		$show_format    = count( $formats ) > 1;
 		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		?>
 		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 16px;">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-status">Status</label></th>
-				<td>
-					<select id="nop-<?php echo esc_attr( $slug ); ?>-in-status"
-					        name="<?php echo esc_attr( "{$name_prefix}[post_status]" ); ?>">
-						<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>"
-							        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php if ( count( $formats ) > 1 ) : ?>
-			<tr>
-				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-format">Format</label></th>
-				<td>
-					<select id="nop-<?php echo esc_attr( $slug ); ?>-in-format"
-					        name="<?php echo esc_attr( "{$name_prefix}[post_format]" ); ?>">
-						<?php foreach ( $formats as $format ) : ?>
-							<option value="<?php echo esc_attr( $format ); ?>"
-							        <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
-								<?php echo esc_html( ucfirst( $format ) ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</td>
-			</tr>
-			<?php endif; ?>
-			<tr>
-				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-category">Category</label></th>
-				<td>
-					<?php $this->render_token_field(
-						"nop-{$slug}-in-category",
-						"{$name_prefix}[post_category]",
-						$settings['post_category'] ?? 'Notes',
-						$category_names,
-						'Add category…',
-						'Category name',
-						'Created automatically if it doesn\'t exist.'
-					); ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="nop-<?php echo esc_attr( $slug ); ?>-in-tags">Tags</label></th>
-				<td>
-					<?php $this->render_token_field(
-						"nop-{$slug}-in-tags",
-						"{$name_prefix}[post_tags]",
-						$settings['post_tags'] ?? '',
-						$tag_names,
-						'Add tags…',
-						'Tag name'
-					); ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Photos</th>
-				<td>
-					<label>
+		<p class="description" style="margin: 6px 0 12px;">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
+		<table class="nop-kinds-table">
+			<thead>
+				<tr>
+					<th scope="col" class="nop-kinds-table__status">Status</th>
+					<?php if ( $show_format ) : ?><th scope="col" class="nop-kinds-table__format">Format</th><?php endif; ?>
+					<th scope="col">Category</th>
+					<th scope="col">Tags</th>
+					<th scope="col" class="nop-kinds-table__enable">Photos</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="nop-kinds-table__status">
+						<select name="<?php echo esc_attr( "{$name_prefix}[post_status]" ); ?>">
+							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>"
+								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+									<?php echo esc_html( $label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+					<?php if ( $show_format ) : ?>
+					<td class="nop-kinds-table__format">
+						<select name="<?php echo esc_attr( "{$name_prefix}[post_format]" ); ?>">
+							<?php foreach ( $formats as $format ) : ?>
+								<option value="<?php echo esc_attr( $format ); ?>"
+								        <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
+									<?php echo esc_html( ucfirst( $format ) ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+					<?php endif; ?>
+					<td>
+						<?php $this->render_token_field(
+							"nop-{$slug}-in-category",
+							"{$name_prefix}[post_category]",
+							$settings['post_category'] ?? 'Notes',
+							$category_names,
+							'Add category…',
+							'Category name'
+						); ?>
+					</td>
+					<td>
+						<?php $this->render_token_field(
+							"nop-{$slug}-in-tags",
+							"{$name_prefix}[post_tags]",
+							$settings['post_tags'] ?? '',
+							$tag_names,
+							'Add tags…',
+							'Tag name'
+						); ?>
+					</td>
+					<td class="nop-kinds-table__enable">
 						<input type="checkbox"
 						       name="<?php echo esc_attr( "{$name_prefix}[sideload_photos]" ); ?>"
 						       value="1"
+						       aria-label="Save photos to media library"
 						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-						Save photos to your media library
-					</label>
-				</td>
-			</tr>
+					</td>
+				</tr>
+			</tbody>
 		</table>
 		<?php
 	}
