@@ -5,17 +5,24 @@
  * for the selected kind. Selecting any kind auto-sets the post format to
  * "status". Filling in a URL auto-fills the post title if it is still empty.
  *
+ * Layout behaviour:
+ *   - Empty post + kind selected  → starter layout applied automatically.
+ *   - Post with content + kind    → "Apply layout" button offered in panel.
+ *
  * No build step — window.wp globals only.
  */
-( function ( plugins, editPost, element, data, components, i18n ) {
+( function ( plugins, editPost, element, data, components, i18n, blocks ) {
 	'use strict';
 
 	var el            = element.createElement;
+	var useState      = element.useState;
 	var useSelect     = data.useSelect;
 	var useDispatch   = data.useDispatch;
+	var parse         = blocks.parse;
 	var Panel         = editPost.PluginDocumentSettingPanel;
 	var SelectControl = components.SelectControl;
 	var TextControl   = components.TextControl;
+	var Button        = components.Button;
 	var __            = i18n.__;
 
 	// ── Kind definitions ────────────────────────────────────────────────────────
@@ -69,9 +76,9 @@
 					label:   __( 'Response', 'nop-indieweb' ),
 					type:    'select',
 					options: [
-						{ value: 'yes',        label: __( 'Yes',       'nop-indieweb' ) },
-						{ value: 'no',         label: __( 'No',        'nop-indieweb' ) },
-						{ value: 'maybe',      label: __( 'Maybe',     'nop-indieweb' ) },
+						{ value: 'yes',        label: __( 'Yes',        'nop-indieweb' ) },
+						{ value: 'no',         label: __( 'No',         'nop-indieweb' ) },
+						{ value: 'maybe',      label: __( 'Maybe',      'nop-indieweb' ) },
 						{ value: 'interested', label: __( 'Interested', 'nop-indieweb' ) },
 					],
 				},
@@ -82,7 +89,21 @@
 	var KIND_MAP = {};
 	KINDS.forEach( function ( k ) { KIND_MAP[ k.value ] = k; } );
 
-	// ── Auto-title patterns (mirrors PHP service class logic) ──────────────────
+	// ── Starter layouts ─────────────────────────────────────────────────────────
+	// These populate the post content area when a kind is selected on an empty post.
+	// post-source renders a linked card for the kind URL once set in the sidebar.
+	// rsvp-meta renders the RSVP status badge and event link.
+
+	var LAYOUTS = {
+		note:     '<!-- wp:paragraph /-->',
+		bookmark: '<!-- wp:nop-indieweb/post-source /--><!-- wp:paragraph /-->',
+		reply:    '<!-- wp:nop-indieweb/post-source /--><!-- wp:paragraph /-->',
+		like:     '<!-- wp:nop-indieweb/post-source /-->',
+		repost:   '<!-- wp:nop-indieweb/post-source /-->',
+		rsvp:     '<!-- wp:nop-indieweb/rsvp-meta /--><!-- wp:paragraph /-->',
+	};
+
+	// ── Auto-title helpers ──────────────────────────────────────────────────────
 
 	var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
 
@@ -107,6 +128,18 @@
 		try { new URL( url ); return true; } catch ( e ) { return false; }
 	}
 
+	// Post is considered empty if it has no blocks, or exactly one empty paragraph.
+	function isEditorEmpty( blockList ) {
+		if ( ! blockList || blockList.length === 0 ) {
+			return true;
+		}
+		if ( blockList.length === 1 ) {
+			var b = blockList[ 0 ];
+			return b.name === 'core/paragraph' && ! ( b.attributes && b.attributes.content );
+		}
+		return false;
+	}
+
 	// ── Panel component ─────────────────────────────────────────────────────────
 
 	function PostKindsPanel() {
@@ -118,17 +151,45 @@
 			return select( 'core/editor' ).getEditedPostAttribute( 'title' ) || '';
 		}, [] );
 
-		var dispatch = useDispatch( 'core/editor' );
+		var currentBlocks = useSelect( function ( select ) {
+			return select( 'core/block-editor' ).getBlocks();
+		}, [] );
 
-		var kind   = meta['nop_indieweb_post_kind'] || '';
-		var config = KIND_MAP[ kind ] || KIND_MAP[''];
+		var editorDispatch = useDispatch( 'core/editor' );
+		var blockDispatch  = useDispatch( 'core/block-editor' );
+
+		var offeredState   = useState( null );
+		var offeredKind    = offeredState[ 0 ];
+		var setOfferedKind = offeredState[ 1 ];
+
+		var kind   = meta[ 'nop_indieweb_post_kind' ] || '';
+		var config = KIND_MAP[ kind ] || KIND_MAP[ '' ];
+
+		function applyLayout( kindValue ) {
+			var layout = LAYOUTS[ kindValue ];
+			if ( ! layout ) {
+				return;
+			}
+			blockDispatch.resetBlocks( parse( layout ) );
+			setOfferedKind( null );
+		}
 
 		function setKind( newKind ) {
 			var update = { meta: { nop_indieweb_post_kind: newKind } };
 			if ( newKind ) {
 				update.format = 'status';
 			}
-			dispatch.editPost( update );
+			editorDispatch.editPost( update );
+
+			if ( newKind && LAYOUTS[ newKind ] ) {
+				if ( isEditorEmpty( currentBlocks ) ) {
+					applyLayout( newKind );
+				} else {
+					setOfferedKind( newKind );
+				}
+			} else {
+				setOfferedKind( null );
+			}
 		}
 
 		function setMeta( key, value ) {
@@ -140,11 +201,12 @@
 				update.title = TITLE_PATTERNS[ kind ]( value );
 			}
 
-			dispatch.editPost( update );
+			editorDispatch.editPost( update );
 		}
 
-		// Build the panel's children as an explicit array so we can spread it
-		// into createElement without a wrapper element.
+		var hasFields  = config.fields.length > 0;
+		var hasOffer   = !! ( offeredKind && KIND_MAP[ offeredKind ] );
+
 		var children = [
 			el( SelectControl, {
 				key:                     'kind-select',
@@ -152,9 +214,24 @@
 				value:                   kind,
 				options:                 KINDS.map( function ( k ) { return { value: k.value, label: k.label }; } ),
 				onChange:                setKind,
-				__nextHasNoMarginBottom: config.fields.length === 0,
+				__nextHasNoMarginBottom: ! hasFields && ! hasOffer,
 			} ),
 		];
+
+		if ( hasOffer ) {
+			children.push(
+				el( 'div', { key: 'layout-offer', style: { marginTop: '8px' } },
+					el( Button, {
+						variant: 'secondary',
+						size:    'small',
+						onClick: function () { applyLayout( offeredKind ); },
+					}, __( 'Apply ', 'nop-indieweb' ) + KIND_MAP[ offeredKind ].label + __( ' layout', 'nop-indieweb' ) ),
+					el( 'p', {
+						style: { fontSize: '11px', color: '#757575', margin: '4px 0 0' },
+					}, __( 'Replaces current content.', 'nop-indieweb' ) )
+				)
+			);
+		}
 
 		config.fields.forEach( function ( field, i ) {
 			var isLast = ( i === config.fields.length - 1 );
@@ -163,7 +240,7 @@
 				children.push( el( SelectControl, {
 					key:                     field.key,
 					label:                   field.label,
-					value:                   meta[ field.key ] || field.options[0].value,
+					value:                   meta[ field.key ] || field.options[ 0 ].value,
 					options:                 field.options,
 					onChange:                function ( v ) { setMeta( field.key, v ); },
 					__nextHasNoMarginBottom: isLast,
@@ -192,5 +269,6 @@
 	window.wp.element,
 	window.wp.data,
 	window.wp.components,
-	window.wp.i18n
+	window.wp.i18n,
+	window.wp.blocks
 );

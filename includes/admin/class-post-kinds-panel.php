@@ -25,7 +25,7 @@ class Post_Kinds_Panel {
 		wp_enqueue_script(
 			'nop-indieweb-post-kinds-panel',
 			NOP_INDIEWEB_URL . 'admin/post-kinds-panel.js',
-			[ 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
+			[ 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n', 'wp-blocks' ],
 			NOP_INDIEWEB_VERSION,
 			true
 		);
