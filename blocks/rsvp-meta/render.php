@@ -42,6 +42,14 @@ $rsvp_value = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp',        true
 $event_url  = (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true );
 
 if ( ! $rsvp_value && ! $event_url ) {
+	// In the block editor (REST render request), show a placeholder so the block
+	// doesn't trigger a "block rendered as empty" error before data is entered.
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--placeholder' ] );
+		echo '<div ' . $wrapper_attrs . '>';
+		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">Set RSVP in sidebar →</span></p>';
+		echo '</div>';
+	}
 	return;
 }
 

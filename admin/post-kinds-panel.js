@@ -91,15 +91,32 @@
 
 	// ── Starter layouts ─────────────────────────────────────────────────────────
 	// These populate the post content area when a kind is selected on an empty post.
-	// post-source renders a linked card for the kind URL once set in the sidebar.
-	// rsvp-meta renders the RSVP status badge and event link.
+	// Bound buttons mirror the template markup: the URL binding reads from post meta
+	// set in the sidebar, but the button itself always has static content so it never
+	// renders as empty in the block editor.
+	// rsvp-meta is server-rendered but shows a placeholder when no data is set.
+
+	function boundButton( metaKey, label ) {
+		return [
+			'<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->',
+			'<div class="wp-block-buttons">',
+			'<!-- wp:button {"metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"' + metaKey + '"}}}},"className":"is-style-outline"} -->',
+			'<div class="wp-block-button is-style-outline">',
+			'<a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noreferrer noopener">',
+			label + ' →',
+			'</a></div>',
+			'<!-- /wp:button -->',
+			'</div>',
+			'<!-- /wp:buttons -->',
+		].join( '' );
+	}
 
 	var LAYOUTS = {
 		note:     '<!-- wp:paragraph /-->',
-		bookmark: '<!-- wp:nop-indieweb/post-source /--><!-- wp:paragraph /-->',
-		reply:    '<!-- wp:nop-indieweb/post-source /--><!-- wp:paragraph /-->',
-		like:     '<!-- wp:nop-indieweb/post-source /-->',
-		repost:   '<!-- wp:nop-indieweb/post-source /-->',
+		bookmark: boundButton( 'nop_indieweb_bookmark_of',  'View Bookmark' )   + '<!-- wp:paragraph /-->',
+		reply:    boundButton( 'nop_indieweb_in_reply_to',  'View Original Post' ) + '<!-- wp:paragraph /-->',
+		like:     boundButton( 'nop_indieweb_like_of',      'View Post' ),
+		repost:   boundButton( 'nop_indieweb_repost_of',    'View Original' ),
 		rsvp:     '<!-- wp:nop-indieweb/rsvp-meta /--><!-- wp:paragraph /-->',
 	};
 
