@@ -117,6 +117,7 @@ class Auth_Endpoint {
 	// ── HTML output ───────────────────────────────────────────────────────────
 
 	private function render_html( array $params ): void {
+		header( 'Content-Type: text/html; charset=UTF-8' );
 		$client_label  = esc_html( parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
 		$scope_labels  = $this->describe_scopes( $params['scope'] );
 		$site_name     = get_bloginfo( 'name' );
