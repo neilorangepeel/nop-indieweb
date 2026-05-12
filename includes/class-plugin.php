@@ -76,6 +76,7 @@ class Plugin {
 		( new Endpoint( $services, $syndication_manager ) )->register();
 		( new Media_Endpoint() )->register();
 		( new Token_Endpoint() )->register();
+		( new Auth_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
 		( new Like_Endpoint() )->register();
@@ -90,7 +91,6 @@ class Plugin {
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
-			( new Auth_Endpoint() )->register();
 			( new Debug( $services ) )->register();
 			( new Checkin_Metabox() )->register();
 			( new Post_Kinds_Panel() )->register();
