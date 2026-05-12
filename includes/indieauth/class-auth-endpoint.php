@@ -43,11 +43,19 @@ class Auth_Endpoint {
 	}
 
 	public function rest_render_page( WP_REST_Request $request ): void {
-		if ( ! is_user_logged_in() ) {
+		// Use wp_validate_auth_cookie() rather than is_user_logged_in().
+		// The REST API's rest_cookie_check_errors hook calls wp_set_current_user(0)
+		// on any request that has no X-WP-Nonce header — even if the browser sent
+		// a valid session cookie — so is_user_logged_in() always returns false here,
+		// causing an infinite redirect loop with wp-login.php.
+		// Validating the raw cookie directly bypasses that layer entirely.
+		$user_id = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( ! $user_id ) {
 			$redirect_to = add_query_arg( $request->get_params(), static::url() );
 			wp_redirect( wp_login_url( $redirect_to ), 302 );
 			exit;
 		}
+		wp_set_current_user( $user_id );
 
 		$params = $this->validate_request( $request->get_params() );
 		if ( is_wp_error( $params ) ) {
