@@ -108,13 +108,22 @@ if ( $photos_term instanceof WP_Term ) {
 	WP_CLI::line( 'Photos category not found — skipping.' );
 }
 
-// ── 4. Bookmarks/Checkins — verify existing terms are assigned ────────────────
-foreach ( [ 'bookmarks' => 'bookmark', 'checkins' => 'checkin' ] as $cat_slug => $kind_slug ) {
-	$cat = get_term_by( 'slug', $cat_slug, 'category' )
-		?: get_term_by( 'name', ucfirst( $cat_slug ), 'category' );
+// ── 4. Kind-named categories → matching kind ────────────────────────────────
+// Both singular and plural category slugs handled — historical data uses both.
+$cat_to_kind = [
+	'bookmarks' => 'bookmark', 'bookmark' => 'bookmark',
+	'checkins'  => 'checkin',  'checkin'  => 'checkin',
+	'likes'     => 'like',     'like'     => 'like',
+	'replies'   => 'reply',    'reply'    => 'reply',
+	'reposts'   => 'repost',   'repost'   => 'repost',
+	'rsvps'     => 'rsvp',     'rsvp'     => 'rsvp',
+	'notes'     => 'note',     'note'     => 'note',
+	'films'     => 'watch',    'film'     => 'watch',
+];
 
+foreach ( $cat_to_kind as $cat_slug => $kind_slug ) {
+	$cat = get_term_by( 'slug', $cat_slug, 'category' );
 	if ( ! $cat instanceof WP_Term ) {
-		WP_CLI::line( ucfirst( $cat_slug ) . " category not found — skipping." );
 		continue;
 	}
 
@@ -131,8 +140,13 @@ foreach ( [ 'bookmarks' => 'bookmark', 'checkins' => 'checkin' ] as $cat_slug =>
 	foreach ( $posts as $post_id ) {
 		$assign( $post_id, $kind_slug ) ? $assigned++ : $skipped++;
 	}
-	WP_CLI::line( ucfirst( $cat_slug ) . " ({$cat->count} posts): assigned={$assigned} already-had-kind={$skipped}" );
+	WP_CLI::line( "Category '{$cat->slug}' → {$kind_slug} ({$cat->count} posts): assigned={$assigned} already-had-kind={$skipped}" );
 }
+
+// ── 5. Meta-cache backfill — catches posts that have nop_indieweb_post_kind
+// meta set (e.g. created by a service) but never had the term assigned. ──────
+$backfilled = Kind_Taxonomy::backfill_from_meta();
+WP_CLI::line( "Meta-cache backfill: {$backfilled} posts received a kind term from existing meta." );
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 WP_CLI::line( '' );

@@ -12,8 +12,9 @@
  */
 
 $retire = [
-	'statuses', 'photos', 'bookmarks', 'checkins',
+	'statuses', 'photos', 'bookmarks', 'checkins', 'checkin',
 	'likes', 'replies', 'reposts', 'rsvps', 'notes',
+	'films', 'film',
 ];
 
 foreach ( $retire as $slug ) {
