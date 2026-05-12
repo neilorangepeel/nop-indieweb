@@ -72,9 +72,12 @@ class Letterboxd extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'watch';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind'    => 'watch',
 			'nop_indieweb_film_title'   => $parsed['film_title'],
 			'nop_indieweb_film_year'    => $parsed['film_year'],
 			'nop_indieweb_film_rating'  => $parsed['rating'],

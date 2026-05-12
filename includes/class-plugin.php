@@ -3,6 +3,7 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb;
 
+use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Micropub\Endpoint;
 use NOP\IndieWeb\Micropub\Media_Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
@@ -69,6 +70,7 @@ class Plugin {
 		$syndication_manager->register();
 		( new Feed_Importer( $note, $letterboxd ) )->register();
 
+		( new Kind_Taxonomy() )->register();
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();
@@ -264,46 +266,46 @@ class Plugin {
 				'file'        => 'single-watch.html',
 			],
 
-			// ── Category archive templates ────────────────────────────────────────────
-			'nop-indieweb//category-films' => [
+			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
+			'nop-indieweb//taxonomy-nop_kind-watch' => [
 				'title'       => __( 'Archive – Film Diary', 'nop-indieweb' ),
-				'description' => __( 'Three-column poster grid for the Films category. Shows poster, star rating, title, and watch date.', 'nop-indieweb' ),
-				'file'        => 'category-films.html',
+				'description' => __( 'Three-column poster grid for the watch kind. Shows poster, star rating, title, and watch date.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-watch.html',
 			],
-			'nop-indieweb//category-notes' => [
+			'nop-indieweb//taxonomy-nop_kind-note' => [
 				'title'       => __( 'Archive – Notes', 'nop-indieweb' ),
 				'description' => __( 'Dense chronological stream for imported social posts. Shows content and platform attribution.', 'nop-indieweb' ),
-				'file'        => 'category-notes.html',
+				'file'        => 'taxonomy-nop_kind-note.html',
 			],
-			'nop-indieweb//category-checkin' => [
+			'nop-indieweb//taxonomy-nop_kind-checkin' => [
 				'title'       => __( 'Archive – Checkins', 'nop-indieweb' ),
 				'description' => __( 'Venue list for Swarm checkin posts. Shows venue name, locality, and date.', 'nop-indieweb' ),
-				'file'        => 'category-checkin.html',
+				'file'        => 'taxonomy-nop_kind-checkin.html',
 			],
-			'nop-indieweb//category-bookmarks' => [
+			'nop-indieweb//taxonomy-nop_kind-bookmark' => [
 				'title'       => __( 'Archive – Bookmarks', 'nop-indieweb' ),
 				'description' => __( 'Reading list of bookmarked URLs with optional notes.', 'nop-indieweb' ),
-				'file'        => 'category-bookmarks.html',
+				'file'        => 'taxonomy-nop_kind-bookmark.html',
 			],
-			'nop-indieweb//category-likes' => [
+			'nop-indieweb//taxonomy-nop_kind-like' => [
 				'title'       => __( 'Archive – Likes', 'nop-indieweb' ),
 				'description' => __( 'Compact list of liked posts across the web.', 'nop-indieweb' ),
-				'file'        => 'category-likes.html',
+				'file'        => 'taxonomy-nop_kind-like.html',
 			],
-			'nop-indieweb//category-reposts' => [
+			'nop-indieweb//taxonomy-nop_kind-repost' => [
 				'title'       => __( 'Archive – Reposts', 'nop-indieweb' ),
 				'description' => __( 'Compact list of reposted content from Mastodon and Bluesky.', 'nop-indieweb' ),
-				'file'        => 'category-reposts.html',
+				'file'        => 'taxonomy-nop_kind-repost.html',
 			],
-			'nop-indieweb//category-replies' => [
+			'nop-indieweb//taxonomy-nop_kind-reply' => [
 				'title'       => __( 'Archive – Replies', 'nop-indieweb' ),
 				'description' => __( 'Conversation list showing in-reply-to context and reply content.', 'nop-indieweb' ),
-				'file'        => 'category-replies.html',
+				'file'        => 'taxonomy-nop_kind-reply.html',
 			],
-			'nop-indieweb//category-rsvps' => [
+			'nop-indieweb//taxonomy-nop_kind-rsvp' => [
 				'title'       => __( 'Archive – RSVPs', 'nop-indieweb' ),
 				'description' => __( 'Event response list showing RSVP status and event link.', 'nop-indieweb' ),
-				'file'        => 'category-rsvps.html',
+				'file'        => 'taxonomy-nop_kind-rsvp.html',
 			],
 		];
 

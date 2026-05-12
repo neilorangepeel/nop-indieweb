@@ -44,6 +44,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-reply.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-like.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-repost.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-rsvp.php';
+require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';

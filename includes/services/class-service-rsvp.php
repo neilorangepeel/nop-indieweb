@@ -42,7 +42,7 @@ class RSVP extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'RSVPs' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 		$domain       = $this->domain_from_url( $parsed['in_reply_to'] );
 
 		$args = [
@@ -63,9 +63,12 @@ class RSVP extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'rsvp';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind'   => 'rsvp',
 			'nop_indieweb_in_reply_to' => $parsed['in_reply_to'],
 			'nop_indieweb_rsvp'        => $parsed['rsvp'],
 		];

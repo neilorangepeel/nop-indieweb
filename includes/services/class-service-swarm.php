@@ -112,7 +112,7 @@ class Swarm extends Service_Base {
 
 		$title = $parsed['venue_name'] ?: 'Checked in';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Checkin' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );
 
 		$note   = trim( $parsed['content'] );
@@ -141,10 +141,12 @@ class Swarm extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'checkin';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			// Post kind — explicit, drives template selection.
-			'nop_indieweb_post_kind'        => 'checkin',
 			'nop_indieweb_service'          => 'swarm',
 
 			// Venue identity
