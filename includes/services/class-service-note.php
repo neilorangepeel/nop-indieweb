@@ -74,7 +74,7 @@ class Note extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $content ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Notes' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
 
 		$args = [
@@ -98,9 +98,12 @@ class Note extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'note';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind'   => 'note',
 			'nop_indieweb_platform'    => $parsed['platform'],
 			'nop_indieweb_source_url'  => $parsed['source_url'],
 			'nop_indieweb_syndication' => $parsed['syndication'],

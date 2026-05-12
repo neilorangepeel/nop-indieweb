@@ -51,9 +51,11 @@ class Registry {
 
 		return [
 			// ── Post kind ────────────────────────────────────────────────────────
+			// Derived read-cache — do not write directly. Written only by the
+			// nop_kind taxonomy mirror hook in Kind_Taxonomy::mirror_kind_to_meta().
 			'nop_indieweb_post_kind'        => array_merge( $string, [
 				'label'       => __( 'Post Kind', 'nop-indieweb' ),
-				'description' => 'Explicit post kind (e.g. checkin, workout, note). Drives template selection.',
+				'description' => 'Read-cache of the nop_kind taxonomy term slug. Kept in sync by a mirror hook — do not write directly.',
 			] ),
 
 			// ── Service provenance ───────────────────────────────────────────────

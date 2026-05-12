@@ -3,6 +3,7 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Services;
 
+use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_Error;
 
 /**
@@ -26,6 +27,14 @@ abstract class Service_Base {
 	abstract public function get_meta( array $parsed ): array;
 	public function get_post_format( array $parsed ): string {
 		return 'status';
+	}
+
+	/**
+	 * Returns the nop_kind taxonomy slug for posts created by this service.
+	 * Override in subclasses. An empty string means no kind term is assigned.
+	 */
+	public function get_kind(): string {
+		return '';
 	}
 
 	/**
@@ -87,6 +96,11 @@ abstract class Service_Base {
 		$format = $this->get_post_format( $parsed );
 		if ( $format && 'standard' !== $format ) {
 			set_post_format( $post_id, $format );
+		}
+
+		$kind = $this->get_kind();
+		if ( $kind ) {
+			wp_set_object_terms( $post_id, $kind, Kind_Taxonomy::TAXONOMY );
 		}
 
 		set_transient( 'nop_indieweb_last_payload', $payload, DAY_IN_SECONDS );

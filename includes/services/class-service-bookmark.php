@@ -34,7 +34,7 @@ class Bookmark extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Bookmarks' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 
 		$args = [
 			'post_title'   => 'Bookmarked · ' . $this->domain_from_url( $parsed['bookmark_of'] ),
@@ -54,9 +54,12 @@ class Bookmark extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'bookmark';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind'   => 'bookmark',
 			'nop_indieweb_bookmark_of' => $parsed['bookmark_of'],
 		];
 	}

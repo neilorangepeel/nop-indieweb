@@ -157,11 +157,24 @@
 		return false;
 	}
 
+	// ── Term ID lookup (seeded from PHP via wp_localize_script) ────────────────
+
+	var termSlugToId = {};
+	var termIdToSlug = {};
+	( window.nopIndieWebKindTerms || [] ).forEach( function ( t ) {
+		termSlugToId[ t.slug ] = t.id;
+		termIdToSlug[ t.id ]   = t.slug;
+	} );
+
 	// ── Panel component ─────────────────────────────────────────────────────────
 
 	function PostKindsPanel() {
 		var meta = useSelect( function ( select ) {
 			return select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {};
+		}, [] );
+
+		var currentTermIds = useSelect( function ( select ) {
+			return select( 'core/editor' ).getEditedPostAttribute( 'nop_kind' ) || [];
 		}, [] );
 
 		var title = useSelect( function ( select ) {
@@ -179,7 +192,10 @@
 		var offeredKind    = offeredState[ 0 ];
 		var setOfferedKind = offeredState[ 1 ];
 
-		var kind   = meta[ 'nop_indieweb_post_kind' ] || '';
+		// Derive kind slug: prefer live taxonomy attribute, fall back to meta read-cache.
+		var kind = ( currentTermIds.length > 0 && termIdToSlug[ currentTermIds[ 0 ] ] )
+			? termIdToSlug[ currentTermIds[ 0 ] ]
+			: ( meta[ 'nop_indieweb_post_kind' ] || '' );
 		var config = KIND_MAP[ kind ] || KIND_MAP[ '' ];
 
 		function applyLayout( kindValue ) {
@@ -192,7 +208,9 @@
 		}
 
 		function setKind( newKind ) {
-			var update = { meta: { nop_indieweb_post_kind: newKind } };
+			var termId = termSlugToId[ newKind ];
+			var update = {};
+			update.nop_kind = ( newKind && termId ) ? [ termId ] : [];
 			if ( newKind ) {
 				update.format = 'status';
 			}

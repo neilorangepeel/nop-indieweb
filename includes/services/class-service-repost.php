@@ -34,7 +34,7 @@ class Repost extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Reposts' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 
 		$args = [
 			'post_title'   => 'Reposted · ' . $this->domain_from_url( $parsed['repost_of'] ),
@@ -54,9 +54,12 @@ class Repost extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'repost';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind' => 'repost',
 			'nop_indieweb_repost_of' => $parsed['repost_of'],
 		];
 	}

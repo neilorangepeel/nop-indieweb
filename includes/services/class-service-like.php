@@ -34,7 +34,7 @@ class Like extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '', 'Likes' );
+		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 
 		$args = [
 			'post_title'   => 'Liked · ' . $this->domain_from_url( $parsed['like_of'] ),
@@ -54,10 +54,13 @@ class Like extends Service_Base {
 		return $args;
 	}
 
+	public function get_kind(): string {
+		return 'like';
+	}
+
 	public function get_meta( array $parsed ): array {
 		return [
-			'nop_indieweb_post_kind' => 'like',
-			'nop_indieweb_like_of'   => $parsed['like_of'],
+			'nop_indieweb_like_of' => $parsed['like_of'],
 		];
 	}
 

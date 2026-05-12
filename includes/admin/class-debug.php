@@ -22,9 +22,10 @@ class Debug {
 
 	public function register(): void {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
-		add_action( 'admin_post_nop_indieweb_test_payload',   [ $this, 'handle_test_post' ] );
-		add_action( 'admin_post_nop_indieweb_backfeed_sync',  [ $this, 'handle_backfeed_sync' ] );
-		add_action( 'admin_post_nop_indieweb_import_feeds',   [ $this, 'handle_import_feeds' ] );
+		add_action( 'admin_post_nop_indieweb_test_payload',         [ $this, 'handle_test_post' ] );
+		add_action( 'admin_post_nop_indieweb_backfeed_sync',        [ $this, 'handle_backfeed_sync' ] );
+		add_action( 'admin_post_nop_indieweb_import_feeds',         [ $this, 'handle_import_feeds' ] );
+		add_action( 'admin_post_nop_indieweb_migrate_kind_taxonomy', [ $this, 'handle_migrate_kind_taxonomy' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
@@ -94,6 +95,22 @@ class Debug {
 		wp_safe_redirect( add_query_arg( [
 			'page'            => 'nop-indieweb-debug',
 			'backfeed_result' => 'success',
+		], admin_url( 'options-general.php' ) ) );
+		exit;
+	}
+
+	public function handle_migrate_kind_taxonomy(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Unauthorized.' );
+		}
+		check_admin_referer( 'nop_indieweb_migrate_kind_taxonomy' );
+
+		$count = \NOP\IndieWeb\Kind\Kind_Taxonomy::backfill_from_meta();
+
+		wp_safe_redirect( add_query_arg( [
+			'page'           => 'nop-indieweb-debug',
+			'migrate_result' => 'success',
+			'migrate_count'  => $count,
 		], admin_url( 'options-general.php' ) ) );
 		exit;
 	}
@@ -169,6 +186,21 @@ class Debug {
 				<?php wp_nonce_field( 'nop_indieweb_backfeed_sync' ); ?>
 				<input type="hidden" name="action" value="nop_indieweb_backfeed_sync">
 				<?php submit_button( 'Sync Now', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h2>Kind Taxonomy Migration</h2>
+			<p>Assigns the <code>nop_kind</code> taxonomy term to every post that already has a <code>nop_indieweb_post_kind</code> meta value. Safe to run multiple times — already-migrated posts are a no-op.</p>
+			<?php
+			$migrate_result = sanitize_key( $_GET['migrate_result'] ?? '' );
+			$migrate_count  = absint( $_GET['migrate_count'] ?? 0 );
+			if ( 'success' === $migrate_result ) :
+			?>
+			<div class="notice notice-success is-dismissible"><p>Migration complete — <?php echo $migrate_count; ?> post(s) updated.</p></div>
+			<?php endif; ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'nop_indieweb_migrate_kind_taxonomy' ); ?>
+				<input type="hidden" name="action" value="nop_indieweb_migrate_kind_taxonomy">
+				<?php submit_button( 'Migrate Kind to Taxonomy', 'secondary', 'submit', false ); ?>
 			</form>
 
 			<h2>cURL Example</h2>
