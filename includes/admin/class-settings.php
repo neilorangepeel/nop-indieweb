@@ -282,6 +282,9 @@ class Settings {
 		$clean['services']['letterboxd']['post_tags']       = sanitize_text_field( $input['services']['letterboxd']['post_tags'] ?? '' );
 		$clean['services']['letterboxd']['sideload_poster'] = ! empty( $input['services']['letterboxd']['sideload_poster'] );
 
+		// — Twitter Archive ——————————————————————————————————————————————————————
+		$clean['twitter_archive_url'] = esc_url_raw( $input['twitter_archive_url'] ?? '' );
+
 		return $clean;
 	}
 
@@ -771,6 +774,21 @@ class Settings {
 						<a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> and
 						<a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> use this for richer data.
 					</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Twitter Archive</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
+				<td>
+					<input type="url" id="twitter-archive-url"
+					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
+					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
+					       class="regular-text"
+					       placeholder="https://yoursite.com/twitter-archive/">
+					<p class="description">Optional link displayed on archived tweet posts. Leave blank to show the label without a link.</p>
 				</td>
 			</tr>
 		</table>

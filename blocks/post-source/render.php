@@ -82,7 +82,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 	<?php endif; ?>
 
 	<?php if ( $is_twitter_archive ) :
-		$archive_url = (string) get_option( 'nop_indieweb_twitter_archive_url', '' );
+		$archive_url = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' );
 	?>
 	<span class="nop-post-source__item nop-post-source__item--archive">
 		<?php if ( $archive_url ) : ?>

@@ -227,6 +227,16 @@ class Plugin {
 				'description' => __( 'Displays a Letterboxd film diary entry with star rating, poster, watch date, and review.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-watch.html',
 			],
+			'nop-indieweb//single-nop_kind-article' => [
+				'title'       => __( 'Single – Article', 'nop-indieweb' ),
+				'description' => __( 'Displays a long-form article with title, date, tags, and comments.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-article.html',
+			],
+			'nop-indieweb//single-nop_kind-photo' => [
+				'title'       => __( 'Single – Photo', 'nop-indieweb' ),
+				'description' => __( 'Displays a photo post with featured image, caption, and syndication source.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-photo.html',
+			],
 
 			// ── Post-format fallback (theme compat — not used by new posts) ──────────
 			'nop-indieweb//single-post-format-status' => [
@@ -275,6 +285,11 @@ class Plugin {
 				'title'       => __( 'Archive – RSVPs', 'nop-indieweb' ),
 				'description' => __( 'Event response list showing RSVP status and event link.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-rsvp.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-article' => [
+				'title'       => __( 'Archive – Articles', 'nop-indieweb' ),
+				'description' => __( 'Chronological list of long-form articles with title, date, tags, and excerpt.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-article.html',
 			],
 		];
 
