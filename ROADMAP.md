@@ -63,6 +63,8 @@ Today, post kind is stored three times — `nop_indieweb_post_kind` meta, the `s
 
 Fold the **Venue** panel into the **Post Kind** panel as a kind-specific sub-view. End state: two sidebars total (Post Kind, Syndication). The Post Kind panel transforms based on selected kind — note shows just the selector, checkin shows venue display, watch/listen/collection show search UIs.
 
+The editor panel is now config-driven: `Kind_Taxonomy::get_editor_panel_config()` is the single source of truth for per-kind dropdown labels, fields, starter layouts, and title behaviour. Phase 2 extends the per-kind config schema with a new `sub_panel` key (e.g. `'sub_panel' => 'venue'` for checkin, `'sub_panel' => 'lookup:tmdb'` for watch) and JS renders the matching sub-component. No more hardcoded kind branches in the panel JS.
+
 Establish `includes/lookup/Lookup_Provider_Base` to mirror `Service_Base` but for **interactive editor lookups**:
 
 - REST endpoint per provider: `/wp-json/nop-indieweb/v1/lookup/{provider}?q=…`
@@ -74,18 +76,18 @@ Ship with TMDB as the first provider (simplest API-key-only flow), wiring the Wa
 
 ### Phase 3 — Listen kind
 
-Last.fm or MusicBrainz as the lookup provider. Listen kind, sub-panel, `u-listen-of` (or equivalent) microformat output.
+Last.fm or MusicBrainz as the lookup provider. Listen kind, sub-panel, `u-listen-of` (or equivalent) microformat output. The `listen` slot already exists in `get_editor_panel_config()` with empty fields — Phase 3 fills it in with the sub-panel reference and any direct fields the lookup flow surfaces.
 
 ### Phase 4 — Collection kind
 
 The big one. Multi-week build.
 
-- `nop_kind` term `collection` (assumes Phase 1 done).
+- `nop_kind` term `collection` (assumes Phase 1 done) + child terms `music`, `film`, `book` (already seeded in `HIERARCHICAL_KINDS`).
 - `collection_format` taxonomy: music, film, book, game, etc.
 - `collection_format_type` taxonomy: vinyl, cd, tape, bluray, dvd, hardback, ebook, etc.
 - Meta fields per format, all `nop_indieweb_collection_*` (consistent with existing prefix, not `_collection_*`).
 - Lookup providers: Discogs (music), TMDB (film, reusing existing), OpenLibrary (books).
-- Collection sub-panels per format.
+- Collection sub-panels per format — registered as entries in `get_editor_panel_config()` so the existing dropdown picks them up. Decide before designing: do `music`/`film`/`book` get top-level dropdown entries, or does the panel reveal them as a second-level selector when `collection` is chosen? The current config is flat; the second option needs a small config-schema extension.
 - Archive templates: `/collection/`, `/collection/music/vinyl/`, `/collection/film/bluray/`, etc.
 - Microformat design decision: no standard "collection" mf2 — likely `h-cite` + `h-product` nested in `h-entry`. Write up before committing.
 
@@ -93,7 +95,7 @@ The big one. Multi-week build.
 
 ### Phase 5 — Photo kind
 
-Photo as a first-class kind. EXIF extraction, `u-photo` output, photo-specific upload UX. Simplest of the new kinds; can slot in earlier if needed.
+Photo as a first-class kind. EXIF extraction, `u-photo` output, photo-specific upload UX. Simplest of the new kinds; can slot in earlier if needed. The `photo` slot already exists in `get_editor_panel_config()` with empty fields and no layout — Phase 5 adds the photo-specific upload UX as a sub-panel (or as inline fields if simpler).
 
 ### Phase 6 — Portfolio CPT
 
@@ -248,4 +250,4 @@ Publish JSON Feed alongside RSS for each h-feed.
 
 ## Done
 
-_Nothing yet — move shipped items here with a date._
+- **2026-05-12 — Editor panel is config-driven.** `Kind_Taxonomy::get_editor_panel_config()` is the single source of truth for the Post Kind sidebar (dropdown labels, fields, starter layout, title-from-URL behaviour). `admin/post-kinds-panel.js` is a generic renderer over that config. Adding a new kind = register the taxonomy term + add one entry to the config; no JS change. Service-created kinds (`checkin`, `watch`, `listen`) appear in the dropdown with empty fields so hand-authored posts can adopt them. The default Gutenberg taxonomy panel for `nop_kind` is hidden via `removeEditorPanel` to keep kind single-select.

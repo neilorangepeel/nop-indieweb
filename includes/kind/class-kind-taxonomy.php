@@ -164,6 +164,133 @@ class Kind_Taxonomy {
 		}
 	}
 
+	/**
+	 * Per-kind editor panel config consumed by admin/post-kinds-panel.js.
+	 *
+	 * Single source of truth for the post-kind selector in the block editor:
+	 *   - label          → dropdown label
+	 *   - fields         → URL/select inputs shown when the kind is selected
+	 *   - layout         → starter blocks injected into an empty post on selection
+	 *   - title_from_url → if true, the first valid URL entered auto-fills an
+	 *                      empty post title with the URL's hostname
+	 *
+	 * To add a new kind: register the term in FLAT_KINDS / HIERARCHICAL_KINDS,
+	 * then add a config entry here. Service-created kinds (no manual editor
+	 * input) keep empty fields and layout — they still appear in the dropdown
+	 * so a hand-authored post can adopt the kind.
+	 *
+	 * Order in the returned array determines order in the dropdown.
+	 */
+	public static function get_editor_panel_config(): array {
+		$button = static function ( string $meta_key, string $label ): string {
+			return '<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->'
+				. '<div class="wp-block-buttons">'
+				. '<!-- wp:button {"metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"' . $meta_key . '"}}}},"className":"is-style-outline"} -->'
+				. '<div class="wp-block-button is-style-outline">'
+				. '<a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noreferrer noopener">'
+				. esc_html( $label ) . ' →'
+				. '</a></div>'
+				. '<!-- /wp:button -->'
+				. '</div>'
+				. '<!-- /wp:buttons -->';
+		};
+
+		return [
+			'note' => [
+				'label'          => __( 'Note', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '<!-- wp:paragraph /-->',
+				'title_from_url' => false,
+			],
+			'article' => [
+				'label'          => __( 'Article', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+			],
+			'bookmark' => [
+				'label'          => __( 'Bookmark', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_bookmark_of', 'label' => __( 'Bookmark of', 'nop-indieweb' ) ],
+				],
+				'layout'         => $button( 'nop_indieweb_bookmark_of', __( 'View Bookmark', 'nop-indieweb' ) ) . '<!-- wp:paragraph /-->',
+				'title_from_url' => true,
+			],
+			'reply' => [
+				'label'          => __( 'Reply', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_in_reply_to', 'label' => __( 'In reply to', 'nop-indieweb' ) ],
+				],
+				'layout'         => $button( 'nop_indieweb_in_reply_to', __( 'View Original Post', 'nop-indieweb' ) ) . '<!-- wp:paragraph /-->',
+				'title_from_url' => true,
+			],
+			'like' => [
+				'label'          => __( 'Like', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_like_of', 'label' => __( 'Like of', 'nop-indieweb' ) ],
+				],
+				'layout'         => $button( 'nop_indieweb_like_of', __( 'View Post', 'nop-indieweb' ) ),
+				'title_from_url' => true,
+			],
+			'repost' => [
+				'label'          => __( 'Repost', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_repost_of', 'label' => __( 'Repost of', 'nop-indieweb' ) ],
+				],
+				'layout'         => $button( 'nop_indieweb_repost_of', __( 'View Original', 'nop-indieweb' ) ),
+				'title_from_url' => true,
+			],
+			'rsvp' => [
+				'label'          => __( 'RSVP', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_in_reply_to', 'label' => __( 'Event URL', 'nop-indieweb' ) ],
+					[
+						'key'     => 'nop_indieweb_rsvp',
+						'label'   => __( 'Response', 'nop-indieweb' ),
+						'type'    => 'select',
+						'options' => [
+							[ 'value' => 'yes',        'label' => __( 'Yes',        'nop-indieweb' ) ],
+							[ 'value' => 'no',         'label' => __( 'No',         'nop-indieweb' ) ],
+							[ 'value' => 'maybe',      'label' => __( 'Maybe',      'nop-indieweb' ) ],
+							[ 'value' => 'interested', 'label' => __( 'Interested', 'nop-indieweb' ) ],
+						],
+					],
+				],
+				'layout'         => '<!-- wp:nop-indieweb/rsvp-meta /--><!-- wp:paragraph /-->',
+				'title_from_url' => true,
+			],
+			'photo' => [
+				'label'          => __( 'Photo', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+			],
+			// ── Service-created kinds ────────────────────────────────────────────
+			// Posts of these kinds are produced by Micropub / RSS flows. The
+			// dropdown entry lets a hand-authored post adopt the kind without
+			// going through the service. Per-kind editor inputs land here when
+			// the manual-composition flows are designed (roadmap Phase 2+).
+			'checkin' => [
+				'label'          => __( 'Checkin', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+			],
+			'watch' => [
+				'label'          => __( 'Watch', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+			],
+			'listen' => [
+				'label'          => __( 'Listen', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+			],
+		];
+	}
+
 	private function set_description( string $slug ): void {
 		$description = self::KIND_DESCRIPTIONS[ $slug ] ?? '';
 		if ( ! $description ) {

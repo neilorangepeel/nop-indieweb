@@ -41,6 +41,9 @@ class Post_Kinds_Panel {
 				$kind_terms[] = [ 'id' => $term->term_id, 'slug' => $term->slug ];
 			}
 		}
-		wp_localize_script( 'nop-indieweb-post-kinds-panel', 'nopIndieWebKindTerms', $kind_terms );
+		wp_localize_script( 'nop-indieweb-post-kinds-panel', 'nopIndieWebKindsPanel', [
+			'terms'  => $kind_terms,
+			'config' => \NOP\IndieWeb\Kind\Kind_Taxonomy::get_editor_panel_config(),
+		] );
 	}
 }
