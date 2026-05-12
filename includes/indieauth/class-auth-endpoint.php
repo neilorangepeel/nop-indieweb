@@ -4,45 +4,52 @@ declare( strict_types=1 );
 namespace NOP\IndieWeb\IndieAuth;
 
 use WP_Error;
+use WP_REST_Request;
 
 /**
  * IndieAuth authorization endpoint.
  *
- * A hidden wp-admin page that handles the user-facing OAuth approval flow.
- * WordPress handles session authentication automatically — if the user is not
- * logged in, WP redirects to wp-login.php and preserves all IndieAuth GET
- * params via the redirect_to mechanism.
+ * Registered as a REST route so the discovery URL is free of query-string
+ * characters. An admin.php?page=... URL already contains "?" — IndieAuth
+ * clients append their parameters with another "?" creating a double-? URL
+ * that WordPress cannot route.
  *
- * Discovery URL: admin_url( 'admin.php?page=nop-indieweb-auth' )
+ * Discovery URL: /wp-json/nop-indieweb/v1/authorize  (no "?" in the base)
  * Link tag:      <link rel="authorization_endpoint" href="...">
+ *
+ * The route renders HTML directly and exits, bypassing REST serialisation.
+ * WordPress cookie auth applies: if the user is not logged in the handler
+ * redirects to wp-login.php with redirect_to preserving all IndieAuth params.
  */
 class Auth_Endpoint {
 
 	public function register(): void {
-		add_action( 'admin_menu',                             [ $this, 'add_hidden_page' ] );
+		add_action( 'rest_api_init',                          [ $this, 'register_rest_route' ] );
 		add_action( 'admin_post_nop_indieweb_auth_submit',    [ $this, 'process_form' ] );
 	}
 
 	public static function url(): string {
-		return admin_url( 'admin.php?page=nop-indieweb-auth' );
+		return rest_url( 'nop-indieweb/v1/authorize' );
 	}
 
-	// ── Admin page ────────────────────────────────────────────────────────────
+	// ── REST route ────────────────────────────────────────────────────────────
 
-	public function add_hidden_page(): void {
-		// parent = null → hidden from all menus, accessible via admin.php?page=...
-		add_submenu_page(
-			null,
-			__( 'Authorize Application', 'nop-indieweb' ),
-			__( 'Authorize Application', 'nop-indieweb' ),
-			'manage_options',
-			'nop-indieweb-auth',
-			[ $this, 'render_page' ]
-		);
+	public function register_rest_route(): void {
+		register_rest_route( 'nop-indieweb/v1', '/authorize', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'rest_render_page' ],
+			'permission_callback' => '__return_true',
+		] );
 	}
 
-	public function render_page(): void {
-		$params = $this->validate_request( $_GET );
+	public function rest_render_page( WP_REST_Request $request ): void {
+		if ( ! is_user_logged_in() ) {
+			$redirect_to = add_query_arg( $request->get_params(), static::url() );
+			wp_redirect( wp_login_url( $redirect_to ), 302 );
+			exit;
+		}
+
+		$params = $this->validate_request( $request->get_params() );
 		if ( is_wp_error( $params ) ) {
 			wp_die(
 				esc_html( $params->get_error_message() ),
@@ -51,6 +58,57 @@ class Auth_Endpoint {
 			);
 		}
 
+		$this->render_html( $params );
+		exit;
+	}
+
+	// ── Form processing ───────────────────────────────────────────────────────
+
+	public function process_form(): void {
+		check_admin_referer( 'nop_indieweb_auth' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
+		}
+
+		$client_id    = esc_url_raw( $_POST['client_id']    ?? '' );
+		$redirect_uri = esc_url_raw( $_POST['redirect_uri'] ?? '' );
+		$state        = sanitize_text_field( $_POST['state']  ?? '' );
+		$scope        = sanitize_text_field( $_POST['scope']  ?? 'create' );
+		$challenge    = sanitize_text_field( $_POST['code_challenge'] ?? '' );
+		$challenge_m  = sanitize_text_field( $_POST['code_challenge_method'] ?? '' );
+
+		if ( ! $redirect_uri ) {
+			wp_die( esc_html__( 'Missing redirect_uri.', 'nop-indieweb' ) );
+		}
+
+		// Issue auth code — valid for 10 minutes, single-use.
+		$code = bin2hex( random_bytes( 16 ) );
+		set_transient( 'nop_ia_code_' . $code, [
+			'client_id'        => $client_id,
+			'redirect_uri'     => $redirect_uri,
+			'scope'            => $scope,
+			'challenge'        => $challenge,
+			'challenge_method' => $challenge_m,
+			'me'               => home_url( '/' ),
+			'user_id'          => get_current_user_id(),
+			'client_name'      => parse_url( $client_id, PHP_URL_HOST ) ?? $client_id,
+		], 10 * MINUTE_IN_SECONDS );
+
+		$redirect = add_query_arg( [
+			'code'  => $code,
+			'state' => rawurlencode( $state ),
+		], $redirect_uri );
+
+		// wp_safe_redirect blocks cross-origin redirects — use wp_redirect since
+		// redirect_uri was validated against client_id during render_page().
+		wp_redirect( $redirect, 302 );
+		exit;
+	}
+
+	// ── HTML output ───────────────────────────────────────────────────────────
+
+	private function render_html( array $params ): void {
 		$client_label  = esc_html( parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
 		$scope_labels  = $this->describe_scopes( $params['scope'] );
 		$site_name     = get_bloginfo( 'name' );
@@ -61,7 +119,7 @@ class Auth_Endpoint {
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<title><?php printf( esc_html__( 'Authorize — %s', 'nop-indieweb' ), esc_html( $site_name ) ); ?></title>
-			<?php wp_print_styles( 'login' ); ?>
+			<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/login.css' ) ); ?>">
 			<style>
 				body { background: #f0f0f1; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 				.nop-auth-wrap { max-width: 360px; margin: 60px auto; padding: 0 20px; }
@@ -129,50 +187,6 @@ class Auth_Endpoint {
 		<?php
 	}
 
-	// ── Form processing ───────────────────────────────────────────────────────
-
-	public function process_form(): void {
-		check_admin_referer( 'nop_indieweb_auth' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
-		}
-
-		$client_id    = esc_url_raw( $_POST['client_id']    ?? '' );
-		$redirect_uri = esc_url_raw( $_POST['redirect_uri'] ?? '' );
-		$state        = sanitize_text_field( $_POST['state']  ?? '' );
-		$scope        = sanitize_text_field( $_POST['scope']  ?? 'create' );
-		$challenge    = sanitize_text_field( $_POST['code_challenge'] ?? '' );
-		$challenge_m  = sanitize_text_field( $_POST['code_challenge_method'] ?? '' );
-
-		if ( ! $redirect_uri ) {
-			wp_die( esc_html__( 'Missing redirect_uri.', 'nop-indieweb' ) );
-		}
-
-		// Issue auth code — valid for 10 minutes, single-use.
-		$code = bin2hex( random_bytes( 16 ) );
-		set_transient( 'nop_ia_code_' . $code, [
-			'client_id'        => $client_id,
-			'redirect_uri'     => $redirect_uri,
-			'scope'            => $scope,
-			'challenge'        => $challenge,
-			'challenge_method' => $challenge_m,
-			'me'               => home_url( '/' ),
-			'user_id'          => get_current_user_id(),
-			'client_name'      => parse_url( $client_id, PHP_URL_HOST ) ?? $client_id,
-		], 10 * MINUTE_IN_SECONDS );
-
-		$redirect = add_query_arg( [
-			'code'  => $code,
-			'state' => rawurlencode( $state ),
-		], $redirect_uri );
-
-		// wp_safe_redirect blocks cross-origin redirects — use wp_redirect since
-		// redirect_uri was validated against client_id during render_page().
-		wp_redirect( $redirect, 302 );
-		exit;
-	}
-
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private function validate_request( array $params ): array|WP_Error {
@@ -194,11 +208,11 @@ class Auth_Endpoint {
 		}
 
 		return [
-			'client_id'            => esc_url_raw( $params['client_id'] ),
-			'redirect_uri'         => esc_url_raw( $params['redirect_uri'] ),
-			'state'                => sanitize_text_field( $params['state'] ),
-			'scope'                => sanitize_text_field( $params['scope'] ?? 'create' ),
-			'code_challenge'       => sanitize_text_field( $params['code_challenge'] ?? '' ),
+			'client_id'             => esc_url_raw( $params['client_id'] ),
+			'redirect_uri'          => esc_url_raw( $params['redirect_uri'] ),
+			'state'                 => sanitize_text_field( $params['state'] ),
+			'scope'                 => sanitize_text_field( $params['scope'] ?? 'create' ),
+			'code_challenge'        => sanitize_text_field( $params['code_challenge'] ?? '' ),
 			'code_challenge_method' => sanitize_text_field( $params['code_challenge_method'] ?? '' ),
 		];
 	}
@@ -213,11 +227,12 @@ class Auth_Endpoint {
 
 	private function describe_scopes( string $scope_string ): array {
 		$map = [
-			'create' => 'Create new posts',
-			'update' => 'Edit existing posts',
-			'delete' => 'Delete posts',
-			'media'  => 'Upload media files',
-			'draft'  => 'Create draft posts',
+			'create'   => 'Create new posts',
+			'update'   => 'Edit existing posts',
+			'delete'   => 'Delete posts',
+			'undelete' => 'Restore deleted posts',
+			'media'    => 'Upload media files',
+			'draft'    => 'Create draft posts',
 		];
 
 		$scopes = array_filter( array_map( 'trim', explode( ' ', $scope_string ) ) );
