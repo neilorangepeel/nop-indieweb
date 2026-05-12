@@ -86,7 +86,7 @@ class Webmention_Endpoint {
 		// Fetch the source.
 		$response = wp_safe_remote_get( $source, [
 			'timeout'    => 15,
-			'user-agent' => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (webmention; +https://neilorangepeel.com)',
+			'user-agent' => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (webmention; +' . home_url( '/' ) . ')',
 		] );
 
 		$http_code = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );

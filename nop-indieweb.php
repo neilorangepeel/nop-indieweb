@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
- * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication for neilorangepeel.com.
+ * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
  * Version:     0.2.0
  * Requires at least: 6.7
  * Requires PHP:      8.0
