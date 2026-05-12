@@ -217,43 +217,28 @@ class Settings {
 		$clean['services']['entries']['post_tags']       = sanitize_text_field( $input['services']['entries']['post_tags'] ?? '' );
 		$clean['services']['entries']['sideload_photos'] = ! empty( $input['services']['entries']['sideload_photos'] );
 
-		// — Mastodon ——————————————————————————————————————————————————————————————
-		$clean['syndicators']['mastodon']['enabled']      = ! empty( $input['syndicators']['mastodon']['enabled'] );
-		$clean['syndicators']['mastodon']['instance']     = esc_url_raw( $input['syndicators']['mastodon']['instance'] ?? '' );
-		$clean['syndicators']['mastodon']['access_token'] = sanitize_text_field( $input['syndicators']['mastodon']['access_token'] ?? '' );
-		// Inbound defaults (posts received from Mastodon via Bridgy)
-		$clean['syndicators']['mastodon']['post_status']     = in_array( $input['syndicators']['mastodon']['post_status'] ?? '', $valid_statuses, true )
-			? $input['syndicators']['mastodon']['post_status']
-			: 'publish';
-		$clean['syndicators']['mastodon']['post_category']   = sanitize_text_field( $input['syndicators']['mastodon']['post_category'] ?? '' );
-		$clean['syndicators']['mastodon']['post_tags']       = sanitize_text_field( $input['syndicators']['mastodon']['post_tags'] ?? '' );
-		$clean['syndicators']['mastodon']['sideload_photos']  = ! empty( $input['syndicators']['mastodon']['sideload_photos'] );
-		$clean['syndicators']['mastodon']['import_enabled']   = ! empty( $input['syndicators']['mastodon']['import_enabled'] );
-
-		// — Bluesky ———————————————————————————————————————————————————————————————
-		$clean['syndicators']['bluesky']['enabled']      = ! empty( $input['syndicators']['bluesky']['enabled'] );
-		$clean['syndicators']['bluesky']['handle']       = sanitize_text_field( $input['syndicators']['bluesky']['handle'] ?? '' );
-		$clean['syndicators']['bluesky']['app_password'] = sanitize_text_field( $input['syndicators']['bluesky']['app_password'] ?? '' );
-		// Inbound defaults (posts received from Bluesky via Bridgy)
-		$clean['syndicators']['bluesky']['post_status']     = in_array( $input['syndicators']['bluesky']['post_status'] ?? '', $valid_statuses, true )
-			? $input['syndicators']['bluesky']['post_status']
-			: 'publish';
-		$clean['syndicators']['bluesky']['post_category']   = sanitize_text_field( $input['syndicators']['bluesky']['post_category'] ?? '' );
-		$clean['syndicators']['bluesky']['post_tags']       = sanitize_text_field( $input['syndicators']['bluesky']['post_tags'] ?? '' );
-		$clean['syndicators']['bluesky']['sideload_photos']  = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
-		$clean['syndicators']['bluesky']['import_enabled']   = ! empty( $input['syndicators']['bluesky']['import_enabled'] );
-
-		// — Pixelfed ——————————————————————————————————————————————————————————————
-		$clean['syndicators']['pixelfed']['enabled']      = ! empty( $input['syndicators']['pixelfed']['enabled'] );
-		$clean['syndicators']['pixelfed']['instance']     = esc_url_raw( $input['syndicators']['pixelfed']['instance'] ?? '' );
-		$clean['syndicators']['pixelfed']['access_token'] = sanitize_text_field( $input['syndicators']['pixelfed']['access_token'] ?? '' );
-		$clean['syndicators']['pixelfed']['post_status']     = in_array( $input['syndicators']['pixelfed']['post_status'] ?? '', $valid_statuses, true )
-			? $input['syndicators']['pixelfed']['post_status']
-			: 'publish';
-		$clean['syndicators']['pixelfed']['post_category']   = sanitize_text_field( $input['syndicators']['pixelfed']['post_category'] ?? '' );
-		$clean['syndicators']['pixelfed']['post_tags']       = sanitize_text_field( $input['syndicators']['pixelfed']['post_tags'] ?? '' );
-		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
-		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
+		// — Syndicators ——————————————————————————————————————————————————————————
+		foreach ( self::get_syndicator_config() as $slug => $config ) {
+			$in  = $input['syndicators'][ $slug ] ?? [];
+			$out = [
+				'enabled'        => ! empty( $in['enabled'] ),
+				'import_enabled' => ! empty( $in['import_enabled'] ),
+				// Inbound defaults (posts received via Bridgy from this platform)
+				'post_status'    => in_array( $in['post_status'] ?? '', $valid_statuses, true ) ? $in['post_status'] : 'publish',
+				'post_category'  => sanitize_text_field( $in['post_category'] ?? '' ),
+				'post_tags'      => sanitize_text_field( $in['post_tags'] ?? '' ),
+				'sideload_photos'=> ! empty( $in['sideload_photos'] ),
+			];
+			foreach ( $config['fields'] as $key => $field ) {
+				$value      = (string) ( $in[ $key ] ?? '' );
+				$out[ $key ] = ( ( $field['type'] ?? '' ) === 'url' )
+					? esc_url_raw( $value )
+					: sanitize_text_field( $value );
+			}
+			// Merge, don't replace — preserves keys (e.g. last_synced_at) written
+			// outside this sanitize path by background jobs.
+			$clean['syndicators'][ $slug ] = array_merge( $clean['syndicators'][ $slug ] ?? [], $out );
+		}
 
 		// — Post Kinds ————————————————————————————————————————————————————————————
 		foreach ( [ 'bookmark', 'reply', 'like', 'repost', 'rsvp' ] as $kind ) {
@@ -812,75 +797,162 @@ class Settings {
 
 	// ——— Tab: Mastodon ———————————————————————————————————————————————————————
 
-	private function render_tab_mastodon(): void {
-		$prefix   = self::OPTION_KEY . '[syndicators][mastodon]';
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
+	private function render_tab_mastodon(): void { $this->render_syndicator_tab( 'mastodon' ); }
+	private function render_tab_bluesky():  void { $this->render_syndicator_tab( 'bluesky'  ); }
+	private function render_tab_pixelfed(): void { $this->render_syndicator_tab( 'pixelfed' ); }
+
+	/**
+	 * Per-syndicator shape — drives both render_syndicator_tab() and the
+	 * sanitize() loop. Adding a new ActivityPub-style syndicator (Threads,
+	 * Tumblr, micro.blog) means a new entry here plus the matching tab slug
+	 * in TAB_GROUPS — no copy-pasted HTML or sanitize block.
+	 */
+	private static function get_syndicator_config(): array {
+		return [
+			'mastodon' => [
+				'label'         => __( 'Mastodon', 'nop-indieweb' ),
+				'intro'         => __( 'Syndicates posts to your Mastodon account when you publish. Requires an access token from your instance.', 'nop-indieweb' ),
+				'doc_link'      => [ 'url' => 'https://docs.joinmastodon.org/client/token/', 'text' => __( 'How to create an access token →', 'nop-indieweb' ) ],
+				'enable_text'   => __( 'Syndicate posts to Mastodon on publish', 'nop-indieweb' ),
+				'fields'        => [
+					'instance'     => [
+						'label'       => __( 'Instance URL', 'nop-indieweb' ),
+						'type'        => 'url',
+						'placeholder' => 'https://mastodon.social',
+						'description' => __( 'Your Mastodon instance URL (e.g. https://mastodon.social).', 'nop-indieweb' ),
+					],
+					'access_token' => [
+						'label'       => __( 'Access Token', 'nop-indieweb' ),
+						'type'        => 'password',
+						'description' => __( 'From your Mastodon instance: Preferences → Development → New Application. Needs <code>write:statuses read:statuses</code> scopes.', 'nop-indieweb' ),
+					],
+				],
+				'import'        => [
+					'checkbox_label' => __( 'Automatically import your Mastodon posts as WordPress entries (hourly)', 'nop-indieweb' ),
+					'help'           => __( 'Replies and boosts are excluded. Posts already published from WordPress are skipped.', 'nop-indieweb' ),
+					'button_label'   => __( 'Import from Mastodon now', 'nop-indieweb' ),
+				],
+			],
+			'bluesky' => [
+				'label'         => __( 'Bluesky', 'nop-indieweb' ),
+				'intro'         => __( 'Syndicates posts to your Bluesky account when you publish. Uses an app password — never your main password.', 'nop-indieweb' ),
+				'doc_link'      => [ 'url' => 'https://bsky.app/settings/app-passwords', 'text' => __( 'Create an app password →', 'nop-indieweb' ) ],
+				'enable_text'   => __( 'Syndicate posts to Bluesky on publish', 'nop-indieweb' ),
+				'fields'        => [
+					'handle'       => [
+						'label'       => __( 'Handle', 'nop-indieweb' ),
+						'type'        => 'text',
+						'placeholder' => 'you.bsky.social',
+						'description' => __( 'Your Bluesky handle — either <code>you.bsky.social</code> or your custom domain handle.', 'nop-indieweb' ),
+					],
+					'app_password' => [
+						'label'       => __( 'App Password', 'nop-indieweb' ),
+						'type'        => 'password',
+						'description' => __( 'From Bluesky: Settings → Privacy and Security → App Passwords.', 'nop-indieweb' ),
+					],
+				],
+				'import'        => [
+					'checkbox_label' => __( 'Automatically import your Bluesky posts as WordPress entries (hourly)', 'nop-indieweb' ),
+					'help'           => __( 'Replies and reposts are excluded. Posts already published from WordPress are skipped.', 'nop-indieweb' ),
+					'button_label'   => __( 'Import from Bluesky now', 'nop-indieweb' ),
+				],
+			],
+			'pixelfed' => [
+				'label'         => __( 'Pixelfed', 'nop-indieweb' ),
+				'intro'         => __( 'Syndicates posts to your Pixelfed account when you publish. Pixelfed uses the same API as Mastodon — create an access token from your instance\'s developer settings.', 'nop-indieweb' ),
+				'doc_link'      => null,
+				'enable_text'   => __( 'Syndicate posts to Pixelfed on publish', 'nop-indieweb' ),
+				'fields'        => [
+					'instance'     => [
+						'label'       => __( 'Instance URL', 'nop-indieweb' ),
+						'type'        => 'url',
+						'placeholder' => 'https://pixelfed.social',
+						'description' => __( 'Your Pixelfed instance URL (e.g. https://pixelfed.social).', 'nop-indieweb' ),
+					],
+					'access_token' => [
+						'label'       => __( 'Access Token', 'nop-indieweb' ),
+						'type'        => 'password',
+						'description' => __( 'From your Pixelfed instance: Settings → Applications → Create New Token.', 'nop-indieweb' ),
+					],
+				],
+				'import'        => [
+					'checkbox_label' => __( 'Automatically import your Pixelfed posts as WordPress entries (hourly)', 'nop-indieweb' ),
+					'help'           => __( 'Replies and boosts are excluded. Posts already published from WordPress are skipped.', 'nop-indieweb' ),
+					'button_label'   => __( 'Import from Pixelfed now', 'nop-indieweb' ),
+				],
+			],
+		];
+	}
+
+	private function render_syndicator_tab( string $slug ): void {
+		$config = self::get_syndicator_config()[ $slug ] ?? null;
+		if ( ! $config ) {
+			return;
+		}
+
+		$prefix   = self::OPTION_KEY . "[syndicators][{$slug}]";
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $slug ] ?? [];
+
+		$all_credentials_filled = true;
+		foreach ( $config['fields'] as $key => $field ) {
+			if ( empty( $settings[ $key ] ) ) {
+				$all_credentials_filled = false;
+				break;
+			}
+		}
 		?>
-		<p>Syndicates posts to your Mastodon account when you publish. Requires an access token from your instance.</p>
-		<p><a href="https://docs.joinmastodon.org/client/token/" target="_blank" rel="noopener">How to create an access token →</a></p>
+		<p><?php echo esc_html( $config['intro'] ); ?></p>
+		<?php if ( $config['doc_link'] ) : ?>
+		<p><a href="<?php echo esc_url( $config['doc_link']['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $config['doc_link']['text'] ); ?></a></p>
+		<?php endif; ?>
 
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Enable</th>
+				<th scope="row"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>" value="1"
 						       <?php checked( $settings['enabled'] ?? false ); ?>>
-						Syndicate posts to Mastodon on publish
+						<?php echo esc_html( $config['enable_text'] ); ?>
 					</label>
 				</td>
 			</tr>
-			<tr>
-				<th scope="row"><label for="mastodon-instance">Instance URL</label></th>
-				<td>
-					<input type="url" id="mastodon-instance" name="<?php echo "{$prefix}[instance]"; ?>"
-					       value="<?php echo esc_attr( $settings['instance'] ?? '' ); ?>"
-					       class="regular-text" placeholder="https://mastodon.social">
-					<p class="description">Your Mastodon instance URL (e.g. https://mastodon.social).</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="mastodon-token">Access Token</label></th>
-				<td>
-					<input type="password" id="mastodon-token" name="<?php echo "{$prefix}[access_token]"; ?>"
-					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
-					       class="regular-text" autocomplete="off">
-					<p class="description">From your Mastodon instance: Preferences → Development → New Application. Needs <code>write:statuses read:statuses</code> scopes.</p>
-				</td>
-			</tr>
+			<?php foreach ( $config['fields'] as $key => $field ) : ?>
+				<?php $this->render_credential_row( $slug, $key, $field, $prefix, $settings ); ?>
+			<?php endforeach; ?>
 		</table>
 
-		<?php if ( ! empty( $settings['access_token'] ) && ! empty( $settings['instance'] ) ) : ?>
+		<?php if ( $all_credentials_filled ) : ?>
 		<p>
-			<button type="button" class="button nop-test-connection" data-service="mastodon"
+			<button type="button" class="button nop-test-connection" data-service="<?php echo esc_attr( $slug ); ?>"
 			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
-				Test connection
+				<?php esc_html_e( 'Test connection', 'nop-indieweb' ); ?>
 			</button>
-			<span class="nop-test-result" style="margin-left:8px;"></span>
+			<span class="nop-test-result"></span>
 		</p>
 		<?php endif; ?>
 
-		<?php $this->render_inbound_defaults( 'mastodon', $prefix, $settings ); ?>
+		<?php $this->render_inbound_defaults( $slug, $prefix, $settings ); ?>
 
-		<h3 class="nop-section-heading">Import</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Import', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Import posts</th>
+				<th scope="row"><?php esc_html_e( 'Import posts', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[import_enabled]" ); ?>" value="1"
 						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
-						Automatically import your Mastodon posts as WordPress entries (hourly)
+						<?php echo esc_html( $config['import']['checkbox_label'] ); ?>
 					</label>
-					<p class="description">Replies and boosts are excluded. Posts already published from WordPress are skipped.</p>
+					<p class="description"><?php echo esc_html( $config['import']['help'] ); ?></p>
 				</td>
 			</tr>
 			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
 			<tr>
-				<th scope="row">Sync now</th>
+				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
 				<td>
-					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'mastodon', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_mastodon' ) ); ?>"
-					   class="button">Import from Mastodon now</a>
+					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', $slug, admin_url( 'options-general.php?page=' . self::PAGE_SLUG ) ), "nop_indieweb_sync_{$slug}" ) ); ?>"
+					   class="button"><?php echo esc_html( $config['import']['button_label'] ); ?></a>
 				</td>
 			</tr>
 			<?php endif; ?>
@@ -888,154 +960,42 @@ class Settings {
 		<?php
 	}
 
-	private function render_tab_bluesky(): void {
-		$prefix   = self::OPTION_KEY . '[syndicators][bluesky]';
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky'] ?? [];
+	/**
+	 * Renders a single credential input row. Password-type fields get a
+	 * reveal toggle so the user can verify a paste without leaking the
+	 * value into the rendered DOM.
+	 */
+	private function render_credential_row( string $slug, string $key, array $field, string $prefix, array $settings ): void {
+		$id    = "nop-{$slug}-{$key}";
+		$type  = $field['type'] ?? 'text';
+		$value = (string) ( $settings[ $key ] ?? '' );
 		?>
-		<p>Syndicates posts to your Bluesky account when you publish. Uses an app password — never your main password.</p>
-		<p><a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">Create an app password →</a></p>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Enable</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
-						       <?php checked( $settings['enabled'] ?? false ); ?>>
-						Syndicate posts to Bluesky on publish
-					</label>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="bluesky-handle">Handle</label></th>
-				<td>
-					<input type="text" id="bluesky-handle" name="<?php echo "{$prefix}[handle]"; ?>"
-					       value="<?php echo esc_attr( $settings['handle'] ?? '' ); ?>"
-					       class="regular-text" placeholder="neilorangepeel.com">
-					<p class="description">Your Bluesky handle — either <code>you.bsky.social</code> or your custom domain handle.</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="bluesky-password">App Password</label></th>
-				<td>
-					<input type="password" id="bluesky-password" name="<?php echo "{$prefix}[app_password]"; ?>"
-					       value="<?php echo esc_attr( $settings['app_password'] ?? '' ); ?>"
-					       class="regular-text" autocomplete="off">
-					<p class="description">From Bluesky: Settings → Privacy and Security → App Passwords.</p>
-				</td>
-			</tr>
-		</table>
-
-		<?php if ( ! empty( $settings['app_password'] ) && ! empty( $settings['handle'] ) ) : ?>
-		<p>
-			<button type="button" class="button nop-test-connection" data-service="bluesky"
-			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
-				Test connection
-			</button>
-			<span class="nop-test-result" style="margin-left:8px;"></span>
-		</p>
-		<?php endif; ?>
-
-		<?php $this->render_inbound_defaults( 'bluesky', $prefix, $settings ); ?>
-
-		<h3 class="nop-section-heading">Import</h3>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Import posts</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
-						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
-						Automatically import your Bluesky posts as WordPress entries (hourly)
-					</label>
-					<p class="description">Replies and reposts are excluded. Posts already published from WordPress are skipped.</p>
-				</td>
-			</tr>
-			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
-			<tr>
-				<th scope="row">Sync now</th>
-				<td>
-					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'bluesky', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_bluesky' ) ); ?>"
-					   class="button">Import from Bluesky now</a>
-				</td>
-			</tr>
-			<?php endif; ?>
-		</table>
-		<?php
-	}
-
-	private function render_tab_pixelfed(): void {
-		$prefix   = self::OPTION_KEY . '[syndicators][pixelfed]';
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['pixelfed'] ?? [];
-		?>
-		<p>Syndicates posts to your Pixelfed account when you publish. Pixelfed uses the same API as Mastodon — create an access token from your instance's developer settings.</p>
-
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Enable</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
-						       <?php checked( $settings['enabled'] ?? false ); ?>>
-						Syndicate posts to Pixelfed on publish
-					</label>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="pixelfed-instance">Instance URL</label></th>
-				<td>
-					<input type="url" id="pixelfed-instance" name="<?php echo "{$prefix}[instance]"; ?>"
-					       value="<?php echo esc_attr( $settings['instance'] ?? '' ); ?>"
-					       class="regular-text" placeholder="https://pixelfed.social">
-					<p class="description">Your Pixelfed instance URL (e.g. https://pixelfed.social).</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="pixelfed-token">Access Token</label></th>
-				<td>
-					<input type="password" id="pixelfed-token" name="<?php echo "{$prefix}[access_token]"; ?>"
-					       value="<?php echo esc_attr( $settings['access_token'] ?? '' ); ?>"
-					       class="regular-text" autocomplete="off">
-					<p class="description">From your Pixelfed instance: Settings → Applications → Create New Token.</p>
-				</td>
-			</tr>
-		</table>
-
-		<?php if ( ! empty( $settings['access_token'] ) && ! empty( $settings['instance'] ) ) : ?>
-		<p>
-			<button type="button" class="button nop-test-connection" data-service="pixelfed"
-			        data-nonce="<?php echo esc_attr( wp_create_nonce( 'nop_test_connection' ) ); ?>">
-				Test connection
-			</button>
-			<span class="nop-test-result" style="margin-left:8px;"></span>
-		</p>
-		<?php endif; ?>
-
-		<?php $this->render_inbound_defaults( 'pixelfed', $prefix, $settings ); ?>
-
-		<h3 class="nop-section-heading">Import</h3>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Import posts</th>
-				<td>
-					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
-						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
-						Automatically import your Pixelfed posts as WordPress entries (hourly)
-					</label>
-					<p class="description">Replies and boosts are excluded. Posts already published from WordPress are skipped.</p>
-				</td>
-			</tr>
-			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
-			<tr>
-				<th scope="row">Sync now</th>
-				<td>
-					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', 'pixelfed', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ), 'nop_indieweb_sync_pixelfed' ) ); ?>"
-					   class="button">Import from Pixelfed now</a>
-				</td>
-			</tr>
-			<?php endif; ?>
-		</table>
+		<tr>
+			<th scope="row"><label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $field['label'] ); ?></label></th>
+			<td>
+				<?php if ( 'password' === $type ) : ?>
+				<span class="nop-secret-field">
+					<input type="password" id="<?php echo esc_attr( $id ); ?>"
+					       name="<?php echo esc_attr( "{$prefix}[{$key}]" ); ?>"
+					       value="<?php echo esc_attr( $value ); ?>"
+					       class="regular-text" autocomplete="off"<?php echo isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : ''; ?>>
+					<button type="button" class="button button-secondary nop-secret-toggle"
+					        data-target="<?php echo esc_attr( $id ); ?>"
+					        aria-label="<?php esc_attr_e( 'Show or hide value', 'nop-indieweb' ); ?>">
+						<?php esc_html_e( 'Show', 'nop-indieweb' ); ?>
+					</button>
+				</span>
+				<?php else : ?>
+				<input type="<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $id ); ?>"
+				       name="<?php echo esc_attr( "{$prefix}[{$key}]" ); ?>"
+				       value="<?php echo esc_attr( $value ); ?>"
+				       class="regular-text"<?php echo isset( $field['placeholder'] ) ? ' placeholder="' . esc_attr( $field['placeholder'] ) . '"' : ''; ?>>
+				<?php endif; ?>
+				<?php if ( ! empty( $field['description'] ) ) : ?>
+				<p class="description"><?php echo wp_kses_post( $field['description'] ); ?></p>
+				<?php endif; ?>
+			</td>
+		</tr>
 		<?php
 	}
 

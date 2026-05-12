@@ -24,6 +24,28 @@
 	--nop-radius:         3px;     /* WP core uses 3 px for cards / inputs */
 }
 
+/* ── Secret field with reveal toggle ──────────────────────────────────────── */
+
+.nop-secret-field {
+	display:     inline-flex;
+	align-items: stretch;
+	gap:         4px;
+	max-width:   30em;
+}
+
+.nop-secret-field .regular-text {
+	flex: 1;
+}
+
+.nop-secret-toggle {
+	min-width: 4.5em;
+}
+
+/* Test-connection result text — sits inline beside the button. */
+.nop-test-result {
+	margin-left: 8px;
+}
+
 /* ── Endpoint URL (read-only value inside form-table) ───────────────────────── */
 
 .nop-url-copy-row {

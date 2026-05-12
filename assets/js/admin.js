@@ -105,6 +105,21 @@
 			} );
 		} );
 
+		// ── Secret reveal toggles ─────────────────────────────────────────────────
+		// Tokens and app passwords render as type=password so they don't sit in
+		// the DOM in plain text. The toggle flips the input type so the user can
+		// verify a paste, then a click reverts it.
+
+		document.querySelectorAll( '.nop-secret-toggle' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				var input = document.getElementById( btn.dataset.target );
+				if ( ! input ) return;
+				var hidden = input.type === 'password';
+				input.type      = hidden ? 'text'  : 'password';
+				btn.textContent = hidden ? 'Hide'  : 'Show';
+			} );
+		} );
+
 		// ── Token fields ──────────────────────────────────────────────────────────
 
 		document.querySelectorAll( '.nop-token-field' ).forEach( initTokenField );
