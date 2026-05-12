@@ -181,21 +181,23 @@ class Note extends Service_Base {
 	}
 
 	private function generate_title( string $content, string $post_date ): string {
-		$date  = $post_date ? wp_date( 'j M Y', strtotime( $post_date ) ) : wp_date( 'j M Y' );
-		$text  = trim( wp_strip_all_tags( $content ) );
+		$text  = preg_replace( '/<!--.*?-->/s', '', $content );
+		$text  = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $text ) ) );
 		$words = preg_split( '/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY );
 
 		$url_words  = array_filter( $words, fn( $w ) => str_starts_with( $w, 'http' ) );
 		$text_words = array_values( array_filter( $words, fn( $w ) => ! str_starts_with( $w, 'http' ) ) );
 
 		if ( empty( $text_words ) && ! empty( $url_words ) ) {
-			$domain = wp_parse_url( reset( $url_words ), PHP_URL_HOST ) ?: reset( $url_words );
-			return 'Link · ' . $domain;
+			return wp_parse_url( reset( $url_words ), PHP_URL_HOST ) ?: reset( $url_words );
 		}
 
-		$pool    = $text_words ?: $words;
-		$snippet = implode( ' ', array_slice( $pool, 0, 5 ) ) . ( count( $pool ) > 5 ? '…' : '' );
-		return $snippet ? "{$date} · {$snippet}" : $date;
+		$pool = $text_words ?: $words;
+		if ( $pool ) {
+			return implode( ' ', array_slice( $pool, 0, 6 ) ) . ( count( $pool ) > 6 ? '…' : '' );
+		}
+
+		return $post_date ? wp_date( 'j M Y', strtotime( $post_date ) ) : wp_date( 'j M Y' );
 	}
 
 }
