@@ -763,21 +763,6 @@ class Settings {
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Twitter Archive</h3>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
-				<td>
-					<input type="url" id="twitter-archive-url"
-					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
-					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
-					       class="regular-text"
-					       placeholder="https://yoursite.com/twitter-archive/">
-					<p class="description">Optional link displayed on archived tweet posts. Leave blank to show the label without a link.</p>
-				</td>
-			</tr>
-		</table>
-
 		<h3 class="nop-section-heading">Developer</h3>
 		<table class="form-table" role="presentation">
 			<tr>
@@ -915,6 +900,11 @@ class Settings {
 						       <?php checked( $settings['enabled'] ?? false ); ?>>
 						<?php echo esc_html( $config['enable_text'] ); ?>
 					</label>
+					<?php if ( ! empty( $settings['enabled'] ) && ! $all_credentials_filled ) : ?>
+					<p class="nop-credential-warning">
+						<?php esc_html_e( 'Enabled but credentials are missing — syndication will silently fail until they are filled in below.', 'nop-indieweb' ); ?>
+					</p>
+					<?php endif; ?>
 				</td>
 			</tr>
 			<?php foreach ( $config['fields'] as $key => $field ) : ?>
@@ -947,12 +937,19 @@ class Settings {
 					<p class="description"><?php echo esc_html( $config['import']['help'] ); ?></p>
 				</td>
 			</tr>
-			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
+			<?php if ( ! empty( $settings['import_enabled'] ) ) :
+				$last_sync = $this->human_time_diff( $settings['import_last_at'] ?? null, 'Last imported' );
+			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
 				<td>
 					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'nop_indieweb_sync', $slug, admin_url( 'options-general.php?page=' . self::PAGE_SLUG ) ), "nop_indieweb_sync_{$slug}" ) ); ?>"
 					   class="button"><?php echo esc_html( $config['import']['button_label'] ); ?></a>
+					<?php if ( $last_sync ) : ?>
+					<span class="nop-last-sync"><?php echo esc_html( $last_sync ); ?></span>
+					<?php else : ?>
+					<span class="nop-last-sync nop-last-sync--never"><?php esc_html_e( 'Not yet imported', 'nop-indieweb' ); ?></span>
+					<?php endif; ?>
 				</td>
 			</tr>
 			<?php endif; ?>
@@ -1210,6 +1207,22 @@ class Settings {
 				</tr>
 				<?php endforeach; ?>
 			</tbody>
+		</table>
+
+		<h3 class="nop-section-heading">Twitter Archive</h3>
+		<p class="description" style="margin-bottom:12px;">Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.</p>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
+				<td>
+					<input type="url" id="twitter-archive-url"
+					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
+					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
+					       class="regular-text"
+					       placeholder="https://yoursite.com/twitter-archive/">
+					<p class="description">Optional link displayed on archived tweet posts. Leave blank to show the label without a link.</p>
+				</td>
+			</tr>
 		</table>
 		<?php
 	}

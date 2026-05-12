@@ -46,6 +46,24 @@
 	margin-left: 8px;
 }
 
+/* Inline warning when Enable is on but credentials are missing. */
+.nop-credential-warning {
+	color:     var(--nop-text-error);
+	font-size: 13px;
+	margin:    4px 0 0;
+}
+
+/* Last-sync timestamp shown next to the Sync now button. */
+.nop-last-sync {
+	margin-left: 12px;
+	color:       #646970;
+	font-size:   13px;
+}
+
+.nop-last-sync--never {
+	font-style: italic;
+}
+
 /* ── Endpoint URL (read-only value inside form-table) ───────────────────────── */
 
 .nop-url-copy-row {
