@@ -56,7 +56,16 @@ class Endpoint {
 			return new WP_REST_Response( [
 				'media-endpoint' => Media_Endpoint::url(),
 				'syndicate-to'   => $syndicate_to,
-				'post-types'     => [ [ 'type' => 'entry', 'name' => 'Post' ] ],
+				'post-types'     => [
+					[ 'type' => 'note',     'name' => 'Note' ],
+					[ 'type' => 'article',  'name' => 'Article' ],
+					[ 'type' => 'bookmark', 'name' => 'Bookmark' ],
+					[ 'type' => 'like',     'name' => 'Like' ],
+					[ 'type' => 'repost',   'name' => 'Repost' ],
+					[ 'type' => 'reply',    'name' => 'Reply' ],
+					[ 'type' => 'rsvp',     'name' => 'RSVP' ],
+					[ 'type' => 'checkin',  'name' => 'Checkin' ],
+				],
 			], 200 );
 		}
 
