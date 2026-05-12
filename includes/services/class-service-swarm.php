@@ -232,7 +232,4 @@ class Swarm extends Service_Base {
 		}
 	}
 
-	public function get_post_format( array $parsed ): string {
-		return $this->get_settings()['post_format'] ?? 'status';
-	}
 }

@@ -30,6 +30,24 @@ class Kind_Taxonomy {
 		'photo'    => 'Photo',
 	];
 
+	const KIND_DESCRIPTIONS = [
+		'note'       => 'Short-form posts without a title — thoughts, status updates, quick reactions.',
+		'article'    => 'Long-form posts with a title — essays, blog posts, written pieces.',
+		'bookmark'   => 'A saved link to content worth revisiting.',
+		'reply'      => 'A response to content elsewhere on the web.',
+		'like'       => 'Appreciation for something elsewhere on the web.',
+		'repost'     => 'Sharing someone else\'s post without added commentary.',
+		'rsvp'       => 'A response to an event invitation.',
+		'checkin'    => 'A location check-in, usually from Swarm.',
+		'watch'      => 'A film or show watched, logged via Letterboxd.',
+		'listen'     => 'Music or audio actively listened to.',
+		'photo'      => 'A post where an image is the primary content.',
+		'collection' => 'Ownership of a physical or digital media item.',
+		'music'      => 'A music album or release in the collection.',
+		'film'       => 'A film owned on physical or digital media.',
+		'book'       => 'A book owned or read.',
+	];
+
 	// collection → {music, film, book}; format detail (vinyl, cd, dvd, etc.) goes on tags.
 	const HIERARCHICAL_KINDS = [
 		'collection' => [
@@ -122,12 +140,14 @@ class Kind_Taxonomy {
 			if ( ! term_exists( $slug, self::TAXONOMY ) ) {
 				wp_insert_term( $name, self::TAXONOMY, [ 'slug' => $slug ] );
 			}
+			$this->set_description( $slug );
 		}
 
 		foreach ( self::HIERARCHICAL_KINDS as $parent_slug => $parent ) {
 			if ( ! term_exists( $parent_slug, self::TAXONOMY ) ) {
 				wp_insert_term( $parent['name'], self::TAXONOMY, [ 'slug' => $parent_slug ] );
 			}
+			$this->set_description( $parent_slug );
 			$parent_term = get_term_by( 'slug', $parent_slug, self::TAXONOMY );
 			if ( ! $parent_term instanceof \WP_Term ) {
 				continue;
@@ -139,7 +159,19 @@ class Kind_Taxonomy {
 						'parent' => $parent_term->term_id,
 					] );
 				}
+				$this->set_description( $child_slug );
 			}
+		}
+	}
+
+	private function set_description( string $slug ): void {
+		$description = self::KIND_DESCRIPTIONS[ $slug ] ?? '';
+		if ( ! $description ) {
+			return;
+		}
+		$term = get_term_by( 'slug', $slug, self::TAXONOMY );
+		if ( $term instanceof \WP_Term && $term->description !== $description ) {
+			wp_update_term( $term->term_id, self::TAXONOMY, [ 'description' => $description ] );
 		}
 	}
 }

@@ -26,15 +26,6 @@ abstract class Service_Base {
 	abstract public function map_to_post( array $parsed ): array;
 	abstract public function get_meta( array $parsed ): array;
 	/**
-	 * Returns the post format to set after insert. Empty string = standard (no format).
-	 * Override only if a theme requires a specific format for styling purposes.
-	 * The plugin does not set post formats itself — nop_kind is the sole kind signal.
-	 */
-	public function get_post_format( array $parsed ): string {
-		return '';
-	}
-
-	/**
 	 * Returns the nop_kind taxonomy slug for posts created by this service.
 	 * Override in subclasses. An empty string means no kind term is assigned.
 	 */
@@ -96,11 +87,6 @@ abstract class Service_Base {
 		$post_id = wp_insert_post( $post_args, true );
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
-		}
-
-		$format = $this->get_post_format( $parsed );
-		if ( $format && 'standard' !== $format ) {
-			set_post_format( $post_id, $format );
 		}
 
 		$kind = $this->get_kind( $parsed );

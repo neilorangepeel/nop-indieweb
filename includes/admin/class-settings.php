@@ -204,8 +204,7 @@ class Settings {
 		$clean['services']['swarm']['post_status']     = in_array( $input['services']['swarm']['post_status'] ?? '', $valid_statuses, true )
 			? $input['services']['swarm']['post_status']
 			: 'publish';
-		$clean['services']['swarm']['post_format']     = sanitize_key( $input['services']['swarm']['post_format'] ?? 'status' );
-		$clean['services']['swarm']['post_category']   = sanitize_text_field( $input['services']['swarm']['post_category'] ?? 'Checkin' );
+		$clean['services']['swarm']['post_category']   = sanitize_text_field( $input['services']['swarm']['post_category'] ?? '' );
 		$clean['services']['swarm']['post_tags']       = sanitize_text_field( $input['services']['swarm']['post_tags'] ?? 'Swarm' );
 		$clean['services']['swarm']['sideload_photos'] = ! empty( $input['services']['swarm']['sideload_photos'] );
 
@@ -214,8 +213,7 @@ class Settings {
 		$clean['services']['entries']['post_status']     = in_array( $input['services']['entries']['post_status'] ?? '', $valid_statuses, true )
 			? $input['services']['entries']['post_status']
 			: 'publish';
-		$clean['services']['entries']['post_format']     = sanitize_key( $input['services']['entries']['post_format'] ?? 'status' );
-		$clean['services']['entries']['post_category']   = sanitize_text_field( $input['services']['entries']['post_category'] ?? 'Notes' );
+		$clean['services']['entries']['post_category']   = sanitize_text_field( $input['services']['entries']['post_category'] ?? '' );
 		$clean['services']['entries']['post_tags']       = sanitize_text_field( $input['services']['entries']['post_tags'] ?? '' );
 		$clean['services']['entries']['sideload_photos'] = ! empty( $input['services']['entries']['sideload_photos'] );
 
@@ -227,8 +225,7 @@ class Settings {
 		$clean['syndicators']['mastodon']['post_status']     = in_array( $input['syndicators']['mastodon']['post_status'] ?? '', $valid_statuses, true )
 			? $input['syndicators']['mastodon']['post_status']
 			: 'publish';
-		$clean['syndicators']['mastodon']['post_format']     = sanitize_key( $input['syndicators']['mastodon']['post_format'] ?? 'status' );
-		$clean['syndicators']['mastodon']['post_category']   = sanitize_text_field( $input['syndicators']['mastodon']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['mastodon']['post_category']   = sanitize_text_field( $input['syndicators']['mastodon']['post_category'] ?? '' );
 		$clean['syndicators']['mastodon']['post_tags']       = sanitize_text_field( $input['syndicators']['mastodon']['post_tags'] ?? '' );
 		$clean['syndicators']['mastodon']['sideload_photos']  = ! empty( $input['syndicators']['mastodon']['sideload_photos'] );
 		$clean['syndicators']['mastodon']['import_enabled']   = ! empty( $input['syndicators']['mastodon']['import_enabled'] );
@@ -241,8 +238,7 @@ class Settings {
 		$clean['syndicators']['bluesky']['post_status']     = in_array( $input['syndicators']['bluesky']['post_status'] ?? '', $valid_statuses, true )
 			? $input['syndicators']['bluesky']['post_status']
 			: 'publish';
-		$clean['syndicators']['bluesky']['post_format']     = sanitize_key( $input['syndicators']['bluesky']['post_format'] ?? 'status' );
-		$clean['syndicators']['bluesky']['post_category']   = sanitize_text_field( $input['syndicators']['bluesky']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['bluesky']['post_category']   = sanitize_text_field( $input['syndicators']['bluesky']['post_category'] ?? '' );
 		$clean['syndicators']['bluesky']['post_tags']       = sanitize_text_field( $input['syndicators']['bluesky']['post_tags'] ?? '' );
 		$clean['syndicators']['bluesky']['sideload_photos']  = ! empty( $input['syndicators']['bluesky']['sideload_photos'] );
 		$clean['syndicators']['bluesky']['import_enabled']   = ! empty( $input['syndicators']['bluesky']['import_enabled'] );
@@ -254,8 +250,7 @@ class Settings {
 		$clean['syndicators']['pixelfed']['post_status']     = in_array( $input['syndicators']['pixelfed']['post_status'] ?? '', $valid_statuses, true )
 			? $input['syndicators']['pixelfed']['post_status']
 			: 'publish';
-		$clean['syndicators']['pixelfed']['post_format']     = sanitize_key( $input['syndicators']['pixelfed']['post_format'] ?? 'status' );
-		$clean['syndicators']['pixelfed']['post_category']   = sanitize_text_field( $input['syndicators']['pixelfed']['post_category'] ?? 'Notes' );
+		$clean['syndicators']['pixelfed']['post_category']   = sanitize_text_field( $input['syndicators']['pixelfed']['post_category'] ?? '' );
 		$clean['syndicators']['pixelfed']['post_tags']       = sanitize_text_field( $input['syndicators']['pixelfed']['post_tags'] ?? '' );
 		$clean['syndicators']['pixelfed']['sideload_photos'] = ! empty( $input['syndicators']['pixelfed']['sideload_photos'] );
 		$clean['syndicators']['pixelfed']['import_enabled']  = ! empty( $input['syndicators']['pixelfed']['import_enabled'] );
@@ -1029,8 +1024,6 @@ class Settings {
 	private function render_tab_letterboxd(): void {
 		$prefix   = self::OPTION_KEY . '[services][letterboxd]';
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd'] ?? [];
-		$formats  = $this->get_formats();
-
 		$username = $settings['username'] ?? '';
 		?>
 		<p>Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.</p>
@@ -1106,7 +1099,7 @@ class Settings {
 						<?php $this->render_token_field(
 							'letterboxd-in-category',
 							"{$prefix}[post_category]",
-							$settings['post_category'] ?? 'Films',
+							$settings['post_category'] ?? '',
 							$category_names,
 							'Add category…',
 							'Category name'
@@ -1138,9 +1131,6 @@ class Settings {
 	private function render_tab_publishing(): void {
 		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		$formats        = $this->get_formats();
-		$show_format    = count( $formats ) > 1;
-
 		$entries_settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
 		$entries_prefix   = self::OPTION_KEY . '[services][entries]';
 		?>
@@ -1151,7 +1141,6 @@ class Settings {
 				<tr>
 					<th scope="col">Enable</th>
 					<th scope="col">Status</th>
-					<?php if ( $show_format ) : ?><th scope="col" class="nop-kinds-table__format">Format</th><?php endif; ?>
 					<th scope="col">Category</th>
 					<th scope="col">Tags</th>
 					<th scope="col" class="nop-kinds-table__enable">Photos</th>
@@ -1175,19 +1164,8 @@ class Settings {
 							<?php endforeach; ?>
 						</select>
 					</td>
-					<?php if ( $show_format ) : ?>
-					<td class="nop-kinds-table__format">
-						<select name="<?php echo esc_attr( "{$entries_prefix}[post_format]" ); ?>">
-							<?php foreach ( $formats as $format ) : ?>
-								<option value="<?php echo esc_attr( $format ); ?>" <?php selected( $entries_settings['post_format'] ?? 'status', $format ); ?>>
-									<?php echo esc_html( ucfirst( $format ) ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-					<?php endif; ?>
 					<td>
-						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? 'Notes', $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
 					</td>
 					<td>
 						<?php $this->render_token_field( 'nop-entries-svc-tags', "{$entries_prefix}[post_tags]", $entries_settings['post_tags'] ?? '', $tag_names, 'Add tags…', 'Tag name' ); ?>
@@ -1206,11 +1184,11 @@ class Settings {
 		<p class="description" style="margin-bottom:12px;">Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don't exist.</p>
 		<?php
 		$kinds = [
-			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of',        'default_category' => 'Bookmarks' ],
-			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to',        'default_category' => 'Replies'   ],
-			'like'     => [ 'label' => 'Like',      'micropub' => 'like-of',            'default_category' => 'Likes'     ],
-			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of',          'default_category' => 'Reposts'   ],
-			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp', 'default_category' => 'RSVPs'     ],
+			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of'        ],
+			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to'        ],
+			'like'     => [ 'label' => 'Like',      'micropub' => 'like-of'            ],
+			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of'          ],
+			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp' ],
 		];
 		?>
 		<table class="nop-kinds-table">
@@ -1249,7 +1227,7 @@ class Settings {
 						</select>
 					</td>
 					<td>
-						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? $kind['default_category'], $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
 					</td>
 				</tr>
 				<?php endforeach; ?>
@@ -1300,7 +1278,6 @@ class Settings {
 	private function render_tab_swarm(): void {
 		$prefix   = self::OPTION_KEY . '[services][swarm]';
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
-		$formats  = $this->get_formats();
 		$endpoint = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 
 		$category_names = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) ) );
@@ -1341,7 +1318,6 @@ class Settings {
 			<thead>
 				<tr>
 					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<?php if ( count( $formats ) > 1 ) : ?><th scope="col" class="nop-kinds-table__format">Format</th><?php endif; ?>
 					<th scope="col">Category</th>
 					<th scope="col">Tags</th>
 					<th scope="col" class="nop-kinds-table__enable">Photos</th>
@@ -1359,23 +1335,11 @@ class Settings {
 							<?php endforeach; ?>
 						</select>
 					</td>
-					<?php if ( count( $formats ) > 1 ) : ?>
-					<td class="nop-kinds-table__format">
-						<select name="<?php echo "{$prefix}[post_format]"; ?>">
-							<?php foreach ( $formats as $format ) : ?>
-								<option value="<?php echo esc_attr( $format ); ?>"
-								        <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
-									<?php echo esc_html( ucfirst( $format ) ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-					<?php endif; ?>
 					<td>
 						<?php $this->render_token_field(
 							'nop-swarm-svc-category',
 							"{$prefix}[post_category]",
-							$settings['post_category'] ?? 'Checkin',
+							$settings['post_category'] ?? '',
 							$category_names,
 							'Add category…',
 							'Category name'
@@ -1404,13 +1368,6 @@ class Settings {
 	}
 
 	// ——— Shared rendering helpers ————————————————————————————————————————————
-
-	private function get_formats(): array {
-		$theme_formats = get_theme_support( 'post-formats' );
-		return is_array( $theme_formats )
-			? array_merge( [ 'standard' ], $theme_formats[0] ?? [] )
-			: [ 'standard' ];
-	}
 
 	private function render_token_field(
 		string $id,
@@ -1443,8 +1400,6 @@ class Settings {
 	}
 
 	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
-		$formats        = $this->get_formats();
-		$show_format    = count( $formats ) > 1;
 		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
 		?>
@@ -1454,7 +1409,6 @@ class Settings {
 			<thead>
 				<tr>
 					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<?php if ( $show_format ) : ?><th scope="col" class="nop-kinds-table__format">Format</th><?php endif; ?>
 					<th scope="col">Category</th>
 					<th scope="col">Tags</th>
 					<th scope="col" class="nop-kinds-table__enable">Photos</th>
@@ -1472,23 +1426,11 @@ class Settings {
 							<?php endforeach; ?>
 						</select>
 					</td>
-					<?php if ( $show_format ) : ?>
-					<td class="nop-kinds-table__format">
-						<select name="<?php echo esc_attr( "{$name_prefix}[post_format]" ); ?>">
-							<?php foreach ( $formats as $format ) : ?>
-								<option value="<?php echo esc_attr( $format ); ?>"
-								        <?php selected( $settings['post_format'] ?? 'status', $format ); ?>>
-									<?php echo esc_html( ucfirst( $format ) ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-					<?php endif; ?>
 					<td>
 						<?php $this->render_token_field(
 							"nop-{$slug}-in-category",
 							"{$name_prefix}[post_category]",
-							$settings['post_category'] ?? 'Notes',
+							$settings['post_category'] ?? '',
 							$category_names,
 							'Add category…',
 							'Category name'

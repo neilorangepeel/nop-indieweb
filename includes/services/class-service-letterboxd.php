@@ -88,11 +88,6 @@ class Letterboxd extends Service_Base {
 		];
 	}
 
-	// Standard post — film reviews have titles, so no post format is set.
-	public function get_post_format( array $parsed ): string {
-		return '';
-	}
-
 	protected function after_insert( int $post_id, array $parsed ): void {
 		if ( ! $parsed['poster'] ) {
 			return;
