@@ -1,14 +1,12 @@
+/* The block fills its constrained-layout slot so it sits at the same
+   contentSize position as the surrounding post body. The button (inline-flex
+   inside) and the count then sit at flex-start, left-aligned with the content
+   above. Don't shrink with width:fit-content — that lets the parent's
+   margin:auto re-center the pill, pulling it away from the content edge. */
 .nop-like-button {
 	display: flex;
-	width: fit-content;
 	align-items: center;
 	gap: 0.5rem;
-}
-
-/* Override constrained-layout margin:auto so the button stays left-aligned. */
-.wp-block-nop-indieweb-like-button.nop-like-button {
-	margin-left: 0 !important;
-	margin-right: auto !important;
 }
 
 /* ── Button ─────────────────────────────────────────────────────────────── */
