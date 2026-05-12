@@ -34,6 +34,77 @@ Principles drawn from active IndieWeb practitioners — primarily Max Böck ([Th
 
 **Implication for the rest of this roadmap:** clever items below (Reply Router, polymorphic identity form, ActivityPub) all sit *downstream* of foundations being audited and the "also happening on" panel shipping. Don't build the clever surface until the basics serve everyone well.
 
+## Architecture evolution
+
+A phased rework of how post kinds, structured meta, and per-kind editor UX hang together. Motivated by an architecture review of the current plugin against a target model: Posts for stream content (notes, checkins, photos, watches, listens, bookmarks, collections), Pages for evergreen, a Portfolio CPT for work, and a `kind` taxonomy that drives URLs, templates, microformats, and editor sidebars.
+
+### Phase 1 — Kind: meta → taxonomy
+
+Today, post kind is stored three times — `nop_indieweb_post_kind` meta, the `status` post format, and (for some kinds) a category. Migrate to a single canonical source: a hierarchical `nop_kind` taxonomy. Status post format stays for theme aesthetics; categories stop being used for kind grouping.
+
+**Authority model — derived denormalisation, not parallel writes:**
+
+- The `nop_kind` taxonomy term is **canonical** (queries, archive URLs, admin filter UI, sub-taxonomy nesting).
+- The `nop_indieweb_post_kind` meta is kept as a **derived read-cache** of the term, mirrored via a `set_object_terms` hook (~10 lines). Never written directly by services, the panel, or any code.
+- Reasons to keep the meta: hot read paths (`Semantic_Markup::output_kind_links`, `inject_post_format_template`, the post-kinds panel JS) are materially faster than `wp_get_post_terms`; Block Bindings already read it; Micropub clients and the mf2 endpoint speak in scalar property values; external themes/plugins may read it.
+- Drift is impossible by construction because there's only one write path (the term).
+
+**Steps:**
+
+1. Register `nop_kind` taxonomy, hierarchical, `show_in_rest: true`.
+2. Add `set_object_terms` mirror hook that writes the term name into `nop_indieweb_post_kind` meta on every change.
+3. Backfill migration: iterate posts with existing `nop_indieweb_post_kind` meta, call `wp_set_object_terms` for each (mirror hook re-writes meta, no-op for unchanged values).
+4. Update services and the JS panel to write the **term**, never the meta directly.
+5. Switch readers gradually: `Semantic_Markup`, `inject_post_format_template`, the JS panel. Meta remains the read interface for now — the term is what changes.
+6. Drop the category-as-kind pattern: remove auto-categorisation from services, retire `category-{kind}` templates in favour of `taxonomy-nop_kind-{term}` templates.
+7. Doc-comment the meta in `class-meta-registry.php` as "derived cache — do not write directly."
+
+### Phase 2 — Editor consolidation + `Lookup_Provider_Base`
+
+Fold the **Venue** panel into the **Post Kind** panel as a kind-specific sub-view. End state: two sidebars total (Post Kind, Syndication). The Post Kind panel transforms based on selected kind — note shows just the selector, checkin shows venue display, watch/listen/collection show search UIs.
+
+Establish `includes/lookup/Lookup_Provider_Base` to mirror `Service_Base` but for **interactive editor lookups**:
+
+- REST endpoint per provider: `/wp-json/nop-indieweb/v1/lookup/{provider}?q=…`
+- Per-provider credential storage in plugin settings.
+- One shared "lookup picker" JS component reusable across panels (search input → debounced fetch → results list → on-pick, write meta + sideload cover art).
+- Server-side cover art sideloading via the existing `Service_Base::sideload_photos()` helper.
+
+Ship with TMDB as the first provider (simplest API-key-only flow), wiring the Watch kind to interactive in-editor lookup.
+
+### Phase 3 — Listen kind
+
+Last.fm or MusicBrainz as the lookup provider. Listen kind, sub-panel, `u-listen-of` (or equivalent) microformat output.
+
+### Phase 4 — Collection kind
+
+The big one. Multi-week build.
+
+- `nop_kind` term `collection` (assumes Phase 1 done).
+- `collection_format` taxonomy: music, film, book, game, etc.
+- `collection_format_type` taxonomy: vinyl, cd, tape, bluray, dvd, hardback, ebook, etc.
+- Meta fields per format, all `nop_indieweb_collection_*` (consistent with existing prefix, not `_collection_*`).
+- Lookup providers: Discogs (music), TMDB (film, reusing existing), OpenLibrary (books).
+- Collection sub-panels per format.
+- Archive templates: `/collection/`, `/collection/music/vinyl/`, `/collection/film/bluray/`, etc.
+- Microformat design decision: no standard "collection" mf2 — likely `h-cite` + `h-product` nested in `h-entry`. Write up before committing.
+
+**Open question (resolve before starting):** catalogue model (many lightweight entries with same shape, optimised for filtering) or post model (full editorial entry per item with prose in the canvas)? May be both — canvas-for-prose preserves the option.
+
+### Phase 5 — Photo kind
+
+Photo as a first-class kind. EXIF extraction, `u-photo` output, photo-specific upload UX. Simplest of the new kinds; can slot in earlier if needed.
+
+### Phase 6 — Portfolio CPT
+
+Separate track. Different fields, different URL structure, doesn't belong in the stream. Independent of everything above.
+
+### Open questions to resolve before Phase 1
+
+1. **Comfort with the meta-to-taxonomy migration.** Reversible in principle, irreversible-feeling in practice. Decision: proceed (this section assumes yes).
+2. **Collection as catalogue vs. posts.** Decide before designing meta schema in Phase 4.
+3. **API key storage.** Discogs / TMDB / Last.fm need keys. Plugin settings are fine for a personal site; flag if a more secure store is wanted.
+
 ## Planned
 
 ### Checkin world map
@@ -167,6 +238,13 @@ Publish JSON Feed alongside RSS for each h-feed.
 - **No magic:** keep explicit `require_once` loading, no autoloader, no service-locator patterns.
 - **Bridgy Fed before native AP:** prove the federation workflow with the bridge before scoping native ActivityPub work.
 - **Privacy by default for location data:** any feature that publishes lat/lng must ship with exclusion controls, not add them later.
+- **Kind taxonomy is canonical; meta is a derived cache.** `nop_kind` term is the single write target; `nop_indieweb_post_kind` meta is mirrored from it via a hook and treated as read-only by every other code path.
+- **Single write path for kind.** Services, the editor panel, importers, and migrations all write the taxonomy term. Nothing writes the kind meta directly except the mirror hook.
+- **Sub-taxonomies are hierarchical.** `nop_kind` is hierarchical so `collection > music > vinyl` nests cleanly; `collection_format` and `collection_format_type` are separate hierarchical taxonomies for sub-classification.
+- **Meta naming stays `nop_indieweb_*`.** Public prefix, REST-exposed, consistent across every kind. Don't introduce single-underscore prefixes (`_collection_*`) — they're WP-private and break Block Bindings + REST.
+- **`Lookup_Provider_Base` mirrors `Service_Base`.** Inbound Micropub flows and interactive editor lookups share conceptual structure (parse → validate → map → meta → after-insert hook) but live in separate abstractions because they run in different contexts.
+- **Categories are user-supplied topics, not kind.** Once `nop_kind` exists, services stop auto-assigning categories. Categories belong to the user (Belfast, Photography) and must not double as a kind discriminator.
+- **Post format `status` stays orthogonal to kind.** Kept for theme aesthetics; not a kind mechanism.
 
 ## Done
 
