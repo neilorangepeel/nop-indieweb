@@ -37,7 +37,7 @@ class Like extends Service_Base {
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 
 		$args = [
-			'post_title'   => 'Liked · ' . $this->domain_from_url( $parsed['like_of'] ),
+			'post_title'   => $this->domain_from_url( $parsed['like_of'] ),
 			'post_content' => $blocks,
 			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',

@@ -34,7 +34,6 @@ class Reply extends Service_Base {
 		$settings                    = $this->get_settings();
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'] );
 
-		$date   = $post_date ? wp_date( 'j M Y', strtotime( $post_date ) ) : wp_date( 'j M Y' );
 		$domain = $this->domain_from_url( $parsed['in_reply_to'] );
 
 		$blocks = $parsed['content']
@@ -44,7 +43,7 @@ class Reply extends Service_Base {
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 
 		$args = [
-			'post_title'   => "{$date} · Reply to {$domain}",
+			'post_title'   => $domain,
 			'post_content' => $blocks,
 			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',

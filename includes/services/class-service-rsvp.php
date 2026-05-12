@@ -46,7 +46,7 @@ class RSVP extends Service_Base {
 		$domain       = $this->domain_from_url( $parsed['in_reply_to'] );
 
 		$args = [
-			'post_title'   => 'RSVP ' . $parsed['rsvp'] . ' · ' . $domain,
+			'post_title'   => $domain,
 			'post_content' => $blocks,
 			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',

@@ -122,23 +122,16 @@
 
 	// ── Auto-title helpers ──────────────────────────────────────────────────────
 
-	var MONTHS = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
-
 	function domainFromUrl( url ) {
 		try { return new URL( url ).hostname; } catch ( e ) { return url; }
 	}
 
-	function todayLabel() {
-		var d = new Date();
-		return d.getDate() + ' ' + MONTHS[ d.getMonth() ] + ' ' + d.getFullYear();
-	}
-
 	var TITLE_PATTERNS = {
-		bookmark: function ( url ) { return 'Bookmarked · ' + domainFromUrl( url ); },
-		reply:    function ( url ) { return todayLabel() + ' · Reply to ' + domainFromUrl( url ); },
-		like:     function ( url ) { return 'Liked · ' + domainFromUrl( url ); },
-		repost:   function ( url ) { return 'Reposted · ' + domainFromUrl( url ); },
-		rsvp:     function ( url ) { return 'RSVP · ' + domainFromUrl( url ); },
+		bookmark: function ( url ) { return domainFromUrl( url ); },
+		reply:    function ( url ) { return domainFromUrl( url ); },
+		like:     function ( url ) { return domainFromUrl( url ); },
+		repost:   function ( url ) { return domainFromUrl( url ); },
+		rsvp:     function ( url ) { return domainFromUrl( url ); },
 	};
 
 	function isValidUrl( url ) {
