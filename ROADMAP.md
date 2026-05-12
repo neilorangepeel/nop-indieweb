@@ -2,6 +2,38 @@
 
 Forward-looking notes for `nop-indieweb`. Items here are not promises — they're shaped ideas waiting for prioritisation. Move items to `## Done` when shipped.
 
+## Foundations
+
+Principles drawn from active IndieWeb practitioners — primarily Max Böck ([The IndieWeb for Everyone](https://mxb.dev/blog/the-indieweb-for-everyone/), [Using Webmentions in Eleventy](https://mxb.dev/blog/using-webmentions-on-static-sites/)) and Zach Leatherman ([Own Your Content on Social Media Using the IndieWeb](https://www.zachleat.com/web/own-your-content/)). Read in full before the next development session.
+
+**Operating principles:**
+
+- **Friction is the enemy.** The IndieWeb's losing position vs. silos is a friction problem, not a protocol problem. Any feature that needs explaining to the visitor has already lost the 95%.
+- **Design before protocol.** A webmention rendered as raw mf2 data looks academic. Visual polish of the basic experience matters more than the next clever IndieWeb feature.
+- **Aggregate, don't enumerate.** Facepile likes and reposts. Thread replies. Don't render 30 likes as 30 rows.
+- **Show provenance.** Make it visible when a comment came via Mastodon-via-Bridgy vs. a direct webmention vs. a native WP comment.
+- **Bridges over native federation.** Lean on Bridgy / webmention.io / Webfinger rather than reimplementing federation plumbing.
+- **Treat the site as a publication, not a forum.** Conversations naturally happen on the platforms they originated on. The site is the canonical archive of those conversations, not the venue for new ones.
+- **Clever features serve the curious. Display polish serves everyone.** Prioritise the second.
+
+**Current state audit — already in place (`blocks/webmentions/render.php`):**
+
+- Likes and reposts facepiled separately, with author photos from meta.
+- Replies threaded, mixing webmentions + WP comments in one stream.
+- Platform tags ("Mastodon", "Bluesky") visible per-reply.
+- SVG fallback avatars; accessible markup; reply links integrated with native WP threaded UI.
+- Original-platform URL linked from each reply.
+
+**Foundation gaps to close before adding new features:**
+
+1. **Comment form friendliness audit.** Open the standard WP comment form on a recent post through the eyes of a non-IndieWeb visitor. Does it look modern and inviting, or developer-built? Is the path to leaving a comment obvious? Adjust theme styling and field labels if needed.
+2. **"Also happening on" panel under each post.** Read `nop_indieweb_syndication` meta and render deep-links to the Mastodon / Bluesky / Pixelfed thread for that post. Honest cross-platform visibility without auto-bridging. Highest-leverage single addition.
+3. **Empty-state polish.** When a post has zero responses, the block currently returns nothing. Consider a small invitation ("Be the first to respond — comment below, or reply from your own site.") to reduce the "is this site even alive" feeling on older posts.
+4. **Mobile rendering audit.** Verify the facepile, threaded replies, and platform tags render cleanly on narrow viewports.
+5. **Provenance visibility audit.** Bridgy-backfed Mastodon replies are tagged as "Mastodon" — but a direct webmention from a blog and a Bridgy-backfed Mastodon reply currently look similar in the meta line. Consider a subtle visual cue ("via Bridgy" or a bridge icon) so the bridging chain is honest.
+
+**Implication for the rest of this roadmap:** clever items below (Reply Router, polymorphic identity form, ActivityPub) all sit *downstream* of foundations being audited and the "also happening on" panel shipping. Don't build the clever surface until the basics serve everyone well.
+
 ## Planned
 
 ### Checkin world map
@@ -37,7 +69,23 @@ A world map on the checkins archive showing every Swarm checkin as a pin.
 
 ## Under consideration
 
-Discussed but not committed. Listed in rough priority order — top items have the highest leverage relative to effort.
+Discussed but not committed. Listed in rough priority order — top items have the highest leverage relative to effort. **All assume Foundations are audited first.**
+
+### Reply Router (smart, identity-honest, venue-agnostic reply UX)
+
+Replace the standard comment form with a single-textarea, single-identity-field interface whose submit button morphs based on what the visitor types. Routes to:
+
+- Native WP comment (email or anonymous)
+- Mastodon share intent with `in_reply_to` (fediverse handle entered)
+- Bluesky compose intent (`@handle.bsky.social` entered)
+- Micropub-to-their-site (IndieAuth URL)
+- Webmention from their URL (mf2 detected on input)
+
+Auto-detect `rel="me"` chains so a personal URL surfaces all the visitor's identities. Persist choice in localStorage. Pair with a `/respond` page explaining webmentions, linking to starter platforms (micro.blog, BearBlog, write.as, webmention.app), with a sandbox for the curious.
+
+**Note:** this is a clever feature that primarily serves the IndieWeb-literate 5%. Foundations + "also happening on" panel must ship first, since they serve everyone. Build the Reply Router only once usage data justifies it.
+
+
 
 ### Federation strategy
 
