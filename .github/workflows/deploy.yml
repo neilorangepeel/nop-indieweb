@@ -19,3 +19,6 @@ jobs:
           script: |
             cd ~/www/neil.rocks/public_html/wp-content/plugins/nop-indieweb
             git pull origin main
+            echo '<?php opcache_reset(); echo "ok";' > ~/www/neilorangepeel.com/public_html/opcache-reset-tmp.php
+            curl -s https://neilorangepeel.com/opcache-reset-tmp.php
+            rm ~/www/neilorangepeel.com/public_html/opcache-reset-tmp.php
