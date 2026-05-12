@@ -16,8 +16,9 @@ class Kind_Taxonomy {
 
 	const TAXONOMY = 'nop_kind';
 
-	const DEFAULT_KINDS = [
+	const FLAT_KINDS = [
 		'note'     => 'Note',
+		'article'  => 'Article',
 		'bookmark' => 'Bookmark',
 		'reply'    => 'Reply',
 		'like'     => 'Like',
@@ -25,6 +26,20 @@ class Kind_Taxonomy {
 		'rsvp'     => 'RSVP',
 		'checkin'  => 'Checkin',
 		'watch'    => 'Watch',
+		'listen'   => 'Listen',
+		'photo'    => 'Photo',
+	];
+
+	// collection → {music, film, book}; format detail (vinyl, cd, dvd, etc.) goes on tags.
+	const HIERARCHICAL_KINDS = [
+		'collection' => [
+			'name'     => 'Collection',
+			'children' => [
+				'music' => 'Music',
+				'film'  => 'Film',
+				'book'  => 'Book',
+			],
+		],
 	];
 
 	public function register(): void {
@@ -103,9 +118,27 @@ class Kind_Taxonomy {
 	}
 
 	private function seed_terms(): void {
-		foreach ( self::DEFAULT_KINDS as $slug => $name ) {
+		foreach ( self::FLAT_KINDS as $slug => $name ) {
 			if ( ! term_exists( $slug, self::TAXONOMY ) ) {
 				wp_insert_term( $name, self::TAXONOMY, [ 'slug' => $slug ] );
+			}
+		}
+
+		foreach ( self::HIERARCHICAL_KINDS as $parent_slug => $parent ) {
+			if ( ! term_exists( $parent_slug, self::TAXONOMY ) ) {
+				wp_insert_term( $parent['name'], self::TAXONOMY, [ 'slug' => $parent_slug ] );
+			}
+			$parent_term = get_term_by( 'slug', $parent_slug, self::TAXONOMY );
+			if ( ! $parent_term instanceof \WP_Term ) {
+				continue;
+			}
+			foreach ( $parent['children'] as $child_slug => $child_name ) {
+				if ( ! term_exists( $child_slug, self::TAXONOMY ) ) {
+					wp_insert_term( $child_name, self::TAXONOMY, [
+						'slug'   => $child_slug,
+						'parent' => $parent_term->term_id,
+					] );
+				}
 			}
 		}
 	}
