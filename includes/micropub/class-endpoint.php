@@ -65,6 +65,8 @@ class Endpoint {
 					[ 'type' => 'reply',    'name' => 'Reply' ],
 					[ 'type' => 'rsvp',     'name' => 'RSVP' ],
 					[ 'type' => 'checkin',  'name' => 'Checkin' ],
+					[ 'type' => 'listen',   'name' => 'Listen' ],
+					[ 'type' => 'photo',    'name' => 'Photo' ],
 				],
 			], 200 );
 		}
