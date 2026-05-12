@@ -42,8 +42,8 @@ class Kind_Taxonomy {
 			],
 			'hierarchical'      => true,
 			'show_in_rest'      => true,
-			'show_ui'           => false,
-			'show_admin_column' => false,
+			'show_ui'           => true,
+			'show_admin_column' => true,
 			'rewrite'           => [ 'slug' => 'kind' ],
 			'query_var'         => false,
 		] );
