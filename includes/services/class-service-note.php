@@ -114,7 +114,7 @@ class Note extends Service_Base {
 
 	public function get_post_format( array $parsed ): string {
 		$settings = $this->get_inbound_settings( $parsed['platform'] );
-		return $settings['post_format'] ?? 'status';
+		return $settings['post_format'] ?? '';
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
