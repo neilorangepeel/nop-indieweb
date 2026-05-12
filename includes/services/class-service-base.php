@@ -25,8 +25,13 @@ abstract class Service_Base {
 	abstract public function parse( array $payload ): array;
 	abstract public function map_to_post( array $parsed ): array;
 	abstract public function get_meta( array $parsed ): array;
+	/**
+	 * Returns the post format to set after insert. Empty string = standard (no format).
+	 * Override only if a theme requires a specific format for styling purposes.
+	 * The plugin does not set post formats itself — nop_kind is the sole kind signal.
+	 */
 	public function get_post_format( array $parsed ): string {
-		return 'status';
+		return '';
 	}
 
 	/**

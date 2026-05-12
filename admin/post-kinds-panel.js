@@ -209,11 +209,7 @@
 
 		function setKind( newKind ) {
 			var termId = termSlugToId[ newKind ];
-			var update = {};
-			update.nop_kind = ( newKind && termId ) ? [ termId ] : [];
-			if ( newKind ) {
-				update.format = 'status';
-			}
+			var update = { nop_kind: ( newKind && termId ) ? [ termId ] : [] };
 			editorDispatch.editPost( update );
 
 			if ( newKind && LAYOUTS[ newKind ] ) {

@@ -87,7 +87,6 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_patterns' ] );
 		add_action( 'init', [ $this, 'register_templates' ] );
-		add_action( 'after_setup_theme', [ $this, 'ensure_post_format_support' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
@@ -101,10 +100,10 @@ class Plugin {
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
-		// Inject post-format templates into the block-theme template hierarchy.
-		// get_single_template() doesn't include single-post-format-{format} by default,
-		// so block templates with that slug are never matched during real requests.
-		add_filter( 'single_template_hierarchy', [ $this, 'inject_post_format_template' ] );
+		// Inject kind-based templates into the block-theme single-post hierarchy.
+		// Also injects post-format slugs as a lower-priority fallback so themes
+		// that style format-status posts still work without changes.
+		add_filter( 'single_template_hierarchy', [ $this, 'inject_kind_template' ] );
 
 		// Keep webmentions out of the standard WordPress comments block.
 		// The webmentions block fetches them explicitly with type='webmention',
@@ -145,74 +144,41 @@ class Plugin {
 		] );
 	}
 
-	public function ensure_post_format_support(): void {
-		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] );
-
-		$needed = [];
-		if ( ! empty( $settings['swarm']['enabled'] ) ) {
-			$needed[] = 'status';
-		}
-
-		$needed = apply_filters( 'nop_indieweb_required_post_formats', $needed );
-
-		if ( ! $needed ) {
-			return;
-		}
-
-		$supported = get_theme_support( 'post-formats' );
-		$supported = is_array( $supported ) && isset( $supported[0] ) ? $supported[0] : [];
-
-		$missing = array_diff( $needed, $supported );
-		if ( $missing ) {
-			add_theme_support( 'post-formats', array_unique( array_merge( $supported, $missing ) ) );
-		}
-	}
-
-	public function inject_post_format_template( array $templates ): array {
-		$post   = get_queried_object();
+	/**
+	 * Injects kind-based templates into the single-post hierarchy.
+	 *
+	 * Priority (highest first):
+	 *   1. single-nop_kind-{slug}  — plugin's primary block template
+	 *   2. single-post-format-{format}-{kind}  — theme compat if format is set
+	 *   3. single-post-format-{format}          — theme compat fallback
+	 *
+	 * The plugin no longer sets post formats itself. If a theme or legacy data
+	 * has set a format, those slugs are still injected below the kind template
+	 * so existing theme templates continue to work unchanged.
+	 */
+	public function inject_kind_template( array $templates ): array {
+		$post = get_queried_object();
 		if ( ! $post instanceof \WP_Post ) {
 			return $templates;
 		}
 
+		$kind   = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
 		$format = get_post_format( $post );
 
-		// Standard-format posts with a specific post kind get their own template slug.
-		if ( ! $format ) {
-			$kind = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
+		// Format-based slugs first (lower priority — unshifted before kind).
+		if ( $format && 'standard' !== $format ) {
+			array_unshift( $templates, "single-post-format-{$format}" );
 			if ( $kind ) {
-				array_unshift( $templates, "single-{$kind}" );
+				array_unshift( $templates, "single-post-format-{$format}-{$kind}" );
 			}
-			return $templates;
 		}
 
-		// Base format template — fallback for all status posts.
-		array_unshift( $templates, "single-post-format-{$format}" );
-
-		// More-specific subtype template prepended at the front.
-		// Themes only need to create the file if they want a distinct layout.
-		$subtype = $this->resolve_status_subtype( $post );
-		if ( $subtype ) {
-			array_unshift( $templates, "single-post-format-{$format}-{$subtype}" );
+		// Kind template last (highest priority — ends up at front of array).
+		if ( $kind ) {
+			array_unshift( $templates, "single-nop_kind-{$kind}" );
 		}
 
 		return $templates;
-	}
-
-	/**
-	 * Identifies the display subtype of a status post from its stored meta.
-	 * Returns an empty string when no specific subtype is detected.
-	 */
-	private function resolve_status_subtype( \WP_Post $post ): string {
-		// Explicit kind set at creation time — always authoritative.
-		$kind = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
-		if ( $kind ) {
-			return $kind;
-		}
-		// Inference fallback for posts predating the post_kind field.
-		if ( get_post_meta( $post->ID, 'nop_indieweb_venue_name', true ) ) {
-			return 'checkin';
-		}
-		return '';
 	}
 
 
@@ -220,50 +186,53 @@ class Plugin {
 		$dir = NOP_INDIEWEB_DIR . 'templates/';
 
 		$templates = [
-			'nop-indieweb//single-post-format-status' => [
-				'title'       => __( 'Single – Status Post', 'nop-indieweb' ),
-				'description' => __( 'Displays a single status-format post. Themes can override this template.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status.html',
+			// ── Kind single-post templates (single-nop_kind-{slug}) ─────────────────
+			'nop-indieweb//single-nop_kind-checkin' => [
+				'title'       => __( 'Single – Checkin', 'nop-indieweb' ),
+				'description' => __( 'Displays a checkin post with venue, map, and syndication metadata.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-checkin.html',
 			],
-			'nop-indieweb//single-post-format-status-checkin' => [
-				'title'       => __( 'Single – Status: Checkin', 'nop-indieweb' ),
-				'description' => __( 'Displays a checkin post with venue, map, and syndication metadata. Themes can override this template.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-checkin.html',
-			],
-			'nop-indieweb//single-post-format-status-note' => [
-				'title'       => __( 'Single – Status: Note', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-note' => [
+				'title'       => __( 'Single – Note', 'nop-indieweb' ),
 				'description' => __( 'Displays an imported social post (Mastodon, Bluesky) with platform attribution and source link.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-note.html',
+				'file'        => 'single-nop_kind-note.html',
 			],
-			'nop-indieweb//single-post-format-status-bookmark' => [
-				'title'       => __( 'Single – Status: Bookmark', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-bookmark' => [
+				'title'       => __( 'Single – Bookmark', 'nop-indieweb' ),
 				'description' => __( 'Displays a bookmark post with the bookmarked URL.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-bookmark.html',
+				'file'        => 'single-nop_kind-bookmark.html',
 			],
-			'nop-indieweb//single-post-format-status-reply' => [
-				'title'       => __( 'Single – Status: Reply', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-reply' => [
+				'title'       => __( 'Single – Reply', 'nop-indieweb' ),
 				'description' => __( 'Displays a reply post with the URL being replied to.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-reply.html',
+				'file'        => 'single-nop_kind-reply.html',
 			],
-			'nop-indieweb//single-post-format-status-like' => [
-				'title'       => __( 'Single – Status: Like', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-like' => [
+				'title'       => __( 'Single – Like', 'nop-indieweb' ),
 				'description' => __( 'Displays a like post with the liked URL.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-like.html',
+				'file'        => 'single-nop_kind-like.html',
 			],
-			'nop-indieweb//single-post-format-status-repost' => [
-				'title'       => __( 'Single – Status: Repost', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-repost' => [
+				'title'       => __( 'Single – Repost', 'nop-indieweb' ),
 				'description' => __( 'Displays a repost with the reposted URL.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-repost.html',
+				'file'        => 'single-nop_kind-repost.html',
 			],
-			'nop-indieweb//single-post-format-status-rsvp' => [
-				'title'       => __( 'Single – Status: RSVP', 'nop-indieweb' ),
+			'nop-indieweb//single-nop_kind-rsvp' => [
+				'title'       => __( 'Single – RSVP', 'nop-indieweb' ),
 				'description' => __( 'Displays an RSVP post with the event URL and response.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status-rsvp.html',
+				'file'        => 'single-nop_kind-rsvp.html',
 			],
-			'nop-indieweb//single-watch' => [
+			'nop-indieweb//single-nop_kind-watch' => [
 				'title'       => __( 'Single – Film Diary Entry', 'nop-indieweb' ),
 				'description' => __( 'Displays a Letterboxd film diary entry with star rating, poster, watch date, and review.', 'nop-indieweb' ),
-				'file'        => 'single-watch.html',
+				'file'        => 'single-nop_kind-watch.html',
+			],
+
+			// ── Post-format fallback (theme compat — not used by new posts) ──────────
+			'nop-indieweb//single-post-format-status' => [
+				'title'       => __( 'Single – Status Post (legacy)', 'nop-indieweb' ),
+				'description' => __( 'Fallback for posts with post_format=status set by a theme. New posts use single-nop_kind-{slug} instead.', 'nop-indieweb' ),
+				'file'        => 'single-post-format-status.html',
 			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
