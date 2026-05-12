@@ -60,7 +60,7 @@ class Reply extends Service_Base {
 		return $args;
 	}
 
-	public function get_kind(): string {
+	public function get_kind( array $parsed = [] ): string {
 		return 'reply';
 	}
 

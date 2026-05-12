@@ -51,8 +51,15 @@ class Note extends Service_Base {
 
 		$source_url = esc_url_raw( $props['url'][0] ?? $syndication[0] ?? '' );
 
+		$content_trimmed = sanitize_textarea_field( $content );
+		$name            = sanitize_text_field( $props['name'][0] ?? '' );
+		// Micropub spec: name present and distinct from content = article.
+		$is_article = $name !== '' && $name !== $content_trimmed;
+
 		return [
-			'content'     => sanitize_textarea_field( $content ),
+			'content'     => $content_trimmed,
+			'name'        => $is_article ? $name : '',
+			'is_article'  => $is_article,
 			'published'   => sanitize_text_field( $props['published'][0] ?? '' ),
 			'source_url'  => $source_url,
 			'platform'    => $this->detect_platform( $source_url ),
@@ -78,7 +85,7 @@ class Note extends Service_Base {
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
 
 		$args = [
-			'post_title'   => $this->generate_title( $content, $post_date ),
+			'post_title'   => $parsed['is_article'] ? $parsed['name'] : $this->generate_title( $content, $post_date ),
 			'post_content' => $blocks,
 			'post_status'  => $settings['post_status'] ?? 'publish',
 			'post_type'    => 'post',
@@ -98,8 +105,8 @@ class Note extends Service_Base {
 		return $args;
 	}
 
-	public function get_kind(): string {
-		return 'note';
+	public function get_kind( array $parsed = [] ): string {
+		return ! empty( $parsed['is_article'] ) ? 'article' : 'note';
 	}
 
 	public function get_meta( array $parsed ): array {

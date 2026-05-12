@@ -38,7 +38,7 @@ abstract class Service_Base {
 	 * Returns the nop_kind taxonomy slug for posts created by this service.
 	 * Override in subclasses. An empty string means no kind term is assigned.
 	 */
-	public function get_kind(): string {
+	public function get_kind( array $parsed = [] ): string {
 		return '';
 	}
 
@@ -103,7 +103,7 @@ abstract class Service_Base {
 			set_post_format( $post_id, $format );
 		}
 
-		$kind = $this->get_kind();
+		$kind = $this->get_kind( $parsed );
 		if ( $kind ) {
 			wp_set_object_terms( $post_id, $kind, Kind_Taxonomy::TAXONOMY );
 		}
