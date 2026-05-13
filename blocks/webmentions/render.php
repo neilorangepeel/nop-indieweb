@@ -73,6 +73,7 @@ $webmention_ids  = [];
 foreach ( $webmentions as $wm ) {
 	$type             = get_comment_meta( $wm->comment_ID, 'webmention_type', true );
 	$webmention_ids[] = (int) $wm->comment_ID;
+	$source           = get_comment_meta( $wm->comment_ID, 'webmention_source', true );
 
 	$entry = [
 		'id'         => $wm->comment_ID,
@@ -81,8 +82,8 @@ foreach ( $webmentions as $wm ) {
 		'photo'      => get_comment_meta( $wm->comment_ID, 'webmention_author_photo',  true ),
 		'handle'     => get_comment_meta( $wm->comment_ID, 'webmention_author_handle', true ),
 		'platform'   => get_comment_meta( $wm->comment_ID, 'webmention_platform',      true ),
-		'source'     => get_comment_meta( $wm->comment_ID, 'webmention_source',        true )
-		              ?: ( get_comment_meta( $wm->comment_ID, 'webmention_original_url', true ) ?: $wm->comment_author_url ),
+		'via_bridgy' => $source && str_contains( $source, 'brid.gy' ),
+		'source'     => $source ?: ( get_comment_meta( $wm->comment_ID, 'webmention_original_url', true ) ?: $wm->comment_author_url ),
 		'content'    => $wm->comment_content,
 		'date'       => $wm->comment_date_gmt,
 	];
@@ -197,7 +198,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 			$time_label   = $entry['date'] ? nop_wm_time_label( $entry['date'] ) : '';
 			$time_iso     = $entry['date'] ? gmdate( 'c', (int) strtotime( $entry['date'] ) ) : '';
 			$children     = $comment_children[ (int) $entry['id'] ] ?? [];
-			$platform_tag = nop_wm_platform_tag( (string) ( $entry['platform'] ?? '' ) );
+			$platform_tag = nop_wm_platform_tag( (string) ( $entry['platform'] ?? '' ), ! empty( $entry['via_bridgy'] ) );
 			$author_name  = $entry['author'];
 		?>
 		<li class="nop-webmentions__reply" id="nop-wm-<?php echo esc_attr( (string) $entry['id'] ); ?>">

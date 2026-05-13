@@ -90,6 +90,17 @@
 	color: rgba(190, 28, 80, 0.9);
 }
 
+/* Sibling to the platform pill — distinguishes "Mastodon (direct via API)" from
+   "Mastodon · via Bridgy" (relayed). Muted so it doesn't outweigh the platform. */
+.nop-webmentions__via-bridgy {
+	margin-inline-start: 0.125rem;
+	color: var(--wp--preset--color--accent-4, #6b7280);
+	font-size: 0.6875rem;
+	font-weight: 400;
+	letter-spacing: 0;
+	vertical-align: middle;
+}
+
 /* ── Overflow bubble ─────────────────────────────────────────────────────────── */
 
 .nop-webmentions__overflow {

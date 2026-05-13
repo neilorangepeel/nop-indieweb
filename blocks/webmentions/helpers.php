@@ -46,7 +46,7 @@ function nop_wm_avatar_wrap( array $entry, int $size ): string {
 	     . '</div>';
 }
 
-function nop_wm_platform_tag( string $platform ): string {
+function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): string {
 	if ( ! $platform || 'site' === $platform ) {
 		return '';
 	}
@@ -56,7 +56,16 @@ function nop_wm_platform_tag( string $platform ): string {
 	];
 	$label = $labels[ $platform ] ?? ucfirst( $platform );
 	$class = 'nop-webmentions__via nop-webmentions__via--' . sanitize_html_class( $platform );
-	return '<span class="' . esc_attr( $class ) . '" aria-label="via ' . esc_attr( $label ) . '">' . esc_html( $label ) . '</span>';
+
+	// A bridged reply lives on a different platform and was relayed via Bridgy.
+	// Visible only when we know the platform — avoids "Unknown · via Bridgy".
+	$show_bridgy = $via_bridgy && in_array( $platform, [ 'mastodon', 'bluesky' ], true );
+	$bridgy_suffix = $show_bridgy
+		? ' <span class="nop-webmentions__via-bridgy">· via Bridgy</span>'
+		: '';
+	$aria = $show_bridgy ? 'via ' . $label . ' (relayed via Bridgy)' : 'via ' . $label;
+
+	return '<span class="' . esc_attr( $class ) . '" aria-label="' . esc_attr( $aria ) . '">' . esc_html( $label ) . '</span>' . $bridgy_suffix;
 }
 
 function nop_wm_reply_link( int|string $comment_id, int $post_id, string $below_element, string $author = '' ): string {
