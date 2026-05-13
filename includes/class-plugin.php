@@ -285,6 +285,16 @@ class Plugin {
 	}
 
 	public function register_blocks(): void {
+		// Shared editor helper used by SSR blocks. Registered before the blocks
+		// so editor.asset.php files can list 'nop-indieweb-ssr-block-helper' as a dep.
+		wp_register_script(
+			'nop-indieweb-ssr-block-helper',
+			NOP_INDIEWEB_URL . 'assets/js/ssr-block-helper.js',
+			[ 'wp-blocks', 'wp-element', 'wp-server-side-render', 'wp-data' ],
+			NOP_INDIEWEB_VERSION,
+			true
+		);
+
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );

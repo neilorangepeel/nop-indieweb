@@ -7,13 +7,13 @@
  *
  * No build step — window.wp globals only.
  */
-( function ( plugins, editPost, element, data, components, i18n ) {
+( function ( plugins, editor, editPost, element, data, components, i18n ) {
 	'use strict';
 
 	var el          = element.createElement;
 	var useSelect   = data.useSelect;
 	var useDispatch = data.useDispatch;
-	var Panel       = editPost.PluginDocumentSettingPanel;
+	var Panel       = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
 	var CheckboxControl = components.CheckboxControl;
 	var __          = i18n.__;
 
@@ -28,7 +28,7 @@
 			return select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {};
 		}, [] );
 
-		var editPost = useDispatch( 'core/editor' ).editPost;
+		var editPostFn = useDispatch( 'core/editor' ).editPost;
 
 		var status = useSelect( function ( select ) {
 			return select( 'core/editor' ).getEditedPostAttribute( 'status' );
@@ -52,7 +52,7 @@
 			var next = checked
 				? activeTargets.concat( [ slug ] ).filter( function ( v, i, a ) { return a.indexOf( v ) === i; } )
 				: activeTargets.filter( function ( s ) { return s !== slug; } );
-			editPost( { meta: { nop_indieweb_syndicate_to: next } } );
+			editPostFn( { meta: { nop_indieweb_syndicate_to: next } } );
 		}
 
 		return el( Panel, { name: 'nop-indieweb-syndication', title: __( 'Syndicate to', 'nop-indieweb' ) },
@@ -74,6 +74,7 @@
 
 } )(
 	window.wp.plugins,
+	window.wp.editor,
 	window.wp.editPost,
 	window.wp.element,
 	window.wp.data,

@@ -26,18 +26,10 @@ class Checkin_Metabox {
 			return;
 		}
 
-		// Only load for checkin posts — no point registering the plugin on unrelated posts.
-		// Default to not enqueuing when post ID is undetermined (e.g. new post screen).
-		global $post;
-		$post_id = $post->ID ?? 0;
-		if ( ! $post_id ) {
-			return;
-		}
-		$kind      = get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
-		$has_venue = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
-		if ( 'checkin' !== $kind && ! $has_venue ) {
-			return;
-		}
+		// The panel itself self-gates on nop_indieweb_post_kind in JS, so we
+		// always enqueue on Post edit screens — this covers brand-new posts
+		// where no kind has been chosen yet, but the user might pick "checkin"
+		// from the Post Kinds panel and expect the venue panel to appear.
 
 		$base = NOP_INDIEWEB_URL . 'admin/';
 		$ver  = NOP_INDIEWEB_VERSION;
@@ -45,14 +37,14 @@ class Checkin_Metabox {
 		wp_enqueue_script(
 			'nop-indieweb-checkin-panel',
 			$base . 'checkin-panel.js',
-			[ 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
+			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
 			$ver,
 			true
 		);
 
 		wp_enqueue_style(
-			'nop-indieweb-checkin-panel',
-			$base . 'checkin-panel.css',
+			'nop-indieweb-editor-sidebar',
+			$base . 'editor-sidebar.css',
 			[],
 			$ver
 		);

@@ -17,7 +17,7 @@
  *
  * No build step — window.wp globals only.
  */
-( function ( plugins, editPost, element, data, components, i18n, blocks ) {
+( function ( plugins, editor, editPost, element, data, components, i18n, blocks ) {
 	'use strict';
 
 	var el            = element.createElement;
@@ -25,7 +25,9 @@
 	var useSelect     = data.useSelect;
 	var useDispatch   = data.useDispatch;
 	var parse         = blocks.parse;
-	var Panel         = editPost.PluginDocumentSettingPanel;
+	// wp.editor.PluginDocumentSettingPanel is the canonical location since WP 6.6;
+	// the wp.editPost copy is a deprecation alias.
+	var Panel         = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
 	var SelectControl = components.SelectControl;
 	var TextControl   = components.TextControl;
 	var Button        = components.Button;
@@ -207,10 +209,19 @@
 	// single-select (see Kind_Taxonomy doc-comment) and is managed by the panel
 	// above; the checkbox-list panel WordPress auto-generates lets users assign
 	// multiple terms and confuses the single canonical write path.
-	data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_kind' );
+	//
+	// removeEditorPanel moved from core/edit-post to core/editor in WP 6.6.
+	// Prefer the new store and fall back for older installs.
+	var dispatchStore = data.dispatch( 'core/editor' );
+	if ( dispatchStore && typeof dispatchStore.removeEditorPanel === 'function' ) {
+		dispatchStore.removeEditorPanel( 'taxonomy-panel-nop_kind' );
+	} else {
+		data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_kind' );
+	}
 
 } )(
 	window.wp.plugins,
+	window.wp.editor,
 	window.wp.editPost,
 	window.wp.element,
 	window.wp.data,

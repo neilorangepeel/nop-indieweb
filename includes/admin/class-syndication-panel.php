@@ -34,14 +34,14 @@ class Syndication_Panel {
 		wp_enqueue_script(
 			'nop-indieweb-syndication-panel',
 			$base . 'syndication-panel.js',
-			[ 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
+			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
 			$ver,
 			true
 		);
 
 		wp_enqueue_style(
-			'nop-indieweb-checkin-panel',
-			$base . 'checkin-panel.css',
+			'nop-indieweb-editor-sidebar',
+			$base . 'editor-sidebar.css',
 			[],
 			$ver
 		);

@@ -10,14 +10,13 @@
  *
  * No build step — window.wp globals only.
  */
-( function ( plugins, editPost, element, data, components, i18n ) {
+( function ( plugins, editor, editPost, element, data, components, i18n ) {
 	'use strict';
 
 	var el          = element.createElement;
-	var Fragment    = element.Fragment;
 	var useSelect   = data.useSelect;
 	var useDispatch = data.useDispatch;
-	var Panel       = editPost.PluginDocumentSettingPanel;
+	var Panel       = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
 	var TextControl = components.TextControl;
 	var ExternalLink = components.ExternalLink;
 	var __          = i18n.__;
@@ -27,7 +26,7 @@
 			return select( 'core/editor' ).getEditedPostAttribute( 'meta' ) || {};
 		}, [] );
 
-		var editPost = useDispatch( 'core/editor' ).editPost;
+		var editPostFn = useDispatch( 'core/editor' ).editPost;
 
 		if ( meta['nop_indieweb_post_kind'] !== 'checkin' ) {
 			return null;
@@ -60,7 +59,7 @@
 				el( TextControl, {
 					label:                   __( 'Name', 'nop-indieweb' ),
 					value:                   venueName,
-					onChange:                function ( val ) { editPost( { meta: { nop_indieweb_venue_name: val } } ); },
+					onChange:                function ( val ) { editPostFn( { meta: { nop_indieweb_venue_name: val } } ); },
 					__nextHasNoMarginBottom: true,
 				} ),
 
@@ -103,6 +102,7 @@
 
 } )(
 	window.wp.plugins,
+	window.wp.editor,
 	window.wp.editPost,
 	window.wp.element,
 	window.wp.data,
