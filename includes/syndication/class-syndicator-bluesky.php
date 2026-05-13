@@ -28,6 +28,40 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		return str_contains( $url, 'bsky.app' );
 	}
 
+	public function test_connection(): array {
+		if ( ! $this->is_configured() ) {
+			return [ 'ok' => false, 'message' => __( 'Not configured.', 'nop-indieweb' ) ];
+		}
+
+		$response = wp_remote_post(
+			$this->pds() . '/xrpc/com.atproto.server.createSession',
+			[
+				'headers' => [ 'Content-Type' => 'application/json' ],
+				'body'    => wp_json_encode( [
+					'identifier' => $this->handle(),
+					'password'   => $this->app_password(),
+				] ),
+				'timeout' => 10,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return [ 'ok' => false, 'message' => $response->get_error_message() ];
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 === $code && isset( $body['handle'] ) ) {
+			return [ 'ok' => true, 'message' => 'Connected as @' . $body['handle'] ];
+		}
+
+		return [
+			'ok'      => false,
+			'message' => 'Error ' . $code . ': ' . ( $body['message'] ?? __( 'Unknown error', 'nop-indieweb' ) ),
+		];
+	}
+
 	protected function do_syndicate( int $post_id ): ?string {
 		$session = $this->create_session();
 		if ( ! $session ) {

@@ -43,6 +43,8 @@ class Plugin {
 
 	private static ?Plugin $instance = null;
 
+	private ?Syndication_Manager $syndication_manager = null;
+
 	public static function get_instance(): Plugin {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -51,6 +53,10 @@ class Plugin {
 	}
 
 	private function __construct() {}
+
+	public function syndication_manager(): ?Syndication_Manager {
+		return $this->syndication_manager;
+	}
 
 	public function boot(): void {
 		$note       = new Note();
@@ -66,7 +72,8 @@ class Plugin {
 			$note,
 		] );
 
-		$syndication_manager = new Syndication_Manager();
+		$syndication_manager       = new Syndication_Manager();
+		$this->syndication_manager = $syndication_manager;
 		$syndication_manager->register();
 		( new Feed_Importer( $note, $letterboxd ) )->register();
 

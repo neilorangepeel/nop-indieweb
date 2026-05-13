@@ -53,93 +53,19 @@ class Settings {
 			wp_send_json_error( 'Unauthorized', 403 );
 		}
 
-		$service = sanitize_key( $_POST['service'] ?? '' );
+		$slug      = sanitize_key( $_POST['service'] ?? '' );
+		$manager   = \NOP\IndieWeb\Plugin::get_instance()->syndication_manager();
+		$syndicator = $manager ? $manager->get( $slug ) : null;
 
-		if ( 'mastodon' === $service ) {
-			$instance = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.instance', '' );
-			$token    = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.access_token', '' );
-
-			if ( ! $instance || ! $token ) {
-				wp_send_json_error( 'Not configured.' );
-			}
-
-			$response = wp_remote_get( rtrim( $instance, '/' ) . '/api/v1/accounts/verify_credentials', [
-				'headers' => [ 'Authorization' => 'Bearer ' . $token ],
-				'timeout' => 10,
-			] );
-
-			if ( is_wp_error( $response ) ) {
-				wp_send_json_error( $response->get_error_message() );
-			}
-
-			$code = wp_remote_retrieve_response_code( $response );
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			if ( 200 === $code && isset( $body['acct'] ) ) {
-				if ( ! empty( $body['url'] ) ) {
-					\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.mastodon.profile_url', esc_url_raw( $body['url'] ) );
-				}
-				wp_send_json_success( 'Connected as @' . $body['acct'] );
-			} else {
-				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
-			}
-		} elseif ( 'pixelfed' === $service ) {
-			$instance = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.instance', '' );
-			$token    = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.access_token', '' );
-
-			if ( ! $instance || ! $token ) {
-				wp_send_json_error( 'Not configured.' );
-			}
-
-			$response = wp_remote_get( rtrim( $instance, '/' ) . '/api/v1/accounts/verify_credentials', [
-				'headers' => [ 'Authorization' => 'Bearer ' . $token ],
-				'timeout' => 10,
-			] );
-
-			if ( is_wp_error( $response ) ) {
-				wp_send_json_error( $response->get_error_message() );
-			}
-
-			$code = wp_remote_retrieve_response_code( $response );
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			if ( 200 === $code && isset( $body['acct'] ) ) {
-				if ( ! empty( $body['url'] ) ) {
-					\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.pixelfed.profile_url', esc_url_raw( $body['url'] ) );
-				}
-				wp_send_json_success( 'Connected as @' . $body['acct'] );
-			} else {
-				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['error'] ?? 'Unknown error' ) );
-			}
-		} elseif ( 'bluesky' === $service ) {
-			$handle   = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
-			$password = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.app_password', '' );
-
-			if ( ! $handle || ! $password ) {
-				wp_send_json_error( 'Not configured.' );
-			}
-
-			$response = wp_remote_post( 'https://bsky.social/xrpc/com.atproto.server.createSession', [
-				'headers' => [ 'Content-Type' => 'application/json' ],
-				'body'    => wp_json_encode( [ 'identifier' => $handle, 'password' => $password ] ),
-				'timeout' => 10,
-			] );
-
-			if ( is_wp_error( $response ) ) {
-				wp_send_json_error( $response->get_error_message() );
-			}
-
-			$code = wp_remote_retrieve_response_code( $response );
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			if ( 200 === $code && isset( $body['handle'] ) ) {
-				wp_send_json_success( 'Connected as @' . $body['handle'] );
-			} else {
-				wp_send_json_error( 'Error ' . $code . ': ' . ( $body['message'] ?? 'Unknown error' ) );
-			}
-		} else {
-			wp_send_json_error( 'Unknown service.' );
+		if ( ! $syndicator ) {
+			wp_send_json_error( __( 'Unknown service.', 'nop-indieweb' ) );
 		}
+
+		$result = $syndicator->test_connection();
+		if ( $result['ok'] ) {
+			wp_send_json_success( $result['message'] );
+		}
+		wp_send_json_error( $result['message'] );
 	}
 
 	public function add_page(): void {

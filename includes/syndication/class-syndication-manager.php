@@ -90,6 +90,16 @@ class Syndication_Manager {
 		return null;
 	}
 
+	/** Returns the syndicator with the given slug, or null if unknown. */
+	public function get( string $slug ): ?Syndicator_Base {
+		foreach ( $this->syndicators as $syndicator ) {
+			if ( $syndicator->slug() === $slug ) {
+				return $syndicator;
+			}
+		}
+		return null;
+	}
+
 	/** Returns syndicator definitions for the editor panel. */
 	public function get_panel_data(): array {
 		return array_values( array_map(

@@ -15,6 +15,14 @@ abstract class Syndicator_Base {
 
 	abstract protected function owns_url( string $url ): bool;
 
+	/**
+	 * Verifies credentials are valid and the remote service is reachable.
+	 * Returns [ 'ok' => bool, 'message' => string ]. Override in subclasses.
+	 */
+	public function test_connection(): array {
+		return [ 'ok' => false, 'message' => __( 'Connection test not supported.', 'nop-indieweb' ) ];
+	}
+
 	public function matches_url( string $url ): bool {
 		return $this->owns_url( $url );
 	}
