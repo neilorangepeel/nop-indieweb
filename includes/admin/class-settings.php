@@ -22,6 +22,13 @@ class Settings {
 	private const OPTION_KEY = 'nop_indieweb_settings';
 	private const PAGE_SLUG  = 'nop-indieweb-settings';
 
+	private const POST_STATUSES = [
+		'publish' => 'Published',
+		'draft'   => 'Draft',
+		'private' => 'Private',
+	];
+	private const VALID_STATUS_KEYS = [ 'publish', 'draft', 'private' ];
+
 	private const TAB_GROUPS = [
 		''         => [ 'overview'    => 'Overview' ],
 		'Networks' => [
@@ -106,6 +113,24 @@ class Settings {
 
 	// ——— Settings sanitize ————————————————————————————————————————————————————
 
+	private function sanitize_status( string $value, string $fallback = 'publish' ): string {
+		return in_array( $value, self::VALID_STATUS_KEYS, true ) ? $value : $fallback;
+	}
+
+	/**
+	 * Sanitizes the common service/syndicator block: enabled, status, category, tags, sideload.
+	 * $defaults supplies text fallbacks when a field is missing from $in.
+	 */
+	private function sanitize_service_defaults( array $in, array $defaults = [] ): array {
+		return [
+			'enabled'         => ! empty( $in['enabled'] ),
+			'post_status'     => $this->sanitize_status( $in['post_status'] ?? '' ),
+			'post_category'   => sanitize_text_field( $in['post_category'] ?? ( $defaults['post_category'] ?? '' ) ),
+			'post_tags'       => sanitize_text_field( $in['post_tags'] ?? ( $defaults['post_tags'] ?? '' ) ),
+			'sideload_photos' => ! empty( $in['sideload_photos'] ),
+		];
+	}
+
 	public function sanitize( mixed $input ): array {
 		if ( ! is_array( $input ) ) {
 			return get_option( self::OPTION_KEY, [] );
@@ -124,37 +149,24 @@ class Settings {
 		$clean['mf2_enabled'] = ! empty( $input['mf2_enabled'] );
 
 		// — Swarm —————————————————————————————————————————————————————————————
-		$valid_statuses = [ 'publish', 'draft', 'private' ];
-
-		$clean['services']['swarm']['enabled']         = ! empty( $input['services']['swarm']['enabled'] );
-		$clean['services']['swarm']['post_status']     = in_array( $input['services']['swarm']['post_status'] ?? '', $valid_statuses, true )
-			? $input['services']['swarm']['post_status']
-			: 'publish';
-		$clean['services']['swarm']['post_category']   = sanitize_text_field( $input['services']['swarm']['post_category'] ?? '' );
-		$clean['services']['swarm']['post_tags']       = sanitize_text_field( $input['services']['swarm']['post_tags'] ?? 'Swarm' );
-		$clean['services']['swarm']['sideload_photos'] = ! empty( $input['services']['swarm']['sideload_photos'] );
+		$clean['services']['swarm'] = $this->sanitize_service_defaults( $input['services']['swarm'] ?? [], [
+			'enabled'         => false,
+			'post_tags'       => 'Swarm',
+			'sideload_photos' => true,
+		] );
 
 		// — Entries ———————————————————————————————————————————————————————————————
-		$clean['services']['entries']['enabled']         = ! empty( $input['services']['entries']['enabled'] );
-		$clean['services']['entries']['post_status']     = in_array( $input['services']['entries']['post_status'] ?? '', $valid_statuses, true )
-			? $input['services']['entries']['post_status']
-			: 'publish';
-		$clean['services']['entries']['post_category']   = sanitize_text_field( $input['services']['entries']['post_category'] ?? '' );
-		$clean['services']['entries']['post_tags']       = sanitize_text_field( $input['services']['entries']['post_tags'] ?? '' );
-		$clean['services']['entries']['sideload_photos'] = ! empty( $input['services']['entries']['sideload_photos'] );
+		$clean['services']['entries'] = $this->sanitize_service_defaults( $input['services']['entries'] ?? [], [
+			'enabled'         => false,
+			'sideload_photos' => true,
+		] );
 
 		// — Syndicators ——————————————————————————————————————————————————————————
 		foreach ( self::get_syndicator_config() as $slug => $config ) {
 			$in  = $input['syndicators'][ $slug ] ?? [];
-			$out = [
-				'enabled'        => ! empty( $in['enabled'] ),
-				'import_enabled' => ! empty( $in['import_enabled'] ),
-				// Inbound defaults (posts received via Bridgy from this platform)
-				'post_status'    => in_array( $in['post_status'] ?? '', $valid_statuses, true ) ? $in['post_status'] : 'publish',
-				'post_category'  => sanitize_text_field( $in['post_category'] ?? '' ),
-				'post_tags'      => sanitize_text_field( $in['post_tags'] ?? '' ),
-				'sideload_photos'=> ! empty( $in['sideload_photos'] ),
-			];
+			$out = $this->sanitize_service_defaults( $in, [ 'sideload_photos' => false ] );
+			$out['import_enabled'] = ! empty( $in['import_enabled'] );
+
 			foreach ( $config['fields'] as $key => $field ) {
 				$value      = (string) ( $in[ $key ] ?? '' );
 				$out[ $key ] = ( ( $field['type'] ?? '' ) === 'url' )
@@ -169,9 +181,7 @@ class Settings {
 		// — Post Kinds ————————————————————————————————————————————————————————————
 		foreach ( [ 'bookmark', 'reply', 'like', 'repost', 'rsvp' ] as $kind ) {
 			$clean['services'][ $kind ]['enabled']       = ! empty( $input['services'][ $kind ]['enabled'] );
-			$clean['services'][ $kind ]['post_status']   = in_array( $input['services'][ $kind ]['post_status'] ?? '', $valid_statuses, true )
-				? $input['services'][ $kind ]['post_status']
-				: 'publish';
+			$clean['services'][ $kind ]['post_status']   = $this->sanitize_status( $input['services'][ $kind ]['post_status'] ?? '' );
 			$clean['services'][ $kind ]['post_category'] = sanitize_text_field( $input['services'][ $kind ]['post_category'] ?? '' );
 		}
 
@@ -184,14 +194,15 @@ class Settings {
 			: 'bridgy_only';
 
 		// — Letterboxd ————————————————————————————————————————————————————————————
-		$clean['services']['letterboxd']['import_enabled']  = ! empty( $input['services']['letterboxd']['import_enabled'] );
-		$clean['services']['letterboxd']['username']        = sanitize_text_field( $input['services']['letterboxd']['username'] ?? '' );
-		$clean['services']['letterboxd']['post_status']     = in_array( $input['services']['letterboxd']['post_status'] ?? '', $valid_statuses, true )
-			? $input['services']['letterboxd']['post_status']
-			: 'publish';
-		$clean['services']['letterboxd']['post_category']   = sanitize_text_field( $input['services']['letterboxd']['post_category'] ?? 'Films' );
-		$clean['services']['letterboxd']['post_tags']       = sanitize_text_field( $input['services']['letterboxd']['post_tags'] ?? '' );
-		$clean['services']['letterboxd']['sideload_poster'] = ! empty( $input['services']['letterboxd']['sideload_poster'] );
+		$lb = $input['services']['letterboxd'] ?? [];
+		$clean['services']['letterboxd'] = [
+			'import_enabled'  => ! empty( $lb['import_enabled'] ),
+			'username'        => sanitize_text_field( $lb['username'] ?? '' ),
+			'post_status'     => $this->sanitize_status( $lb['post_status'] ?? '' ),
+			'post_category'   => sanitize_text_field( $lb['post_category'] ?? 'Films' ),
+			'post_tags'       => sanitize_text_field( $lb['post_tags'] ?? '' ),
+			'sideload_poster' => ! empty( $lb['sideload_poster'] ),
+		];
 
 		// — Twitter Archive ——————————————————————————————————————————————————————
 		$clean['twitter_archive_url'] = esc_url_raw( $input['twitter_archive_url'] ?? '' );
@@ -210,11 +221,16 @@ class Settings {
 
 			<h1>IndieWeb</h1>
 
-			<nav class="nav-tab-wrapper nop-nav-tabs" aria-label="Settings sections">
+			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="Settings sections">
 				<?php foreach ( self::TAB_GROUPS as $tabs ) : ?>
 					<?php foreach ( $tabs as $slug => $label ) : ?>
 						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
 						<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
+						   id="nop-tablabel-<?php echo esc_attr( $slug ); ?>"
+						   role="tab"
+						   aria-controls="nop-tab-<?php echo esc_attr( $slug ); ?>"
+						   aria-selected="false"
+						   tabindex="-1"
 						   class="nav-tab<?php
 								echo ! $tab_enabled ? ' nop-tab--inactive' : '';
 								echo 'advanced' === $slug ? ' nop-tab--advanced' : '';
@@ -225,44 +241,44 @@ class Settings {
 						</a>
 					<?php endforeach; ?>
 				<?php endforeach; ?>
-			</nav>
+			</div>
 
 			<form method="post" action="options.php" class="nop-settings-form">
 				<?php settings_fields( self::OPTION_KEY ); ?>
 
-				<div id="nop-tab-overview" class="nop-tab-panel">
+				<div id="nop-tab-overview" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-overview" tabindex="0">
 					<?php $this->render_tab_overview(); ?>
 				</div>
 
-				<div id="nop-tab-mastodon" class="nop-tab-panel" hidden>
+				<div id="nop-tab-mastodon" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-mastodon" tabindex="0" hidden>
 					<?php $this->render_tab_mastodon(); ?>
 				</div>
 
-				<div id="nop-tab-bluesky" class="nop-tab-panel" hidden>
+				<div id="nop-tab-bluesky" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-bluesky" tabindex="0" hidden>
 					<?php $this->render_tab_bluesky(); ?>
 				</div>
 
-				<div id="nop-tab-pixelfed" class="nop-tab-panel" hidden>
+				<div id="nop-tab-pixelfed" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-pixelfed" tabindex="0" hidden>
 					<?php $this->render_tab_pixelfed(); ?>
 				</div>
 
-				<div id="nop-tab-letterboxd" class="nop-tab-panel" hidden>
+				<div id="nop-tab-letterboxd" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-letterboxd" tabindex="0" hidden>
 					<?php $this->render_tab_letterboxd(); ?>
 				</div>
 
-				<div id="nop-tab-swarm" class="nop-tab-panel" hidden>
+				<div id="nop-tab-swarm" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-swarm" tabindex="0" hidden>
 					<?php $this->render_tab_swarm(); ?>
 				</div>
 
-				<div id="nop-tab-publishing" class="nop-tab-panel" hidden>
+				<div id="nop-tab-publishing" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-publishing" tabindex="0" hidden>
 					<?php $this->render_tab_publishing(); ?>
 				</div>
 
-				<div id="nop-tab-reactions" class="nop-tab-panel" hidden>
+				<div id="nop-tab-reactions" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-reactions" tabindex="0" hidden>
 					<?php $this->render_tab_reactions(); ?>
 				</div>
 
-				<div id="nop-tab-advanced" class="nop-tab-panel" hidden>
+				<div id="nop-tab-advanced" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-advanced" tabindex="0" hidden>
 					<?php $this->render_tab_advanced(); ?>
 				</div>
 
@@ -412,9 +428,9 @@ class Settings {
 		<div class="nop-network-cards">
 			<?php foreach ( $networks as $network ) : ?>
 			<div class="nop-network-card <?php echo $network['active'] ? 'nop-network-card--active' : 'nop-network-card--inactive'; ?>"
-			     <?php if ( $network['active'] ) : ?>style="border-left-color: <?php echo esc_attr( $network['color'] ); ?>"<?php endif; ?>>
+			     style="--nop-card-accent: <?php echo esc_attr( $network['active'] ? $network['color'] : '#c3c4c7' ); ?>">
 				<div class="nop-network-card__header">
-					<span class="nop-network-card__dot" style="background: <?php echo esc_attr( $network['active'] ? $network['color'] : '#c3c4c7' ); ?>"></span>
+					<span class="nop-network-card__dot"></span>
 					<strong class="nop-network-card__name"><?php echo esc_html( $network['label'] ); ?></strong>
 				</div>
 				<p class="nop-network-card__status">
@@ -582,8 +598,8 @@ class Settings {
 			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
 		?>
 
-		<h3 class="nop-section-heading" style="padding-top:0;border-top:none;">IndieAuth</h3>
-		<p class="description" style="margin-bottom:12px;">These endpoints are advertised automatically in your site's <code>&lt;head&gt;</code> — Micropub clients discover them without any setup.</p>
+		<h3 class="nop-section-heading nop-section-heading--first">IndieAuth</h3>
+		<p class="description nop-section-intro">These endpoints are advertised automatically in your site's <code>&lt;head&gt;</code> — Micropub clients discover them without any setup.</p>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Authorization Endpoint</th>
@@ -644,7 +660,7 @@ class Settings {
 								?>
 								<a href="<?php echo esc_url( $revoke_url ); ?>"
 								   class="nop-revoke-link"
-								   onclick="return confirm('Revoke access for <?php echo esc_js( $session['client_name'] ?: $session['client_id'] ); ?>?')">
+								   data-confirm="<?php echo esc_attr( sprintf( 'Revoke access for %s?', $session['client_name'] ?: $session['client_id'] ) ); ?>">
 									Revoke
 								</a>
 							</td>
@@ -970,61 +986,16 @@ class Settings {
 		</table>
 
 		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 12px;">Applied to posts imported from Letterboxd.</p>
+		<p class="description nop-section-intro">Applied to posts imported from Letterboxd.</p>
 		<?php
-		$category_names = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) ) );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag', 'hide_empty' => false ] ) ) );
-		?>
-		<table class="nop-kinds-table">
-			<thead>
-				<tr>
-					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
-					<th scope="col" class="nop-kinds-table__enable">Poster</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td class="nop-kinds-table__status">
-						<select name="<?php echo "{$prefix}[post_status]"; ?>">
-							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-								<option value="<?php echo esc_attr( $value ); ?>"
-								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
-									<?php echo esc_html( $label ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-					<td>
-						<?php $this->render_token_field(
-							'letterboxd-in-category',
-							"{$prefix}[post_category]",
-							$settings['post_category'] ?? '',
-							$category_names,
-							'Add category…',
-							'Category name'
-						); ?>
-					</td>
-					<td>
-						<?php $this->render_token_field(
-							'letterboxd-in-tags',
-							"{$prefix}[post_tags]",
-							$settings['post_tags'] ?? '',
-							$tag_names,
-							'Add tags…',
-							'Tag name'
-						); ?>
-					</td>
-					<td class="nop-kinds-table__enable">
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_poster]"; ?>" value="1"
-						       aria-label="Save film poster to media library"
-						       <?php checked( $settings['sideload_poster'] ?? true ); ?>>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-		<?php
+		$this->render_defaults_table( [
+			'slug'         => 'letterboxd',
+			'prefix'       => $prefix,
+			'settings'     => $settings,
+			'last_label'   => 'Poster',
+			'last_field'   => 'sideload_poster',
+			'last_aria'    => 'Save film poster to media library',
+		] );
 	}
 
 	// ——— Tab: Publishing ————————————————————————————————————————————————————
@@ -1035,8 +1006,8 @@ class Settings {
 		$entries_settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
 		$entries_prefix   = self::OPTION_KEY . '[services][entries]';
 		?>
-		<h3 class="nop-section-heading" style="padding-top:0;border-top:none;">Notes</h3>
-		<p class="description" style="margin-bottom:12px;">Short posts sent via any Micropub client (Quill, iA Writer, etc.).</p>
+		<h3 class="nop-section-heading nop-section-heading--first">Notes</h3>
+		<p class="description nop-section-intro">Short posts sent via any Micropub client (Quill, iA Writer, etc.).</p>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
@@ -1058,7 +1029,7 @@ class Settings {
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$entries_prefix}[post_status]" ); ?>">
-							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $entries_settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1082,7 +1053,7 @@ class Settings {
 		</table>
 
 		<h3 class="nop-section-heading">Interaction posts</h3>
-		<p class="description" style="margin-bottom:12px;">Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don't exist.</p>
+		<p class="description nop-section-intro">Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don't exist.</p>
 		<?php
 		$kinds = [
 			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of'        ],
@@ -1120,7 +1091,7 @@ class Settings {
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
-							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
+							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1136,7 +1107,7 @@ class Settings {
 		</table>
 
 		<h3 class="nop-section-heading">Twitter Archive</h3>
-		<p class="description" style="margin-bottom:12px;">Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.</p>
+		<p class="description nop-section-intro">Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.</p>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
@@ -1196,13 +1167,10 @@ class Settings {
 		$prefix   = self::OPTION_KEY . '[services][swarm]';
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
 		$endpoint = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
-
-		$category_names = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) ) );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag',  'hide_empty' => false ] ) ) );
 		?>
 		<p>Swarm by Foursquare lets you check in to places. Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> and every check-in automatically becomes a post on your site.</p>
 
-		<h3 class="nop-section-heading" style="padding-top:0;border-top:none;">Enable</h3>
+		<h3 class="nop-section-heading">Enable</h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Accept check-ins</th>
@@ -1230,58 +1198,15 @@ class Settings {
 		</table>
 
 		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 12px;">Applied to posts created from Swarm check-ins.</p>
-		<table class="nop-kinds-table">
-			<thead>
-				<tr>
-					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
-					<th scope="col" class="nop-kinds-table__enable">Photos</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td class="nop-kinds-table__status">
-						<select name="<?php echo "{$prefix}[post_status]"; ?>">
-							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-								<option value="<?php echo esc_attr( $value ); ?>"
-								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
-									<?php echo esc_html( $label ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</td>
-					<td>
-						<?php $this->render_token_field(
-							'nop-swarm-svc-category',
-							"{$prefix}[post_category]",
-							$settings['post_category'] ?? '',
-							$category_names,
-							'Add category…',
-							'Category name'
-						); ?>
-					</td>
-					<td>
-						<?php $this->render_token_field(
-							'nop-swarm-svc-tags',
-							"{$prefix}[post_tags]",
-							$settings['post_tags'] ?? 'Swarm',
-							$tag_names,
-							'Add tags…',
-							'Tag name'
-						); ?>
-					</td>
-					<td class="nop-kinds-table__enable">
-						<input type="checkbox" name="<?php echo "{$prefix}[sideload_photos]"; ?>" value="1"
-						       title="Save Swarm photos to your media library."
-						       aria-label="Save photos to media library"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
-					</td>
-				</tr>
-			</tbody>
-		</table>
+		<p class="description nop-section-intro">Applied to posts created from Swarm check-ins.</p>
 		<?php
+		$this->render_defaults_table( [
+			'slug'        => 'swarm',
+			'prefix'      => $prefix,
+			'settings'    => $settings,
+			'tag_default' => 'Swarm',
+			'last_aria'   => 'Save Swarm photos to media library',
+		] );
 	}
 
 	// ——— Shared rendering helpers ————————————————————————————————————————————
@@ -1316,28 +1241,48 @@ class Settings {
 		<?php
 	}
 
-	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
-		$category_names = array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
-		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false, 'orderby' => 'name' ] ) ) );
+	/**
+	 * Renders the shared Status + Category + Tags + sideload-checkbox table used
+	 * across Letterboxd, Swarm, and the per-syndicator inbound-defaults sections.
+	 *
+	 * $args keys:
+	 *   slug         — identifier for token-field IDs
+	 *   prefix       — form-name prefix, e.g. "nop_indieweb_settings[services][swarm]"
+	 *   settings     — current values
+	 *   last_label   — last-column heading ("Photos", "Poster")
+	 *   last_field   — checkbox field name (e.g. "sideload_photos")
+	 *   last_default — default for the checkbox when unset
+	 *   last_aria    — aria-label for the checkbox
+	 *   tag_default  — default tag value (e.g. "Swarm")
+	 */
+	private function render_defaults_table( array $args ): void {
+		$category_names = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'category', 'hide_empty' => false ] ) ) );
+		$tag_names      = array_values( array_map( fn( $t ) => $t->name, get_terms( [ 'taxonomy' => 'post_tag',  'hide_empty' => false ] ) ) );
+
+		$slug        = $args['slug'];
+		$prefix      = $args['prefix'];
+		$settings    = $args['settings'];
+		$last_label  = $args['last_label']  ?? 'Photos';
+		$last_field  = $args['last_field']  ?? 'sideload_photos';
+		$last_def    = $args['last_default'] ?? true;
+		$last_aria   = $args['last_aria']   ?? 'Save photos to media library';
+		$tag_default = $args['tag_default'] ?? '';
 		?>
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description" style="margin: 6px 0 12px;">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
 					<th scope="col" class="nop-kinds-table__status">Status</th>
 					<th scope="col">Category</th>
 					<th scope="col">Tags</th>
-					<th scope="col" class="nop-kinds-table__enable">Photos</th>
+					<th scope="col" class="nop-kinds-table__enable"><?php echo esc_html( $last_label ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td class="nop-kinds-table__status">
-						<select name="<?php echo esc_attr( "{$name_prefix}[post_status]" ); ?>">
-							<?php foreach ( [ 'publish' => 'Published', 'draft' => 'Draft', 'private' => 'Private' ] as $value => $label ) : ?>
-								<option value="<?php echo esc_attr( $value ); ?>"
-								        <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
+						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
+							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -1345,8 +1290,8 @@ class Settings {
 					</td>
 					<td>
 						<?php $this->render_token_field(
-							"nop-{$slug}-in-category",
-							"{$name_prefix}[post_category]",
+							"nop-{$slug}-category",
+							"{$prefix}[post_category]",
 							$settings['post_category'] ?? '',
 							$category_names,
 							'Add category…',
@@ -1355,25 +1300,35 @@ class Settings {
 					</td>
 					<td>
 						<?php $this->render_token_field(
-							"nop-{$slug}-in-tags",
-							"{$name_prefix}[post_tags]",
-							$settings['post_tags'] ?? '',
+							"nop-{$slug}-tags",
+							"{$prefix}[post_tags]",
+							$settings['post_tags'] ?? $tag_default,
 							$tag_names,
 							'Add tags…',
 							'Tag name'
 						); ?>
 					</td>
 					<td class="nop-kinds-table__enable">
-						<input type="checkbox"
-						       name="<?php echo esc_attr( "{$name_prefix}[sideload_photos]" ); ?>"
-						       value="1"
-						       aria-label="Save photos to media library"
-						       <?php checked( $settings['sideload_photos'] ?? true ); ?>>
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[{$last_field}]" ); ?>" value="1"
+						       aria-label="<?php echo esc_attr( $last_aria ); ?>"
+						       <?php checked( $settings[ $last_field ] ?? $last_def ); ?>>
 					</td>
 				</tr>
 			</tbody>
 		</table>
 		<?php
+	}
+
+	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
+		?>
+		<h3 class="nop-section-heading">Inbound Defaults</h3>
+		<p class="description nop-section-intro">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
+		<?php
+		$this->render_defaults_table( [
+			'slug'     => "{$slug}-in",
+			'prefix'   => $name_prefix,
+			'settings' => $settings,
+		] );
 	}
 
 	// ——— Assets ——————————————————————————————————————————————————————————————

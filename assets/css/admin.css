@@ -46,6 +46,14 @@
 	margin-left: 8px;
 }
 
+.nop-test-result.is-success {
+	color: #007017; /* WP success green, slightly darker than #00a32a for contrast against white */
+}
+
+.nop-test-result.is-error {
+	color: var(--nop-text-error);
+}
+
 /* Inline warning when Enable is on but credentials are missing. */
 .nop-credential-warning {
 	color:     var(--nop-text-error);
@@ -113,9 +121,16 @@
 	border-top:     1px solid var(--nop-border-subtle);
 }
 
-.nop-tab-panel > .nop-section-heading:first-child {
+.nop-tab-panel > .nop-section-heading:first-child,
+.nop-section-heading--first {
 	border-top:  none;
 	padding-top: 0;
+}
+
+/* Description that follows a section heading. Gives the same spacing the
+   inline style="margin-bottom:12px" used to provide. */
+.nop-section-intro {
+	margin: 6px 0 12px;
 }
 
 /* ── Nav tabs ───────────────────────────────────────────────────────────────── */
@@ -407,20 +422,18 @@
 }
 
 .nop-network-card {
+	--nop-card-accent: var(--nop-border);
+
 	display:        flex;
 	flex-direction: column;
 	gap:            4px;
 	padding:        12px 14px;
 	background:     var(--nop-surface);
 	border:         1px solid var(--nop-border);
-	border-left:    3px solid var(--nop-border); /* overridden inline for active */
+	border-left:    3px solid var(--nop-card-accent);
 	border-radius:  var(--nop-radius);
 	font-size:      12px;
 	line-height:    1.4;
-}
-
-.nop-network-card--active {
-	border-left-width: 3px; /* colour set inline */
 }
 
 .nop-network-card--inactive {
@@ -438,6 +451,7 @@
 	width:         8px;
 	height:        8px;
 	border-radius: 50%;
+	background:    var(--nop-card-accent);
 }
 
 .nop-network-card__name {

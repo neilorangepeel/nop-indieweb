@@ -8,26 +8,51 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 
 		// ── Tab switching ─────────────────────────────────────────────────────────
+		// Implements the WAI-ARIA Tabs pattern: roving tabindex, aria-selected on
+		// the active tab, arrow keys to move between tabs, Home/End to jump.
 
 		var wrap = document.querySelector( '.nop-indieweb-settings' );
 		if ( wrap ) {
-			var tabs   = wrap.querySelectorAll( '.nop-nav-tabs .nav-tab' );
+			var tabs   = Array.prototype.slice.call( wrap.querySelectorAll( '.nop-nav-tabs [role="tab"]' ) );
 			var panels = wrap.querySelectorAll( '.nop-tab-panel' );
 
-			function activate( targetId ) {
+			function activate( targetId, focusTab ) {
 				tabs.forEach( function ( tab ) {
-					tab.classList.toggle( 'nav-tab-active', tab.getAttribute( 'href' ) === targetId );
+					var isActive = tab.getAttribute( 'href' ) === targetId;
+					tab.classList.toggle( 'nav-tab-active', isActive );
+					tab.setAttribute( 'aria-selected', isActive ? 'true' : 'false' );
+					tab.setAttribute( 'tabindex', isActive ? '0' : '-1' );
+					if ( isActive && focusTab ) {
+						tab.focus();
+					}
 				} );
 				panels.forEach( function ( panel ) {
 					panel.hidden = ( '#' + panel.id ) !== targetId;
 				} );
 			}
 
-			tabs.forEach( function ( tab ) {
+			tabs.forEach( function ( tab, index ) {
 				tab.addEventListener( 'click', function ( e ) {
 					e.preventDefault();
 					var target = this.getAttribute( 'href' );
-					activate( target );
+					activate( target, false );
+					if ( history.replaceState ) {
+						history.replaceState( null, '', target );
+					}
+				} );
+
+				tab.addEventListener( 'keydown', function ( e ) {
+					var next = null;
+					switch ( e.key ) {
+						case 'ArrowRight': next = tabs[ ( index + 1 ) % tabs.length ]; break;
+						case 'ArrowLeft':  next = tabs[ ( index - 1 + tabs.length ) % tabs.length ]; break;
+						case 'Home':       next = tabs[ 0 ]; break;
+						case 'End':        next = tabs[ tabs.length - 1 ]; break;
+						default: return;
+					}
+					e.preventDefault();
+					var target = next.getAttribute( 'href' );
+					activate( target, true );
 					if ( history.replaceState ) {
 						history.replaceState( null, '', target );
 					}
@@ -35,10 +60,10 @@
 			} );
 
 			var hash = window.location.hash;
-			if ( hash && wrap.querySelector( '.nop-nav-tabs .nav-tab[href="' + hash + '"]' ) ) {
-				activate( hash );
+			if ( hash && wrap.querySelector( '.nop-nav-tabs [role="tab"][href="' + hash + '"]' ) ) {
+				activate( hash, false );
 			} else if ( tabs.length ) {
-				activate( tabs[ 0 ].getAttribute( 'href' ) );
+				activate( tabs[ 0 ].getAttribute( 'href' ), false );
 			}
 		}
 
@@ -80,8 +105,8 @@
 				var service = btn.dataset.service;
 				var nonce   = btn.dataset.nonce;
 
-				btn.disabled    = true;
-				result.style.color = '';
+				btn.disabled = true;
+				result.classList.remove( 'is-success', 'is-error' );
 				result.textContent = 'Testing…';
 
 				var body = new FormData();
@@ -93,15 +118,25 @@
 					.then( function ( r ) { return r.json(); } )
 					.then( function ( data ) {
 						result.textContent = data.data;
-						result.style.color = data.success ? 'green' : '#b32d2e';
+						result.classList.add( data.success ? 'is-success' : 'is-error' );
 					} )
 					.catch( function () {
 						result.textContent = 'Request failed.';
-						result.style.color = '#b32d2e';
+						result.classList.add( 'is-error' );
 					} )
 					.finally( function () {
 						btn.disabled = false;
 					} );
+			} );
+		} );
+
+		// ── Revoke-token confirmation ─────────────────────────────────────────────
+
+		document.querySelectorAll( '.nop-revoke-link[data-confirm]' ).forEach( function ( link ) {
+			link.addEventListener( 'click', function ( e ) {
+				if ( ! window.confirm( link.dataset.confirm ) ) {
+					e.preventDefault();
+				}
 			} );
 		} );
 
