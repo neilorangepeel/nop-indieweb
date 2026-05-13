@@ -77,6 +77,7 @@ add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\IndieAuth\Token_Store::maybe_create_table();
 	\NOP\IndieWeb\maybe_migrate_profile_urls();
 	\NOP\IndieWeb\maybe_migrate_swarm_source_url();
+	\NOP\IndieWeb\maybe_flush_kind_rewrite_rules();
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
 
@@ -132,4 +133,22 @@ function maybe_migrate_swarm_source_url(): void {
 	}
 
 	update_option( 'nop_indieweb_swarm_source_migrated', 1, false );
+}
+
+/**
+ * One-time migration: flush WordPress rewrite rules so taxonomy-archive URLs
+ * for the nop_kind taxonomy (e.g. /kind/checkin/) start resolving. The
+ * taxonomy is registered with rewrite slug 'kind', but rewrite rules are
+ * cached in an option and don't regenerate until something calls
+ * flush_rewrite_rules(). Defers the flush to the `init` hook at priority 99
+ * so the taxonomy is already registered when the rules regenerate.
+ */
+function maybe_flush_kind_rewrite_rules(): void {
+	if ( get_option( 'nop_indieweb_kind_rewrite_flushed' ) ) {
+		return;
+	}
+	add_action( 'init', function () {
+		flush_rewrite_rules();
+		update_option( 'nop_indieweb_kind_rewrite_flushed', 1, false );
+	}, 99 );
 }
