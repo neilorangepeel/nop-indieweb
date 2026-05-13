@@ -142,12 +142,22 @@ class Plugin {
 		if ( is_admin() ) {
 			return (int) $count;
 		}
-		return (int) get_comments( [
-			'post_id'      => $post_id,
-			'type__not_in' => [ 'webmention' ],
-			'status'       => 'approve',
-			'count'        => true,
-		] );
+
+		// Subtract webmentions from the count WordPress already calculated, rather
+		// than re-counting all non-webmention comments — one query, same result.
+		// Memoise per request so a listing page that renders the same post twice
+		// only hits the DB once.
+		static $webmention_counts = [];
+		if ( ! isset( $webmention_counts[ $post_id ] ) ) {
+			$webmention_counts[ $post_id ] = (int) get_comments( [
+				'post_id' => $post_id,
+				'type'    => 'webmention',
+				'status'  => 'approve',
+				'count'   => true,
+			] );
+		}
+
+		return max( 0, (int) $count - $webmention_counts[ $post_id ] );
 	}
 
 	public function inject_kind_template( array $templates ): array {
@@ -269,17 +279,36 @@ class Plugin {
 			],
 		];
 
+		// Templates only change when the plugin version changes, but
+		// register_block_template() takes content (not a path), so without a
+		// cache we'd read 18 files on every request including REST/AJAX. Cache
+		// the file contents in a transient keyed on plugin version — auto-invalidates
+		// on upgrade.
+		$cache_key = 'nop_indieweb_template_contents_' . NOP_INDIEWEB_VERSION;
+		$contents  = get_transient( $cache_key );
+
+		if ( false === $contents ) {
+			$contents = [];
+			foreach ( $templates as $id => $template ) {
+				$path = $dir . $template['file'];
+				if ( ! is_readable( $path ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+					trigger_error( "NOP IndieWeb: template file missing: {$path}", E_USER_WARNING );
+					continue;
+				}
+				$contents[ $id ] = file_get_contents( $path );
+			}
+			set_transient( $cache_key, $contents, DAY_IN_SECONDS );
+		}
+
 		foreach ( $templates as $id => $template ) {
-			$path = $dir . $template['file'];
-			if ( ! is_readable( $path ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-				trigger_error( "NOP IndieWeb: template file missing: {$path}", E_USER_WARNING );
+			if ( ! isset( $contents[ $id ] ) ) {
 				continue;
 			}
 			register_block_template( $id, [
 				'title'       => $template['title'],
 				'description' => $template['description'],
-				'content'     => file_get_contents( $path ),
+				'content'     => $contents[ $id ],
 			] );
 		}
 	}
@@ -389,6 +418,12 @@ HTML,
 	}
 
 	public function output_link_headers(): void {
+		// Discovery headers are only useful on page responses — skip REST/AJAX/admin
+		// where they add bytes nobody reads.
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+
 		header( sprintf( 'Link: <%s>; rel="micropub"',               rest_url( 'nop-indieweb/v1/micropub' ) ), false );
 		header( sprintf( 'Link: <%s>; rel="webmention"',             rest_url( 'nop-indieweb/v1/webmention' ) ), false );
 		header( sprintf( 'Link: <%s>; rel="authorization_endpoint"', Auth_Endpoint::url() ),                  false );
