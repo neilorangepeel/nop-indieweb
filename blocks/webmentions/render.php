@@ -57,6 +57,7 @@ $wp_comments = get_comments( [
 ] );
 
 if ( empty( $webmentions ) && empty( $wp_comments ) ) {
+	nop_wm_render_empty_state( $post_id );
 	return;
 }
 
@@ -123,6 +124,7 @@ foreach ( $wp_comments as $c ) {
 usort( $replies, static fn( array $a, array $b ) => strcmp( $a['date'], $b['date'] ) );
 
 if ( ! $likes && ! $reposts && ! $replies ) {
+	nop_wm_render_empty_state( $post_id );
 	return;
 }
 
@@ -378,6 +380,14 @@ function nop_wm_time_label( string $date_gmt ): string {
 	if ( $diff < 604800 )  { return floor( $diff / 86400 ) . ' days ago'; }
 	if ( $diff < 2592000 ) { return floor( $diff / 604800 ) . ' weeks ago'; }
 	return (string) wp_date( 'j F Y', $ts );
+}
+
+function nop_wm_render_empty_state( int $post_id ): void {
+	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions nop-webmentions--empty' ] );
+	$message       = comments_open( $post_id )
+		? __( 'Be the first to respond — comment below, or reply from your own site.', 'nop-indieweb' )
+		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
+	echo '<div ' . $wrapper_attrs . '><p class="nop-webmentions__empty">' . esc_html( $message ) . '</p></div>';
 }
 
 function nop_wm_repost_icon(): string {

@@ -307,3 +307,15 @@
 	flex: 1;
 	min-width: 0;
 }
+
+/* ── Empty state ─────────────────────────────────────────────────────────────
+   Shown when a post has no responses yet. Low chrome — single line, muted.
+   The comment form (if open) lives below this block and provides the action. */
+
+.nop-webmentions__empty {
+	margin: 0;
+	color: var(--wp--preset--color--accent-4, #6b7280);
+	font-size: var(--wp--preset--font-size--small, 0.875rem);
+	line-height: 1.5;
+}
+
