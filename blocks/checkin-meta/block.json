@@ -4,7 +4,7 @@
 	"name": "nop-indieweb/checkin-meta",
 	"title": "Checkin Meta",
 	"description": "Outputs venue location, categories, map link, syndication URLs, and service attribution for a checkin post.",
-	"category": "theme",
+	"category": "nop-indieweb-meta",
 	"icon": "location",
 	"keywords": ["checkin", "swarm", "foursquare", "indieweb", "location"],
 	"editorScript": "file:./editor.js",

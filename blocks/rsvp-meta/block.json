@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "nop-indieweb/rsvp-meta",
 	"title": "RSVP Meta",
-	"category": "widgets",
+	"category": "nop-indieweb-meta",
 	"description": "Displays and edits RSVP status for an event response.",
 	"supports": { "html": false, "multiple": false },
 	"usesContext": [ "postId", "postType" ],

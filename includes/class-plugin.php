@@ -88,6 +88,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_patterns' ] );
 		add_action( 'init', [ $this, 'register_templates' ] );
+		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
@@ -101,8 +102,6 @@ class Plugin {
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
 		// Inject kind-based templates into the block-theme single-post hierarchy.
-		// Also injects post-format slugs as a lower-priority fallback so themes
-		// that style format-status posts still work without changes.
 		add_filter( 'single_template_hierarchy', [ $this, 'inject_kind_template' ] );
 
 		// Keep webmentions out of the standard WordPress comments block.
@@ -144,36 +143,13 @@ class Plugin {
 		] );
 	}
 
-	/**
-	 * Injects kind-based templates into the single-post hierarchy.
-	 *
-	 * Priority (highest first):
-	 *   1. single-nop_kind-{slug}  — plugin's primary block template
-	 *   2. single-post-format-{format}-{kind}  — theme compat if format is set
-	 *   3. single-post-format-{format}          — theme compat fallback
-	 *
-	 * The plugin no longer sets post formats itself. If a theme or legacy data
-	 * has set a format, those slugs are still injected below the kind template
-	 * so existing theme templates continue to work unchanged.
-	 */
 	public function inject_kind_template( array $templates ): array {
 		$post = get_queried_object();
 		if ( ! $post instanceof \WP_Post ) {
 			return $templates;
 		}
 
-		$kind   = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
-		$format = get_post_format( $post );
-
-		// Format-based slugs first (lower priority — unshifted before kind).
-		if ( $format && 'standard' !== $format ) {
-			array_unshift( $templates, "single-post-format-{$format}" );
-			if ( $kind ) {
-				array_unshift( $templates, "single-post-format-{$format}-{$kind}" );
-			}
-		}
-
-		// Kind template last (highest priority — ends up at front of array).
+		$kind = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
 		if ( $kind ) {
 			array_unshift( $templates, "single-nop_kind-{$kind}" );
 		}
@@ -236,13 +212,6 @@ class Plugin {
 				'title'       => __( 'Single – Photo', 'nop-indieweb' ),
 				'description' => __( 'Displays a photo post with featured image, caption, and syndication source.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-photo.html',
-			],
-
-			// ── Post-format fallback (theme compat — not used by new posts) ──────────
-			'nop-indieweb//single-post-format-status' => [
-				'title'       => __( 'Single – Status Post (legacy)', 'nop-indieweb' ),
-				'description' => __( 'Fallback for posts with post_format=status set by a theme. New posts use single-nop_kind-{slug} instead.', 'nop-indieweb' ),
-				'file'        => 'single-post-format-status.html',
 			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
@@ -317,6 +286,19 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
+	}
+
+	public function register_block_categories( array $categories ): array {
+		return array_merge( $categories, [
+			[
+				'slug'  => 'nop-indieweb-conversations',
+				'title' => __( 'NOP · Conversations', 'nop-indieweb' ),
+			],
+			[
+				'slug'  => 'nop-indieweb-meta',
+				'title' => __( 'NOP · Kind meta', 'nop-indieweb' ),
+			],
+		] );
 	}
 
 	public function register_patterns(): void {

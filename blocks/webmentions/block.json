@@ -4,7 +4,7 @@
 	"name": "nop-indieweb/webmentions",
 	"title": "Webmentions",
 	"description": "Displays likes, reposts, and replies received via webmention for this post.",
-	"category": "theme",
+	"category": "nop-indieweb-conversations",
 	"icon": "heart",
 	"keywords": ["webmention", "likes", "replies", "indieweb", "bridgy"],
 	"editorScript": "file:./editor.js",

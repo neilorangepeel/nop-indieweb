@@ -4,7 +4,7 @@
 	"name": "nop-indieweb/syndication-panel",
 	"title": "Syndication Panel",
 	"description": "Shows where this post is also being discussed on Mastodon, Bluesky, Pixelfed, etc. Renders nothing when the post has no syndication links.",
-	"category": "theme",
+	"category": "nop-indieweb-conversations",
 	"icon": "share-alt2",
 	"keywords": [ "syndication", "posse", "mastodon", "bluesky", "pixelfed", "indieweb" ],
 	"editorScript": "file:./editor.js",

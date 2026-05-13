@@ -4,7 +4,7 @@
 	"name": "nop-indieweb/film-meta",
 	"title": "Film Meta",
 	"description": "Star rating, watch date, and Letterboxd attribution for a film diary entry. The rating is editable by clicking the stars directly in the block editor.",
-	"category": "theme",
+	"category": "nop-indieweb-meta",
 	"icon": "star-filled",
 	"keywords": ["film", "letterboxd", "rating", "stars", "watch", "movie"],
 	"editorScript": "file:./editor.js",

@@ -24,40 +24,18 @@ Principles drawn from active IndieWeb practitioners — primarily Max Böck ([Th
 - SVG fallback avatars; accessible markup; reply links integrated with native WP threaded UI.
 - Original-platform URL linked from each reply.
 
-**Foundation gaps to close before adding new features:**
+**Foundation gaps still open:**
 
 1. **Comment form friendliness audit.** Open the standard WP comment form on a recent post through the eyes of a non-IndieWeb visitor. Does it look modern and inviting, or developer-built? Is the path to leaving a comment obvious? Adjust theme styling and field labels if needed.
-2. **"Also happening on" panel under each post.** Read `nop_indieweb_syndication` meta and render deep-links to the Mastodon / Bluesky / Pixelfed thread for that post. Honest cross-platform visibility without auto-bridging. Highest-leverage single addition.
-3. **Empty-state polish.** When a post has zero responses, the block currently returns nothing. Consider a small invitation ("Be the first to respond — comment below, or reply from your own site.") to reduce the "is this site even alive" feeling on older posts.
-4. **Mobile rendering audit.** Verify the facepile, threaded replies, and platform tags render cleanly on narrow viewports.
-5. **Provenance visibility audit.** Bridgy-backfed Mastodon replies are tagged as "Mastodon" — but a direct webmention from a blog and a Bridgy-backfed Mastodon reply currently look similar in the meta line. Consider a subtle visual cue ("via Bridgy" or a bridge icon) so the bridging chain is honest.
+2. **Mobile rendering audit.** Verify the facepile, threaded replies, and platform tags render cleanly on narrow viewports.
 
-**Implication for the rest of this roadmap:** clever items below (Reply Router, polymorphic identity form, ActivityPub) all sit *downstream* of foundations being audited and the "also happening on" panel shipping. Don't build the clever surface until the basics serve everyone well.
+**Implication for the rest of this roadmap:** clever items below (Reply Router, polymorphic identity form, ActivityPub) all sit *downstream* of these remaining audits. Don't build the clever surface until the basics serve everyone well.
 
 ## Architecture evolution
 
 A phased rework of how post kinds, structured meta, and per-kind editor UX hang together. Motivated by an architecture review of the current plugin against a target model: Posts for stream content (notes, checkins, photos, watches, listens, bookmarks, collections), Pages for evergreen, a Portfolio CPT for work, and a `kind` taxonomy that drives URLs, templates, microformats, and editor sidebars.
 
-### Phase 1 — Kind: meta → taxonomy
-
-Today, post kind is stored three times — `nop_indieweb_post_kind` meta, the `status` post format, and (for some kinds) a category. Migrate to a single canonical source: a hierarchical `nop_kind` taxonomy. Status post format stays for theme aesthetics; categories stop being used for kind grouping.
-
-**Authority model — derived denormalisation, not parallel writes:**
-
-- The `nop_kind` taxonomy term is **canonical** (queries, archive URLs, admin filter UI, sub-taxonomy nesting).
-- The `nop_indieweb_post_kind` meta is kept as a **derived read-cache** of the term, mirrored via a `set_object_terms` hook (~10 lines). Never written directly by services, the panel, or any code.
-- Reasons to keep the meta: hot read paths (`Semantic_Markup::output_kind_links`, `inject_post_format_template`, the post-kinds panel JS) are materially faster than `wp_get_post_terms`; Block Bindings already read it; Micropub clients and the mf2 endpoint speak in scalar property values; external themes/plugins may read it.
-- Drift is impossible by construction because there's only one write path (the term).
-
-**Steps:**
-
-1. Register `nop_kind` taxonomy, hierarchical, `show_in_rest: true`.
-2. Add `set_object_terms` mirror hook that writes the term name into `nop_indieweb_post_kind` meta on every change.
-3. Backfill migration: iterate posts with existing `nop_indieweb_post_kind` meta, call `wp_set_object_terms` for each (mirror hook re-writes meta, no-op for unchanged values).
-4. Update services and the JS panel to write the **term**, never the meta directly.
-5. Switch readers gradually: `Semantic_Markup`, `inject_post_format_template`, the JS panel. Meta remains the read interface for now — the term is what changes.
-6. Drop the category-as-kind pattern: remove auto-categorisation from services, retire `category-{kind}` templates in favour of `taxonomy-nop_kind-{term}` templates.
-7. Doc-comment the meta in `class-meta-registry.php` as "derived cache — do not write directly."
+Phase 1 has shipped — see **Done** for details. The authority model (term canonical, meta as derived read-cache) is enshrined in **Decisions and constraints** below.
 
 ### Phase 2 — Editor consolidation + `Lookup_Provider_Base`
 
@@ -246,8 +224,16 @@ Publish JSON Feed alongside RSS for each h-feed.
 - **Meta naming stays `nop_indieweb_*`.** Public prefix, REST-exposed, consistent across every kind. Don't introduce single-underscore prefixes (`_collection_*`) — they're WP-private and break Block Bindings + REST.
 - **`Lookup_Provider_Base` mirrors `Service_Base`.** Inbound Micropub flows and interactive editor lookups share conceptual structure (parse → validate → map → meta → after-insert hook) but live in separate abstractions because they run in different contexts.
 - **Categories are user-supplied topics, not kind.** Once `nop_kind` exists, services stop auto-assigning categories. Categories belong to the user (Belfast, Photography) and must not double as a kind discriminator.
-- **Post format `status` stays orthogonal to kind.** Kept for theme aesthetics; not a kind mechanism.
+- **Post formats are fully retired.** Neither the plugin nor the active theme uses `post_format` for anything. Kind taxonomy is the only post discriminator. Do not reintroduce post-format support or `single-post-format-*` templates.
 
 ## Done
 
+- **2026-05-13 — Post formats fully retired.** Active theme no longer declares `post-formats` support, so the Post Format panel is gone from the editor sidebar. Removed the format pattern category, `neilorangepeel/format` block binding, helper function, `single-post-format-status.html` template, and `format-link` / `format-audio` / `binding-format` patterns from the theme. Plugin dropped the post-format fallback path in `inject_kind_template`, its own `single-post-format-status.html`, and the matching registered-template entry. Cleared `post_format` terms from every existing post via `wp_set_post_terms( $id, [], 'post_format' )`. Kind taxonomy is now the sole post discriminator end-to-end.
+- **2026-05-13 — IndieWeb block categories.** Eight plugin blocks moved from generic `theme` / `widgets` into two dedicated inserter chips: **NOP · Conversations** (webmentions, like-button, syndication-panel, post-source) and **NOP · Kind meta** (checkin-meta, film-meta, film-card, rsvp-meta). Registered via `block_categories_all` in `Plugin::register_block_categories()`.
+- **2026-05-13 — Foundation gap closed: "Also happening on" panel.** New server-rendered `blocks/syndication-panel/` block surfaces a post's syndication URLs with platform labels resolved through `Syndication_Manager` (so custom syndicators are honoured); hidden when there's nothing to show. Swarm checkins now also write `nop_indieweb_source_url` / `nop_indieweb_platform` on insert, with a one-time backfill migration for existing posts.
+- **2026-05-13 — Foundation gap closed: empty-state invitation.** Posts with zero likes/reposts/replies/comments now render a single muted line inviting a response, wording adapted to whether comments are open. No more blank webmentions block on older posts.
+- **2026-05-13 — Foundation gap closed: provenance visibility.** Bridged replies (detected from `brid.gy` in the webmention source URL) now show a muted "· via Bridgy" suffix next to the platform pill, with the aria-label updated symmetrically. Display-only — no ingest, schema, or migration changes.
+- **2026-05-13 — Webmentions + like-button blocks survive multiple renders in one request.** Helpers extracted to `blocks/webmentions/helpers.php` (loaded via `require_once`); the like-button block now uses a local `$icon` variable rather than a top-level function. Prevents function-redeclaration fatals inside Query Loops.
+- **2026-05-12 → 2026-05-13 — Architecture Phase 1: kind meta → `nop_kind` taxonomy.** Hierarchical `nop_kind` taxonomy registered and exposed in REST. `set_object_terms` mirror hook writes the term slug into `nop_indieweb_post_kind` meta — the meta is now a derived read-cache, doc-commented as such in `class-meta-registry.php`. Services and the editor panel write the term, never the meta. Backfill migration covers existing posts (`bin/migrate-kinds.php`). Category-as-kind retired (`bin/retire-categories.php`); post-format assignment dropped; single templates routed via `nop_kind`. Admin posts list gained a Kind column and filter. Rewrite rules flush on next page load.
+- **2026-05-12 — Syndicator settings UX overhaul.** Tabs config-driven from a single source; inline credential warnings; last-sync timestamps per platform; reveal toggle on credential fields; Twitter Archive moved to its own tab.
 - **2026-05-12 — Editor panel is config-driven.** `Kind_Taxonomy::get_editor_panel_config()` is the single source of truth for the Post Kind sidebar (dropdown labels, fields, starter layout, title-from-URL behaviour). `admin/post-kinds-panel.js` is a generic renderer over that config. Adding a new kind = register the taxonomy term + add one entry to the config; no JS change. Service-created kinds (`checkin`, `watch`, `listen`) appear in the dropdown with empty fields so hand-authored posts can adopt them. The default Gutenberg taxonomy panel for `nop_kind` is hidden via `removeEditorPanel` to keep kind single-select.

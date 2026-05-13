@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "nop-indieweb/like-button",
 	"title": "Like Button",
-	"category": "widgets",
+	"category": "nop-indieweb-conversations",
 	"description": "Interactive like button. Site likes and IndieWeb webmention likes are counted and displayed together.",
 	"supports": { "html": false },
 	"usesContext": [ "postId", "postType" ],

@@ -4,7 +4,7 @@
 	"name": "nop-indieweb/post-source",
 	"title": "Post Source",
 	"description": "Displays the originating platform and source URL for an imported social post, plus any outbound syndication links.",
-	"category": "theme",
+	"category": "nop-indieweb-conversations",
 	"icon": "share-alt",
 	"editorScript": "file:./editor.js",
 	"style": "file:./style.css",
