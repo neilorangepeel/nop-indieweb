@@ -8,6 +8,8 @@
  */
 declare( strict_types=1 );
 
+$icon = '<svg class="nop-like-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 
 // Editor preview — no post context available.
@@ -16,7 +18,7 @@ if ( ! $post_id ) {
 	?>
 	<div <?php echo $wrapper; ?>>
 		<button class="nop-like-button__btn" type="button" aria-pressed="false">
-			<?php echo nop_like_button_icon(); ?>
+			<?php echo $icon; ?>
 			<span class="nop-like-button__label">Like</span>
 		</button>
 		<span class="nop-like-button__count" hidden>0</span>
@@ -43,7 +45,7 @@ $wrapper = get_block_wrapper_attributes( [
 	        type="button"
 	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
-		<?php echo nop_like_button_icon(); ?>
+		<?php echo $icon; ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
 	<span class="nop-like-button__count"
@@ -52,8 +54,3 @@ $wrapper = get_block_wrapper_attributes( [
 		<?php echo esc_html( (string) $count ); ?>
 	</span>
 </div>
-<?php
-
-function nop_like_button_icon(): string {
-	return '<svg class="nop-like-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
-}
