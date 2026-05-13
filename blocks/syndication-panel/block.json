@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/syndication-panel",
+	"title": "Syndication Panel",
+	"description": "Shows where this post is also being discussed on Mastodon, Bluesky, Pixelfed, etc. Renders nothing when the post has no syndication links.",
+	"category": "theme",
+	"icon": "share-alt2",
+	"keywords": [ "syndication", "posse", "mastodon", "bluesky", "pixelfed", "indieweb" ],
+	"editorScript": "file:./editor.js",
+	"style": "file:./style.css",
+	"render": "file:./render.php",
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"align": false,
+		"spacing": { "margin": true, "padding": true },
+		"typography": { "fontSize": true, "lineHeight": true },
+		"color": { "text": true, "background": false, "link": true }
+	}
+}

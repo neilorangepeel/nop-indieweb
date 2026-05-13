@@ -15,6 +15,10 @@ abstract class Syndicator_Base {
 
 	abstract protected function owns_url( string $url ): bool;
 
+	public function matches_url( string $url ): bool {
+		return $this->owns_url( $url );
+	}
+
 	public function enabled(): bool {
 		return (bool) \NOP\IndieWeb\nop_indieweb_get_option( "syndicators.{$this->slug()}.enabled", false );
 	}

@@ -316,6 +316,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
 	}
 
 	public function register_patterns(): void {

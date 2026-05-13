@@ -1,0 +1,79 @@
+.nop-syndication-panel {
+	margin-block: 2rem;
+	padding-block-start: 1rem;
+	border-block-start: 1px solid var(--wp--preset--color--accent-6, #e5e7eb);
+}
+
+.nop-syndication-panel__heading {
+	margin: 0 0 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--wp--preset--color--accent-4, #6b7280);
+}
+
+.nop-syndication-panel__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.25rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nop-syndication-panel__item {
+	margin: 0;
+}
+
+.nop-syndication-panel__link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: inherit;
+	text-decoration: none;
+	font-size: 0.9375rem;
+	line-height: 1.4;
+}
+
+.nop-syndication-panel__link:hover .nop-syndication-panel__label,
+.nop-syndication-panel__link:focus-visible .nop-syndication-panel__label {
+	text-decoration: underline;
+}
+
+.nop-syndication-panel__link:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+	border-radius: 0.25rem;
+}
+
+.nop-syndication-panel__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	background: var(--nop-syndication-icon-bg, var(--wp--preset--color--accent-6, #f3f4f6));
+	color: var(--nop-syndication-icon-color, inherit);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 1;
+}
+
+.nop-syndication-panel__icon--bluesky {
+	--nop-syndication-icon-bg: #0085ff;
+	--nop-syndication-icon-color: #fff;
+}
+
+.nop-syndication-panel__icon--mastodon {
+	--nop-syndication-icon-bg: #6364ff;
+	--nop-syndication-icon-color: #fff;
+}
+
+.nop-syndication-panel__icon--pixelfed {
+	--nop-syndication-icon-bg: #110e30;
+	--nop-syndication-icon-color: #fff;
+}

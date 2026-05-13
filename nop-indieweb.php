@@ -76,6 +76,7 @@ register_activation_hook( __FILE__, function () {
 add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\IndieAuth\Token_Store::maybe_create_table();
 	\NOP\IndieWeb\maybe_migrate_profile_urls();
+	\NOP\IndieWeb\maybe_migrate_swarm_source_url();
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
 
@@ -93,4 +94,42 @@ function maybe_migrate_profile_urls(): void {
 			delete_option( $legacy_key );
 		}
 	}
+}
+
+/**
+ * One-time migration: backfills source_url + platform on existing Swarm
+ * checkin posts so the syndication-panel and post-source blocks render
+ * correctly. Pre-existing data put the Swarm permalink only in
+ * nop_indieweb_syndication and nop_indieweb_checkin_url; these posts need
+ * the source-url/platform pair too.
+ */
+function maybe_migrate_swarm_source_url(): void {
+	if ( get_option( 'nop_indieweb_swarm_source_migrated' ) ) {
+		return;
+	}
+
+	$query = new \WP_Query( [
+		'post_type'      => 'post',
+		'post_status'    => 'any',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [
+			[ 'key' => 'nop_indieweb_service', 'value' => 'swarm' ],
+		],
+		'no_found_rows'  => true,
+	] );
+
+	foreach ( $query->posts as $post_id ) {
+		if ( ! get_post_meta( $post_id, 'nop_indieweb_platform', true ) ) {
+			update_post_meta( $post_id, 'nop_indieweb_platform', 'swarm' );
+		}
+		if ( ! get_post_meta( $post_id, 'nop_indieweb_source_url', true ) ) {
+			$checkin_url = (string) get_post_meta( $post_id, 'nop_indieweb_checkin_url', true );
+			if ( $checkin_url ) {
+				update_post_meta( $post_id, 'nop_indieweb_source_url', $checkin_url );
+			}
+		}
+	}
+
+	update_option( 'nop_indieweb_swarm_source_migrated', 1, false );
 }

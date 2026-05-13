@@ -148,6 +148,8 @@ class Swarm extends Service_Base {
 	public function get_meta( array $parsed ): array {
 		return [
 			'nop_indieweb_service'          => 'swarm',
+			'nop_indieweb_platform'         => 'swarm',
+			'nop_indieweb_source_url'       => $parsed['checkin_url'],
 
 			// Venue identity
 			'nop_indieweb_venue_name'       => $parsed['venue_name'],

@@ -74,6 +74,22 @@ class Syndication_Manager {
 		);
 	}
 
+	/**
+	 * Resolves a syndication URL to the syndicator that owns it.
+	 * Returns [ 'slug' => ..., 'label' => ... ] or null when unknown.
+	 */
+	public function resolve_url( string $url ): ?array {
+		foreach ( $this->syndicators as $syndicator ) {
+			if ( $syndicator->matches_url( $url ) ) {
+				return [
+					'slug'  => $syndicator->slug(),
+					'label' => $syndicator->label(),
+				];
+			}
+		}
+		return null;
+	}
+
 	/** Returns syndicator definitions for the editor panel. */
 	public function get_panel_data(): array {
 		return array_values( array_map(
