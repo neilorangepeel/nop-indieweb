@@ -28,6 +28,7 @@ define( 'NOP_INDIEWEB_FILE',    __FILE__ );
 // Load all files explicitly — no autoloader magic.
 require_once NOP_INDIEWEB_DIR . 'includes/utils/functions.php';
 require_once NOP_INDIEWEB_DIR . 'includes/utils/microformats.php';
+require_once NOP_INDIEWEB_DIR . 'includes/utils/block-content.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-token-store.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-auth-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-token-endpoint.php';

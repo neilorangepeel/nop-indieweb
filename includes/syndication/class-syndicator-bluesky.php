@@ -68,10 +68,26 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			return null;
 		}
 
-		$text    = $this->build_status_text( $post_id, 300 );
-		$url     = get_permalink( $post_id );
-		$facets  = $this->build_link_facets( $text, $url );
-		$embed   = $this->build_link_card( $post_id, $url, $session );
+		$permalink = (string) get_permalink( $post_id );
+		$images    = $this->collect_inline_images( $post_id, 4 );
+		$body_text = $this->build_full_text( $post_id );
+
+		if ( $images ) {
+			// Image path: keep the URL out of the visible text budget by hiding
+			// it behind a 1-char facet label. Reader sees text + photos + tiny
+			// ↗ link back to the canonical post.
+			$label  = '↗';
+			$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
+			$facet  = $this->build_label_facet( $text, $label, $permalink );
+			$embed  = $this->build_image_embed( $images, $session );
+			$facets = $facet ? [ $facet ] : [];
+		} else {
+			// No images: full text + inline URL, with optional link-card preview
+			// for titled posts (Articles/Bookmarks/Replies).
+			$text   = $this->compose_status( $body_text, 300, $permalink, mb_strlen( $permalink ) );
+			$facets = $this->build_link_facets( $text, $permalink );
+			$embed  = $this->build_link_card( $post_id, $permalink, $session );
+		}
 
 		$record = [
 			'$type'     => 'app.bsky.feed.post',
@@ -151,29 +167,93 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( ! $thumbnail_id ) {
 			return null;
 		}
-
-		$image = wp_get_attachment_image_src( $thumbnail_id, 'medium' );
-		if ( ! $image ) {
+		$src = wp_get_attachment_image_src( $thumbnail_id, 'medium' );
+		if ( ! $src ) {
 			return null;
 		}
+		return $this->upload_image_blob( [
+			'url'           => (string) $src[0],
+			'alt'           => '',
+			'attachment_id' => $thumbnail_id,
+			'width'         => (int) ( $src[1] ?? 0 ),
+			'height'        => (int) ( $src[2] ?? 0 ),
+		], $session );
+	}
 
-		$response = wp_remote_get( $image[0], [ 'timeout' => 15 ] );
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+	/**
+	 * Builds an app.bsky.embed.images structure from inline images. Each entry
+	 * carries alt text and an aspect-ratio hint so Bluesky's feed doesn't crop
+	 * to a square. Skips individual images that fail to upload — does not fail
+	 * the whole post.
+	 */
+	private function build_image_embed( array $images, array $session ): ?array {
+		$items = [];
+		foreach ( $images as $image ) {
+			$blob = $this->upload_image_blob( $image, $session );
+			if ( ! $blob ) {
+				continue;
+			}
+			$entry = [
+				'alt'   => (string) ( $image['alt'] ?? '' ),
+				'image' => $blob,
+			];
+			$width  = (int) ( $image['width'] ?? 0 );
+			$height = (int) ( $image['height'] ?? 0 );
+			if ( $width > 0 && $height > 0 ) {
+				$entry['aspectRatio'] = [ 'width' => $width, 'height' => $height ];
+			}
+			$items[] = $entry;
+		}
+		if ( ! $items ) {
 			return null;
 		}
+		return [
+			'$type'  => 'app.bsky.embed.images',
+			'images' => $items,
+		];
+	}
 
-		$mime = strtok( wp_remote_retrieve_header( $response, 'content-type' ), ';' );
-		if ( ! in_array( $mime, [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ], true ) ) {
-			return null;
+	/**
+	 * Uploads a single image as a Bluesky blob. Bluesky's 1MB blob limit kicks
+	 * in often — when the 'large' URL is over budget, try the 'medium' size for
+	 * known attachments before giving up.
+	 */
+	private function upload_image_blob( array $image, array $session ): ?array {
+		$candidates = [ (string) $image['url'] ];
+
+		$id = (int) ( $image['attachment_id'] ?? 0 );
+		if ( $id > 0 ) {
+			$medium = wp_get_attachment_image_src( $id, 'medium' );
+			if ( $medium && (string) $medium[0] !== (string) $image['url'] ) {
+				$candidates[] = (string) $medium[0];
+			}
+			$thumb = wp_get_attachment_image_src( $id, 'thumbnail' );
+			if ( $thumb && ! in_array( (string) $thumb[0], $candidates, true ) ) {
+				$candidates[] = (string) $thumb[0];
+			}
 		}
 
-		$image_data = wp_remote_retrieve_body( $response );
-
-		// Bluesky blob limit is 1MB.
-		if ( strlen( $image_data ) > 1_000_000 ) {
-			return null;
+		foreach ( $candidates as $url ) {
+			$fetched = $this->fetch_image( $url );
+			if ( ! $fetched ) {
+				continue;
+			}
+			if ( strlen( $fetched['data'] ) > 1_000_000 ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'Bluesky: image over 1MB, trying smaller', [
+					'url'   => $url,
+					'bytes' => strlen( $fetched['data'] ),
+				] );
+				continue;
+			}
+			$blob = $this->upload_blob( $fetched['data'], $fetched['mime'], $session );
+			if ( $blob ) {
+				return $blob;
+			}
 		}
+		return null;
+	}
 
+	private function upload_blob( string $data, string $mime, array $session ): ?array {
 		$upload = wp_remote_post(
 			$this->pds() . '/xrpc/com.atproto.repo.uploadBlob',
 			[
@@ -181,17 +261,35 @@ class Syndicator_Bluesky extends Syndicator_Base {
 					'Authorization' => 'Bearer ' . $session['accessJwt'],
 					'Content-Type'  => $mime,
 				],
-				'body'    => $image_data,
+				'body'    => $data,
 				'timeout' => 30,
 			]
 		);
-
 		if ( is_wp_error( $upload ) || 200 !== wp_remote_retrieve_response_code( $upload ) ) {
 			return null;
 		}
+		$body = json_decode( wp_remote_retrieve_body( $upload ), true );
+		return $body['blob'] ?? null;
+	}
 
-		$blob = json_decode( wp_remote_retrieve_body( $upload ), true );
-		return $blob['blob'] ?? null;
+	/**
+	 * Builds a single facet that turns a short visible label (e.g. "↗") into a
+	 * clickable link, keeping the full permalink out of the visible text.
+	 */
+	private function build_label_facet( string $text, string $label, string $url ): ?array {
+		$byte_start = strpos( $text, $label );
+		if ( false === $byte_start ) {
+			return null;
+		}
+		return [
+			'index'    => [
+				'byteStart' => $byte_start,
+				'byteEnd'   => $byte_start + strlen( $label ),
+			],
+			'features' => [
+				[ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ],
+			],
+		];
 	}
 
 	private function create_session(): ?array {

@@ -54,82 +54,77 @@ abstract class Syndicator_Base {
 		}
 	}
 
-	protected function build_status_text( int $post_id, int $limit ): string {
+	/**
+	 * Composes the post body text used by the syndicator.
+	 *
+	 * Falls back through: checkin venue name → post title → full block text.
+	 * Returns the text without any permalink/attribution — append it separately
+	 * via compose_status() so the truncation budget accounts for it.
+	 */
+	protected function build_full_text( int $post_id ): string {
 		$post       = get_post( $post_id );
 		$venue_name = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
-		$permalink  = get_permalink( $post_id );
 
 		if ( $venue_name ) {
-			$text = sprintf( 'Checked in at %s', $venue_name );
-		} elseif ( $post->post_title ) {
-			$text = $post->post_title;
-		} else {
-			$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 30 );
-			$text    = $excerpt ?: '';
+			return sprintf( 'Checked in at %s', $venue_name );
 		}
-
-		// Reserve space for the URL + newlines.
-		$url_part   = "\n\n" . $permalink;
-		$max_text   = $limit - mb_strlen( $url_part );
-		if ( mb_strlen( $text ) > $max_text ) {
-			$text = mb_substr( $text, 0, $max_text - 1 ) . '…';
+		if ( $post && $post->post_title ) {
+			return (string) $post->post_title;
 		}
-
-		return $text . $url_part;
+		if ( $post ) {
+			return \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
+		}
+		return '';
 	}
 
 	/**
-	 * Uploads the post's featured image to a Mastodon-compatible /api/v2/media endpoint.
-	 * Returns the media attachment ID string, or null if no thumbnail or upload fails.
+	 * Composes `<text>\n\n<suffix>`, truncating $text so the whole thing fits in
+	 * $limit. $suffix_cost is how many characters the suffix occupies against the
+	 * platform's budget — for Mastodon, URLs cost a flat 23 regardless of length;
+	 * for Bluesky a facet label costs its visible character count.
+	 *
+	 * If $suffix is empty, no separator or suffix is appended.
 	 */
-	protected function upload_featured_image( int $post_id, string $instance, string $token ): ?string {
-		$thumbnail_id = get_post_thumbnail_id( $post_id );
-		if ( ! $thumbnail_id ) {
-			return null;
+	protected function compose_status( string $text, int $limit, string $suffix, int $suffix_cost ): string {
+		if ( '' === $suffix ) {
+			if ( mb_strlen( $text ) > $limit ) {
+				$text = mb_substr( $text, 0, $limit - 1 ) . '…';
+			}
+			return $text;
 		}
 
-		$image = wp_get_attachment_image_src( $thumbnail_id, 'large' );
-		if ( ! $image ) {
-			return null;
+		$overhead = 2 + $suffix_cost; // "\n\n" + the suffix's budget cost
+		$max_text = $limit - $overhead;
+		if ( $max_text < 0 ) {
+			$max_text = 0;
 		}
-
-		$file_data = $this->fetch_image( $image[0] );
-		if ( ! $file_data ) {
-			return null;
+		if ( mb_strlen( $text ) > $max_text ) {
+			$text = mb_substr( $text, 0, max( 0, $max_text - 1 ) ) . '…';
 		}
+		return ( '' === $text ) ? $suffix : ( $text . "\n\n" . $suffix );
+	}
 
-		$boundary = wp_generate_password( 24, false );
-		$body     = "--{$boundary}\r\n"
-			. "Content-Disposition: form-data; name=\"file\"; filename=\"image\"\r\n"
-			. "Content-Type: {$file_data['mime']}\r\n\r\n"
-			. $file_data['data'] . "\r\n"
-			. "--{$boundary}--";
-
-		$response = wp_remote_post(
-			rtrim( $instance, '/' ) . '/api/v2/media',
-			[
-				'headers' => [
-					'Authorization' => 'Bearer ' . $token,
-					'Content-Type'  => "multipart/form-data; boundary={$boundary}",
-				],
-				'body'    => $body,
-				'timeout' => 30,
-			]
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return null;
+	/**
+	 * Returns inline image references from the post content, up to $limit.
+	 * Each item: [ url, alt, attachment_id, width, height ].
+	 */
+	protected function collect_inline_images( int $post_id, int $limit ): array {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return [];
 		}
+		return \NOP\IndieWeb\nop_indieweb_block_images( (string) $post->post_content, $limit );
+	}
 
-		$code   = wp_remote_retrieve_response_code( $response );
-		$result = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		// 200 = ready immediately, 202 = processing (still usable for the status).
-		if ( in_array( $code, [ 200, 202 ], true ) && isset( $result['id'] ) ) {
-			return (string) $result['id'];
-		}
-
-		return null;
+	/**
+	 * Back-compat helper: full text + plain permalink suffix. URLs cost their
+	 * literal length here — Mastodon's 23-char flat rule is handled by callers
+	 * that know about it.
+	 */
+	protected function build_status_text( int $post_id, int $limit ): string {
+		$text      = $this->build_full_text( $post_id );
+		$permalink = (string) get_permalink( $post_id );
+		return $this->compose_status( $text, $limit, $permalink, mb_strlen( $permalink ) );
 	}
 
 	protected function fetch_image( string $url ): ?array {
