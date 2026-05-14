@@ -328,6 +328,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-footer' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
@@ -399,6 +400,51 @@ class Plugin {
 <!-- /wp:separator -->
 
 <!-- wp:nop-indieweb/checkin-meta /-->
+
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
+		register_block_pattern( 'nop-indieweb/note-post', [
+			'title'         => __( 'Note Post', 'nop-indieweb' ),
+			'description'   => __( 'Short-form note layout: inline kind/date header, featured image, content, and a compact interaction row (like · comments · reposts · source).', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'note', 'social', 'indieweb', 'like', 'webmention' ],
+			'viewportWidth' => 800,
+			'content'       => <<<'HTML'
+<!-- wp:group {"style":{"spacing":{"blockGap":"0"}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group">
+
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"1.5rem"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group" style="padding-top:2rem;padding-bottom:1.5rem">
+<!-- wp:group {"style":{"spacing":{"blockGap":"0.5rem"}},"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
+<div class="wp-block-group">
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.1em","textTransform":"uppercase"}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Note</p>
+<!-- /wp:paragraph -->
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.6875rem"}}} -->
+<p class="has-text-color" style="color:#9ca3af;font-size:0.6875rem" aria-hidden="true">·</p>
+<!-- /wp:paragraph -->
+<!-- wp:post-date {"format":"j M Y, H:i","style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem"}}} /-->
+</div>
+<!-- /wp:group -->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:post-featured-image {"align":"wide","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} /-->
+
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"1.5rem","bottom":"1.25rem"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group" style="padding-top:1.5rem;padding-bottom:1.25rem">
+<!-- wp:post-content {"layout":{"type":"constrained"}} /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"2.5rem"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group" style="padding-top:0;padding-bottom:2.5rem">
+<!-- wp:nop-indieweb/post-footer /-->
+</div>
+<!-- /wp:group -->
 
 </div>
 <!-- /wp:group -->
