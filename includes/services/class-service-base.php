@@ -321,7 +321,16 @@ abstract class Service_Base {
 			}
 
 			if ( '' !== $alt ) {
+				// WordPress video attachments don't expose an "Alt text" field in
+				// the Media Library admin (image-only UI). Mirror the alt into
+				// post_excerpt so it lands in the Caption field and is editable
+				// in admin, while keeping _wp_attachment_image_alt for REST
+				// consumers and consistency with photos.
 				update_post_meta( (int) $id, '_wp_attachment_image_alt', $alt );
+				wp_update_post( [
+					'ID'           => (int) $id,
+					'post_excerpt' => $alt,
+				] );
 			}
 			$ids[] = (int) $id;
 		}
@@ -331,6 +340,8 @@ abstract class Service_Base {
 
 	/**
 	 * Builds core/video block markup for a list of sideloaded video attachment IDs.
+	 * When an attachment has a caption (post_excerpt), render it as a figcaption
+	 * so the alt text is visible on the public post too.
 	 */
 	protected function build_video_blocks( array $ids ): string {
 		$blocks = [];
@@ -339,10 +350,15 @@ abstract class Service_Base {
 			if ( ! $src ) {
 				continue;
 			}
+			$caption  = (string) get_post_field( 'post_excerpt', $id );
+			$fig_html = '' !== $caption
+				? '<figcaption class="wp-element-caption">' . esc_html( $caption ) . '</figcaption>'
+				: '';
 			$blocks[] = sprintf(
-				"<!-- wp:video {\"id\":%d} -->\n<figure class=\"wp-block-video\"><video controls src=\"%s\"></video></figure>\n<!-- /wp:video -->",
+				"<!-- wp:video {\"id\":%d} -->\n<figure class=\"wp-block-video\"><video controls src=\"%s\"></video>%s</figure>\n<!-- /wp:video -->",
 				$id,
-				esc_url( $src )
+				esc_url( $src ),
+				$fig_html
 			);
 		}
 		return implode( "\n\n", $blocks );
