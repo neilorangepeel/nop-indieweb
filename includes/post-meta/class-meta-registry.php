@@ -196,15 +196,25 @@ class Registry {
 			] ),
 
 			// ── Photos ───────────────────────────────────────────────────────────
-			// CDN URLs are always stored as a permanent record even when photos are sideloaded.
+			// Source URLs are always stored as a permanent record even when photos are sideloaded.
 			'nop_indieweb_photos'           => array_merge( $array, [
 				'label'       => __( 'Photos', 'nop-indieweb' ),
-				'description' => 'Original CDN photo URLs from Swarm.',
+				'description' => 'Source photo URLs (Swarm CDN, Bluesky getBlob, etc.) preserved alongside any sideloaded attachments.',
 			] ),
 			// Attachment IDs are set after sideloading; absent if sideloading is disabled.
 			'nop_indieweb_photo_ids'        => array_merge( $int_array, [
 				'label'       => __( 'Photo IDs', 'nop-indieweb' ),
 				'description' => 'WordPress attachment IDs for sideloaded photos.',
+			] ),
+
+			// ── Videos ───────────────────────────────────────────────────────────
+			'nop_indieweb_videos'           => array_merge( $array, [
+				'label'       => __( 'Videos', 'nop-indieweb' ),
+				'description' => 'Source video URLs (Bluesky getBlob, etc.) preserved alongside any sideloaded attachments.',
+			] ),
+			'nop_indieweb_video_ids'        => array_merge( $int_array, [
+				'label'       => __( 'Video IDs', 'nop-indieweb' ),
+				'description' => 'WordPress attachment IDs for sideloaded videos.',
 			] ),
 
 			// ── Raw payload ──────────────────────────────────────────────────────

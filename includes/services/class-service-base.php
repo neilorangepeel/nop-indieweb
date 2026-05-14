@@ -105,13 +105,22 @@ abstract class Service_Base {
 	}
 
 	/**
-	 * Sideloads remote photo URLs into the WordPress media library.
+	 * Sideloads remote photos into the WordPress media library.
+	 *
+	 * Each entry may be either:
+	 *   - a string URL (legacy form, used by Swarm/Mastodon/Letterboxd)
+	 *   - an array { primary: string, fallback?: string, size?: int } (Bluesky)
+	 *
+	 * The array form lets us prefer the original blob and fall back to a
+	 * CDN-resized version when the original would blow past the size cap. The
+	 * cap is filterable via the `nop_indieweb_photo_size_cap` filter (default
+	 * 25 MB per image).
 	 *
 	 * Returns attachment IDs for successfully imported images.
 	 * Sets the first photo as the post's featured image if none is set.
 	 */
-	protected function sideload_photos( array $photo_urls, int $post_id ): array {
-		if ( ! $photo_urls ) {
+	protected function sideload_photos( array $photos, int $post_id ): array {
+		if ( ! $photos ) {
 			return [];
 		}
 
@@ -121,10 +130,16 @@ abstract class Service_Base {
 			require_once ABSPATH . 'wp-admin/includes/image.php';
 		}
 
+		$cap_bytes      = (int) apply_filters( 'nop_indieweb_photo_size_cap', 25 * 1024 * 1024 );
 		$attachment_ids = [];
 		$set_featured   = ! has_post_thumbnail( $post_id );
 
-		foreach ( $photo_urls as $url ) {
+		foreach ( $photos as $photo ) {
+			$url = $this->select_photo_url( $photo, $cap_bytes );
+			if ( '' === $url ) {
+				continue;
+			}
+
 			$id = media_sideload_image( $url, $post_id, '', 'id' );
 			if ( is_wp_error( $id ) ) {
 				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $id->get_error_message() );
@@ -138,6 +153,38 @@ abstract class Service_Base {
 		}
 
 		return $attachment_ids;
+	}
+
+	/**
+	 * Resolves a photo entry to the URL we should actually sideload.
+	 * Strings pass through as-is. For array entries, picks primary unless the
+	 * advertised size exceeds the cap — in which case fallback is used (if
+	 * supplied). No HTTP round-trip for the size check; relies on the source
+	 * payload carrying the byte count.
+	 */
+	private function select_photo_url( mixed $photo, int $cap_bytes ): string {
+		if ( is_string( $photo ) ) {
+			return $photo;
+		}
+		if ( ! is_array( $photo ) ) {
+			return '';
+		}
+
+		$primary  = (string) ( $photo['primary'] ?? '' );
+		$fallback = (string) ( $photo['fallback'] ?? '' );
+		$size     = (int) ( $photo['size'] ?? 0 );
+
+		if ( '' === $primary ) {
+			return $fallback;
+		}
+		if ( '' !== $fallback && $size > 0 && $size > $cap_bytes ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Photo blob over cap, falling back to CDN', [
+				'size' => $size,
+				'cap'  => $cap_bytes,
+			] );
+			return $fallback;
+		}
+		return $primary;
 	}
 
 	private function find_by_dedup_key( string $key, string $meta_key ): ?int {
@@ -197,6 +244,102 @@ abstract class Service_Base {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Sideloads video blobs into the WordPress media library.
+	 *
+	 * Each entry: { primary: string, size?: int, alt?: string }. Skipped (with a
+	 * log entry) when the advertised size exceeds the
+	 * `nop_indieweb_video_size_cap` filter (default 100 MB) — videos are big,
+	 * and there's no useful CDN fallback to swap in like there is for photos.
+	 *
+	 * Returns attachment IDs for successfully imported videos.
+	 */
+	protected function sideload_videos( array $videos, int $post_id ): array {
+		if ( ! $videos ) {
+			return [];
+		}
+
+		if ( ! function_exists( 'media_handle_sideload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		$cap_bytes = (int) apply_filters( 'nop_indieweb_video_size_cap', 100 * 1024 * 1024 );
+		$ids       = [];
+
+		foreach ( $videos as $video ) {
+			if ( ! is_array( $video ) ) {
+				$video = [ 'primary' => (string) $video ];
+			}
+			$url  = (string) ( $video['primary'] ?? '' );
+			$size = (int) ( $video['size'] ?? 0 );
+			$alt  = (string) ( $video['alt'] ?? '' );
+
+			if ( '' === $url ) {
+				continue;
+			}
+			if ( $size > 0 && $size > $cap_bytes ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'Video blob over cap, skipping sideload', [
+					'size' => $size,
+					'cap'  => $cap_bytes,
+					'url'  => $url,
+				] );
+				continue;
+			}
+
+			$tmp = download_url( $url, 600 );
+			if ( is_wp_error( $tmp ) ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'Video download failed', [
+					'url'   => $url,
+					'error' => $tmp->get_error_message(),
+				] );
+				continue;
+			}
+
+			$file = [
+				'name'     => 'video-' . substr( md5( $url ), 0, 12 ) . '.mp4',
+				'tmp_name' => $tmp,
+			];
+
+			$id = media_handle_sideload( $file, $post_id );
+			if ( is_wp_error( $id ) ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'Video sideload failed', [
+					'url'   => $url,
+					'error' => $id->get_error_message(),
+				] );
+				@unlink( $tmp );
+				continue;
+			}
+
+			if ( '' !== $alt ) {
+				update_post_meta( (int) $id, '_wp_attachment_image_alt', $alt );
+			}
+			$ids[] = (int) $id;
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Builds core/video block markup for a list of sideloaded video attachment IDs.
+	 */
+	protected function build_video_blocks( array $ids ): string {
+		$blocks = [];
+		foreach ( $ids as $id ) {
+			$src = wp_get_attachment_url( $id );
+			if ( ! $src ) {
+				continue;
+			}
+			$blocks[] = sprintf(
+				"<!-- wp:video {\"id\":%d} -->\n<figure class=\"wp-block-video\"><video controls src=\"%s\"></video></figure>\n<!-- /wp:video -->",
+				$id,
+				esc_url( $src )
+			);
+		}
+		return implode( "\n\n", $blocks );
 	}
 
 	/**

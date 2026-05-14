@@ -252,17 +252,7 @@ class Feed_Importer {
 	private function bluesky_to_payload( array $post, string $url ): array {
 		$record = $post['record'] ?? [];
 		$text   = $record['text'] ?? '';
-
-		// Extract image URLs from the resolved embed view.
-		$photos = [];
-		$embed  = $post['embed'] ?? [];
-		if ( 'app.bsky.embed.images#view' === ( $embed['$type'] ?? '' ) ) {
-			foreach ( $embed['images'] ?? [] as $img ) {
-				if ( ! empty( $img['fullsize'] ) ) {
-					$photos[] = $img['fullsize'];
-				}
-			}
-		}
+		$did    = (string) ( $post['author']['did'] ?? '' );
 
 		return [
 			'type'       => [ 'h-entry' ],
@@ -271,9 +261,107 @@ class Feed_Importer {
 				'published'   => [ $record['createdAt'] ?? '' ],
 				'url'         => [ $url ],
 				'syndication' => [ $url ],
-				'photo'       => $photos,
+				'photo'       => $this->bluesky_extract_photos( $post, $did ),
+				'video'       => $this->bluesky_extract_videos( $post, $did ),
 			],
 		];
+	}
+
+	/**
+	 * Extracts video references from a Bluesky post.
+	 *
+	 * Returns an array of { primary, size, alt, width, height } entries pointing
+	 * at the original uploaded blob via getBlob. Handles both standalone video
+	 * embeds and the recordWithMedia variant.
+	 */
+	private function bluesky_extract_videos( array $post, string $did ): array {
+		if ( '' === $did ) {
+			return [];
+		}
+
+		$record_embed = $post['record']['embed'] ?? [];
+		if ( 'app.bsky.embed.recordWithMedia' === ( $record_embed['$type'] ?? '' ) ) {
+			$record_embed = $record_embed['media'] ?? [];
+		}
+
+		if ( 'app.bsky.embed.video' !== ( $record_embed['$type'] ?? '' ) ) {
+			return [];
+		}
+
+		$video = $record_embed['video'] ?? [];
+		$cid   = (string) ( $video['ref']['$link'] ?? '' );
+		if ( '' === $cid ) {
+			return [];
+		}
+
+		return [ [
+			'primary' => $this->bluesky_blob_url( $did, $cid ),
+			'size'    => (int) ( $video['size'] ?? 0 ),
+			'alt'     => (string) ( $record_embed['alt'] ?? '' ),
+			'width'   => (int) ( $record_embed['aspectRatio']['width']  ?? 0 ),
+			'height'  => (int) ( $record_embed['aspectRatio']['height'] ?? 0 ),
+		] ];
+	}
+
+	/**
+	 * Extracts photo references from a Bluesky post.
+	 *
+	 * Returns an array of { primary, fallback, size } entries:
+	 *   - primary  → getBlob URL for the original uploaded blob (full fidelity)
+	 *   - fallback → fullsize CDN URL (used if the original exceeds the size cap)
+	 *   - size     → blob byte count from the record, used to pick primary/fallback
+	 *
+	 * Handles both standalone image embeds and the recordWithMedia variant
+	 * (quote-posts with images).
+	 */
+	private function bluesky_extract_photos( array $post, string $did ): array {
+		if ( '' === $did ) {
+			return [];
+		}
+
+		$record_embed = $post['record']['embed'] ?? [];
+		$view_embed   = $post['embed'] ?? [];
+
+		// recordWithMedia nests the actual media one level deeper.
+		if ( 'app.bsky.embed.recordWithMedia' === ( $record_embed['$type'] ?? '' ) ) {
+			$record_embed = $record_embed['media'] ?? [];
+		}
+		if ( 'app.bsky.embed.recordWithMedia#view' === ( $view_embed['$type'] ?? '' ) ) {
+			$view_embed = $view_embed['media'] ?? [];
+		}
+
+		if ( 'app.bsky.embed.images' !== ( $record_embed['$type'] ?? '' ) ) {
+			return [];
+		}
+
+		$view_images = ( 'app.bsky.embed.images#view' === ( $view_embed['$type'] ?? '' ) )
+			? ( $view_embed['images'] ?? [] )
+			: [];
+
+		$photos = [];
+		foreach ( $record_embed['images'] ?? [] as $i => $rec_img ) {
+			$cid = (string) ( $rec_img['image']['ref']['$link'] ?? '' );
+			if ( '' === $cid ) {
+				continue;
+			}
+			$photos[] = [
+				'primary'  => $this->bluesky_blob_url( $did, $cid ),
+				'fallback' => (string) ( $view_images[ $i ]['fullsize'] ?? '' ),
+				'size'     => (int) ( $rec_img['image']['size'] ?? 0 ),
+			];
+		}
+		return $photos;
+	}
+
+	/**
+	 * Builds a getBlob URL for an original uploaded blob. bsky.social serves
+	 * blobs for accounts hosted there; for self-hosted PDSs this would need
+	 * to resolve via the DID document — out of scope for v1 since the
+	 * importer only fetches the configured user's own account.
+	 */
+	private function bluesky_blob_url( string $did, string $cid ): string {
+		return 'https://bsky.social/xrpc/com.atproto.sync.getBlob?'
+			. http_build_query( [ 'did' => $did, 'cid' => $cid ] );
 	}
 
 	private function bluesky_uri_to_url( string $uri, string $did ): string {

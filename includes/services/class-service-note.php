@@ -64,10 +64,11 @@ class Note extends Service_Base {
 			'source_url'  => $source_url,
 			'platform'    => $this->detect_platform( $source_url ),
 			'syndication' => $syndication,
-			'photos'      => array_map(
-				'esc_url_raw',
-				array_values( array_filter( (array) ( $props['photo'] ?? [] ) ) )
-			),
+			// Photo/video entries may be a plain URL string (Micropub spec) or
+			// an array with { primary, fallback, size } shape from the Bluesky
+			// importer. sideload_photos/sideload_videos handle both shapes.
+			'photos'      => array_values( array_filter( (array) ( $props['photo'] ?? [] ) ) ),
+			'videos'      => array_values( array_filter( (array) ( $props['video'] ?? [] ) ) ),
 			'raw_payload' => $payload,
 		];
 	}
@@ -114,34 +115,68 @@ class Note extends Service_Base {
 			'nop_indieweb_platform'    => $parsed['platform'],
 			'nop_indieweb_source_url'  => $parsed['source_url'],
 			'nop_indieweb_syndication' => $parsed['syndication'],
-			'nop_indieweb_photos'      => $parsed['photos'],
+			'nop_indieweb_photos'      => $this->media_urls_for_meta( $parsed['photos'] ),
+			'nop_indieweb_videos'      => $this->media_urls_for_meta( $parsed['videos'] ),
 			'nop_indieweb_raw_payload' => wp_json_encode( $parsed['raw_payload'] ),
 		];
 	}
 
-	protected function after_insert( int $post_id, array $parsed ): void {
-		if ( ! $parsed['photos'] ) {
-			return;
+	/**
+	 * Flattens media entries to URL strings for meta storage. Plain strings pass
+	 * through; array entries use the primary URL (or fallback when primary is
+	 * missing). Empty entries are dropped.
+	 */
+	private function media_urls_for_meta( array $entries ): array {
+		$urls = [];
+		foreach ( $entries as $entry ) {
+			if ( is_string( $entry ) ) {
+				$url = esc_url_raw( $entry );
+			} elseif ( is_array( $entry ) ) {
+				$url = esc_url_raw( (string) ( $entry['primary'] ?? $entry['fallback'] ?? '' ) );
+			} else {
+				$url = '';
+			}
+			if ( '' !== $url ) {
+				$urls[] = $url;
+			}
 		}
+		return $urls;
+	}
 
+	protected function after_insert( int $post_id, array $parsed ): void {
 		$settings = $this->get_inbound_settings( $parsed['platform'] );
-		$ids      = [];
 
-		if ( ! empty( $settings['sideload_photos'] ) ) {
-			$ids = $this->sideload_photos( $parsed['photos'], $post_id );
-			if ( $ids ) {
-				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+		$photo_ids = [];
+		if ( $parsed['photos'] && ! empty( $settings['sideload_photos'] ) ) {
+			$photo_ids = $this->sideload_photos( $parsed['photos'], $post_id );
+			if ( $photo_ids ) {
+				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $photo_ids );
 			}
 		}
 
-		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'] );
-		if ( $photo_blocks ) {
-			$post = get_post( $post_id );
-			wp_update_post( [
-				'ID'           => $post_id,
-				'post_content' => rtrim( $post->post_content ) . "\n\n" . $photo_blocks,
-			] );
+		$video_ids = [];
+		if ( $parsed['videos'] && ! empty( $settings['sideload_photos'] ) ) {
+			$video_ids = $this->sideload_videos( $parsed['videos'], $post_id );
+			if ( $video_ids ) {
+				update_post_meta( $post_id, 'nop_indieweb_video_ids', $video_ids );
+			}
 		}
+
+		$photo_blocks = $parsed['photos']
+			? $this->build_photo_blocks( $photo_ids, $photo_ids ? [] : $this->media_urls_for_meta( $parsed['photos'] ) )
+			: '';
+		$video_blocks = $video_ids ? $this->build_video_blocks( $video_ids ) : '';
+
+		$append = trim( implode( "\n\n", array_filter( [ $photo_blocks, $video_blocks ] ) ) );
+		if ( '' === $append ) {
+			return;
+		}
+
+		$post = get_post( $post_id );
+		wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => rtrim( $post->post_content ) . "\n\n" . $append,
+		] );
 	}
 
 	/**
