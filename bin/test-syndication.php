@@ -66,4 +66,31 @@ $trunc = $compose->invoke( $bluesky, $long, 300, '↗', 1 );
 echo "300-limit '↗' on 400xs: len=" . mb_strlen( $trunc ) . " tail='" . mb_substr( $trunc, -5 ) . "'\n";
 
 wp_delete_post( $post_id, true );
+
+echo "\n── Kind-aware build_full_text ──\n";
+$make_post = static function ( string $title, string $content, string $kind ): int {
+	$id = wp_insert_post( [
+		'post_status'  => 'draft',
+		'post_title'   => $title,
+		'post_content' => $content,
+	] );
+	wp_set_object_terms( $id, $kind, 'nop_kind' );
+	return $id;
+};
+
+$note_post    = $make_post( 'Working on a syndication plugin', '<!-- wp:paragraph --><p>Body content goes here</p><!-- /wp:paragraph -->', 'note' );
+$article_post = $make_post( 'My great essay', '<!-- wp:paragraph --><p>First paragraph of the article</p><!-- /wp:paragraph -->', 'article' );
+$bare_note    = $make_post( 'Fallback title', '', 'note' );
+$like_post    = $make_post( 'example.com', '', 'like' );
+
+echo "note with title+body  → [" . $build_full->invoke( $bluesky, $note_post ) . "]\n";
+echo "article with title+body → [" . $build_full->invoke( $bluesky, $article_post ) . "]\n";
+echo "note with title only  → [" . $build_full->invoke( $bluesky, $bare_note ) . "]\n";
+echo "like with title only  → [" . $build_full->invoke( $bluesky, $like_post ) . "]\n";
+
+wp_delete_post( $note_post, true );
+wp_delete_post( $article_post, true );
+wp_delete_post( $bare_note, true );
+wp_delete_post( $like_post, true );
+
 echo "\nOK\n";

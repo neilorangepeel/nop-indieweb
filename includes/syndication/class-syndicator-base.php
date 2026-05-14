@@ -55,11 +55,14 @@ abstract class Syndicator_Base {
 	}
 
 	/**
-	 * Composes the post body text used by the syndicator.
+	 * Composes the post body text used by the syndicator. Kind-aware:
+	 *   - checkin → "Checked in at {venue}"
+	 *   - article → title first (link card carries the body)
+	 *   - everything else → body text first, title only as a fallback when the
+	 *     body is empty (e.g. Like/Repost where the auto-title carries the URL)
 	 *
-	 * Falls back through: checkin venue name → post title → full block text.
-	 * Returns the text without any permalink/attribution — append it separately
-	 * via compose_status() so the truncation budget accounts for it.
+	 * Returns text without any permalink — compose_status() appends that and
+	 * accounts for the truncation budget.
 	 */
 	protected function build_full_text( int $post_id ): string {
 		$post       = get_post( $post_id );
@@ -68,13 +71,19 @@ abstract class Syndicator_Base {
 		if ( $venue_name ) {
 			return sprintf( 'Checked in at %s', $venue_name );
 		}
-		if ( $post && $post->post_title ) {
-			return (string) $post->post_title;
+		if ( ! $post ) {
+			return '';
 		}
-		if ( $post ) {
-			return \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
+
+		$kind  = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		$title = (string) ( $post->post_title ?? '' );
+		$body  = \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
+
+		if ( 'article' === $kind ) {
+			return '' !== $title ? $title : $body;
 		}
-		return '';
+
+		return '' !== $body ? $body : $title;
 	}
 
 	/**
