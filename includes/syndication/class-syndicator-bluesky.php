@@ -275,18 +275,27 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	}
 
 	/**
-	 * Builds a single facet that turns a short visible label (e.g. "↗") into a
-	 * clickable link, keeping the full permalink out of the visible text.
+	 * Builds a single facet that turns a short visible label (e.g. the site
+	 * host) into a clickable link, keeping the full permalink out of the
+	 * visible text.
+	 *
+	 * Anchors to the *last* occurrence of the label, since compose_status()
+	 * always appends the label as the final bytes of the text. Using strpos
+	 * (first occurrence) would mis-target when the body happens to mention
+	 * the same string mid-sentence.
 	 */
 	private function build_label_facet( string $text, string $label, string $url ): ?array {
-		$byte_start = strpos( $text, $label );
-		if ( false === $byte_start ) {
+		if ( '' === $label || '' === $text ) {
+			return null;
+		}
+		$byte_start = strlen( $text ) - strlen( $label );
+		if ( $byte_start < 0 || substr( $text, $byte_start ) !== $label ) {
 			return null;
 		}
 		return [
 			'index'    => [
 				'byteStart' => $byte_start,
-				'byteEnd'   => $byte_start + strlen( $label ),
+				'byteEnd'   => strlen( $text ),
 			],
 			'features' => [
 				[ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ],
