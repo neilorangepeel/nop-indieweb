@@ -73,10 +73,12 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$body_text = $this->build_full_text( $post_id );
 
 		if ( $images ) {
-			// Image path: keep the URL out of the visible text budget by hiding
-			// it behind a 1-char facet label. Reader sees text + photos + tiny
-			// ↗ link back to the canonical post.
-			$label  = '↗';
+			// Image path: use the bare site host (e.g. neilorangepeel.com) as the
+			// facet label so readers see who/where the post came from while
+			// keeping the full URL out of the visible text budget. Falls back to
+			// the full permalink if the host can't be parsed.
+			$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
+			$label  = '' !== $host ? $host : $permalink;
 			$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
 			$facet  = $this->build_label_facet( $text, $label, $permalink );
 			$embed  = $this->build_image_embed( $images, $session );
