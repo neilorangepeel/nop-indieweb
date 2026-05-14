@@ -71,11 +71,19 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 	}
 
 	/**
-	 * Inline images from post content take precedence (up to 4). When none are
-	 * present, fall back to the featured image so titled posts still get a
-	 * thumbnail in their timeline preview.
+	 * Composes the media attached to a status:
+	 *   - core/video block in content → upload that one video (Mastodon caps
+	 *     status at 1 video OR up to 4 images, can't mix)
+	 *   - else inline core/image blocks → upload up to 4
+	 *   - else featured image → upload it so titled posts still get a thumbnail
 	 */
 	private function upload_post_images( int $post_id, string $instance, string $token ): array {
+		$video = $this->collect_inline_video( $post_id );
+		if ( $video ) {
+			$id = $this->upload_video( $instance, $token, $video['url'], $video['alt'] );
+			return $id ? [ $id ] : [];
+		}
+
 		$inline = $this->collect_inline_images( $post_id, 4 );
 
 		if ( $inline ) {
@@ -107,14 +115,33 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 	 * description field. Returns the media attachment ID, or null on failure.
 	 */
 	private function upload_image( string $instance, string $token, string $url, string $alt ): ?string {
-		$file_data = $this->fetch_image( $url );
+		return $this->upload_media(
+			$instance,
+			$token,
+			$this->fetch_image( $url ),
+			'image',
+			$alt
+		);
+	}
+
+	private function upload_video( string $instance, string $token, string $url, string $alt ): ?string {
+		return $this->upload_media(
+			$instance,
+			$token,
+			$this->fetch_video( $url ),
+			'video.mp4',
+			$alt
+		);
+	}
+
+	private function upload_media( string $instance, string $token, ?array $file_data, string $filename, string $alt ): ?string {
 		if ( ! $file_data ) {
 			return null;
 		}
 
 		$boundary = wp_generate_password( 24, false );
 		$body     = "--{$boundary}\r\n"
-			. "Content-Disposition: form-data; name=\"file\"; filename=\"image\"\r\n"
+			. "Content-Disposition: form-data; name=\"file\"; filename=\"{$filename}\"\r\n"
 			. "Content-Type: {$file_data['mime']}\r\n\r\n"
 			. $file_data['data'] . "\r\n";
 
@@ -134,7 +161,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 					'Content-Type'  => "multipart/form-data; boundary={$boundary}",
 				],
 				'body'    => $body,
-				'timeout' => 30,
+				'timeout' => 120,
 			]
 		);
 

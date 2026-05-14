@@ -137,20 +137,37 @@ abstract class Syndicator_Base {
 	}
 
 	protected function fetch_image( string $url ): ?array {
-		$response = wp_remote_get( $url, [ 'timeout' => 15 ] );
+		return $this->fetch_media( $url, [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ], 15 );
+	}
+
+	protected function fetch_video( string $url ): ?array {
+		return $this->fetch_media( $url, [ 'video/mp4', 'video/webm', 'video/quicktime' ], 60 );
+	}
+
+	private function fetch_media( string $url, array $allowed_mimes, int $timeout ): ?array {
+		$response = wp_remote_get( $url, [ 'timeout' => $timeout ] );
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			return null;
 		}
-
 		$mime = strtok( wp_remote_retrieve_header( $response, 'content-type' ), ';' );
-
-		if ( ! in_array( $mime, [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ], true ) ) {
+		if ( ! in_array( $mime, $allowed_mimes, true ) ) {
 			return null;
 		}
-
 		return [
 			'mime' => $mime,
 			'data' => wp_remote_retrieve_body( $response ),
 		];
+	}
+
+	/**
+	 * Returns the first inline core/video block reference from a post, or null.
+	 * Mirrors collect_inline_images() but capped at one (platform limit).
+	 */
+	protected function collect_inline_video( int $post_id ): ?array {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return null;
+		}
+		return \NOP\IndieWeb\nop_indieweb_block_video( (string) $post->post_content );
 	}
 }

@@ -69,22 +69,27 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 
 		$permalink = (string) get_permalink( $post_id );
-		$images    = $this->collect_inline_images( $post_id, 4 );
+		$video     = $this->collect_inline_video( $post_id );
+		$images    = $video ? [] : $this->collect_inline_images( $post_id, 4 );
 		$body_text = $this->build_full_text( $post_id );
 
-		if ( $images ) {
-			// Image path: use the bare site host (e.g. neilorangepeel.com) as the
+		if ( $video || $images ) {
+			// Media path: use the bare site host (e.g. neilorangepeel.com) as the
 			// facet label so readers see who/where the post came from while
 			// keeping the full URL out of the visible text budget. Falls back to
-			// the full permalink if the host can't be parsed.
+			// the full permalink if the host can't be parsed. Video and image
+			// embeds are mutually exclusive on Bluesky — video wins when both
+			// are present in the post.
 			$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 			$label  = '' !== $host ? $host : $permalink;
 			$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
 			$facet  = $this->build_label_facet( $text, $label, $permalink );
-			$embed  = $this->build_image_embed( $images, $session );
+			$embed  = $video
+				? $this->build_video_embed( $video, $session )
+				: $this->build_image_embed( $images, $session );
 			$facets = $facet ? [ $facet ] : [];
 		} else {
-			// No images: full text + inline URL, with optional link-card preview
+			// No media: full text + inline URL, with optional link-card preview
 			// for titled posts (Articles/Bookmarks/Replies).
 			$text   = $this->compose_status( $body_text, 300, $permalink, mb_strlen( $permalink ) );
 			$facets = $this->build_link_facets( $text, $permalink );
@@ -255,6 +260,47 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		return null;
 	}
 
+	/**
+	 * Builds an app.bsky.embed.video structure from a single inline video.
+	 * Uploads the original WP attachment's bytes as a blob; carries alt text
+	 * and aspect ratio so the post renders with the right shape and is
+	 * accessible. Returns null if the upload fails (status will post without
+	 * the embed in that case).
+	 */
+	private function build_video_embed( array $video, array $session ): ?array {
+		$blob = $this->upload_video_blob( $video, $session );
+		if ( ! $blob ) {
+			return null;
+		}
+		$embed = [
+			'$type' => 'app.bsky.embed.video',
+			'video' => $blob,
+		];
+		if ( ! empty( $video['alt'] ) ) {
+			$embed['alt'] = (string) $video['alt'];
+		}
+		$width  = (int) ( $video['width']  ?? 0 );
+		$height = (int) ( $video['height'] ?? 0 );
+		if ( $width > 0 && $height > 0 ) {
+			$embed['aspectRatio'] = [ 'width' => $width, 'height' => $height ];
+		}
+		return $embed;
+	}
+
+	/**
+	 * Uploads a video file to the PDS as a blob. Bluesky enforces its own
+	 * size/duration limits (currently ~100 MB / ~60 s) — we don't pre-check
+	 * those here; the upload simply fails and the post goes out without
+	 * the video embed if Bluesky rejects it.
+	 */
+	private function upload_video_blob( array $video, array $session ): ?array {
+		$fetched = $this->fetch_video( (string) $video['url'] );
+		if ( ! $fetched ) {
+			return null;
+		}
+		return $this->upload_blob( $fetched['data'], $fetched['mime'], $session );
+	}
+
 	private function upload_blob( string $data, string $mime, array $session ): ?array {
 		$upload = wp_remote_post(
 			$this->pds() . '/xrpc/com.atproto.repo.uploadBlob',
@@ -264,7 +310,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 					'Content-Type'  => $mime,
 				],
 				'body'    => $data,
-				'timeout' => 30,
+				// 120s handles large videos on slow connections; photos finish in a fraction of this.
+				'timeout' => 120,
 			]
 		);
 		if ( is_wp_error( $upload ) || 200 !== wp_remote_retrieve_response_code( $upload ) ) {

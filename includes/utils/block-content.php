@@ -46,6 +46,23 @@ function nop_indieweb_block_images( string $post_content, int $limit = 4 ): arra
 	return $images;
 }
 
+/**
+ * Returns the first core/video block reference found in block content, or null.
+ *
+ * { url, alt, attachment_id, width, height }. Alt is read from the attachment's
+ * caption (post_excerpt) — that's where the importer parks Bluesky/Mastodon
+ * alt text since WP video attachments don't expose an Alt Text field.
+ *
+ * Mastodon and Bluesky each cap status posts at one video, so we only need
+ * the first occurrence.
+ */
+function nop_indieweb_block_video( string $post_content ): ?array {
+	if ( '' === trim( $post_content ) ) {
+		return null;
+	}
+	return nop_indieweb_find_first_video( parse_blocks( $post_content ) );
+}
+
 /** @internal */
 function nop_indieweb_walk_blocks_for_text( array $blocks ): array {
 	$parts = [];
@@ -65,6 +82,8 @@ function nop_indieweb_walk_blocks_for_text( array $blocks ): array {
 		if ( in_array( $name, [
 			'core/image',
 			'core/gallery',
+			'core/video',
+			'core/audio',
 			'core/cover',
 			'core/separator',
 			'core/spacer',
@@ -169,6 +188,71 @@ function nop_indieweb_image_from_block( array $block ): ?array {
 		'attachment_id' => $id,
 		'width'         => $w,
 		'height'        => $h,
+	];
+}
+
+/** @internal */
+function nop_indieweb_find_first_video( array $blocks ): ?array {
+	foreach ( $blocks as $block ) {
+		$name = $block['blockName'] ?? '';
+		if ( 'core/video' === $name ) {
+			$video = nop_indieweb_video_from_block( $block );
+			if ( $video ) {
+				return $video;
+			}
+			continue;
+		}
+		if ( ! empty( $block['innerBlocks'] ) ) {
+			$found = nop_indieweb_find_first_video( $block['innerBlocks'] );
+			if ( $found ) {
+				return $found;
+			}
+		}
+	}
+	return null;
+}
+
+/** @internal */
+function nop_indieweb_video_from_block( array $block ): ?array {
+	$attrs = $block['attrs'] ?? [];
+	$id    = (int) ( $attrs['id'] ?? 0 );
+	$url   = '';
+	$alt   = '';
+	$w     = 0;
+	$h     = 0;
+	$mime  = '';
+
+	if ( $id ) {
+		$url  = (string) wp_get_attachment_url( $id );
+		$mime = (string) get_post_mime_type( $id );
+		// Importer parks alt text in post_excerpt; fall back to image-alt meta
+		// for older or hand-authored attachments.
+		$alt = (string) get_post_field( 'post_excerpt', $id );
+		if ( '' === $alt ) {
+			$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+		}
+		$meta = wp_get_attachment_metadata( $id );
+		$w    = (int) ( $meta['width']  ?? 0 );
+		$h    = (int) ( $meta['height'] ?? 0 );
+	}
+
+	// Fallback: parse innerHTML for src.
+	$html = $block['innerHTML'] ?? '';
+	if ( '' === $url && preg_match( '/<video[^>]+src="([^"]+)"/i', $html, $m ) ) {
+		$url = $m[1];
+	}
+
+	if ( '' === $url ) {
+		return null;
+	}
+
+	return [
+		'url'           => $url,
+		'alt'           => $alt,
+		'attachment_id' => $id,
+		'width'         => $w,
+		'height'        => $h,
+		'mime'          => '' !== $mime ? $mime : 'video/mp4',
 	];
 }
 

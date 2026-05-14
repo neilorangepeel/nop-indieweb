@@ -67,6 +67,16 @@ echo "300-limit '↗' on 400xs: len=" . mb_strlen( $trunc ) . " tail='" . mb_sub
 
 wp_delete_post( $post_id, true );
 
+echo "\n── Video block extractor ──\n";
+$with_video = '<!-- wp:paragraph --><p>watch this</p><!-- /wp:paragraph -->'
+	. '<!-- wp:video {"id":99} --><figure class="wp-block-video"><video controls src="https://neilorangepeel.com/wp-content/uploads/clip.mp4"></video></figure><!-- /wp:video -->';
+$v = NOP\IndieWeb\nop_indieweb_block_video( $with_video );
+echo "found: " . ( $v ? 'yes' : 'no' ) . "\n";
+if ( $v ) {
+	echo "  url={$v['url']}  attachment_id={$v['attachment_id']}  mime={$v['mime']}\n";
+}
+echo "text without video bleed: [" . NOP\IndieWeb\nop_indieweb_block_text( $with_video ) . "]\n";
+
 echo "\n── Kind-aware build_full_text ──\n";
 $make_post = static function ( string $title, string $content, string $kind ): int {
 	$id = wp_insert_post( [

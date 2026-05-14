@@ -160,15 +160,29 @@ class Feed_Importer {
 		$text = wp_strip_all_tags( $html );
 		$url  = $status['url'] ?? '';
 
-		// Mastodon's url is its own server-processed JPEG (~1920px max). No
-		// usable fallback to pair against — it's the only thing the platform
-		// exposes — so the size cap path in sideload_photos won't fire.
+		// Mastodon's url is its own server-processed file. No usable fallback
+		// to pair against — it's the only thing the platform exposes — so the
+		// size cap path in sideload_photos won't fire.
 		$photos = [];
+		$videos = [];
 		foreach ( $status['media_attachments'] ?? [] as $att ) {
-			if ( 'image' === ( $att['type'] ?? '' ) && ! empty( $att['url'] ) ) {
-				$photos[] = [
-					'primary' => (string) $att['url'],
-					'alt'     => (string) ( $att['description'] ?? '' ),
+			$type = (string) ( $att['type'] ?? '' );
+			$src  = (string) ( $att['url'] ?? '' );
+			if ( '' === $src ) {
+				continue;
+			}
+			$alt  = (string) ( $att['description'] ?? '' );
+			$meta = $att['meta']['original'] ?? [];
+
+			if ( 'image' === $type ) {
+				$photos[] = [ 'primary' => $src, 'alt' => $alt ];
+			} elseif ( in_array( $type, [ 'video', 'gifv' ], true ) ) {
+				$videos[] = [
+					'primary' => $src,
+					'alt'     => $alt,
+					'size'    => (int) ( $att['meta']['original']['size'] ?? 0 ),
+					'width'   => (int) ( $meta['width']  ?? 0 ),
+					'height'  => (int) ( $meta['height'] ?? 0 ),
 				];
 			}
 		}
@@ -181,6 +195,7 @@ class Feed_Importer {
 				'url'         => [ $url ],
 				'syndication' => [ $url ],
 				'photo'       => $photos,
+				'video'       => $videos,
 			],
 		];
 	}
