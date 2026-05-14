@@ -160,10 +160,16 @@ class Feed_Importer {
 		$text = wp_strip_all_tags( $html );
 		$url  = $status['url'] ?? '';
 
+		// Mastodon's url is its own server-processed JPEG (~1920px max). No
+		// usable fallback to pair against — it's the only thing the platform
+		// exposes — so the size cap path in sideload_photos won't fire.
 		$photos = [];
 		foreach ( $status['media_attachments'] ?? [] as $att ) {
 			if ( 'image' === ( $att['type'] ?? '' ) && ! empty( $att['url'] ) ) {
-				$photos[] = $att['url'];
+				$photos[] = [
+					'primary' => (string) $att['url'],
+					'alt'     => (string) ( $att['description'] ?? '' ),
+				];
 			}
 		}
 
@@ -348,6 +354,7 @@ class Feed_Importer {
 				'primary'  => $this->bluesky_blob_url( $did, $cid ),
 				'fallback' => (string) ( $view_images[ $i ]['fullsize'] ?? '' ),
 				'size'     => (int) ( $rec_img['image']['size'] ?? 0 ),
+				'alt'      => (string) ( $rec_img['alt'] ?? '' ),
 			];
 		}
 		return $photos;

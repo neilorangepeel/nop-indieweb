@@ -146,6 +146,12 @@ abstract class Service_Base {
 				continue;
 			}
 			$attachment_ids[] = (int) $id;
+
+			$alt = is_array( $photo ) ? (string) ( $photo['alt'] ?? '' ) : '';
+			if ( '' !== $alt ) {
+				update_post_meta( (int) $id, '_wp_attachment_image_alt', $alt );
+			}
+
 			if ( $set_featured ) {
 				set_post_thumbnail( $post_id, $id );
 				$set_featured = false;

@@ -65,7 +65,7 @@ $post_with_images = [
 $photos = $extract_photos->invoke( $importer, $post_with_images, $did );
 foreach ( $photos as $i => $p ) {
 	echo "  [$i] primary={$p['primary']}\n";
-	echo "      fallback={$p['fallback']} size={$p['size']}\n";
+	echo "      fallback={$p['fallback']} size={$p['size']} alt='{$p['alt']}'\n";
 }
 
 echo "\n── video extraction ──\n";
