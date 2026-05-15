@@ -17,7 +17,9 @@ class MF2_Parser {
 
 	public function parse( string $html, string $source_url ): array {
 		$dom = new \DOMDocument();
-		@$dom->loadHTML( '<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR );
+		// LIBXML_NONET blocks the parser from issuing network requests for any
+		// embedded references; @ suppresses warnings from malformed third-party HTML.
+		@$dom->loadHTML( '<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR | LIBXML_NONET );
 		$xpath = new \DOMXPath( $dom );
 
 		$root         = $this->find_root( $xpath );

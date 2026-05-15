@@ -71,6 +71,13 @@ class Like_Endpoint {
 			return new \WP_Error( 'invalid_post', 'Post not found.', [ 'status' => 404 ] );
 		}
 
+		// Cheap per-IP burst limit. The IP-hash dedup below prevents duplicate
+		// likes on the same post, but doesn't prevent an attacker rotating
+		// across many posts to flood the comments table.
+		if ( ! $this->throttle_ok() ) {
+			return new \WP_Error( 'rate_limited', 'Too many likes from this IP — try again shortly.', [ 'status' => 429 ] );
+		}
+
 		if ( $this->visitor_has_liked( $post_id ) ) {
 			return new \WP_REST_Response( [
 				'liked'   => true,
@@ -143,5 +150,24 @@ class Like_Endpoint {
 			$ip = substr( $ip, 7 );
 		}
 		return hash( 'sha256', $ip . wp_salt( 'nonce' ) );
+	}
+
+	/**
+	 * Per-IP burst limit: caps new like POSTs at 30/min by default.
+	 * Returns true if the request may proceed.
+	 */
+	private function throttle_ok(): bool {
+		$max    = (int) apply_filters( 'nop_indieweb_like_rate_limit', 30 );
+		$window = (int) apply_filters( 'nop_indieweb_like_rate_window', MINUTE_IN_SECONDS );
+		if ( $max <= 0 ) {
+			return true;
+		}
+		$key   = 'nop_like_rl_' . $this->ip_hash();
+		$count = (int) get_transient( $key );
+		if ( $count >= $max ) {
+			return false;
+		}
+		set_transient( $key, $count + 1, $window );
+		return true;
 	}
 }

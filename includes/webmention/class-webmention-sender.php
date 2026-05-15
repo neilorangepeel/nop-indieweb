@@ -103,7 +103,7 @@ class Webmention_Sender {
 	 * signal that no endpoint exists — it just means it isn't in the headers.
 	 */
 	private function discover_endpoint( string $target ): ?string {
-		$response = wp_remote_head( $target, [ 'timeout' => 10, 'redirection' => 5 ] );
+		$response = wp_remote_head( $target, [ 'timeout' => 10, 'redirection' => 3 ] );
 
 		if ( ! is_wp_error( $response ) ) {
 			$endpoint = $this->endpoint_from_link_header(
@@ -115,7 +115,14 @@ class Webmention_Sender {
 			}
 		}
 
-		$response = wp_remote_get( $target, [ 'timeout' => 10, 'redirection' => 5 ] );
+		// Cap the HTML body we parse for <link rel="webmention">. 2 MB is
+		// generous for any real article and stops a hostile target from
+		// streaming gigabytes.
+		$response = wp_remote_get( $target, [
+			'timeout'             => 10,
+			'redirection'         => 3,
+			'limit_response_size' => 2 * 1024 * 1024,
+		] );
 		if ( is_wp_error( $response ) ) {
 			return null;
 		}

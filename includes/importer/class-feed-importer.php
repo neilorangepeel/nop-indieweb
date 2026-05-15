@@ -126,7 +126,11 @@ class Feed_Importer {
 
 		// Token may lack read:statuses scope; fall back to unauthenticated for public accounts.
 		if ( null === $statuses && 'mastodon' === $platform ) {
-			$response = wp_remote_get( $statuses_url, [ 'timeout' => 15 ] );
+			$response = wp_safe_remote_get( $statuses_url, [
+				'timeout'             => 15,
+				'redirection'         => 3,
+				'limit_response_size' => 4 * 1024 * 1024,
+			] );
 			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
 				$data     = json_decode( wp_remote_retrieve_body( $response ), true );
 				$statuses = is_array( $data ) ? $data : null;
@@ -216,7 +220,7 @@ class Feed_Importer {
 		// Resolve handle to DID using the public AppView — no credentials needed.
 		$resolve = wp_remote_get(
 			'https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?' . http_build_query( [ 'handle' => $handle ] ),
-			[ 'timeout' => 15 ]
+			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 1 * 1024 * 1024 ]
 		);
 
 		if ( is_wp_error( $resolve ) || 200 !== wp_remote_retrieve_response_code( $resolve ) ) {
@@ -231,7 +235,7 @@ class Feed_Importer {
 
 		$response = wp_remote_get(
 			'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?' . http_build_query( [ 'actor' => $did, 'limit' => 25 ] ),
-			[ 'timeout' => 15 ]
+			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 4 * 1024 * 1024 ]
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -411,7 +415,7 @@ class Feed_Importer {
 
 		$response = wp_remote_get(
 			"https://letterboxd.com/{$username}/rss/",
-			[ 'timeout' => 15, 'user-agent' => 'nop-indieweb/1.0 (WordPress)' ]
+			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 4 * 1024 * 1024, 'user-agent' => 'nop-indieweb/1.0 (WordPress)' ]
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -419,7 +423,9 @@ class Feed_Importer {
 		}
 
 		libxml_use_internal_errors( true );
-		$xml = simplexml_load_string( wp_remote_retrieve_body( $response ) );
+		// LIBXML_NONET blocks any network DTD/entity resolution; LIBXML_NOENT is
+		// deliberately omitted so external entities are not expanded (XXE defence).
+		$xml = simplexml_load_string( wp_remote_retrieve_body( $response ), \SimpleXMLElement::class, LIBXML_NONET );
 		libxml_clear_errors();
 
 		if ( ! $xml ) {
@@ -511,9 +517,14 @@ class Feed_Importer {
 	}
 
 	private function api_get( string $url, string $token ): ?array {
-		$response = wp_remote_get( $url, [
-			'headers' => [ 'Authorization' => "Bearer {$token}" ],
-			'timeout' => 15,
+		// wp_safe_remote_get rejects loopback / private IPs so a tampered or
+		// socially-engineered Mastodon instance setting cannot redirect us into
+		// the local network with a Bearer token attached.
+		$response = wp_safe_remote_get( $url, [
+			'headers'             => [ 'Authorization' => "Bearer {$token}" ],
+			'timeout'             => 15,
+			'redirection'         => 3,
+			'limit_response_size' => 4 * 1024 * 1024,
 		] );
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {

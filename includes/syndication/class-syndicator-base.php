@@ -144,8 +144,18 @@ abstract class Syndicator_Base {
 		return $this->fetch_media( $url, [ 'video/mp4', 'video/webm', 'video/quicktime' ], 60 );
 	}
 
+	/** Hard cap on media body fetched for syndication uploads (50 MB). */
+	private const MEDIA_FETCH_CAP_BYTES = 50 * 1024 * 1024;
+
 	private function fetch_media( string $url, array $allowed_mimes, int $timeout ): ?array {
-		$response = wp_remote_get( $url, [ 'timeout' => $timeout ] );
+		// Cap body size so a malicious/runaway upstream can't blow up PHP memory.
+		// The URL here is a WordPress attachment URL from the post being syndicated,
+		// so it's normally same-host — but defend in depth.
+		$response = wp_remote_get( $url, [
+			'timeout'             => $timeout,
+			'redirection'         => 3,
+			'limit_response_size' => self::MEDIA_FETCH_CAP_BYTES,
+		] );
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			return null;
 		}

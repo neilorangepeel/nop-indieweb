@@ -124,11 +124,7 @@ abstract class Service_Base {
 			return [];
 		}
 
-		if ( ! function_exists( 'media_sideload_image' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/media.php';
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			require_once ABSPATH . 'wp-admin/includes/image.php';
-		}
+		$this->require_media_includes();
 
 		$cap_bytes      = (int) apply_filters( 'nop_indieweb_photo_size_cap', 25 * 1024 * 1024 );
 		$attachment_ids = [];
@@ -140,9 +136,21 @@ abstract class Service_Base {
 				continue;
 			}
 
-			$id = media_sideload_image( $url, $post_id, '', 'id' );
+			$tmp = $this->safe_download_to_tmp( $url, $cap_bytes );
+			if ( is_wp_error( $tmp ) ) {
+				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $tmp->get_error_message() );
+				continue;
+			}
+
+			$file = [
+				'name'     => $this->safe_basename_from_url( $url, 'jpg' ),
+				'tmp_name' => $tmp,
+			];
+
+			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $id->get_error_message() );
+				@unlink( $tmp );
 				continue;
 			}
 			$attachment_ids[] = (int) $id;
@@ -159,6 +167,83 @@ abstract class Service_Base {
 		}
 
 		return $attachment_ids;
+	}
+
+	private function require_media_includes(): void {
+		if ( function_exists( 'media_handle_sideload' ) ) {
+			return;
+		}
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+	}
+
+	/**
+	 * Streams a URL to a tmp file with both SSRF protection and a hard byte cap.
+	 *
+	 * Uses wp_safe_remote_get under the hood, which honours WordPress's
+	 * http_request_host_is_external filter — rejects loopback, link-local, and
+	 * RFC1918 hosts that an attacker-controlled feed could try to coerce us
+	 * into fetching. limit_response_size truncates the body at $cap_bytes.
+	 *
+	 * @return string|WP_Error  Temporary file path on success.
+	 */
+	protected function safe_download_to_tmp( string $url, int $cap_bytes, int $timeout = 60 ): string|WP_Error {
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+		if ( 'https' !== $scheme && 'http' !== $scheme ) {
+			return new WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		$tmp = wp_tempnam( $url );
+		if ( ! $tmp ) {
+			return new WP_Error( 'nop_tmpnam_failed', 'Could not allocate temp file.' );
+		}
+
+		$response = wp_safe_remote_get( $url, [
+			'timeout'             => $timeout,
+			'redirection'         => 3,
+			'stream'              => true,
+			'filename'            => $tmp,
+			'limit_response_size' => $cap_bytes,
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			@unlink( $tmp );
+			return $response;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			@unlink( $tmp );
+			return new WP_Error( 'nop_bad_status', "Upstream returned HTTP {$code}." );
+		}
+
+		$bytes = @filesize( $tmp );
+		if ( false === $bytes || $bytes === 0 ) {
+			@unlink( $tmp );
+			return new WP_Error( 'nop_empty_body', 'Downloaded file was empty.' );
+		}
+		if ( $bytes > $cap_bytes ) {
+			@unlink( $tmp );
+			return new WP_Error( 'nop_too_large', "File exceeds cap ({$bytes} > {$cap_bytes})." );
+		}
+
+		return $tmp;
+	}
+
+	/**
+	 * Returns a safe filename for sideloading. Strips any path/query so a
+	 * remote-controlled URL cannot influence where the file lands; falls back
+	 * to a hashed name when the URL has no usable basename.
+	 */
+	private function safe_basename_from_url( string $url, string $default_ext ): string {
+		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$name = sanitize_file_name( basename( $path ) );
+		if ( '' === $name || '.' === $name || str_starts_with( $name, '.' ) ) {
+			$name = 'media-' . substr( md5( $url ), 0, 12 ) . '.' . $default_ext;
+		}
+		return $name;
 	}
 
 	/**
@@ -267,11 +352,7 @@ abstract class Service_Base {
 			return [];
 		}
 
-		if ( ! function_exists( 'media_handle_sideload' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/media.php';
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			require_once ABSPATH . 'wp-admin/includes/image.php';
-		}
+		$this->require_media_includes();
 
 		$cap_bytes = (int) apply_filters( 'nop_indieweb_video_size_cap', 100 * 1024 * 1024 );
 		$ids       = [];
@@ -287,6 +368,8 @@ abstract class Service_Base {
 			if ( '' === $url ) {
 				continue;
 			}
+			// $size is sender-supplied and can lie — it's only used as an early
+			// reject hint. The real cap is enforced by safe_download_to_tmp().
 			if ( $size > 0 && $size > $cap_bytes ) {
 				\NOP\IndieWeb\nop_indieweb_log( 'Video blob over cap, skipping sideload', [
 					'size' => $size,
@@ -296,7 +379,7 @@ abstract class Service_Base {
 				continue;
 			}
 
-			$tmp = download_url( $url, 600 );
+			$tmp = $this->safe_download_to_tmp( $url, $cap_bytes, 120 );
 			if ( is_wp_error( $tmp ) ) {
 				\NOP\IndieWeb\nop_indieweb_log( 'Video download failed', [
 					'url'   => $url,

@@ -61,10 +61,19 @@ class Webmention_Endpoint {
 		);
 	}
 
+	/** Maximum source-page body we'll buffer + parse. 2 MB is plenty for HTML mf2. */
+	private const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
+
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$receive_enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'webmentions', [] )['receive_enabled'] ?? true;
 		if ( ! $receive_enabled ) {
 			return new \WP_Error( 'webmentions_disabled', 'Webmentions are not accepted.', [ 'status' => 403 ] );
+		}
+
+		// Cheap per-IP throttle. Prevents a misbehaving sender (or attacker)
+		// from forcing the worker pool to repeatedly fetch arbitrary URLs.
+		if ( ! $this->throttle_ok() ) {
+			return new \WP_Error( 'rate_limited', 'Too many webmentions from this IP — try again shortly.', [ 'status' => 429 ] );
 		}
 
 		$source = $request->get_param( 'source' );
@@ -72,6 +81,15 @@ class Webmention_Endpoint {
 
 		if ( $source === $target ) {
 			return new \WP_Error( 'invalid_webmention', 'Source and target must differ.', [ 'status' => 400 ] );
+		}
+
+		// Reject anything that isn't an http(s) URL — wp_safe_remote_get also
+		// rejects file://, gopher://, etc., but failing early is cleaner.
+		foreach ( [ 'source' => $source, 'target' => $target ] as $name => $url ) {
+			$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+			if ( 'https' !== $scheme && 'http' !== $scheme ) {
+				return new \WP_Error( 'invalid_url', "{$name} must be an http(s) URL.", [ 'status' => 400 ] );
+			}
 		}
 
 		if ( ! $this->is_local_url( $target ) ) {
@@ -83,10 +101,13 @@ class Webmention_Endpoint {
 			return new \WP_Error( 'target_not_found', 'Target URL does not resolve to a post.', [ 'status' => 400 ] );
 		}
 
-		// Fetch the source.
+		// Fetch the source. wp_safe_remote_get blocks SSRF to private/loopback IPs;
+		// limit_response_size caps the body so a sender cannot stream gigabytes at us.
 		$response = wp_safe_remote_get( $source, [
-			'timeout'    => 15,
-			'user-agent' => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (webmention; +' . home_url( '/' ) . ')',
+			'timeout'             => 15,
+			'redirection'         => 3,
+			'limit_response_size' => self::MAX_SOURCE_BYTES,
+			'user-agent'          => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (webmention; +' . home_url( '/' ) . ')',
 		] );
 
 		$http_code = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );
@@ -144,7 +165,9 @@ class Webmention_Endpoint {
 			return false;
 		}
 		$dom = new \DOMDocument();
-		@$dom->loadHTML( $html, LIBXML_NOERROR );
+		// LIBXML_NONET blocks any network fetch the parser might attempt; the @
+		// suppresses parse warnings from malformed third-party HTML.
+		@$dom->loadHTML( $html, LIBXML_NOERROR | LIBXML_NONET );
 		$xpath = new \DOMXPath( $dom );
 		foreach ( $xpath->query( '//a[@href]' ) as $link ) {
 			if ( rtrim( $link->getAttribute( 'href' ), '/' ) === $target_norm ) {
@@ -152,6 +175,36 @@ class Webmention_Endpoint {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Simple per-IP rate-limit using a short-lived transient counter.
+	 *
+	 * Allows 20 requests per IP per 5 minutes by default. Bridgy and similar
+	 * relays send burst traffic, so the limit is generous; the goal is to
+	 * stop a single attacker from running the endpoint into the ground.
+	 */
+	private function throttle_ok(): bool {
+		$max    = (int) apply_filters( 'nop_indieweb_webmention_rate_limit', 20 );
+		$window = (int) apply_filters( 'nop_indieweb_webmention_rate_window', 5 * MINUTE_IN_SECONDS );
+		if ( $max <= 0 ) {
+			return true;
+		}
+
+		$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+		if ( ! $ip ) {
+			return true;
+		}
+		if ( str_starts_with( $ip, '::ffff:' ) ) {
+			$ip = substr( $ip, 7 );
+		}
+		$key   = 'nop_wm_rl_' . hash( 'sha256', $ip . wp_salt( 'nonce' ) );
+		$count = (int) get_transient( $key );
+		if ( $count >= $max ) {
+			return false;
+		}
+		set_transient( $key, $count + 1, $window );
+		return true;
 	}
 
 	// ── Storage ────────────────────────────────────────────────────────────────

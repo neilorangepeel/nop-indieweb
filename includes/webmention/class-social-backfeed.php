@@ -352,9 +352,15 @@ class Social_Backfeed {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
-		$response = wp_remote_get( $url, [
-			'timeout' => 15,
-			'headers' => $headers,
+		// wp_safe_remote_get rejects loopback / private IPs so a misconfigured
+		// or socially-engineered Mastodon instance setting can't redirect us
+		// into the local network. 4 MB cap stops a hostile API from streaming
+		// arbitrary bodies into PHP memory.
+		$response = wp_safe_remote_get( $url, [
+			'timeout'             => 15,
+			'redirection'         => 3,
+			'limit_response_size' => 4 * 1024 * 1024,
+			'headers'             => $headers,
 		] );
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
