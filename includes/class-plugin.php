@@ -109,6 +109,7 @@ class Plugin {
 			( new Syndication_Panel( $syndication_manager ) )->register();
 		}
 
+		add_action( 'before_delete_post', [ $this, 'delete_map_image' ] );
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
@@ -501,6 +502,16 @@ HTML,
 
 		foreach ( $this->get_me_urls() as $url ) {
 			header( sprintf( 'Link: <%s>; rel="me"', $url ), false );
+		}
+	}
+
+	public function delete_map_image( int $post_id ): void {
+		if ( ! get_post_meta( $post_id, 'nop_indieweb_map_url', true ) ) {
+			return;
+		}
+		$file = wp_upload_dir()['basedir'] . "/checkin-maps/checkin-map-{$post_id}.png";
+		if ( file_exists( $file ) ) {
+			wp_delete_file( $file );
 		}
 	}
 
