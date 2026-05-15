@@ -110,7 +110,11 @@ class Swarm extends Service_Base {
 		// payloads) — avoids WordPress scheduling the post as 'future'.
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
-		$title = $parsed['venue_name'] ?: 'Checked in';
+		$venue    = $parsed['venue_name'];
+		$locality = $parsed['venue_locality'];
+		$title    = $venue
+			? ( $locality ? "{$venue}, {$locality}" : $venue )
+			: 'Checked in';
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );
@@ -169,9 +173,6 @@ class Swarm extends Service_Base {
 			'nop_indieweb_venue_country'    => $parsed['venue_country'],
 			'nop_indieweb_venue_postcode'   => $parsed['venue_postcode'],
 
-			// Categories
-			'nop_indieweb_venue_categories' => $parsed['venue_categories'],
-
 			// Syndication — unique checkin URL stored separately for fast dedup queries.
 			'nop_indieweb_checkin_url'      => $parsed['checkin_url'],
 			'nop_indieweb_syndication'      => $parsed['syndication'],
@@ -186,6 +187,11 @@ class Swarm extends Service_Base {
 
 	protected function after_insert( int $post_id, array $parsed ): void {
 		$settings = $this->get_settings();
+
+		$cats = array_filter( (array) ( $parsed['venue_categories'] ?? [] ) );
+		if ( $cats ) {
+			wp_set_object_terms( $post_id, $cats, \NOP\IndieWeb\Kind\Venue_Category_Taxonomy::TAXONOMY );
+		}
 
 		if ( ! $parsed['photos'] ) {
 			return;

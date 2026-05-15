@@ -128,7 +128,8 @@ class MF2_Endpoint {
 		$venue_postcode   = get_post_meta( $post_id, 'nop_indieweb_venue_postcode',   true );
 		$venue_lat        = get_post_meta( $post_id, 'nop_indieweb_venue_lat',        true );
 		$venue_lng        = get_post_meta( $post_id, 'nop_indieweb_venue_lng',        true );
-		$venue_categories = get_post_meta( $post_id, 'nop_indieweb_venue_categories', true );
+		$_vc_terms        = get_the_terms( $post_id, 'nop_venue_category' );
+		$venue_categories = ( $_vc_terms && ! is_wp_error( $_vc_terms ) ) ? wp_list_pluck( $_vc_terms, 'name' ) : [];
 
 		$props = [ 'name' => [ $venue_name ] ];
 
@@ -142,8 +143,8 @@ class MF2_Endpoint {
 		if ( $venue_lat )      $props['latitude']       = [ $venue_lat ];
 		if ( $venue_lng )      $props['longitude']      = [ $venue_lng ];
 
-		if ( is_array( $venue_categories ) && $venue_categories ) {
-			$props['category'] = array_values( array_filter( $venue_categories ) );
+		if ( $venue_categories ) {
+			$props['category'] = array_values( $venue_categories );
 		}
 
 		return [

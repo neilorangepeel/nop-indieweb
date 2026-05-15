@@ -1,0 +1,56 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/venue-link",
+	"title": "Venue Link",
+	"description": "Renders a link to the venue on Foursquare/Swarm with the hostname as the display label.",
+	"category": "nop-indieweb-meta",
+	"icon": "admin-links",
+	"keywords": ["checkin", "venue", "foursquare", "swarm", "link"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalTextTransform": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true,
+				"lineHeight": true,
+				"__experimentalFontFamily": true,
+				"__experimentalFontStyle": true,
+				"__experimentalFontWeight": true,
+				"__experimentalLetterSpacing": true,
+				"__experimentalTextDecoration": true,
+				"__experimentalTextTransform": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": true,
+			"link": true,
+			"__experimentalDefaultControls": {
+				"text": true,
+				"background": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		}
+	}
+}

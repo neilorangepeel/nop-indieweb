@@ -4,6 +4,7 @@ declare( strict_types=1 );
 namespace NOP\IndieWeb;
 
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
+use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
 use NOP\IndieWeb\Micropub\Endpoint;
 use NOP\IndieWeb\Micropub\Media_Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
@@ -82,6 +83,7 @@ class Plugin {
 		( new Feed_Importer( $note, $letterboxd ) )->register();
 
 		( new Kind_Taxonomy() )->register();
+		( new Venue_Category_Taxonomy() )->register();
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();
@@ -324,7 +326,7 @@ class Plugin {
 		wp_register_script(
 			'nop-indieweb-ssr-block-helper',
 			NOP_INDIEWEB_URL . 'assets/js/ssr-block-helper.js',
-			[ 'wp-blocks', 'wp-element', 'wp-server-side-render', 'wp-data' ],
+			[ 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-server-side-render', 'wp-data' ],
 			NOP_INDIEWEB_VERSION,
 			true
 		);
@@ -349,6 +351,12 @@ class Plugin {
 			true
 		);
 
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-field' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-coordinates' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-categories' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-link' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-link' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );

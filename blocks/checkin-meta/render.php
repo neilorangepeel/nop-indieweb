@@ -67,7 +67,8 @@ $venue_url        = get_post_meta( $post_id, 'nop_indieweb_venue_url',        tr
 $venue_address    = get_post_meta( $post_id, 'nop_indieweb_venue_address',    true );
 $venue_locality   = get_post_meta( $post_id, 'nop_indieweb_venue_locality',   true );
 $venue_country    = get_post_meta( $post_id, 'nop_indieweb_venue_country',    true );
-$venue_categories = get_post_meta( $post_id, 'nop_indieweb_venue_categories', true );
+$_vc_terms        = get_the_terms( $post_id, 'nop_venue_category' );
+$venue_categories = ( $_vc_terms && ! is_wp_error( $_vc_terms ) ) ? wp_list_pluck( $_vc_terms, 'name' ) : [];
 $syndication      = get_post_meta( $post_id, 'nop_indieweb_syndication',      true );
 $service          = get_post_meta( $post_id, 'nop_indieweb_service',          true );
 
@@ -75,7 +76,7 @@ $location_parts   = array_filter( [ $venue_locality, $venue_country ] );
 $location_line    = implode( ', ', $location_parts );
 
 $syndication      = is_array( $syndication ) ? array_filter( $syndication ) : [];
-$venue_categories = is_array( $venue_categories ) ? array_filter( $venue_categories ) : [];
+$venue_categories = array_filter( $venue_categories );
 
 $map_url = ( $lat && $lng )
 	? sprintf( 'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=16&layers=M', rawurlencode( $lat ), rawurlencode( $lng ) )

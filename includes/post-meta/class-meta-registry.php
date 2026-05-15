@@ -122,12 +122,6 @@ class Registry {
 				'description' => 'Postal code.',
 			] ),
 
-			// ── Venue taxonomy ───────────────────────────────────────────────────
-			'nop_indieweb_venue_categories' => array_merge( $array, [
-				'label'       => __( 'Venue Categories', 'nop-indieweb' ),
-				'description' => 'Venue categories from Foursquare (e.g. ["Bar","Pub"]).',
-			] ),
-
 			// ── Syndication ──────────────────────────────────────────────────────
 			// Stored separately so we can query it directly without deserializing the array.
 			'nop_indieweb_source_url'       => array_merge( $string, [

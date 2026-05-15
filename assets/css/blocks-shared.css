@@ -141,6 +141,32 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	margin-block-start: 1.5em;
 }
 
+/* ── Venue field / venue coordinates ─────────────────────────────────────── */
+
+.nop-venue-field,
+.nop-venue-coordinates {
+	margin-block: 0;
+}
+
+/* ── Checkin map ──────────────────────────────────────────────────────────── */
+
+.nop-checkin-map__img {
+	display: block;
+	width:   100%;
+	height:  auto;
+}
+
+.nop-checkin-map__placeholder {
+	aspect-ratio:     2 / 1;
+	background-color: color-mix(in srgb, currentColor 8%, transparent);
+	border-radius:    4px;
+}
+
+.nop-checkin-map__caption {
+	margin-block-start: 0.5em;
+	font-size:          0.875em;
+}
+
 /* ── Underline link pattern (used by source/map/event links) ──────────────── */
 
 .nop-checkin-map a,

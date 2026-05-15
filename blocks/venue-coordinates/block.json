@@ -1,0 +1,50 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/venue-coordinates",
+	"title": "Venue Coordinates",
+	"description": "Displays venue latitude and longitude as a formatted coordinate string (e.g. 54.597 ° N · –5.930 ° W).",
+	"category": "nop-indieweb-meta",
+	"icon": "location",
+	"keywords": ["checkin", "coordinates", "latitude", "longitude", "location"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalTextTransform": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true,
+				"__experimentalFontFamily": true,
+				"__experimentalFontStyle": true,
+				"__experimentalFontWeight": true,
+				"__experimentalLetterSpacing": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		}
+	}
+}
