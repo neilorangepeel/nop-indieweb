@@ -34,7 +34,8 @@ if ( ! $post_id ) {
 		<p class="nop-checkin-venue-link">
 			<a href="#" onclick="return false;">View on foursquare.com</a>
 		</p>
-		<p class="nop-checkin-map">
+		<div class="nop-checkin-map nop-checkin-map--placeholder" role="img" aria-label="Map preview"></div>
+		<p class="nop-checkin-map__caption">
 			<a href="#" onclick="return false;">View on OpenStreetMap</a>
 		</p>
 		<p class="nop-checkin-syndication">
@@ -46,12 +47,19 @@ if ( ! $post_id ) {
 	return;
 }
 
-$venue_name       = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+$venue_name = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
 
 // Nothing to show if there's no venue — this isn't a checkin post.
 if ( ! $venue_name ) {
 	return;
 }
+
+// Disable link navigation inside the iframed block editor canvas.
+// Defined early so it gates the map fetch below.
+$is_editor = (
+	defined( 'REST_REQUEST' ) && REST_REQUEST &&
+	( isset( $_GET['context'] ) && 'edit' === $_GET['context'] ) // phpcs:ignore WordPress.Security.NonceVerification
+);
 
 $lat              = get_post_meta( $post_id, 'nop_indieweb_venue_lat',        true );
 $lng              = get_post_meta( $post_id, 'nop_indieweb_venue_lng',        true );
@@ -73,11 +81,25 @@ $map_url = ( $lat && $lng )
 	? sprintf( 'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=16&layers=M', rawurlencode( $lat ), rawurlencode( $lng ) )
 	: '';
 
-// Disable link navigation inside the iframed block editor canvas.
-$is_editor = (
-	defined( 'REST_REQUEST' ) && REST_REQUEST &&
-	( isset( $_GET['context'] ) && 'edit' === $_GET['context'] ) // phpcs:ignore WordPress.Security.NonceVerification
-);
+$map_title   = $venue_name ? sprintf( 'Map showing %s', $venue_name ) : 'Location map';
+$map_img_url = '';
+$map_w       = 0;
+$map_h       = 0;
+
+if ( $lat && $lng && ! $is_editor ) {
+	$geoapify_key = trim( \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
+	if ( $geoapify_key ) {
+		$content_size_raw = wp_get_global_settings( [ 'layout', 'contentSize' ] );
+		$map_w = 620;
+		if ( $content_size_raw && preg_match( '/^(\d+(?:\.\d+)?)px$/i', $content_size_raw, $csm ) ) {
+			$map_w = (int) round( (float) $csm[1] );
+		}
+		$map_h       = (int) round( $map_w / 2 );
+		$map_img_url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image(
+			$post_id, (float) $lat, (float) $lng, $map_w, $map_h, $geoapify_key
+		);
+	}
+}
 
 $wrapper_attrs = get_block_wrapper_attributes( [
 	'class' => 'nop-checkin-meta p-checkin h-card' . ( $is_editor ? ' nop-checkin-meta--editor' : '' ),
@@ -125,15 +147,21 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 	</p>
 	<?php endif; ?>
 
-	<?php // ── Map link with hidden mf2 geo ──────────────────────────────────── ?>
-	<?php if ( $map_url ) : ?>
-	<p class="nop-checkin-map">
-		<a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer">
-			View on OpenStreetMap
-		</a>
-		<data class="p-latitude" value="<?php echo esc_attr( $lat ); ?>"></data>
+	<?php // ── Map — cached local attachment, generated once via Geoapify ───── ?>
+	<?php if ( $map_img_url ) : ?>
+	<div class="nop-checkin-map">
+		<img class="nop-checkin-map__img"
+			src="<?php echo esc_url( $map_img_url ); ?>"
+			width="<?php echo esc_attr( (string) $map_w ); ?>"
+			height="<?php echo esc_attr( (string) $map_h ); ?>"
+			alt="<?php echo esc_attr( $map_title ); ?>"
+			loading="lazy" decoding="async">
+		<p class="nop-checkin-map__caption">
+			<a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer">View on OpenStreetMap</a>
+		</p>
+		<data class="p-latitude"  value="<?php echo esc_attr( $lat ); ?>"></data>
 		<data class="p-longitude" value="<?php echo esc_attr( $lng ); ?>"></data>
-	</p>
+	</div>
 	<?php endif; ?>
 
 	<?php // ── Syndication links ─────────────────────────────────────────────── ?>

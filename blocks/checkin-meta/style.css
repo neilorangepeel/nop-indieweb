@@ -46,12 +46,34 @@
 	line-height:    1.6;
 }
 
-/* ── Map link / syndication / source rows ─────────────────────────────────── */
+/* ── Map ──────────────────────────────────────────────────────────────────── */
 
 .nop-checkin-map,
 .nop-checkin-syndication {
 	margin: 0 0 0.4em;
 }
+
+.nop-checkin-map__img {
+	display:       block;
+	width:         100%;
+	height:        auto;
+	border-radius: 4px;
+	margin-bottom: 0.25em;
+}
+
+.nop-checkin-map--placeholder {
+	aspect-ratio:  2 / 1;
+	background:    #f2efe9;
+	border-radius: 4px;
+	margin-bottom: 0.25em;
+}
+
+.nop-checkin-map__caption {
+	font-size: 0.875em;
+	margin:    0;
+}
+
+/* ── Source attribution ───────────────────────────────────────────────────── */
 
 .nop-checkin-source {
 	margin:  0;

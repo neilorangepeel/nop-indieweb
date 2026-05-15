@@ -292,6 +292,76 @@ function nop_indieweb_strict_remote_get( string $url, array $args = [], int $max
 }
 
 /**
+ * Returns a local URL for the check-in map image, fetching it from Geoapify
+ * and saving it as a WP attachment on the first call. Subsequent calls return
+ * the cached URL from post meta — zero external requests at page-render time.
+ *
+ * The image is fetched at 2× the display dimensions so it is retina-ready
+ * when served at the 1× width/height set in the img tag.
+ */
+function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key ): string {
+	$cached = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
+	if ( $cached ) {
+		return $cached;
+	}
+
+	$api_url = sprintf(
+		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=16&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23e03232;size:small&width=%d&height=%d&apiKey=%s',
+		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
+		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
+		$width * 2, $height * 2,
+		rawurlencode( $api_key )
+	);
+
+	$response = wp_safe_remote_get( $api_url, [ 'timeout' => 8 ] );
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return '';
+	}
+
+	// Confirm Geoapify returned an image before touching the filesystem.
+	$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+	if ( ! str_starts_with( (string) $content_type, 'image/' ) ) {
+		return '';
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+
+	$upload = wp_upload_bits( "checkin-map-{$post_id}.png", null, wp_remote_retrieve_body( $response ) );
+	if ( ! empty( $upload['error'] ) ) {
+		return '';
+	}
+
+	$attachment_id = wp_insert_attachment(
+		[
+			'post_title'     => "Map: check-in {$post_id}",
+			'post_mime_type' => 'image/png',
+			'post_status'    => 'inherit',
+			'post_parent'    => $post_id,
+		],
+		$upload['file'],
+		$post_id,
+		true
+	);
+
+	if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
+		wp_delete_file( $upload['file'] );
+		return '';
+	}
+
+	wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
+
+	$local_url = (string) wp_get_attachment_url( $attachment_id );
+	if ( $local_url ) {
+		update_post_meta( $post_id, 'nop_indieweb_map_url', $local_url );
+		update_post_meta( $post_id, 'nop_indieweb_map_id', $attachment_id );
+	}
+
+	return $local_url;
+}
+
+/**
  * One-time migration: flip the existing settings option to autoload=false.
  * Idempotent and cheap — runs on plugins_loaded behind a version flag.
  */

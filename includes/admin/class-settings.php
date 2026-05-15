@@ -148,6 +148,9 @@ class Settings {
 		// — Semantic Web ——————————————————————————————————————————————————————
 		$clean['mf2_enabled'] = ! empty( $input['mf2_enabled'] );
 
+		// — Maps ——————————————————————————————————————————————————————————————
+		$clean['maps']['geoapify_api_key'] = sanitize_text_field( $input['maps']['geoapify_api_key'] ?? '' );
+
 		// — Swarm —————————————————————————————————————————————————————————————
 		$clean['services']['swarm'] = $this->sanitize_service_defaults( $input['services']['swarm'] ?? [], [
 			'enabled'         => false,
@@ -1193,6 +1196,27 @@ class Settings {
 						        data-copy="<?php echo esc_attr( $endpoint ); ?>">Copy</button>
 					</div>
 					<p class="description">Paste this into OwnYourSwarm as your Micropub endpoint. It will ask you to sign in to your site to authorize — that's normal.</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Map</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-geoapify-key">Geoapify API key</label></th>
+				<td>
+					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ); ?>
+					<input type="text" id="nop-geoapify-key"
+					       name="<?php echo self::OPTION_KEY; ?>[maps][geoapify_api_key]"
+					       value="<?php echo esc_attr( $key ); ?>"
+					       class="regular-text code" autocomplete="off"
+					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+					<p class="description">
+						Used to generate static map images for check-in posts.
+						Get a free key (3 000 req/day) at
+						<a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>.
+						Leave blank to use the built-in tile fallback instead.
+					</p>
 				</td>
 			</tr>
 		</table>
