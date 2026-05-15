@@ -57,6 +57,18 @@ class Auth_Endpoint {
 		}
 		wp_set_current_user( $user_id );
 
+		// Only users with the configured capability may issue IndieAuth tokens.
+		// Default is manage_options (single-author site) — sites with multiple
+		// authors can broaden via the filter to allow each author to issue
+		// tokens scoped to their own posts.
+		if ( ! current_user_can( self::authorize_capability() ) ) {
+			wp_die(
+				esc_html__( 'You do not have permission to authorize applications on this site.', 'nop-indieweb' ),
+				esc_html__( 'Authorization Error', 'nop-indieweb' ),
+				[ 'response' => 403 ]
+			);
+		}
+
 		$params = $this->validate_request( $request->get_params() );
 		if ( is_wp_error( $params ) ) {
 			wp_die(
@@ -75,43 +87,68 @@ class Auth_Endpoint {
 	public function process_form(): void {
 		check_admin_referer( 'nop_indieweb_auth' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( self::authorize_capability() ) ) {
 			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 
-		$client_id    = esc_url_raw( $_POST['client_id']    ?? '' );
-		$redirect_uri = esc_url_raw( $_POST['redirect_uri'] ?? '' );
-		$state        = sanitize_text_field( $_POST['state']  ?? '' );
-		$scope        = sanitize_text_field( $_POST['scope']  ?? 'create' );
-		$challenge    = sanitize_text_field( $_POST['code_challenge'] ?? '' );
-		$challenge_m  = sanitize_text_field( $_POST['code_challenge_method'] ?? '' );
-
-		if ( ! $redirect_uri ) {
-			wp_die( esc_html__( 'Missing redirect_uri.', 'nop-indieweb' ) );
+		// Re-validate every parameter on submit — never trust the hidden form
+		// fields. The same host-pin/scheme checks the GET handler ran are
+		// re-run here so a tampered form (extension, MITM, devtools) can't
+		// smuggle a mismatched redirect_uri past the host-pin check.
+		$resolved = $this->validate_core_params( wp_unslash( $_POST ) );
+		if ( is_wp_error( $resolved ) ) {
+			wp_die(
+				esc_html( $resolved->get_error_message() ),
+				esc_html__( 'Authorization Error', 'nop-indieweb' ),
+				[ 'response' => 400 ]
+			);
 		}
+
+		// Whitelist scopes so a tampered form can't request undefined permissions.
+		$scope = self::filter_scopes( $resolved['scope'] );
 
 		// Issue auth code — valid for 10 minutes, single-use.
 		$code = bin2hex( random_bytes( 16 ) );
 		set_transient( 'nop_ia_code_' . $code, [
-			'client_id'        => $client_id,
-			'redirect_uri'     => $redirect_uri,
+			'client_id'        => $resolved['client_id'],
+			'redirect_uri'     => $resolved['redirect_uri'],
 			'scope'            => $scope,
-			'challenge'        => $challenge,
-			'challenge_method' => $challenge_m,
+			'challenge'        => $resolved['code_challenge'],
+			'challenge_method' => $resolved['code_challenge_method'],
 			'me'               => home_url( '/' ),
 			'user_id'          => get_current_user_id(),
-			'client_name'      => parse_url( $client_id, PHP_URL_HOST ) ?? $client_id,
+			'client_name'      => parse_url( $resolved['client_id'], PHP_URL_HOST ) ?? $resolved['client_id'],
 		], 10 * MINUTE_IN_SECONDS );
 
 		$redirect = add_query_arg( [
 			'code'  => $code,
-			'state' => rawurlencode( $state ),
-		], $redirect_uri );
+			'state' => rawurlencode( $resolved['state'] ),
+		], $resolved['redirect_uri'] );
 
 		// wp_safe_redirect blocks cross-origin redirects — use wp_redirect since
-		// redirect_uri was validated against client_id during render_page().
+		// redirect_uri was just re-validated against client_id by validate_request().
 		wp_redirect( $redirect, 302 );
 		exit;
+	}
+
+	/**
+	 * Capability required to authorize an IndieAuth client.
+	 * Defaults to manage_options; filter to broaden for multi-author sites.
+	 */
+	private static function authorize_capability(): string {
+		$cap = (string) apply_filters( 'nop_indieweb_authorize_capability', 'manage_options' );
+		return $cap !== '' ? $cap : 'manage_options';
+	}
+
+	/**
+	 * Drops unknown / unsupported scopes from the requested scope string.
+	 * Prevents a tampered form from requesting fabricated permissions.
+	 */
+	private static function filter_scopes( string $scope_string ): string {
+		$allowed   = [ 'create', 'update', 'delete', 'undelete', 'media', 'draft' ];
+		$requested = array_filter( array_map( 'trim', explode( ' ', strtolower( $scope_string ) ) ) );
+		$kept      = array_values( array_intersect( $allowed, $requested ) );
+		return $kept ? implode( ' ', $kept ) : 'create';
 	}
 
 	// ── HTML output ───────────────────────────────────────────────────────────
@@ -198,15 +235,37 @@ class Auth_Endpoint {
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
+	/**
+	 * Validates the full IndieAuth GET request, including response_type.
+	 */
 	private function validate_request( array $params ): array|WP_Error {
-		foreach ( [ 'response_type', 'client_id', 'redirect_uri', 'state' ] as $key ) {
+		if ( empty( $params['response_type'] ) ) {
+			return new WP_Error( 'missing_param', 'Missing required parameter: response_type' );
+		}
+		if ( 'code' !== $params['response_type'] ) {
+			return new WP_Error( 'unsupported_response_type', 'Only response_type=code is supported.' );
+		}
+		return $this->validate_core_params( $params );
+	}
+
+	/**
+	 * Validates parameters common to GET and POST: client_id, redirect_uri host
+	 * pin, state, scope, code_challenge. Called from both render and submit so
+	 * the same host-pin check applies on every code-issuance path.
+	 */
+	private function validate_core_params( array $params ): array|WP_Error {
+		foreach ( [ 'client_id', 'redirect_uri', 'state' ] as $key ) {
 			if ( empty( $params[ $key ] ) ) {
 				return new WP_Error( 'missing_param', "Missing required parameter: {$key}" );
 			}
 		}
 
-		if ( 'code' !== $params['response_type'] ) {
-			return new WP_Error( 'unsupported_response_type', 'Only response_type=code is supported.' );
+		// Reject non-HTTP(S) schemes — IndieAuth specifies https/http URLs only.
+		foreach ( [ 'client_id', 'redirect_uri' ] as $key ) {
+			$scheme = strtolower( (string) parse_url( $params[ $key ], PHP_URL_SCHEME ) );
+			if ( 'https' !== $scheme && 'http' !== $scheme ) {
+				return new WP_Error( 'invalid_uri_scheme', "{$key} must be an http(s) URL." );
+			}
 		}
 
 		// redirect_uri host must match client_id host (IndieAuth spec §4.2.2).
