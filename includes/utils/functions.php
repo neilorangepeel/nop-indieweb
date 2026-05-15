@@ -324,39 +324,20 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 		return '';
 	}
 
-	require_once ABSPATH . 'wp-admin/includes/file.php';
-	require_once ABSPATH . 'wp-admin/includes/media.php';
-	require_once ABSPATH . 'wp-admin/includes/image.php';
-
-	$upload = wp_upload_bits( "checkin-map-{$post_id}.png", null, wp_remote_retrieve_body( $response ) );
-	if ( ! empty( $upload['error'] ) ) {
+	// Save to a dedicated subdirectory — keeps map files out of the Media Library.
+	$upload_dir = wp_upload_dir();
+	$maps_dir   = $upload_dir['basedir'] . '/checkin-maps';
+	if ( ! wp_mkdir_p( $maps_dir ) ) {
 		return '';
 	}
 
-	$attachment_id = wp_insert_attachment(
-		[
-			'post_title'     => "Map: check-in {$post_id}",
-			'post_mime_type' => 'image/png',
-			'post_status'    => 'inherit',
-			'post_parent'    => $post_id,
-		],
-		$upload['file'],
-		$post_id,
-		true
-	);
-
-	if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
-		wp_delete_file( $upload['file'] );
+	$file = $maps_dir . "/checkin-map-{$post_id}.png";
+	if ( false === file_put_contents( $file, wp_remote_retrieve_body( $response ) ) ) {
 		return '';
 	}
 
-	wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
-
-	$local_url = (string) wp_get_attachment_url( $attachment_id );
-	if ( $local_url ) {
-		update_post_meta( $post_id, 'nop_indieweb_map_url', $local_url );
-		update_post_meta( $post_id, 'nop_indieweb_map_id', $attachment_id );
-	}
+	$local_url = $upload_dir['baseurl'] . "/checkin-maps/checkin-map-{$post_id}.png";
+	update_post_meta( $post_id, 'nop_indieweb_map_url', $local_url );
 
 	return $local_url;
 }
