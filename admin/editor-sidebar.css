@@ -64,3 +64,14 @@
 	border-radius: 2px;
 	display:       block;
 }
+
+/* "Apply layout" offer card — shown after a kind change when the editor isn't empty */
+.nop-layout-offer {
+	margin-top: 8px;
+}
+
+.nop-layout-offer__hint {
+	margin:    4px 0 0;
+	font-size: 11px;
+	color:     #757575;
+}

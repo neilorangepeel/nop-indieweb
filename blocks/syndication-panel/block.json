@@ -8,7 +8,7 @@
 	"icon": "share-alt2",
 	"keywords": [ "syndication", "posse", "mastodon", "bluesky", "pixelfed", "indieweb" ],
 	"editorScript": "file:./editor.js",
-	"style": "file:./style.css",
+	"style": [ "file:./style.css", "nop-blocks-shared" ],
 	"render": "file:./render.php",
 	"usesContext": [ "postId", "postType" ],
 	"supports": {

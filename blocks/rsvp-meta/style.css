@@ -1,12 +1,8 @@
-/* ── RSVP Meta block ─────────────────────────────────────────────────────────── */
-
-.nop-rsvp-meta {
-	margin:      1.5em 0 0;
-	padding-top: 1.25em;
-	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
-}
-
-/* ── Status line ─────────────────────────────────────────────────────────────── */
+/*
+ * RSVP Meta block — block-specific styles only.
+ * Section-divider rule and underline link pattern live in
+ * assets/css/blocks-shared.css.
+ */
 
 .nop-rsvp-meta__status {
 	margin: 0 0 0.5em;
@@ -19,13 +15,10 @@
 }
 
 .nop-rsvp-meta__event a {
-	color:                   inherit;
-	text-decoration:         underline;
-	text-underline-offset:   2px;
-	word-break:              break-all;
+	word-break: break-all;
 }
 
-/* ── Badge ───────────────────────────────────────────────────────────────────── */
+/* ── Badge ───────────────────────────────────────────────────────────────── */
 
 .nop-rsvp-badge {
 	display:        inline-flex;
@@ -39,12 +32,12 @@
 	letter-spacing: 0.01em;
 }
 
-/* ── Interactive picker (editor only) ────────────────────────────────────────── */
+/* ── Interactive picker (editor only) ────────────────────────────────────── */
 
 .nop-rsvp-picker {
-	display:    flex;
-	gap:        0.5em;
-	flex-wrap:  wrap;
+	display:       flex;
+	gap:           0.5em;
+	flex-wrap:     wrap;
 	margin-bottom: 0.75em;
 }
 
@@ -70,14 +63,7 @@
 	color:      #fff;
 }
 
-/* ── Placeholder state ───────────────────────────────────────────────────────── */
+/* ── State modifiers ─────────────────────────────────────────────────────── */
 
-.nop-rsvp-meta--placeholder {
-	opacity: 0.4;
-}
-
-/* ── Preview state ───────────────────────────────────────────────────────────── */
-
-.nop-rsvp-meta--preview {
-	opacity: 0.5;
-}
+.nop-rsvp-meta--placeholder { opacity: 0.4; }
+.nop-rsvp-meta--preview     { opacity: 0.5; }

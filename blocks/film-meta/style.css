@@ -1,22 +1,15 @@
 /*
- * Film Meta block — front-end and editor styles.
- *
- * The star-picker (editor) and star-display (frontend) share the same
- * glyph and colour rules. The picker adds invisible hit zones on top
- * to enable half-star selection without a library.
+ * Film Meta block — block-specific styles only.
+ * Section-divider rule, link underline pattern, star colour tokens
+ * (--nop-star-on / --nop-star-off) live in assets/css/blocks-shared.css.
  */
 
-/* ── Block wrapper ───────────────────────────────────────────────────────────── */
-
 .nop-film-meta {
-	margin:      2em 0 0;
-	padding-top: 1.25em;
-	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
 	font-size:   0.875em;
 	line-height: 1.6;
 }
 
-/* ── Film poster ─────────────────────────────────────────────────────────────── */
+/* ── Film poster ─────────────────────────────────────────────────────────── */
 
 .nop-film-meta__poster {
 	display:       block;
@@ -27,12 +20,12 @@
 	box-shadow:    0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* ── Rating container ────────────────────────────────────────────────────────── */
+/* ── Rating row ──────────────────────────────────────────────────────────── */
 
 .nop-film-meta__rating {
-	display:     flex;
-	align-items: center;
-	gap:         0.5em;
+	display:       flex;
+	align-items:   center;
+	gap:           0.5em;
 	margin-bottom: 0.5em;
 }
 
@@ -42,11 +35,11 @@
 	font-weight: 500;
 }
 
-/* ── Static star display (frontend render.php) ───────────────────────────────── */
+/* ── Static star display (frontend render.php) ───────────────────────────── */
 
 .nop-film-stars {
-	display:    inline-flex;
-	gap:        0.05em;
+	display:     inline-flex;
+	gap:         0.05em;
 	line-height: 1;
 }
 
@@ -55,27 +48,21 @@
 	display:   inline-block;
 }
 
-.nop-film-star.is-full {
-	color: #f59f00;
-}
+.nop-film-star.is-full  { color: var(--nop-star-on); }
+.nop-film-star.is-empty { color: var(--nop-star-off); }
 
-/* Half star: left half gold, right half muted — using background-clip on the glyph */
 .nop-film-star.is-half {
-	background:              linear-gradient(to right, #f59f00 50%, #d4d4d8 50%);
+	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
 	-webkit-background-clip: text;
 	background-clip:         text;
 	color:                   transparent;
 }
 
-.nop-film-star.is-empty {
-	color: #d4d4d8;
-}
-
-/* ── Interactive star picker (editor only) ───────────────────────────────────── */
+/* ── Interactive star picker (editor only) ───────────────────────────────── */
 
 .nop-film-star-picker {
-	display:    inline-flex;
-	gap:        0.05em;
+	display:     inline-flex;
+	gap:         0.05em;
 	line-height: 1;
 	cursor:      pointer;
 }
@@ -105,22 +92,17 @@
 	user-select:    none;
 }
 
-.nop-film-star-glyph.is-full {
-	color: #f59f00;
-}
+.nop-film-star-glyph.is-full  { color: var(--nop-star-on); }
+.nop-film-star-glyph.is-empty { color: var(--nop-star-off); }
 
 .nop-film-star-glyph.is-half {
-	background:              linear-gradient(to right, #f59f00 50%, #d4d4d8 50%);
+	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
 	-webkit-background-clip: text;
 	background-clip:         text;
 	color:                   transparent;
 }
 
-.nop-film-star-glyph.is-empty {
-	color: #d4d4d8;
-}
-
-/* ── Meta row (date · rewatch · source) ──────────────────────────────────────── */
+/* ── Meta row (date · rewatch · source) ──────────────────────────────────── */
 
 .nop-film-meta__row {
 	display:     flex;
@@ -133,7 +115,7 @@
 
 .nop-film-meta__year {
 	font-weight: 500;
-	color:       var(--wp--preset--color--contrast, inherit);
+	color:       var(--nop-text);
 	opacity:     0.6;
 }
 
@@ -149,24 +131,7 @@
 	opacity:        0.65;
 }
 
-.nop-film-meta__source {
-	color:           inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
-}
+/* ── State modifiers ─────────────────────────────────────────────────────── */
 
-.nop-film-meta__source:hover {
-	opacity: 0.7;
-}
-
-/* ── Preview state (template editor — no real post) ──────────────────────────── */
-
-.nop-film-meta--preview {
-	opacity: 0.5;
-}
-
-/* ── Placeholder state (entity not yet loaded) ───────────────────────────────── */
-
-.nop-film-meta--placeholder {
-	opacity: 0.4;
-}
+.nop-film-meta--preview     { opacity: 0.5; }
+.nop-film-meta--placeholder { opacity: 0.4; }

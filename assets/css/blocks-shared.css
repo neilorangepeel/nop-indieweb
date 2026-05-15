@@ -1,0 +1,261 @@
+/*
+ * NOP IndieWeb — shared front-end design tokens and utilities.
+ *
+ * Loaded once when any nop-indieweb block is on the page (registered as
+ * "nop-blocks-shared" and listed in each block.json `style` array). Lets
+ * every block reference one source of truth for colours, the pill pattern,
+ * section dividers, and reduced-motion handling.
+ *
+ * Tokens fall back to theme-supplied --wp--preset--* values so the plugin
+ * inherits the active palette automatically.
+ */
+
+:where(
+	.nop-checkin-meta,
+	.nop-film-card,
+	.nop-film-meta,
+	.nop-like-button,
+	.nop-post-footer,
+	.nop-post-source,
+	.nop-rsvp-meta,
+	.nop-syndication-panel,
+	.nop-webmentions
+) {
+	/* Surfaces / text */
+	--nop-divider-color: var(--wp--preset--color--accent-6, #e5e7eb);
+	--nop-muted:         var(--wp--preset--color--accent-4, #6b7280);
+	--nop-text:          var(--wp--preset--color--contrast, inherit);
+
+	/* Pill pattern */
+	--nop-pill-radius:    2rem;
+	--nop-pill-padding:   0.375rem 0.875rem 0.375rem 0.75rem;
+	--nop-pill-gap:       0.375rem;
+	--nop-pill-border:    1px solid var(--nop-divider-color);
+
+	/* Like / heart accent */
+	--nop-like-color:        hsl(340 80% 60%);
+	--nop-like-color-strong: hsl(340 80% 50%);
+
+	/* Section divider applied to top-of-block separators */
+	--nop-section-spacing: 1.25em;
+
+	/* Star colours (film blocks) */
+	--nop-star-on:  #f59f00;
+	--nop-star-off: #d4d4d8;
+}
+
+/* ── Pill pattern (used by like + post-footer) ────────────────────────────── */
+
+.nop-like-button__btn,
+.nop-post-footer__pill {
+	display:       inline-flex;
+	align-items:   center;
+	gap:           var(--nop-pill-gap);
+	padding:       var(--nop-pill-padding);
+	border:        var(--nop-pill-border);
+	border-radius: var(--nop-pill-radius);
+	line-height:   1;
+	white-space:   nowrap;
+	color:         inherit;
+}
+
+a.nop-post-footer__pill,
+button.nop-post-footer__pill,
+.nop-like-button__btn {
+	background:      transparent;
+	font-family:     inherit;
+	font-size:       0.875rem;
+	font-weight:     500;
+	text-decoration: none;
+	transition:      color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+button.nop-like-button__btn,
+button.nop-post-footer__pill--like {
+	cursor: pointer;
+}
+
+/* Hover/active state for the like-style pills (dimmer red, then full red).
+   The icon scales up a hair to telegraph interactivity — kept subtle so it
+   doesn't compete with the actual click animation. */
+.nop-like-button__btn:hover:not(:disabled),
+button.nop-post-footer__pill--like:hover:not(:disabled) {
+	border-color: var(--nop-like-color);
+	color:        var(--nop-like-color-strong);
+}
+
+.nop-like-button__btn:hover:not(:disabled) .nop-like-button__icon,
+button.nop-post-footer__pill--like:hover:not(:disabled) .nop-post-footer__pill-icon {
+	transform: scale(1.08);
+}
+
+/* Liked state */
+.nop-like-button.is-liked .nop-like-button__btn,
+.nop-like-button__btn[aria-pressed="true"],
+button.nop-post-footer__pill--like[aria-pressed="true"],
+button.nop-post-footer__pill--like.is-liked {
+	border-color: var(--nop-like-color);
+	color:        var(--nop-like-color-strong);
+	cursor:       default;
+}
+
+.nop-like-button.is-liked .nop-like-button__icon,
+.nop-post-footer__pill--like.is-liked .nop-post-footer__pill-icon {
+	fill:   var(--nop-like-color);
+	stroke: var(--nop-like-color);
+}
+
+/* ── Heart-pop animation (one keyframes shared across both blocks) ────────── */
+
+@keyframes nop-pill-like-pop {
+	0%   { transform: scale(1); }
+	40%  { transform: scale(1.35); }
+	70%  { transform: scale(0.9); }
+	100% { transform: scale(1); }
+}
+
+.nop-like-button__btn.is-animating .nop-like-button__icon,
+button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
+	animation: nop-pill-like-pop 350ms ease forwards;
+}
+
+.nop-like-button__icon,
+.nop-post-footer__pill-icon {
+	flex-shrink: 0;
+	transition:  fill 150ms ease, stroke 150ms ease, transform 200ms ease;
+}
+
+/* ── Section-divider pattern (top rule above meta blocks) ─────────────────── */
+
+.nop-checkin-meta,
+.nop-film-meta,
+.nop-rsvp-meta,
+.nop-syndication-panel {
+	margin-block-start:  2em;
+	padding-block-start: var(--nop-section-spacing);
+	border-block-start:  1px solid var(--nop-divider-color);
+}
+
+/* Slight tweak — RSVP block sat closer in the original layout */
+.nop-rsvp-meta {
+	margin-block-start: 1.5em;
+}
+
+/* ── Underline link pattern (used by source/map/event links) ──────────────── */
+
+.nop-checkin-map a,
+.nop-checkin-syndication a,
+.nop-film-meta__source,
+.nop-rsvp-meta__event a,
+.nop-post-footer__source-link,
+.nop-post-source__link {
+	color:                 inherit;
+	text-decoration:       underline;
+	text-underline-offset: 2px;
+}
+
+.nop-checkin-map a:hover,
+.nop-checkin-syndication a:hover,
+.nop-film-meta__source:hover {
+	opacity: 0.7;
+}
+
+.nop-post-footer__source-link:hover,
+.nop-post-source__link:hover {
+	color: var(--nop-text);
+}
+
+/* ── Focus rings (consistent across all interactive plugin UI) ────────────── */
+
+.nop-like-button__btn:focus-visible,
+.nop-post-footer__pill--like:focus-visible,
+a.nop-post-footer__pill--link:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+	border-radius:  var(--nop-pill-radius);
+}
+
+.nop-syndication-panel__link:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 3px;
+	border-radius:  0.25rem;
+}
+
+.nop-film-card__title a:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+	border-radius:  2px;
+}
+
+.nop-post-footer__source-link:focus-visible,
+.nop-post-source__link:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+	border-radius:  2px;
+}
+
+/* ── Visually-hidden helper (live regions for async announcements) ────────── */
+
+.nop-like-button__status,
+.nop-post-footer__status {
+	position:    absolute;
+	width:       1px;
+	height:      1px;
+	padding:     0;
+	margin:      -1px;
+	overflow:    hidden;
+	clip:        rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border:      0;
+}
+
+/* ── Reduced-motion: kill transitions/animations across all blocks ────────── */
+
+@media (prefers-reduced-motion: reduce) {
+
+	.nop-like-button__btn,
+	.nop-like-button__icon,
+	.nop-post-footer__pill,
+	.nop-post-footer__pill-icon,
+	.nop-film-card__poster,
+	.nop-webmentions__avatar-link,
+	.nop-webmentions__reply-link {
+		transition: none !important;
+	}
+
+	.nop-like-button__btn.is-animating .nop-like-button__icon,
+	.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
+		animation: none !important;
+	}
+
+	.nop-like-button__btn:hover .nop-like-button__icon,
+	.nop-post-footer__pill--like:hover .nop-post-footer__pill-icon,
+	.nop-film-card:hover .nop-film-card__poster {
+		transform: none;
+	}
+}
+
+/* ── Dark-scheme fallbacks for hardcoded greys ────────────────────────────── */
+
+/*
+ * Themes that opt into dark mode usually swap the --wp--preset--color--*
+ * tokens themselves, but plugins can be embedded in themes that don't.
+ * These rules only kick in when a theme hasn't supplied accent colours,
+ * so the plugin still feels right against a dark surface.
+ */
+@media (prefers-color-scheme: dark) {
+	:where(
+		.nop-checkin-meta,
+		.nop-film-card,
+		.nop-film-meta,
+		.nop-like-button,
+		.nop-post-footer,
+		.nop-post-source,
+		.nop-rsvp-meta,
+		.nop-syndication-panel,
+		.nop-webmentions
+	) {
+		--nop-divider-color: var(--wp--preset--color--accent-6, rgba(255, 255, 255, 0.14));
+		--nop-muted:         var(--wp--preset--color--accent-4, #9ca3af);
+	}
+}

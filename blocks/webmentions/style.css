@@ -1,142 +1,140 @@
+/*
+ * Webmentions block — block-specific styles only.
+ * Reduced-motion handling lives in assets/css/blocks-shared.css.
+ */
+
 .nop-webmentions {
-	display: flex;
+	display:        flex;
 	flex-direction: column;
-	gap: var(--wp--preset--spacing--40, 1.5rem);
+	gap:            var(--wp--preset--spacing--40, 1.5rem);
 }
 
-/* ── Section heading ─────────────────────────────────────────────────────────── */
+/* ── Section heading ─────────────────────────────────────────────────────── */
 
 .nop-webmentions__heading {
-	margin: 0;
-	font-size: var(--wp--preset--font-size--medium, 1.25rem);
+	margin:      0;
+	font-size:   var(--wp--preset--font-size--medium, 1.25rem);
 	font-weight: 700;
 	line-height: 1.3;
 }
 
-/* ── Avatar wrap — positioned shell around link ──────────────────────────────── */
+/* ── Avatar wrap (positioned shell around link) ──────────────────────────── */
 
 .nop-webmentions__avatar-wrap {
-	flex-shrink: 0;
+	flex-shrink:   0;
 	border-radius: 50%;
 }
 
 .nop-webmentions__avatar-link {
-	display: block;
-	border-radius: 50%;
-	overflow: hidden;
-	line-height: 0;
+	display:         block;
+	border-radius:   50%;
+	overflow:        hidden;
+	line-height:     0;
 	text-decoration: none;
-	transition: transform 150ms ease;
+	transition:      transform 150ms ease;
 }
 
 .nop-webmentions__avatar-link:hover {
 	transform: translateY(-3px);
-	position: relative;
-	z-index: 1;
+	position:  relative;
+	z-index:   1;
 }
 
-/* Avatar links are aria-hidden — no focus ring needed */
-
 .nop-webmentions__avatar {
-	display: block;
+	display:       block;
 	border-radius: 50%;
-	object-fit: cover;
+	object-fit:    cover;
 }
 
 .nop-webmentions__avatar--fallback {
-	display: flex;
-	align-items: center;
+	display:         flex;
+	align-items:     center;
 	justify-content: center;
-	border-radius: 50%;
-	background: var(--wp--preset--color--accent-6, rgba(0,0,0,0.12));
-	color: var(--wp--preset--color--accent-4, #6b7280);
-	overflow: hidden;
+	border-radius:   50%;
+	background:      var(--nop-divider-color);
+	color:           var(--nop-muted);
+	overflow:        hidden;
 }
 
 .nop-webmentions__avatar--placeholder {
-	display: block;
+	display:       block;
 	border-radius: 50%;
-	background: var(--wp--preset--color--accent-6, #e5e7eb);
-	opacity: 0.35;
+	background:    var(--nop-divider-color);
+	opacity:       0.35;
 }
 
+/* Sized variants — used by the facepile (36px) and overflow bubble (36px) so
+   render.php no longer sets inline width/height. Replies use the default flow. */
+.nop-webmentions__avatar--36 {
+	width:  36px;
+	height: 36px;
+}
 
-/* ── Platform tag pill ───────────────────────────────────────────────────────── */
+/* ── Platform tag pill ───────────────────────────────────────────────────── */
 
 .nop-webmentions__via {
-	display: inline-flex;
-	align-items: center;
-	font-size: 0.6875rem;
-	font-weight: 600;
-	letter-spacing: 0.03em;
-	padding: 1px 6px;
-	border-radius: 3px;
-	line-height: 1.6;
-	vertical-align: middle;
+	display:         inline-flex;
+	align-items:     center;
+	font-size:       0.6875rem;
+	font-weight:     600;
+	letter-spacing:  0.03em;
+	padding:         1px 6px;
+	border-radius:   3px;
+	line-height:     1.6;
+	vertical-align:  middle;
 }
 
-.nop-webmentions__via--mastodon {
-	background: rgba(99, 100, 255, 0.1);
-	color: rgba(80, 82, 210, 0.9);
-}
+.nop-webmentions__via--mastodon { background: rgba(99, 100, 255, 0.1); color: rgba(80, 82, 210, 0.9); }
+.nop-webmentions__via--bluesky  { background: rgba(0, 133, 255, 0.1);  color: rgba(0, 110, 215, 0.9); }
+.nop-webmentions__via--pixelfed { background: rgba(225, 48, 108, 0.1); color: rgba(190, 28, 80, 0.9); }
 
-.nop-webmentions__via--bluesky {
-	background: rgba(0, 133, 255, 0.1);
-	color: rgba(0, 110, 215, 0.9);
-}
-
-.nop-webmentions__via--pixelfed {
-	background: rgba(225, 48, 108, 0.1);
-	color: rgba(190, 28, 80, 0.9);
-}
-
-/* Sibling to the platform pill — distinguishes "Mastodon (direct via API)" from
-   "Mastodon · via Bridgy" (relayed). Muted so it doesn't outweigh the platform. */
+/* Sibling that distinguishes "Mastodon (direct via API)" from "Mastodon · via Bridgy".
+   Muted so it doesn't outweigh the platform pill itself. */
 .nop-webmentions__via-bridgy {
 	margin-inline-start: 0.125rem;
-	color: var(--wp--preset--color--accent-4, #6b7280);
-	font-size: 0.6875rem;
-	font-weight: 400;
-	letter-spacing: 0;
-	vertical-align: middle;
+	color:               var(--nop-muted);
+	font-size:           0.6875rem;
+	font-weight:         400;
+	vertical-align:      middle;
 }
 
-/* ── Overflow bubble ─────────────────────────────────────────────────────────── */
+/* ── Overflow bubble (likes/reposts past the cap) ────────────────────────── */
 
 .nop-webmentions__overflow {
-	display: flex;
-	align-items: center;
+	display:         flex;
+	align-items:     center;
 	justify-content: center;
-	border-radius: 50%;
-	background: var(--wp--preset--color--accent-6, #e5e7eb);
-	font-size: 0.6875rem;
-	font-weight: 700;
-	color: var(--wp--preset--color--accent-3, #374151);
-	line-height: 1;
-	letter-spacing: -0.02em;
+	border-radius:   50%;
+	background:      var(--nop-divider-color);
+	font-size:       0.6875rem;
+	font-weight:     700;
+	color:           var(--wp--preset--color--accent-3, #374151);
+	line-height:     1;
+	letter-spacing:  -0.02em;
 }
 
-/* ── Facepile row ────────────────────────────────────────────────────────────── */
+/* ── Facepile row ────────────────────────────────────────────────────────── */
 
 .nop-webmentions__facepile {
-	display: flex;
+	display:        flex;
 	flex-direction: row;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 4px;
+	align-items:    center;
+	flex-wrap:      wrap;
+	gap:            4px;
 }
 
-/* ── Likes section ───────────────────────────────────────────────────────────── */
+/* ── Likes / reposts sections ────────────────────────────────────────────── */
 
-.nop-webmentions__likes {
-	display: flex;
+.nop-webmentions__likes,
+.nop-webmentions__reposts {
+	display:        flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	gap:            0.5rem;
 }
 
 .nop-webmentions__liked-by {
-	margin: 0;
-	font-size: 0.9375rem;
+	margin:      0;
+	font-size:   0.9375rem;
 	line-height: 1.4;
 }
 
@@ -144,73 +142,62 @@
 	font-weight: 600;
 }
 
-/* ── Reposts section ─────────────────────────────────────────────────────────── */
-
-.nop-webmentions__reposts {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-/* ── Section label ───────────────────────────────────────────────────────────── */
-
 .nop-webmentions__section-label {
-	margin: 0;
-	font-size: 0.8125rem;
-	font-weight: 600;
+	margin:         0;
+	font-size:      0.8125rem;
+	font-weight:    600;
 	letter-spacing: 0.02em;
-	color: var(--wp--preset--color--accent-4, #6b7280);
-	display: flex;
-	align-items: center;
-	gap: 0.3rem;
+	color:          var(--nop-muted);
+	display:        flex;
+	align-items:    center;
+	gap:            0.3rem;
 }
 
 .nop-webmentions__icon {
 	flex-shrink: 0;
-	opacity: 0.75;
+	opacity:     0.75;
 }
 
-/* ── Replies list — border-top dividers like native WP comments ──────────────── */
+/* ── Replies list (border-top dividers like native WP comments) ──────────── */
 
 .nop-webmentions__replies {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	display: flex;
+	list-style:     none;
+	padding:        0;
+	margin:         0;
+	display:        flex;
 	flex-direction: column;
 }
 
 .nop-webmentions__reply {
-	display: flex;
-	gap: 0.875rem;
+	display:     flex;
+	gap:         0.875rem;
 	align-items: flex-start;
-	padding: var(--wp--preset--spacing--30, 1.25rem) 0;
-	border-top: 1px solid var(--wp--preset--color--accent-6, rgba(0,0,0,0.1));
+	padding:     var(--wp--preset--spacing--30, 1.25rem) 0;
+	border-top:  1px solid var(--nop-divider-color);
 }
 
 .nop-webmentions__replies > .nop-webmentions__reply:first-child {
 	padding-top: 0;
-	border-top: none;
+	border-top:  none;
 }
 
-
 .nop-webmentions__reply-body {
-	flex: 1;
+	flex:      1;
 	min-width: 0;
 }
 
 .nop-webmentions__reply-meta {
-	margin: 0 0 0.35rem;
-	display: flex;
-	flex-wrap: wrap;
+	margin:      0 0 0.35rem;
+	display:     flex;
+	flex-wrap:   wrap;
 	align-items: center;
-	gap: 0.2rem 0.4rem;
+	gap:         0.2rem 0.4rem;
 	line-height: 1.4;
 }
 
 .nop-webmentions__reply-meta a {
 	text-decoration: none;
-	color: inherit;
+	color:           inherit;
 }
 
 .nop-webmentions__reply-meta a:hover strong {
@@ -223,12 +210,12 @@
 
 .nop-webmentions__reply-handle {
 	font-size: 0.875em;
-	color: var(--wp--preset--color--accent-4, #6b7280);
+	color:     var(--nop-muted);
 }
 
 .nop-webmentions__reply-time {
-	font-size: 0.8125rem;
-	color: var(--wp--preset--color--accent-4, #9ca3af) !important;
+	font-size:       0.8125rem;
+	color:           var(--nop-muted) !important;
 	text-decoration: none !important;
 }
 
@@ -237,7 +224,7 @@
 }
 
 .nop-webmentions__reply-content {
-	margin: 0;
+	margin:      0;
 	line-height: 1.6;
 }
 
@@ -245,88 +232,74 @@
 	margin: 0;
 }
 
-/* ── Reply link ──────────────────────────────────────────────────────────────── */
+/* ── Reply link (revealed on hover/focus) ────────────────────────────────── */
 
 .nop-webmentions__reply-link {
-	font-size: 0.8125rem;
-	font-weight: 600;
-	color: var(--wp--preset--color--accent-4, #6b7280) !important;
+	font-size:       0.8125rem;
+	font-weight:     600;
+	color:           var(--nop-muted) !important;
 	text-decoration: none !important;
-	letter-spacing: 0.01em;
-	border-radius: 2px;
-	opacity: 0;
-	transition: opacity 150ms ease, color 150ms ease;
+	letter-spacing:  0.01em;
+	border-radius:   2px;
+	opacity:         0;
+	transition:      opacity 150ms ease, color 150ms ease;
 }
 
-/* Reveal on hover OR when any element in the row has keyboard focus */
-.nop-webmentions__reply:hover .nop-webmentions__reply-link,
-.nop-webmentions__reply:focus-within .nop-webmentions__reply-link,
-.nop-webmentions__comment-reply:hover .nop-webmentions__reply-link,
-.nop-webmentions__comment-reply:focus-within .nop-webmentions__reply-link {
+.nop-webmentions__reply:hover         .nop-webmentions__reply-link,
+.nop-webmentions__reply:focus-within  .nop-webmentions__reply-link,
+.nop-webmentions__comment-reply:hover         .nop-webmentions__reply-link,
+.nop-webmentions__comment-reply:focus-within  .nop-webmentions__reply-link {
 	opacity: 1;
 }
 
 .nop-webmentions__reply-link:hover {
-	color: var(--wp--preset--color--contrast, #111) !important;
+	color: var(--nop-text) !important;
 }
 
 .nop-webmentions__reply-link:focus-visible {
-	opacity: 1;
-	outline: 2px solid currentColor;
+	opacity:        1;
+	outline:        2px solid currentColor;
 	outline-offset: 2px;
-	color: var(--wp--preset--color--contrast, #111) !important;
+	color:          var(--nop-text) !important;
 }
 
-/* ── Motion preference ───────────────────────────────────────────────────────── */
-
-@media (prefers-reduced-motion: reduce) {
-	.nop-webmentions__avatar-link,
-	.nop-webmentions__reply-link {
-		transition: none;
-	}
-}
-
-/* ── Nested WordPress comment replies ────────────────────────────────────────── */
+/* ── Nested WordPress comment replies ────────────────────────────────────── */
 
 .nop-webmentions__comment-replies {
-	list-style: none;
-	padding: 0;
-	margin: 0.875rem 0 0;
-	display: flex;
+	list-style:     none;
+	padding:        0 0 0 1rem;
+	margin:         0.875rem 0 0;
+	display:        flex;
 	flex-direction: column;
-	gap: 0.75rem;
-	padding-left: 1rem;
-	border-left: 2px solid var(--wp--preset--color--accent-6, rgba(0,0,0,0.1));
+	gap:            0.75rem;
+	border-left:    2px solid var(--nop-divider-color);
 }
 
 .nop-webmentions__comment-reply {
-	display: flex;
-	gap: 0.5rem;
+	display:     flex;
+	gap:         0.5rem;
 	align-items: flex-start;
 }
 
 .nop-webmentions__comment-reply-avatar img.nop-webmentions__avatar {
 	border-radius: 50%;
-	object-fit: cover;
-	display: block;
-	width: 28px;
-	height: 28px;
-	flex-shrink: 0;
+	object-fit:    cover;
+	display:       block;
+	width:         28px;
+	height:        28px;
+	flex-shrink:   0;
 }
 
 .nop-webmentions__comment-reply-body {
-	flex: 1;
+	flex:      1;
 	min-width: 0;
 }
 
-/* ── Empty state ─────────────────────────────────────────────────────────────
-   Shown when a post has no responses yet. Low chrome — single line, muted.
-   The comment form (if open) lives below this block and provides the action. */
+/* ── Empty state ─────────────────────────────────────────────────────────── */
 
 .nop-webmentions__empty {
-	margin: 0;
-	color: var(--wp--preset--color--accent-4, #6b7280);
-	font-size: var(--wp--preset--font-size--small, 0.875rem);
+	margin:      0;
+	color:       var(--nop-muted);
+	font-size:   var(--wp--preset--font-size--small, 0.875rem);
 	line-height: 1.5;
 }
-

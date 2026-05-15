@@ -22,7 +22,7 @@ if ( ! $post_id ) {
 		<div class="nop-webmentions__facepile" aria-hidden="true">
 			<?php for ( $i = 0; $i < 4; $i++ ) : ?>
 			<div class="nop-webmentions__avatar-wrap">
-				<span class="nop-webmentions__avatar nop-webmentions__avatar--placeholder" style="width:36px;height:36px;"></span>
+				<span class="nop-webmentions__avatar nop-webmentions__avatar--placeholder nop-webmentions__avatar--36"></span>
 			</div>
 			<?php endfor; ?>
 		</div>
@@ -155,7 +155,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 			<?php endforeach; ?>
 			<?php if ( $overflow > 0 ) : ?>
 			<div class="nop-webmentions__avatar-wrap">
-				<span class="nop-webmentions__overflow" style="width:36px;height:36px;">+<?php echo esc_html( (string) $overflow ); ?></span>
+				<span class="nop-webmentions__overflow nop-webmentions__avatar--36">+<?php echo esc_html( (string) $overflow ); ?></span>
 			</div>
 			<?php endif; ?>
 		</div>
@@ -181,7 +181,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 			<?php endforeach; ?>
 			<?php if ( $overflow_r > 0 ) : ?>
 			<div class="nop-webmentions__avatar-wrap">
-				<span class="nop-webmentions__overflow" style="width:36px;height:36px;">+<?php echo esc_html( (string) $overflow_r ); ?></span>
+				<span class="nop-webmentions__overflow nop-webmentions__avatar--36">+<?php echo esc_html( (string) $overflow_r ); ?></span>
 			</div>
 			<?php endif; ?>
 		</div>

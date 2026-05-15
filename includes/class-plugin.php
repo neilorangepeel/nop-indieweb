@@ -324,6 +324,26 @@ class Plugin {
 			true
 		);
 
+		// Shared front-end stylesheet used by every block. Registered before the
+		// blocks so block.json `style` arrays can list 'nop-blocks-shared' as a dep.
+		// WordPress only enqueues it when at least one of those blocks renders.
+		wp_register_style(
+			'nop-blocks-shared',
+			NOP_INDIEWEB_URL . 'assets/css/blocks-shared.css',
+			[],
+			NOP_INDIEWEB_VERSION
+		);
+
+		// Shared like-action handler used by both the like-button view.js and the
+		// post-footer view.js. Avoids shipping the same fetch/animation logic twice.
+		wp_register_script(
+			'nop-like-action',
+			NOP_INDIEWEB_URL . 'assets/js/nop-like-action.js',
+			[],
+			NOP_INDIEWEB_VERSION,
+			true
+		);
+
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );

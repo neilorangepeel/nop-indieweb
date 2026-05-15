@@ -9,5 +9,5 @@
 	"usesContext": [ "postId", "postType", "queryId" ],
 	"render": "file:./render.php",
 	"editorScript": "file:./editor.js",
-	"style": "file:./style.css"
+	"style": [ "file:./style.css", "nop-blocks-shared" ]
 }

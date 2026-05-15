@@ -30,6 +30,15 @@ class Post_Kinds_Panel {
 			true
 		);
 
+		// Shared editor-sidebar stylesheet (defines .nop-panel-row, .nop-layout-offer, …).
+		// Other panels enqueue the same handle — WP dedupes by handle so this is safe.
+		wp_enqueue_style(
+			'nop-indieweb-editor-sidebar',
+			NOP_INDIEWEB_URL . 'admin/editor-sidebar.css',
+			[],
+			NOP_INDIEWEB_VERSION
+		);
+
 		$terms = get_terms( [
 			'taxonomy'   => \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY,
 			'hide_empty' => false,

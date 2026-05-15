@@ -1,4 +1,8 @@
-/* ── Film Card block — archive grid card ─────────────────────────────────────── */
+/*
+ * Film Card block — block-specific styles only.
+ * Star colour tokens (--nop-star-on / --nop-star-off), focus rings,
+ * and prefers-reduced-motion live in assets/css/blocks-shared.css.
+ */
 
 .nop-film-card {
 	display:        flex;
@@ -6,7 +10,7 @@
 	gap:            0.6em;
 }
 
-/* ── Poster ──────────────────────────────────────────────────────────────────── */
+/* ── Poster ──────────────────────────────────────────────────────────────── */
 
 .nop-film-card__poster-wrap {
 	display:         block;
@@ -29,11 +33,11 @@
 }
 
 .nop-film-card__poster--empty {
-	background:  var(--wp--preset--color--accent-6, #e0e0e0);
-	min-height:  200px;
+	background: var(--nop-divider-color);
+	min-height: 200px;
 }
 
-/* ── Body ────────────────────────────────────────────────────────────────────── */
+/* ── Body ────────────────────────────────────────────────────────────────── */
 
 .nop-film-card__body {
 	display:        flex;
@@ -41,7 +45,7 @@
 	gap:            0.2em;
 }
 
-/* ── Star glyphs (scoped so they don't conflict with film-meta on other pages) ─ */
+/* ── Stars (smaller variant for the card) ────────────────────────────────── */
 
 .nop-film-card .nop-film-stars {
 	display:     inline-flex;
@@ -54,18 +58,17 @@
 	display:   inline-block;
 }
 
-.nop-film-card .nop-film-star.is-full  { color: #f59f00; }
+.nop-film-card .nop-film-star.is-full  { color: var(--nop-star-on); }
+.nop-film-card .nop-film-star.is-empty { color: var(--nop-star-off); }
 
 .nop-film-card .nop-film-star.is-half {
-	background:              linear-gradient(to right, #f59f00 50%, #d4d4d8 50%);
+	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
 	-webkit-background-clip: text;
 	background-clip:         text;
 	color:                   transparent;
 }
 
-.nop-film-card .nop-film-star.is-empty { color: #d4d4d8; }
-
-/* ── Title ───────────────────────────────────────────────────────────────────── */
+/* ── Title ───────────────────────────────────────────────────────────────── */
 
 .nop-film-card__title {
 	margin:      0;
@@ -84,19 +87,13 @@
 	text-underline-offset: 2px;
 }
 
-.nop-film-card__title a:focus-visible {
-	outline:        2px solid currentColor;
-	outline-offset: 2px;
-	border-radius:  2px;
-}
-
 .nop-film-card__rewatch {
 	font-size:   0.75em;
 	opacity:     0.45;
 	margin-left: 0.2em;
 }
 
-/* ── Meta line ───────────────────────────────────────────────────────────────── */
+/* ── Meta line ───────────────────────────────────────────────────────────── */
 
 .nop-film-card__meta {
 	margin:    0;
@@ -104,18 +101,6 @@
 	color:     var(--wp--preset--color--contrast-2, #6b7280);
 }
 
-/* ── Placeholder state ───────────────────────────────────────────────────────── */
-
 .nop-film-card--placeholder {
 	opacity: 0.4;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.nop-film-card__poster {
-		transition: none;
-	}
-
-	.nop-film-card:hover .nop-film-card__poster {
-		transform: none;
-	}
 }

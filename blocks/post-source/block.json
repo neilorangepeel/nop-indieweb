@@ -7,7 +7,7 @@
 	"category": "nop-indieweb-conversations",
 	"icon": "share-alt",
 	"editorScript": "file:./editor.js",
-	"style": "file:./style.css",
+	"style": [ "file:./style.css", "nop-blocks-shared" ],
 	"render": "file:./render.php",
 	"usesContext": ["postId", "postType"],
 	"supports": {

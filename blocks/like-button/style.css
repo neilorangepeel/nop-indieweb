@@ -1,105 +1,23 @@
+/*
+ * Like Button block — block-specific styles only.
+ * Pill base, hover/liked colours, focus ring, animation, visually-hidden
+ * helper and prefers-reduced-motion live in assets/css/blocks-shared.css.
+ */
+
 /* The block fills its constrained-layout slot so it sits at the same
    contentSize position as the surrounding post body. The button (inline-flex
    inside) and the count then sit at flex-start, left-aligned with the content
    above. Don't shrink with width:fit-content — that lets the parent's
    margin:auto re-center the pill, pulling it away from the content edge. */
 .nop-like-button {
-	display: flex;
+	display:     flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap:         0.5rem;
 }
 
-/* ── Button ─────────────────────────────────────────────────────────────── */
-
-.nop-like-button__btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.375rem;
-	padding: 0.375rem 0.875rem 0.375rem 0.75rem;
-	background: none;
-	border: 1px solid var(--wp--preset--color--accent-6, #d1d5db);
-	border-radius: 2rem;
-	cursor: pointer;
-	font-family: inherit;
-	font-size: 0.875rem;
-	font-weight: 500;
-	color: inherit;
-	line-height: 1;
-	transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
-}
-
-.nop-like-button__btn:hover:not( :disabled ) {
-	border-color: hsl( 340 80% 60% );
-	color: hsl( 340 80% 50% );
-}
-
-.nop-like-button__btn:focus-visible {
-	outline: 2px solid currentColor;
-	outline-offset: 3px;
-}
-
-/* ── Liked state ────────────────────────────────────────────────────────── */
-
-.nop-like-button.is-liked .nop-like-button__btn,
-.nop-like-button__btn[aria-pressed="true"] {
-	border-color: hsl( 340 80% 60% );
-	color: hsl( 340 80% 50% );
-	cursor: default;
-}
-
-.nop-like-button.is-liked .nop-like-button__icon {
-	fill: hsl( 340 80% 60% );
-	stroke: hsl( 340 80% 60% );
-}
-
-/* ── Icon ───────────────────────────────────────────────────────────────── */
-
-.nop-like-button__icon {
-	flex-shrink: 0;
-	transition: fill 150ms ease, stroke 150ms ease, transform 200ms ease;
-}
-
-/* ── Count ──────────────────────────────────────────────────────────────── */
-
+/* Block-specific count styling (sits beside the pill, not inside it) */
 .nop-like-button__count {
-	font-size: 0.875rem;
+	font-size:            0.875rem;
 	font-variant-numeric: tabular-nums;
-	color: var(--wp--preset--color--accent-6, #6b7280);
-}
-
-/* ── Heart pop animation ─────────────────────────────────────────────────── */
-
-@keyframes nop-like-pop {
-	0%   { transform: scale( 1 ); }
-	40%  { transform: scale( 1.35 ); }
-	70%  { transform: scale( 0.9 ); }
-	100% { transform: scale( 1 ); }
-}
-
-.nop-like-button__btn.is-animating .nop-like-button__icon {
-	animation: nop-like-pop 350ms ease forwards;
-}
-
-/* Visually hidden live region — injected by view.js for error announcements.
-   Defined here so it works regardless of whether the theme ships this class. */
-.nop-like-button__status {
-	position:   absolute;
-	width:      1px;
-	height:     1px;
-	padding:    0;
-	overflow:   hidden;
-	clip:       rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border:     0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.nop-like-button__btn,
-	.nop-like-button__icon {
-		transition: none;
-	}
-
-	.nop-like-button__btn.is-animating .nop-like-button__icon {
-		animation: none;
-	}
+	color:                var(--nop-muted);
 }

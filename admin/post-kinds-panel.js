@@ -162,15 +162,15 @@
 
 		if ( hasOffer ) {
 			children.push(
-				el( 'div', { key: 'layout-offer', style: { marginTop: '8px' } },
+				el( 'div', { key: 'layout-offer', className: 'nop-layout-offer' },
 					el( Button, {
 						variant: 'secondary',
 						size:    'small',
 						onClick: function () { applyLayout( offeredKind ); },
 					}, __( 'Apply ', 'nop-indieweb' ) + KIND_CONFIG[ offeredKind ].label + __( ' layout', 'nop-indieweb' ) ),
-					el( 'p', {
-						style: { fontSize: '11px', color: '#757575', margin: '4px 0 0' },
-					}, __( 'Replaces current content.', 'nop-indieweb' ) )
+					el( 'p', { className: 'nop-layout-offer__hint' },
+						__( 'Replaces current content.', 'nop-indieweb' )
+					)
 				)
 			);
 		}

@@ -1,42 +1,35 @@
 /*
- * Checkin meta block — front-end styles.
- *
- * Rendered as native page content below the post body, not as a card.
- * A single top rule visually separates it from the post content above.
- * All colours inherit from the theme; no separate background or shadow.
+ * Checkin meta block — block-specific styles only.
+ * Section-divider rule (top border) and underline link pattern live in
+ * assets/css/blocks-shared.css.
  */
 
 .nop-checkin-meta {
-	margin:      2em 0 0;
-	padding-top: 1.25em;
-	border-top:  1px solid var(--wp--preset--color--accent-6, #e0e0e0);
 	font-size:   0.875em;
 	line-height: 1.6;
-	color:       var(--wp--preset--color--contrast, inherit);
+	color:       var(--nop-text);
 }
 
-/* ── Street address ───────────────────────────────────────────────────────── */
+/* ── Address & locality ───────────────────────────────────────────────────── */
 
-.nop-checkin-address {
+.nop-checkin-address,
+.nop-checkin-location {
 	margin:  0 0 0.25em;
 	opacity: 0.65;
 }
 
-/* ── Location line (locality, country) ───────────────────────────────────── */
-
 .nop-checkin-location {
-	margin:   0 0 0.6em;
-	opacity:  0.65;
+	margin-bottom: 0.6em;
 }
 
 /* ── Venue category pills ─────────────────────────────────────────────────── */
 
 .nop-checkin-categories {
-	display:    flex;
-	flex-wrap:  wrap;
-	gap:        5px;
-	margin:     0 0 0.75em;
-	padding:    0;
+	display:   flex;
+	flex-wrap: wrap;
+	gap:       5px;
+	margin:    0 0 0.75em;
+	padding:   0;
 }
 
 .nop-checkin-category {
@@ -48,57 +41,28 @@
 	padding:        2px 8px;
 	border:         1px solid currentColor;
 	border-radius:  2em;
-	color:          var(--wp--preset--color--contrast, #1d2327);
+	color:          var(--nop-text);
 	opacity:        0.55;
 	line-height:    1.6;
 }
 
-/* ── Map link ─────────────────────────────────────────────────────────────── */
+/* ── Map link / syndication / source rows ─────────────────────────────────── */
 
-.nop-checkin-map {
-	margin: 0 0 0.4em;
-}
-
-.nop-checkin-map a {
-	color:           inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
-}
-
-.nop-checkin-map a:hover {
-	opacity: 0.7;
-}
-
-/* ── Syndication ──────────────────────────────────────────────────────────── */
-
+.nop-checkin-map,
 .nop-checkin-syndication {
 	margin: 0 0 0.4em;
 }
-
-.nop-checkin-syndication a {
-	color:           inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
-}
-
-.nop-checkin-syndication a:hover {
-	opacity: 0.7;
-}
-
-/* ── Source attribution ───────────────────────────────────────────────────── */
 
 .nop-checkin-source {
 	margin:  0;
 	opacity: 0.5;
 }
 
-/* ── Preview state (template editor — no real post) ──────────────────────── */
+/* ── State modifiers (template-editor preview, in-editor non-interactive) ── */
 
 .nop-checkin-meta--preview {
 	opacity: 0.5;
 }
-
-/* ── Editor state — disable link navigation inside the canvas iframe ─────── */
 
 .nop-checkin-meta--editor a {
 	pointer-events: none;
