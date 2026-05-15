@@ -1,4 +1,8 @@
 <?php
+// CLI-only — refuse to run if reached over HTTP.
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	exit( 'This file may only be executed via WP-CLI.' );
+}
 /**
  * Retire category-as-kind categories.
  *

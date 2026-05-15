@@ -59,6 +59,10 @@ class Plugin {
 	}
 
 	public function boot(): void {
+		// One-shot migration: drop autoload on the settings option so plaintext
+		// syndication credentials aren't kept in memory on every request.
+		nop_indieweb_maybe_disable_settings_autoload();
+
 		$note       = new Note();
 		$letterboxd = new Letterboxd();
 		// RSVP must appear before Reply — both match in-reply-to and RSVP is the more specific case.

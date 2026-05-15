@@ -1,4 +1,10 @@
 <?php
+// CLI-only — refuse to run if reached over HTTP. Defense in depth: this file
+// normally fatals on undefined WP-CLI calls anyway, but a future edit that
+// bootstraps WordPress first would otherwise expose DB-mutating helpers.
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	exit( 'This file may only be executed via WP-CLI.' );
+}
 /**
  * Phase 1 kind migration.
  *

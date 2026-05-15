@@ -1,4 +1,8 @@
 <?php
+// CLI-only — refuse to run if reached over HTTP.
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	exit( 'This file may only be executed via WP-CLI.' );
+}
 /**
  * Local smoke test for the syndication refactor. Run via:
  *   studio wp eval-file wp-content/plugins/nop-indieweb/bin/test-syndication.php

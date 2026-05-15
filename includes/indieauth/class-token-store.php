@@ -57,7 +57,7 @@ class Token_Store {
 		$opts = get_option( 'nop_indieweb_settings', [] );
 		if ( isset( $opts['secret_token'] ) ) {
 			unset( $opts['secret_token'] );
-			update_option( 'nop_indieweb_settings', $opts );
+			update_option( 'nop_indieweb_settings', $opts, false );
 		}
 
 		update_option( 'nop_indieweb_db_version', self::DB_VERSION );
