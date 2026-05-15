@@ -189,34 +189,84 @@ abstract class Service_Base {
 	 * @return string|WP_Error  Temporary file path on success.
 	 */
 	protected function safe_download_to_tmp( string $url, int $cap_bytes, int $timeout = 60 ): string|WP_Error {
-		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
-		if ( 'https' !== $scheme && 'http' !== $scheme ) {
-			return new WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
-		}
-
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		$tmp = wp_tempnam( $url );
 		if ( ! $tmp ) {
 			return new WP_Error( 'nop_tmpnam_failed', 'Could not allocate temp file.' );
 		}
 
-		$response = wp_safe_remote_get( $url, [
-			'timeout'             => $timeout,
-			'redirection'         => 3,
-			'stream'              => true,
-			'filename'            => $tmp,
-			'limit_response_size' => $cap_bytes,
-		] );
+		// Stream with manual redirect chasing: each hop is one streaming
+		// wp_safe_remote_get (which re-validates the URL against private IPs).
+		// If the response is a redirect, the streamed body is a small HTML page —
+		// we truncate it before following the Location to the next hop. In the
+		// common no-redirect case (every regular API/CDN media URL), this is
+		// ONE network round-trip with zero overhead vs the previous code.
+		$visited = [];
+		$max_hops = 3;
 
-		if ( is_wp_error( $response ) ) {
-			@unlink( $tmp );
-			return $response;
-		}
+		for ( $hop = 0; $hop <= $max_hops; $hop++ ) {
+			$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+			if ( 'https' !== $scheme && 'http' !== $scheme ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
+			}
 
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( $code < 200 || $code >= 300 ) {
-			@unlink( $tmp );
-			return new WP_Error( 'nop_bad_status', "Upstream returned HTTP {$code}." );
+			if ( ! \NOP\IndieWeb\nop_indieweb_is_safe_url( $url ) ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_blocked_ip', 'URL resolves to a private or reserved IP range.' );
+			}
+
+			$url_key = strtolower( $url );
+			if ( isset( $visited[ $url_key ] ) ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_redirect_loop', 'Redirect loop.' );
+			}
+			$visited[ $url_key ] = true;
+
+			$response = wp_safe_remote_get( $url, [
+				'timeout'             => $timeout,
+				'redirection'         => 0,
+				'stream'              => true,
+				'filename'            => $tmp,
+				'limit_response_size' => $cap_bytes,
+			] );
+
+			if ( is_wp_error( $response ) ) {
+				@unlink( $tmp );
+				return $response;
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+			if ( $code >= 200 && $code < 300 ) {
+				break;
+			}
+			if ( $code < 300 || $code >= 400 ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_bad_status', "Upstream returned HTTP {$code}." );
+			}
+
+			$location = wp_remote_retrieve_header( $response, 'location' );
+			if ( ! $location ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_bad_redirect', '3xx without Location header.' );
+			}
+			$next = \WP_Http::make_absolute_url( $location, $url );
+			if ( ! is_string( $next ) || '' === $next ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_bad_redirect', 'Could not resolve redirect target.' );
+			}
+
+			// Discard the redirect page body before following.
+			if ( file_exists( $tmp ) ) {
+				file_put_contents( $tmp, '' );
+			}
+
+			$url = $next;
+
+			if ( $hop === $max_hops ) {
+				@unlink( $tmp );
+				return new WP_Error( 'nop_too_many_redirects', 'Exceeded redirect cap.' );
+			}
 		}
 
 		$bytes = @filesize( $tmp );

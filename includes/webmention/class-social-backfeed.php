@@ -352,13 +352,11 @@ class Social_Backfeed {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
-		// wp_safe_remote_get rejects loopback / private IPs so a misconfigured
-		// or socially-engineered Mastodon instance setting can't redirect us
-		// into the local network. 4 MB cap stops a hostile API from streaming
-		// arbitrary bodies into PHP memory.
-		$response = wp_safe_remote_get( $url, [
+		// Strict re-validation on every redirect hop — see api_get() in the
+		// feed importer for the rationale. A misconfigured or compromised
+		// Mastodon instance cannot redirect us into the local network.
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
 			'timeout'             => 15,
-			'redirection'         => 3,
 			'limit_response_size' => 4 * 1024 * 1024,
 			'headers'             => $headers,
 		] );

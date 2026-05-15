@@ -126,9 +126,8 @@ class Feed_Importer {
 
 		// Token may lack read:statuses scope; fall back to unauthenticated for public accounts.
 		if ( null === $statuses && 'mastodon' === $platform ) {
-			$response = wp_safe_remote_get( $statuses_url, [
+			$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $statuses_url, [
 				'timeout'             => 15,
-				'redirection'         => 3,
 				'limit_response_size' => 4 * 1024 * 1024,
 			] );
 			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
@@ -517,13 +516,15 @@ class Feed_Importer {
 	}
 
 	private function api_get( string $url, string $token ): ?array {
-		// wp_safe_remote_get rejects loopback / private IPs so a tampered or
-		// socially-engineered Mastodon instance setting cannot redirect us into
-		// the local network with a Bearer token attached.
-		$response = wp_safe_remote_get( $url, [
+		// Strict re-validation on every redirect hop — wp_safe_remote_get alone
+		// validates only the first request, then lets WP core follow Location
+		// headers without re-checking. A hostile or compromised Mastodon
+		// instance could otherwise redirect us into the local network with the
+		// Bearer token attached on the first hop (and cURL would strip the
+		// auth on cross-host, but the response body would still come back).
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
 			'headers'             => [ 'Authorization' => "Bearer {$token}" ],
 			'timeout'             => 15,
-			'redirection'         => 3,
 			'limit_response_size' => 4 * 1024 * 1024,
 		] );
 
