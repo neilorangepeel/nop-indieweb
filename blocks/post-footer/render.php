@@ -121,23 +121,27 @@ $wrapper = get_block_wrapper_attributes( [
 		</span>
 	</button>
 
-	<?php if ( $reply_count > 0 ) : ?>
-	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( $reply_count . ' comments' ); ?>">
+	<a class="nop-post-footer__pill nop-post-footer__pill--link"
+	   href="#comments"
+	   aria-label="<?php echo esc_attr( $reply_count > 0
+	       ? sprintf( _n( 'Jump to %d comment', 'Jump to %d comments', $reply_count, 'nop-indieweb' ), $reply_count )
+	       : __( 'Jump to the reply form', 'nop-indieweb' ) ); ?>">
 		<?php echo $comment_icon; ?>
-		<span class="nop-post-footer__pill-count" aria-hidden="true">
+		<span class="nop-post-footer__pill-count"
+		      aria-hidden="true"
+		      <?php echo 0 === $reply_count ? 'hidden' : ''; ?>>
 			<?php echo esc_html( (string) $reply_count ); ?>
 		</span>
-	</span>
-	<?php endif; ?>
+	</a>
 
-	<?php if ( $repost_count > 0 ) : ?>
 	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( $repost_count . ' reposts' ); ?>">
 		<?php echo $repost_icon; ?>
-		<span class="nop-post-footer__pill-count" aria-hidden="true">
+		<span class="nop-post-footer__pill-count"
+		      aria-hidden="true"
+		      <?php echo 0 === $repost_count ? 'hidden' : ''; ?>>
 			<?php echo esc_html( (string) $repost_count ); ?>
 		</span>
 	</span>
-	<?php endif; ?>
 
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-footer__sep" aria-hidden="true">·</span>

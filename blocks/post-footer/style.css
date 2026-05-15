@@ -20,6 +20,22 @@
 	line-height: 1;
 	white-space: nowrap;
 	color: inherit;
+	text-decoration: none;
+}
+
+/* ── Link pill (comment) ──────────────────────────────────────────────────── */
+
+a.nop-post-footer__pill--link {
+	transition: color 150ms ease, border-color 150ms ease;
+}
+
+a.nop-post-footer__pill--link:hover {
+	border-color: currentColor;
+}
+
+a.nop-post-footer__pill--link:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
 }
 
 /* ── Like pill (interactive) ──────────────────────────────────────────────── */
