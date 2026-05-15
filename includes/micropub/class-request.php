@@ -43,14 +43,20 @@ class Request {
 	private function from_json( WP_REST_Request $request ): array {
 		$body = $request->get_json_params() ?? [];
 
+		$type = is_array( $body['type'] ?? null ) ? $body['type'] : [ 'h-entry' ];
+		$type = array_values( array_filter( array_map(
+			fn( $t ) => is_string( $t ) ? sanitize_text_field( $t ) : '',
+			$type
+		) ) ) ?: [ 'h-entry' ];
+
 		return [
 			'action'     => sanitize_key( $body['action'] ?? '' ),
 			'url'        => esc_url_raw( $body['url'] ?? '' ),
-			'type'       => $body['type'] ?? [ 'h-entry' ],
-			'properties' => $body['properties'] ?? [],
-			'replace'    => $body['replace'] ?? [],
-			'add'        => $body['add'] ?? [],
-			'delete'     => $body['delete'] ?? [],
+			'type'       => $type,
+			'properties' => is_array( $body['properties'] ?? null ) ? $body['properties'] : [],
+			'replace'    => is_array( $body['replace']    ?? null ) ? $body['replace']    : [],
+			'add'        => is_array( $body['add']        ?? null ) ? $body['add']        : [],
+			'delete'     => is_array( $body['delete']     ?? null ) ? $body['delete']     : [],
 		];
 	}
 

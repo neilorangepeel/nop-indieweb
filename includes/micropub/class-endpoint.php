@@ -83,11 +83,11 @@ class Endpoint {
 		}
 
 		if ( 'source' === $q ) {
-			$auth_result = ( new Auth() )->verify( $request );
-			if ( is_wp_error( $auth_result ) ) {
-				return $auth_result;
+			$token = ( new Auth() )->verify( $request );
+			if ( is_wp_error( $token ) ) {
+				return $token;
 			}
-			return $this->handle_source_query( $request );
+			return $this->handle_source_query( $request, $token );
 		}
 
 		return new WP_REST_Response( [], 200 );
@@ -97,8 +97,12 @@ class Endpoint {
 	 * Returns mf2 properties of an existing post by URL.
 	 * Supports an optional properties[] param to return a subset.
 	 * Spec: https://micropub.spec.indieweb.org/#source-content
+	 *
+	 * Non-public posts (draft/private/pending/future) require the token's
+	 * owning user to have edit_post capability — otherwise we'd leak unpublished
+	 * content to any holder of a valid Micropub token.
 	 */
-	private function handle_source_query( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+	private function handle_source_query( WP_REST_Request $request, array $token ): WP_REST_Response|WP_Error {
 		$url = (string) $request->get_param( 'url' );
 		if ( ! $url ) {
 			return new WP_Error( 'nop_indieweb_missing_url', 'url parameter is required.', [ 'status' => 400 ] );
@@ -112,6 +116,14 @@ class Endpoint {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error( 'nop_indieweb_not_found', 'Post not found.', [ 'status' => 404 ] );
+		}
+
+		if ( 'publish' !== $post->post_status && ! Auth::can_edit_post( $token, $post_id ) ) {
+			return new WP_Error(
+				'nop_indieweb_forbidden',
+				'Token cannot read this post.',
+				[ 'status' => 403 ]
+			);
 		}
 
 		$properties = [
@@ -138,14 +150,14 @@ class Endpoint {
 	}
 
 	public function handle_post( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$auth_result = ( new Auth() )->verify( $request );
-		if ( is_wp_error( $auth_result ) ) {
-			\NOP\IndieWeb\nop_indieweb_log( 'Auth failed', $auth_result->get_error_message() );
-			return $auth_result;
+		$token = ( new Auth() )->verify( $request );
+		if ( is_wp_error( $token ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Auth failed', $token->get_error_message() );
+			return $token;
 		}
 
 		$payload = ( new Request() )->normalise( $request );
-		\NOP\IndieWeb\nop_indieweb_log( 'Micropub payload received', $payload );
+		\NOP\IndieWeb\nop_indieweb_log( 'Micropub payload received', \NOP\IndieWeb\nop_indieweb_redact_for_log( $payload ) );
 
 		$action = $payload['action'] ?? '';
 
@@ -153,14 +165,19 @@ class Endpoint {
 		// Note: OwnYourSwarm is create-only and never sends these. We handle them
 		// gracefully so the endpoint is spec-compliant for future Micropub clients.
 		if ( 'delete' === $action ) {
-			return $this->handle_delete( $payload['url'] ?? '' );
+			return $this->handle_delete( $payload['url'] ?? '', $token );
 		}
 
 		if ( 'update' === $action ) {
-			return $this->handle_update( $payload );
+			return $this->handle_update( $payload, $token );
 		}
 
 		// Default: create.
+		$scope_err = Auth::require_scope( $token, 'create' );
+		if ( $scope_err ) {
+			return $scope_err;
+		}
+
 		$service = $this->resolve_service( $payload );
 		if ( ! $service ) {
 			return new WP_Error(
@@ -193,7 +210,12 @@ class Endpoint {
 	 * WordPress handles that automatically for trashed posts if you configure
 	 * your theme to return 410 for them.
 	 */
-	private function handle_delete( string $url ): WP_REST_Response|WP_Error {
+	private function handle_delete( string $url, array $token ): WP_REST_Response|WP_Error {
+		$scope_err = Auth::require_scope( $token, 'delete' );
+		if ( $scope_err ) {
+			return $scope_err;
+		}
+
 		if ( ! $url ) {
 			return new WP_Error(
 				'nop_indieweb_missing_url',
@@ -208,6 +230,14 @@ class Endpoint {
 				'nop_indieweb_not_found',
 				'No post found at that URL.',
 				[ 'status' => 400 ]
+			);
+		}
+
+		if ( ! Auth::can_delete_post( $token, $post_id ) ) {
+			return new WP_Error(
+				'nop_indieweb_forbidden',
+				'Token cannot delete this post.',
+				[ 'status' => 403 ]
 			);
 		}
 
@@ -229,7 +259,12 @@ class Endpoint {
 	 * Spec: https://micropub.spec.indieweb.org/#update
 	 * Update requests are always JSON — form-encoded is not supported by the spec.
 	 */
-	private function handle_update( array $payload ): WP_REST_Response|WP_Error {
+	private function handle_update( array $payload, array $token ): WP_REST_Response|WP_Error {
+		$scope_err = Auth::require_scope( $token, 'update' );
+		if ( $scope_err ) {
+			return $scope_err;
+		}
+
 		$url = $payload['url'] ?? '';
 		if ( ! $url ) {
 			return new WP_Error( 'nop_indieweb_missing_url', 'No URL provided for update action.', [ 'status' => 400 ] );
@@ -238,6 +273,14 @@ class Endpoint {
 		$post_id = url_to_postid( $url );
 		if ( ! $post_id ) {
 			return new WP_Error( 'nop_indieweb_not_found', 'No post found at that URL.', [ 'status' => 400 ] );
+		}
+
+		if ( ! Auth::can_edit_post( $token, $post_id ) ) {
+			return new WP_Error(
+				'nop_indieweb_forbidden',
+				'Token cannot edit this post.',
+				[ 'status' => 403 ]
+			);
 		}
 
 		$args = [];
@@ -269,7 +312,7 @@ class Endpoint {
 			wp_update_post( wp_slash( $args ) );
 		}
 
-		\NOP\IndieWeb\nop_indieweb_log( "Micropub update: post {$post_id}", $payload );
+		\NOP\IndieWeb\nop_indieweb_log( "Micropub update: post {$post_id}", \NOP\IndieWeb\nop_indieweb_redact_for_log( $payload ) );
 		return new WP_REST_Response( null, 200 );
 	}
 
