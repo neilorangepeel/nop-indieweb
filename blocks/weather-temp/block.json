@@ -5,7 +5,6 @@
 	"title": "Weather Temperature",
 	"description": "Renders the temperature for a check-in post. Choose °C or °F from the block inspector.",
 	"category": "nop-indieweb-meta",
-	"icon": "thermometer",
 	"keywords": ["weather", "temperature", "checkin", "indieweb"],
 	"editorScript": "file:./editor.js",
 	"style": "nop-blocks-shared",
