@@ -189,6 +189,17 @@ class Swarm extends Service_Base {
 		$settings = $this->get_settings();
 
 		$cats = array_filter( (array) ( $parsed['venue_categories'] ?? [] ) );
+		if ( ! $cats ) {
+			// OwnYourSwarm doesn't forward Foursquare's venue categories
+			// (aaronpk/ownyourswarm#47), so fall back to a direct Places API
+			// lookup when an API key is configured. Returns [] silently if
+			// the key is unset, the venue isn't on Foursquare, or the API
+			// is unreachable — we never want this to block the checkin.
+			$venue_id = \NOP\IndieWeb\Venue\Foursquare_Enricher::extract_venue_id( $parsed['venue_url'] ?? '' );
+			if ( $venue_id ) {
+				$cats = \NOP\IndieWeb\Venue\Foursquare_Enricher::fetch_categories( $venue_id );
+			}
+		}
 		if ( $cats ) {
 			wp_set_object_terms( $post_id, $cats, \NOP\IndieWeb\Kind\Venue_Category_Taxonomy::TAXONOMY );
 		}

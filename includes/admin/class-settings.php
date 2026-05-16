@@ -154,6 +154,9 @@ class Settings {
 		// — Weather ———————————————————————————————————————————————————————————
 		$clean['weather']['pirate_weather_api_key'] = sanitize_text_field( $input['weather']['pirate_weather_api_key'] ?? '' );
 
+		// — Venue ————————————————————————————————————————————————————————————
+		$clean['venue']['foursquare_api_key'] = sanitize_text_field( $input['venue']['foursquare_api_key'] ?? '' );
+
 		// — Swarm —————————————————————————————————————————————————————————————
 		$clean['services']['swarm'] = $this->sanitize_service_defaults( $input['services']['swarm'] ?? [], [
 			'enabled'         => false,
@@ -1240,6 +1243,28 @@ class Settings {
 						Get a free key (10 000 req/day) at
 						<a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>.
 						Leave blank to skip weather enrichment.
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Venue Categories</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-foursquare-key">Foursquare API key</label></th>
+				<td>
+					<?php $fsq_key = \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' ); ?>
+					<input type="text" id="nop-foursquare-key"
+					       name="<?php echo self::OPTION_KEY; ?>[venue][foursquare_api_key]"
+					       value="<?php echo esc_attr( $fsq_key ); ?>"
+					       class="regular-text code" autocomplete="off"
+					       placeholder="fsq3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+					<p class="description">
+						Looks up Foursquare's venue categories (e.g. "Yoga Studio", "Park") on each check-in,
+						since OwnYourSwarm doesn't forward them. Each venue's categories are cached for 30 days.
+						Get a free Service API key at
+						<a href="https://location.foursquare.com/developer/" target="_blank" rel="noopener">location.foursquare.com/developer</a>.
+						Leave blank to skip venue category enrichment.
 					</p>
 				</td>
 			</tr>

@@ -71,7 +71,13 @@ require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-endpoint.p
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-sender.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-social-backfeed.php';
+require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-enricher.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-categories.php';
+	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories', \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
+}
 
 // Create the tokens table on activation and on every load if the schema is stale.
 register_activation_hook( __FILE__, function () {

@@ -284,6 +284,11 @@ class Plugin {
 				'description' => __( 'Chronological list of long-form articles with title, date, tags, and excerpt.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-article.html',
 			],
+			'nop-indieweb//taxonomy-nop_venue_category' => [
+				'title'       => __( 'Archive – Venue Category', 'nop-indieweb' ),
+				'description' => __( 'Lists every check-in in a Foursquare venue category (Yoga Studios, Parks, Bars, etc.).', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_venue_category.html',
+			],
 		];
 
 		// register_block_template() takes content (not a path), so without a
