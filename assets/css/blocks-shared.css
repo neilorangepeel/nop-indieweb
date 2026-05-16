@@ -141,10 +141,11 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	margin-block-start: 1.5em;
 }
 
-/* ── Venue field / venue coordinates ─────────────────────────────────────── */
+/* ── Venue field / venue coordinates / venue categories ───────────────────── */
 
 .nop-venue-field,
-.nop-venue-coordinates {
+.nop-venue-coordinates,
+.nop-venue-categories {
 	margin-block: 0;
 }
 
