@@ -126,6 +126,18 @@ function nop_indieweb_is_safe_url( string $url ): bool {
 		return false;
 	}
 
+	// WASM PHP (WordPress Studio / Playground) tunnels every outbound HTTP
+	// call through the host process. Its DNS shim returns a sentinel address
+	// in 172.x for every hostname, which would always trip the private-range
+	// check below even though no real private-network access is possible
+	// from inside the WASM sandbox. Skip the pre-check there and let
+	// wp_safe_remote_get rely on the host runtime's own egress boundary.
+	// Real PHP hosts don't match this string, so production behaviour is
+	// unchanged.
+	if ( str_contains( php_uname(), 'Emscripten' ) ) {
+		return true;
+	}
+
 	// If the URL already contains a literal IP, validate it directly. Otherwise
 	// resolve the hostname. gethostbyname returns the input string unchanged
 	// when resolution fails — we treat that as unsafe.

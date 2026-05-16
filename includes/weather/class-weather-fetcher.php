@@ -17,7 +17,11 @@ namespace NOP\IndieWeb\Weather;
  */
 class Weather_Fetcher {
 
-	private const ENDPOINT  = 'https://api.pirateweather.net/forecast';
+	// Time-machine subdomain handles past, present, and recent-future
+	// timestamps — one path covers both live Swarm webhooks and historical
+	// backfill. The api.pirateweather.net/forecast endpoint refuses past
+	// timestamps with a 400 "Please Use Timemachine".
+	private const ENDPOINT  = 'https://timemachine.pirateweather.net/forecast';
 	private const TIMEOUT   = 6;
 	private const MAX_BYTES = 256 * 1024;
 
