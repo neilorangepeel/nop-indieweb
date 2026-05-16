@@ -286,12 +286,18 @@ class Plugin {
 			],
 		];
 
-		// Templates only change when the plugin version changes, but
 		// register_block_template() takes content (not a path), so without a
-		// cache we'd read 18 files on every request including REST/AJAX. Cache
-		// the file contents in a transient keyed on plugin version — auto-invalidates
-		// on upgrade.
-		$cache_key = 'nop_indieweb_template_contents_' . NOP_INDIEWEB_VERSION;
+		// cache we'd read 18 files on every request including REST/AJAX. The
+		// transient is keyed on plugin version AND a hash of file mtimes so it
+		// invalidates on upgrade or on any template edit (filemtime is a cheap
+		// stat-cached call).
+		$mtimes = [];
+		foreach ( $templates as $id => $template ) {
+			$path           = $dir . $template['file'];
+			$mtimes[ $id ]  = is_readable( $path ) ? filemtime( $path ) : 0;
+		}
+		$cache_key = 'nop_indieweb_template_contents_' . NOP_INDIEWEB_VERSION
+		           . '_' . substr( md5( implode( ',', $mtimes ) ), 0, 8 );
 		$contents  = get_transient( $cache_key );
 
 		if ( false === $contents ) {
