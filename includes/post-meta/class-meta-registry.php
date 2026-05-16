@@ -122,6 +122,36 @@ class Registry {
 				'description' => 'Postal code.',
 			] ),
 
+			// ── Weather ──────────────────────────────────────────────────────────
+			// Snapshotted at post-create time from the venue lat/lng + post date.
+			// Populated by Weather_Fetcher for kinds where location is inherent
+			// to the post (checkins now, workouts later). Strings throughout to
+			// mirror the venue_lat/lng convention.
+			'nop_indieweb_weather_temp_c'    => array_merge( $string, [
+				'label'       => __( 'Weather Temperature (°C)', 'nop-indieweb' ),
+				'description' => 'Temperature in Celsius at the time and place of the post.',
+			] ),
+			'nop_indieweb_weather_temp_f'    => array_merge( $string, [
+				'label'       => __( 'Weather Temperature (°F)', 'nop-indieweb' ),
+				'description' => 'Temperature in Fahrenheit at the time and place of the post.',
+			] ),
+			'nop_indieweb_weather_icon'      => array_merge( $string, [
+				'label'       => __( 'Weather Icon', 'nop-indieweb' ),
+				'description' => 'Provider icon slug (Pirate Weather vocabulary: clear-day, cloudy, rain, snow, sleet, wind, fog, partly-cloudy-day, partly-cloudy-night, clear-night).',
+			] ),
+			'nop_indieweb_weather_summary'   => array_merge( $string, [
+				'label'       => __( 'Weather Summary', 'nop-indieweb' ),
+				'description' => 'Human-readable conditions ("Partly Cloudy").',
+			] ),
+			'nop_indieweb_weather_provider'  => array_merge( $string, [
+				'label'       => __( 'Weather Provider', 'nop-indieweb' ),
+				'description' => 'Provenance slug (e.g. pirate-weather).',
+			] ),
+			'nop_indieweb_weather_fetched_at' => array_merge( $string, [
+				'label'       => __( 'Weather Fetched At', 'nop-indieweb' ),
+				'description' => 'ISO8601 timestamp of when the weather lookup ran.',
+			] ),
+
 			// ── Syndication ──────────────────────────────────────────────────────
 			// Stored separately so we can query it directly without deserializing the array.
 			'nop_indieweb_source_url'       => array_merge( $string, [

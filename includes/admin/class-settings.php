@@ -151,6 +151,9 @@ class Settings {
 		// — Maps ——————————————————————————————————————————————————————————————
 		$clean['maps']['geoapify_api_key'] = sanitize_text_field( $input['maps']['geoapify_api_key'] ?? '' );
 
+		// — Weather ———————————————————————————————————————————————————————————
+		$clean['weather']['pirate_weather_api_key'] = sanitize_text_field( $input['weather']['pirate_weather_api_key'] ?? '' );
+
 		// — Swarm —————————————————————————————————————————————————————————————
 		$clean['services']['swarm'] = $this->sanitize_service_defaults( $input['services']['swarm'] ?? [], [
 			'enabled'         => false,
@@ -1216,6 +1219,27 @@ class Settings {
 						Get a free key (3 000 req/day) at
 						<a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>.
 						Leave blank to use the built-in tile fallback instead.
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<h3 class="nop-section-heading">Weather</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-pirate-weather-key">Pirate Weather API key</label></th>
+				<td>
+					<?php $weather_key = \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' ); ?>
+					<input type="text" id="nop-pirate-weather-key"
+					       name="<?php echo self::OPTION_KEY; ?>[weather][pirate_weather_api_key]"
+					       value="<?php echo esc_attr( $weather_key ); ?>"
+					       class="regular-text code" autocomplete="off"
+					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+					<p class="description">
+						Snapshots the weather at each check-in's location and time, stored on the post.
+						Get a free key (10 000 req/day) at
+						<a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>.
+						Leave blank to skip weather enrichment.
 					</p>
 				</td>
 			</tr>

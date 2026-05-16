@@ -36,6 +36,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/micropub/class-auth.php';
 require_once NOP_INDIEWEB_DIR . 'includes/micropub/class-request.php';
 require_once NOP_INDIEWEB_DIR . 'includes/micropub/class-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/micropub/class-media-endpoint.php';
+require_once NOP_INDIEWEB_DIR . 'includes/weather/class-weather-fetcher.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-url-response-service.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-swarm.php';

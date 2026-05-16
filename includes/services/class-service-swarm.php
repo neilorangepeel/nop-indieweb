@@ -193,6 +193,20 @@ class Swarm extends Service_Base {
 			wp_set_object_terms( $post_id, $cats, \NOP\IndieWeb\Kind\Venue_Category_Taxonomy::TAXONOMY );
 		}
 
+		// Weather enrichment uses the checkin's real time (post_date_gmt), not
+		// the import time — for live webhooks they're the same, for any future
+		// retro-import they can differ by hours.
+		$lat = (float) ( $parsed['venue_lat'] ?? 0 );
+		$lng = (float) ( $parsed['venue_lng'] ?? 0 );
+		if ( $lat || $lng ) {
+			\NOP\IndieWeb\Weather\Weather_Fetcher::enrich_post(
+				$post_id,
+				$lat,
+				$lng,
+				(int) get_post_timestamp( $post_id, 'date_gmt' )
+			);
+		}
+
 		if ( ! $parsed['photos'] ) {
 			return;
 		}
