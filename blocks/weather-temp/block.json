@@ -1,0 +1,58 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/weather-temp",
+	"title": "Weather Temperature",
+	"description": "Renders the temperature for a check-in post. Choose °C or °F from the block inspector.",
+	"category": "nop-indieweb-meta",
+	"icon": "thermometer",
+	"keywords": ["weather", "temperature", "checkin", "indieweb"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"attributes": {
+		"unit": {
+			"type": "string",
+			"default": "c"
+		},
+		"showSymbol": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true,
+				"__experimentalFontFamily": true,
+				"__experimentalFontWeight": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": false,
+			"link": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		}
+	}
+}

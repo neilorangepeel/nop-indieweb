@@ -355,6 +355,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-coordinates' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-categories' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-link' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-link' );

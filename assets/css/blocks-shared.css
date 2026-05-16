@@ -148,6 +148,27 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	margin-block: 0;
 }
 
+/* ── Weather icon / weather temp ──────────────────────────────────────────── */
+
+/* The Phosphor SVGs are 256×256 viewBox with no intrinsic width/height — they
+ * need a CSS hook to size them. 1em keeps the icon aligned with the
+ * surrounding text and respects the typography fontSize control on the block.
+ * vertical-align middle stops the SVG from sitting on the baseline. */
+.nop-weather-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.nop-weather-icon svg {
+	width:  1em;
+	height: 1em;
+	vertical-align: middle;
+}
+
+.nop-weather-temp {
+	margin-block: 0;
+}
+
 /* ── Checkin map ──────────────────────────────────────────────────────────── */
 
 .nop-checkin-map__img {
