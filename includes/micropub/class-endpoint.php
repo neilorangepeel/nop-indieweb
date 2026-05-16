@@ -187,7 +187,7 @@ class Endpoint {
 			);
 		}
 
-		$post_id = $service->handle( $payload );
+		$post_id = $service->handle( $payload, (int) ( $token['user_id'] ?? 0 ) );
 		if ( is_wp_error( $post_id ) ) {
 			\NOP\IndieWeb\nop_indieweb_log( 'Service handler error', $post_id->get_error_message() );
 			return $post_id;

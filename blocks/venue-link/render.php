@@ -8,13 +8,14 @@
 
 declare( strict_types=1 );
 
-$post_id = $block->context['postId'] ?? get_the_ID();
+$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
+           ( $block->context['postId'] ?? get_the_ID() );
 
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-venue-link' ] );
 	?>
 	<p <?php echo $wrapper_attrs; ?>>
-		<a href="#" onclick="return false;">View on foursquare.com</a>
+		<span>View on foursquare.com</span>
 	</p>
 	<?php
 	return;

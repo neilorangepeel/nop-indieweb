@@ -10,7 +10,7 @@ $is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
 $lat = $post_id ? (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true ) : 0;
 $lng = $post_id ? (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true ) : 0;
 
-if ( ! $lat && ! $lng ) {
+if ( ! $lat || ! $lng ) {
 	if ( $is_editor ) {
 		$lat = 54.5973;
 		$lng = -5.9301;
@@ -25,7 +25,7 @@ $lng_dir = $lng >= 0 ? 'E' : 'W';
 $lat_str = number_format( abs( $lat ), 3 );
 $lng_str = number_format( abs( $lng ), 3 );
 
-$value = sprintf( '%s ° %s · %s ° %s', $lat_str, $lat_dir, ( $lng < 0 ? '–' : '' ) . $lng_str, $lng_dir );
+$value = sprintf( '%s ° %s · %s ° %s', $lat_str, $lat_dir, $lng_str, $lng_dir );
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-venue-coordinates' ] );
 ?>

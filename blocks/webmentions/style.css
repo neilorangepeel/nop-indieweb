@@ -63,11 +63,17 @@
 	opacity:       0.35;
 }
 
-/* Sized variants — used by the facepile (36px) and overflow bubble (36px) so
-   render.php no longer sets inline width/height. Replies use the default flow. */
+/* Sized variants — used by the facepile (36px), overflow bubble (36px), and
+   reply rows (40px) so render.php / helpers.php don't need to set inline
+   width/height on every avatar. */
 .nop-webmentions__avatar--36 {
 	width:  36px;
 	height: 36px;
+}
+
+.nop-webmentions__avatar--40 {
+	width:  40px;
+	height: 40px;
 }
 
 /* ── Platform tag pill ───────────────────────────────────────────────────── */
@@ -252,6 +258,15 @@
 	opacity: 1;
 }
 
+/* Touch devices lack hover and rarely tab — show the reply link permanently
+   so the affordance is reachable. Muted opacity keeps it from competing
+   visually with the author name on rows that aren't being interacted with. */
+@media (hover: none) {
+	.nop-webmentions__reply-link {
+		opacity: 0.85;
+	}
+}
+
 .nop-webmentions__reply-link:hover {
 	color: var(--nop-text) !important;
 }
@@ -302,4 +317,122 @@
 	color:       var(--nop-muted);
 	font-size:   var(--wp--preset--font-size--small, 0.875rem);
 	line-height: 1.5;
+}
+
+/* ── Inline comment form ─────────────────────────────────────────────────── */
+
+/* The form sits inside the same wrapper as the responses list and follows the
+   same vertical rhythm. Padding-top + border-top mirror the divider between
+   reply items so the form reads as the final row in the section. */
+.nop-webmentions__form {
+	padding-top: var(--wp--preset--spacing--30, 1.25rem);
+	border-top:  1px solid var(--nop-divider-color);
+}
+
+.nop-webmentions__form-form {
+	display:        flex;
+	flex-direction: column;
+	gap:            0.625rem;
+	margin:         0;
+}
+
+.nop-webmentions__form-field {
+	margin: 0;
+}
+
+.nop-webmentions__form-field input,
+.nop-webmentions__form-field textarea {
+	width:           100%;
+	padding:         0.5rem 0.75rem;
+	border:          1px solid var(--nop-divider-color);
+	border-radius:   4px;
+	background:      transparent;
+	font:            inherit;
+	color:           inherit;
+	box-sizing:      border-box;
+}
+
+.nop-webmentions__form-field textarea {
+	resize:      vertical;
+	line-height: 1.5;
+	min-height:  4.5em;
+}
+
+.nop-webmentions__form-field input:focus,
+.nop-webmentions__form-field textarea:focus {
+	outline:        2px solid currentColor;
+	outline-offset: -1px;
+	border-color:   transparent;
+}
+
+/* Name + Email share a row on wider viewports, stack on narrow. */
+.nop-webmentions__form-form .comment-form-author,
+.nop-webmentions__form-form .comment-form-email {
+	flex: 1 1 12rem;
+}
+
+@media (min-width: 480px) {
+	.nop-webmentions__form-form {
+		display:               grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap:            0.625rem;
+		row-gap:               0.625rem;
+	}
+	.nop-webmentions__form-field--comment,
+	.nop-webmentions__form-form > .form-submit,
+	.nop-webmentions__form-form > .comment-form-cookies-consent {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Cookies consent — single-line muted, ticked by default by WP core. */
+.nop-webmentions__form-form .comment-form-cookies-consent {
+	display:     flex;
+	align-items: center;
+	gap:         0.5rem;
+	font-size:   0.8125rem;
+	color:       var(--nop-muted);
+	margin:      0;
+}
+
+.nop-webmentions__form-form .comment-form-cookies-consent label {
+	cursor: pointer;
+}
+
+/* Submit pill — matches the like-button / post-footer pill aesthetic. */
+.nop-webmentions__form-form .form-submit {
+	margin: 0;
+}
+
+.nop-webmentions__form-submit {
+	display:       inline-flex;
+	align-items:   center;
+	gap:           var(--nop-pill-gap);
+	padding:       var(--nop-pill-padding);
+	border:        var(--nop-pill-border);
+	border-radius: var(--nop-pill-radius);
+	background:    transparent;
+	font-family:   inherit;
+	font-size:     0.875rem;
+	font-weight:   600;
+	color:         inherit;
+	cursor:        pointer;
+	transition:    color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.nop-webmentions__form-submit:hover {
+	border-color: var(--nop-text);
+	color:        var(--nop-text);
+}
+
+.nop-webmentions__form-submit:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+}
+
+/* Logged-in state — WP renders "Logged in as X. Log out?" instead of name/email. */
+.nop-webmentions__form-form .logged-in-as {
+	font-size: 0.8125rem;
+	color:     var(--nop-muted);
+	margin:    0;
 }

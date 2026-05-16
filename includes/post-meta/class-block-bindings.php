@@ -152,6 +152,12 @@ class Block_Bindings {
 		$class = self::MF2_CLASSES[ $key ];
 
 		// Prepend the mf2 class to the existing class attribute on the first tag.
-		return preg_replace( '/(<\w[^>]+\sclass=")/', '$1' . $class . ' ', $html, 1 ) ?? $html;
+		$replaced = preg_replace( '/(<\w[^>]+\sclass=")/', '$1' . $class . ' ', $html, 1, $count );
+		if ( $count ) {
+			return $replaced;
+		}
+
+		// Fallback: no class attribute on the wrapper — add one to the opening tag.
+		return preg_replace( '/(<\w+)(\s|>)/', '$1 class="' . $class . '"$2', $html, 1 ) ?? $html;
 	}
 }

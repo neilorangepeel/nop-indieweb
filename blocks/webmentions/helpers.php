@@ -14,19 +14,19 @@ function nop_wm_avatar_wrap( array $entry, int $size ): string {
 	$url        = esc_url( $entry['author_url'] ?? '' );
 	$photo      = $entry['photo'] ?? '';
 	$platform   = $entry['platform'] ?? '';
+	$size_class = ' nop-webmentions__avatar--' . $size;
 	$wrap_class = 'nop-webmentions__avatar-wrap'
 	            . ( $platform ? ' nop-webmentions__avatar-wrap--' . sanitize_html_class( $platform ) : '' );
 
 	if ( $photo ) {
 		$avatar = '<img src="' . esc_url( $photo ) . '"'
 		        . ' alt=""'
-		        . ' class="nop-webmentions__avatar"'
+		        . ' class="nop-webmentions__avatar' . $size_class . '"'
 		        . ' width="' . $size . '" height="' . $size . '"'
 		        . ' loading="lazy">';
 	} else {
 		$icon_size = (int) round( $size * 0.55 );
-		$avatar    = '<span class="nop-webmentions__avatar nop-webmentions__avatar--fallback"'
-		           . ' style="width:' . $size . 'px;height:' . $size . 'px;">'
+		$avatar    = '<span class="nop-webmentions__avatar nop-webmentions__avatar--fallback' . $size_class . '">'
 		           . '<svg viewBox="0 0 24 24" fill="currentColor"'
 		           . ' width="' . $icon_size . '" height="' . $icon_size . '"'
 		           . ' aria-hidden="true" focusable="false">'
@@ -133,7 +133,53 @@ function nop_wm_render_empty_state( int $post_id ): void {
 	$message       = comments_open( $post_id )
 		? __( 'Be the first to respond — comment below, or reply from your own site.', 'nop-indieweb' )
 		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
-	echo '<div ' . $wrapper_attrs . '><p class="nop-webmentions__empty">' . esc_html( $message ) . '</p></div>';
+	echo '<div ' . $wrapper_attrs . '>';
+	echo '<p class="nop-webmentions__empty">' . esc_html( $message ) . '</p>';
+	echo nop_wm_render_comment_form( $post_id ); // phpcs:ignore
+	echo '</div>';
+}
+
+/**
+ * Compact inline comment form for the bottom of the Responses section.
+ * Returns empty string when comments are closed on this post.
+ *
+ * Drops the "Website" field on purpose — IndieWeb visitors send a webmention,
+ * casual visitors don't have a site to type in.
+ */
+function nop_wm_render_comment_form( int $post_id ): string {
+	if ( ! comments_open( $post_id ) ) {
+		return '';
+	}
+
+	$args = [
+		'class_container'      => 'nop-webmentions__form',
+		'class_form'           => 'nop-webmentions__form-form',
+		'class_submit'         => 'nop-webmentions__form-submit',
+		'title_reply'          => '',
+		'title_reply_before'   => '',
+		'title_reply_after'    => '',
+		'comment_notes_before' => '',
+		'comment_notes_after'  => '',
+		'label_submit'         => __( 'Post comment', 'nop-indieweb' ),
+		'comment_field'        => '<p class="nop-webmentions__form-field nop-webmentions__form-field--comment">'
+			. '<label for="comment" class="screen-reader-text">' . esc_html__( 'Comment', 'nop-indieweb' ) . '</label>'
+			. '<textarea id="comment" name="comment" rows="3" placeholder="' . esc_attr__( 'Add a comment…', 'nop-indieweb' ) . '" required></textarea>'
+			. '</p>',
+		'fields'               => [
+			'author' => '<p class="nop-webmentions__form-field nop-webmentions__form-field--author">'
+				. '<label for="author" class="screen-reader-text">' . esc_html__( 'Name', 'nop-indieweb' ) . '</label>'
+				. '<input id="author" name="author" type="text" autocomplete="name" placeholder="' . esc_attr__( 'Your name', 'nop-indieweb' ) . '" required>'
+				. '</p>',
+			'email'  => '<p class="nop-webmentions__form-field nop-webmentions__form-field--email">'
+				. '<label for="email" class="screen-reader-text">' . esc_html__( 'Email', 'nop-indieweb' ) . '</label>'
+				. '<input id="email" name="email" type="email" autocomplete="email" placeholder="' . esc_attr__( 'Email (not published)', 'nop-indieweb' ) . '" required>'
+				. '</p>',
+		],
+	];
+
+	ob_start();
+	comment_form( $args, $post_id );
+	return (string) ob_get_clean();
 }
 
 function nop_wm_repost_icon(): string {

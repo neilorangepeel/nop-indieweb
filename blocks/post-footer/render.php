@@ -42,47 +42,53 @@ if ( ! $post_id ) {
 	return;
 }
 
-// ── Like ──────────────────────────────────────────────────────────────────────
+// Per-request memo so listing pages that render the same post twice only hit the DB once.
+static $counts = [];
+if ( ! isset( $counts[ $post_id ] ) ) {
+	$endpoint = new \NOP\IndieWeb\Webmention\Like_Endpoint();
 
-$endpoint   = new \NOP\IndieWeb\Webmention\Like_Endpoint();
-$like_count = $endpoint->like_count( $post_id );
-$liked      = $endpoint->visitor_has_liked( $post_id );
-$rest_url   = rest_url( 'nop-indieweb/v1/like' );
-$nonce      = wp_create_nonce( 'wp_rest' );
+	$reply_wp = (int) get_comments( [
+		'post_id' => $post_id,
+		'type'    => 'comment',
+		'status'  => 'approve',
+		'count'   => true,
+	] );
 
-// ── Reply count (WP comments + webmention replies, not likes or reposts) ──────
+	$reply_wm = (int) get_comments( [
+		'post_id'    => $post_id,
+		'type'       => 'webmention',
+		'status'     => 'approve',
+		'count'      => true,
+		'meta_query' => [ [
+			'relation' => 'OR',
+			[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
+			[ 'key' => 'webmention_type', 'value' => [ 'like', 'repost' ], 'compare' => 'NOT IN' ],
+		] ],
+	] );
 
-$reply_count_wp = (int) get_comments( [
-	'post_id' => $post_id,
-	'type'    => 'comment',
-	'status'  => 'approve',
-	'count'   => true,
-] );
+	$repost = (int) get_comments( [
+		'post_id'    => $post_id,
+		'type'       => 'webmention',
+		'status'     => 'approve',
+		'count'      => true,
+		'meta_key'   => 'webmention_type',
+		'meta_value' => 'repost',
+	] );
 
-$reply_count_wm = (int) get_comments( [
-	'post_id'    => $post_id,
-	'type'       => 'webmention',
-	'status'     => 'approve',
-	'count'      => true,
-	'meta_query' => [ [
-		'relation' => 'OR',
-		[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
-		[ 'key' => 'webmention_type', 'value' => [ 'like', 'repost' ], 'compare' => 'NOT IN' ],
-	] ],
-] );
+	$counts[ $post_id ] = [
+		'like'   => $endpoint->like_count( $post_id ),
+		'liked'  => $endpoint->visitor_has_liked( $post_id ),
+		'reply'  => $reply_wp + $reply_wm,
+		'repost' => $repost,
+	];
+}
 
-$reply_count = $reply_count_wp + $reply_count_wm;
-
-// ── Repost count ──────────────────────────────────────────────────────────────
-
-$repost_count = (int) get_comments( [
-	'post_id'    => $post_id,
-	'type'       => 'webmention',
-	'status'     => 'approve',
-	'count'      => true,
-	'meta_key'   => 'webmention_type',
-	'meta_value' => 'repost',
-] );
+$like_count   = $counts[ $post_id ]['like'];
+$liked        = $counts[ $post_id ]['liked'];
+$reply_count  = $counts[ $post_id ]['reply'];
+$repost_count = $counts[ $post_id ]['repost'];
+$rest_url     = rest_url( 'nop-indieweb/v1/like' );
+$nonce        = wp_create_nonce( 'wp_rest' );
 
 // ── Post source ───────────────────────────────────────────────────────────────
 

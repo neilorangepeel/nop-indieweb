@@ -97,6 +97,30 @@ class MF2_Endpoint {
 			$props['syndication'] = $syndication;
 		}
 
+		// Per-kind canonical URL properties — match the hidden anchors in
+		// Semantic_Markup::output_kind_links so the JSON has parity with the HTML.
+		foreach ( [
+			'in-reply-to' => 'nop_indieweb_in_reply_to',
+			'bookmark-of' => 'nop_indieweb_bookmark_of',
+			'like-of'     => 'nop_indieweb_like_of',
+			'repost-of'   => 'nop_indieweb_repost_of',
+		] as $prop => $meta_key ) {
+			$value = (string) get_post_meta( $post_id, $meta_key, true );
+			if ( $value ) {
+				$props[ $prop ] = [ $value ];
+			}
+		}
+
+		$rsvp = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
+		if ( $rsvp ) {
+			$props['rsvp'] = [ $rsvp ];
+		}
+
+		$photos = $this->collect_photo_urls( $post_id );
+		if ( $photos ) {
+			$props['photo'] = $photos;
+		}
+
 		$author = get_userdata( (int) $post->post_author );
 		if ( $author ) {
 			$props['author'] = [ [
@@ -116,6 +140,41 @@ class MF2_Endpoint {
 			'type'       => [ 'h-entry' ],
 			'properties' => $props,
 		];
+	}
+
+	/**
+	 * Resolves a post's photo URLs by preferring sideloaded attachment IDs
+	 * (canonical local URLs), falling back to the stored source URLs, and
+	 * finally to the featured image if neither photo meta is present.
+	 *
+	 * @return string[]  Zero or more photo URLs, in document order.
+	 */
+	private function collect_photo_urls( int $post_id ): array {
+		$ids = get_post_meta( $post_id, 'nop_indieweb_photo_ids', true );
+		if ( is_array( $ids ) && $ids ) {
+			$urls = array_filter( array_map( 'wp_get_attachment_url', array_map( 'intval', $ids ) ) );
+			if ( $urls ) {
+				return array_values( $urls );
+			}
+		}
+
+		$photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+		if ( is_array( $photos ) && $photos ) {
+			$urls = array_values( array_filter( array_map( 'esc_url_raw', $photos ) ) );
+			if ( $urls ) {
+				return $urls;
+			}
+		}
+
+		$featured = (int) get_post_thumbnail_id( $post_id );
+		if ( $featured ) {
+			$url = wp_get_attachment_url( $featured );
+			if ( $url ) {
+				return [ $url ];
+			}
+		}
+
+		return [];
 	}
 
 	private function build_venue_hcard( int $post_id, string $venue_name ): array {

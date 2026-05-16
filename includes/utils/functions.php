@@ -305,26 +305,33 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 		return $cached;
 	}
 
+	$marker_color = apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
+
 	$api_url = sprintf(
-		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=16&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23e03232;size:small&width=%d&height=%d&apiKey=%s',
+		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=16&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
+		rawurlencode( $marker_color ),
 		$width * 2, $height * 2,
 		rawurlencode( $api_key )
 	);
 
-	$response = wp_safe_remote_get( $api_url, [ 'timeout' => 8 ] );
+	// 4 MB ceiling on the response. A 1240×620 PNG (the upper bound we ever ask
+	// Geoapify for) is well under 1 MB in practice — the cap is just a guard
+	// against an unbounded write to disk if the upstream misbehaves.
+	$response = wp_safe_remote_get( $api_url, [
+		'timeout'             => 8,
+		'limit_response_size' => 4 * 1024 * 1024,
+	] );
 	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
 		return '';
 	}
 
-	// Confirm Geoapify returned an image before touching the filesystem.
 	$content_type = wp_remote_retrieve_header( $response, 'content-type' );
 	if ( ! str_starts_with( (string) $content_type, 'image/' ) ) {
 		return '';
 	}
 
-	// Save to a dedicated subdirectory — keeps map files out of the Media Library.
 	$upload_dir = wp_upload_dir();
 	$maps_dir   = $upload_dir['basedir'] . '/checkin-maps';
 	if ( ! wp_mkdir_p( $maps_dir ) ) {

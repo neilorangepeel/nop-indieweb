@@ -270,5 +270,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 	</ul>
 	<?php endif; ?>
 
+	<?php echo nop_wm_render_comment_form( $post_id ); // phpcs:ignore ?>
+
 </div>
 

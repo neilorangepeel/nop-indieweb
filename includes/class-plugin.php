@@ -389,7 +389,7 @@ class Plugin {
 
 		register_block_pattern( 'nop-indieweb/checkin-post', [
 			'title'         => __( 'Checkin Post', 'nop-indieweb' ),
-			'description'   => __( 'Metadata-list layout: venue name and street address are bound to post meta and fully styleable. Categories, map, and syndication are handled by the checkin-meta block below.', 'nop-indieweb' ),
+			'description'   => __( 'Granular venue blocks (categories, name, address, coordinates, map, venue link) bound to checkin post meta. Each block is individually styleable.', 'nop-indieweb' ),
 			'categories'    => [ 'nop-indieweb' ],
 			'keywords'      => [ 'checkin', 'swarm', 'venue', 'location', 'indieweb' ],
 			'viewportWidth' => 800,
@@ -397,42 +397,23 @@ class Plugin {
 <!-- wp:group {"style":{"spacing":{"blockGap":"1rem"}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
 
-<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group">
-<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Venue</p>
-<!-- /wp:paragraph -->
-<!-- wp:heading {"level":2,"style":{"typography":{"fontWeight":"700","lineHeight":"1.2"}},"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_name"}}}}} -->
-<h2 class="wp-block-heading" style="font-weight:700;line-height:1.2">The Crown Bar</h2>
-<!-- /wp:heading -->
-</div>
-<!-- /wp:group -->
+<!-- wp:nop-indieweb/venue-categories /-->
 
-<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group">
-<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Address</p>
-<!-- /wp:paragraph -->
-<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"nop_indieweb_venue_address"}}}}} -->
-<p>46 Great Victoria Street</p>
-<!-- /wp:paragraph -->
-</div>
-<!-- /wp:group -->
+<!-- wp:nop-indieweb/venue-field {"field":"name"} /-->
 
-<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group">
-<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.6875rem","fontWeight":"600","letterSpacing":"0.08em","textTransform":"uppercase"}}} -->
-<p class="has-text-color" style="color:#6b7280;font-size:0.6875rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase">Date</p>
-<!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/venue-field {"field":"address"} /-->
+
+<!-- wp:nop-indieweb/venue-field {"field":"locality_country"} /-->
+
+<!-- wp:nop-indieweb/venue-coordinates /-->
+
+<!-- wp:nop-indieweb/checkin-map /-->
+
+<!-- wp:nop-indieweb/venue-link /-->
+
+<!-- wp:nop-indieweb/checkin-link /-->
+
 <!-- wp:post-date {"format":"j F Y, g:i a","isLink":false} /-->
-</div>
-<!-- /wp:group -->
-
-<!-- wp:separator {"opacity":"css"} -->
-<hr class="wp-block-separator has-css-opacity"/>
-<!-- /wp:separator -->
-
-<!-- wp:nop-indieweb/checkin-meta /-->
 
 </div>
 <!-- /wp:group -->

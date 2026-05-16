@@ -11,6 +11,7 @@ global $wpdb;
 
 delete_option( 'nop_indieweb_settings' );
 delete_option( 'nop_indieweb_db_version' );
+delete_option( 'nop_indieweb_settings_autoload_off' );
 
 // Legacy standalone options written by early versions of the plugin.
 delete_option( 'nop_indieweb_mastodon_profile_url' );
@@ -20,6 +21,19 @@ delete_option( 'nop_indieweb_pixelfed_profile_url' );
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 $wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE 'nop\_indieweb\_%'" );
+
+// ── Venue category taxonomy ──────────────────────────────────────────────────
+
+$venue_terms = get_terms( [
+	'taxonomy'   => 'nop_venue_category',
+	'hide_empty' => false,
+	'fields'     => 'ids',
+] );
+if ( is_array( $venue_terms ) ) {
+	foreach ( $venue_terms as $term_id ) {
+		wp_delete_term( (int) $term_id, 'nop_venue_category' );
+	}
+}
 
 // ── Webmention comments ───────────────────────────────────────────────────────
 
@@ -34,6 +48,17 @@ if ( $comment_ids ) {
 	$wpdb->query( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$ids})" );
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$ids})" );
+}
+
+// ── Cached map images ────────────────────────────────────────────────────────
+
+$uploads  = wp_upload_dir();
+$maps_dir = ( $uploads['basedir'] ?? '' ) . '/checkin-maps';
+if ( $maps_dir && is_dir( $maps_dir ) ) {
+	foreach ( (array) glob( $maps_dir . '/checkin-map-*.png' ) as $file ) {
+		wp_delete_file( $file );
+	}
+	@rmdir( $maps_dir );
 }
 
 // ── Custom table ─────────────────────────────────────────────────────────────

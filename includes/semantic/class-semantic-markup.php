@@ -11,6 +11,9 @@ namespace NOP\IndieWeb\Semantic;
  *
  * Covers the HTML layer:
  *   h-entry    → body class on IndieWeb posts
+ *   p-name     → outer tag of core/post-title block
+ *   u-url      → inner <a> of core/post-title block + hidden footer anchor
+ *   p-author   → hidden h-card anchor in wp_footer (Bridgy + XRay readability)
  *   dt-published → <time> element inside core/post-date block
  *   e-content  → wrapper div inside core/post-content block
  *
@@ -31,6 +34,8 @@ class Semantic_Markup {
 		add_action( 'wp_head',      [ $this, 'output_alternate_link' ] );
 		add_action( 'wp_footer',    [ $this, 'output_syndication_links' ] );
 		add_action( 'wp_footer',    [ $this, 'output_kind_links' ] );
+		add_action( 'wp_footer',    [ $this, 'output_author_hcard' ] );
+		add_action( 'wp_footer',    [ $this, 'output_post_url' ] );
 	}
 
 	public function add_hentry_class( array $classes ): array {
@@ -58,6 +63,7 @@ class Semantic_Markup {
 		}
 
 		return match ( $block['blockName'] ) {
+			'core/post-title'   => $this->inject_post_title_classes( $html ),
 			'core/post-date'    => $this->add_class_to_tag( $html, 'time', 'dt-published' ),
 			'core/post-content' => $this->add_class_to_tag( $html, 'div',  'e-content' ),
 			default             => $html,
@@ -119,11 +125,63 @@ class Semantic_Markup {
 		}
 	}
 
+	/**
+	 * Emits a hidden p-author h-card anchor inside the h-entry (the body).
+	 *
+	 * The anchor's text is the display name (becomes p-name on the h-card),
+	 * the href is the author archive URL (becomes u-url). Three properties
+	 * out of one element — minimum-viable author for any mf2 consumer.
+	 */
+	public function output_author_hcard(): void {
+		if ( ! $this->is_active() ) {
+			return;
+		}
+		$author_id = (int) get_post_field( 'post_author', get_queried_object_id() );
+		$author    = $author_id ? get_userdata( $author_id ) : null;
+		if ( ! $author ) {
+			return;
+		}
+		printf(
+			"<a class=\"p-author h-card u-url\" href=\"%s\" hidden>%s</a>\n",
+			esc_url( get_author_posts_url( $author_id ) ),
+			esc_html( $author->display_name )
+		);
+	}
+
+	/**
+	 * Hidden u-url anchor pointing at the post's permalink.
+	 *
+	 * Single-post templates render the post-title as a heading without a link,
+	 * so the in-block u-url injection has nothing to attach to. This anchor
+	 * closes that gap.
+	 */
+	public function output_post_url(): void {
+		if ( ! $this->is_active() ) {
+			return;
+		}
+		printf(
+			"<a class=\"u-url\" href=\"%s\" hidden></a>\n",
+			esc_url( get_permalink( get_queried_object_id() ) )
+		);
+	}
+
 	private function is_active(): bool {
 		if ( null === $this->is_active ) {
 			$this->is_active = is_singular( 'post' );
 		}
 		return $this->is_active;
+	}
+
+	/**
+	 * Adds p-name to the outermost heading of the post-title block and
+	 * (if a permalink link is present inside) u-url to that link.
+	 */
+	private function inject_post_title_classes( string $html ): string {
+		$html = $this->add_class_to_first_tag( $html, 'p-name' );
+		if ( str_contains( $html, '<a' ) ) {
+			$html = $this->add_class_to_tag( $html, 'a', 'u-url' );
+		}
+		return $html;
 	}
 
 	/**
@@ -136,6 +194,31 @@ class Semantic_Markup {
 			'/class="(wp-block-post\s)/',
 			'class="$1h-entry ',
 			$html
+		) ?? $html;
+	}
+
+	/**
+	 * Adds a CSS class to the first opening tag in a string, whatever its name.
+	 * Used by post-title which can render as h1–h6 or p depending on settings.
+	 */
+	private function add_class_to_first_tag( string $html, string $class ): string {
+		return preg_replace_callback(
+			'/<(\w+)\b([^>]*)>/',
+			static function ( array $m ) use ( $class ): string {
+				$attrs = $m[2];
+				if ( preg_match( '/\bclass="([^"]*)"/', $attrs, $c ) ) {
+					$attrs = str_replace(
+						$c[0],
+						'class="' . trim( $c[1] . ' ' . $class ) . '"',
+						$attrs
+					);
+				} else {
+					$attrs .= ' class="' . $class . '"';
+				}
+				return '<' . $m[1] . $attrs . '>';
+			},
+			$html,
+			1
 		) ?? $html;
 	}
 

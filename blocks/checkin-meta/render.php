@@ -32,14 +32,14 @@ if ( ! $post_id ) {
 			<span class="nop-checkin-category p-category">Pub</span>
 		</p>
 		<p class="nop-checkin-venue-link">
-			<a href="#" onclick="return false;">View on foursquare.com</a>
+			<span>View on foursquare.com</span>
 		</p>
 		<div class="nop-checkin-map nop-checkin-map--placeholder" role="img" aria-label="Map preview"></div>
 		<p class="nop-checkin-map__caption">
-			<a href="#" onclick="return false;">View on OpenStreetMap</a>
+			<span>View on OpenStreetMap</span>
 		</p>
 		<p class="nop-checkin-syndication">
-			Also on: <a href="#" onclick="return false;">www.swarmapp.com</a>
+			Also on: <span>www.swarmapp.com</span>
 		</p>
 		<p class="nop-checkin-source">via Swarm</p>
 	</div>

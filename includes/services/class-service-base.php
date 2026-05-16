@@ -57,8 +57,15 @@ abstract class Service_Base {
 
 	/**
 	 * Full create lifecycle. Override only if a service needs a different sequence.
+	 *
+	 * @param int $author_id  When > 0, the inserted post's post_author is set to
+	 *                        this user. The Micropub endpoint passes the token's
+	 *                        owning user; cron importers omit it and the resolver
+	 *                        falls back to the current user or the configured
+	 *                        default (filter `nop_indieweb_default_author_id`,
+	 *                        defaulting to user 1).
 	 */
-	public function handle( array $payload ): int|WP_Error {
+	public function handle( array $payload, int $author_id = 0 ): int|WP_Error {
 		$parsed = $this->parse( $payload );
 
 		// Idempotency — return the existing post if we've seen this payload before.
@@ -73,6 +80,10 @@ abstract class Service_Base {
 		}
 
 		$post_args = $this->map_to_post( $parsed );
+
+		// Stamp the post author so mf2 author h-card emission and capability
+		// checks have a real user to work with.
+		$post_args['post_author'] = $this->resolve_author_id( $author_id );
 
 		// Include service meta in meta_input so it is committed before
 		// wp_after_insert_post fires — the syndication manager reads
@@ -565,5 +576,24 @@ abstract class Service_Base {
 	 */
 	protected function domain_from_url( string $url ): string {
 		return wp_parse_url( $url, PHP_URL_HOST ) ?: $url;
+	}
+
+	/**
+	 * Resolves the user ID to stamp on an inserted post.
+	 *
+	 * Priority:
+	 *   1. Explicit $author_id (Micropub endpoint passes the token's user)
+	 *   2. get_current_user_id() (admin sync flows have a logged-in user)
+	 *   3. Filterable default `nop_indieweb_default_author_id` (user 1)
+	 */
+	private function resolve_author_id( int $author_id ): int {
+		if ( $author_id > 0 ) {
+			return $author_id;
+		}
+		$current = get_current_user_id();
+		if ( $current > 0 ) {
+			return $current;
+		}
+		return (int) apply_filters( 'nop_indieweb_default_author_id', 1 );
 	}
 }
