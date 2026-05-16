@@ -4,6 +4,7 @@
 	"name": "nop-indieweb/rsvp-meta",
 	"title": "RSVP Meta",
 	"category": "nop-indieweb-meta",
+	"icon": "calendar-alt",
 	"description": "Displays and edits RSVP status for an event response.",
 	"supports": { "html": false, "multiple": false },
 	"usesContext": [ "postId", "postType" ],

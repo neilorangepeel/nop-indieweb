@@ -4,6 +4,7 @@
 	"name": "nop-indieweb/post-footer",
 	"title": "Post Footer",
 	"category": "nop-indieweb-conversations",
+	"icon": "admin-comments",
 	"description": "Compact interaction row: like, comment, and repost count pills alongside the post's syndication source.",
 	"supports": { "html": false },
 	"usesContext": [ "postId", "postType" ],
