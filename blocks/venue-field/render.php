@@ -24,6 +24,7 @@ $field_config = [
 	'country'          => [ 'key' => 'nop_indieweb_venue_country',  'mf2' => 'p-country-name',    'preview' => 'United Kingdom' ],
 	'postcode'         => [ 'key' => 'nop_indieweb_venue_postcode', 'mf2' => 'p-postal-code',     'preview' => 'BT2 7BA' ],
 	'locality_country' => [ 'key' => null,                              'mf2' => '',            'preview' => 'Belfast, United Kingdom' ],
+	'full_address'     => [ 'key' => null,                              'mf2' => 'p-adr',       'preview' => '46 Great Victoria Street, Belfast, United Kingdom' ],
 	'lat'              => [ 'key' => 'nop_indieweb_venue_lat',      'mf2' => '', 'preview' => '54.5973' ],
 	'lng'              => [ 'key' => 'nop_indieweb_venue_lng',      'mf2' => '', 'preview' => '-5.9301' ],
 	'altitude'         => [ 'key' => 'nop_indieweb_venue_altitude', 'mf2' => '', 'preview' => '10m' ],
@@ -42,6 +43,12 @@ if ( $post_id ) {
 		$locality = get_post_meta( $post_id, 'nop_indieweb_venue_locality', true );
 		$country  = get_post_meta( $post_id, 'nop_indieweb_venue_country',  true );
 		$parts    = array_filter( [ $locality, $country ] );
+		$value    = $parts ? implode( ', ', $parts ) : '';
+	} elseif ( 'full_address' === $field ) {
+		$address  = get_post_meta( $post_id, 'nop_indieweb_venue_address',  true );
+		$locality = get_post_meta( $post_id, 'nop_indieweb_venue_locality', true );
+		$country  = get_post_meta( $post_id, 'nop_indieweb_venue_country',  true );
+		$parts    = array_filter( [ $address, $locality, $country ] );
 		$value    = $parts ? implode( ', ', $parts ) : '';
 	} else {
 		$value = (string) get_post_meta( $post_id, $config['key'], true );

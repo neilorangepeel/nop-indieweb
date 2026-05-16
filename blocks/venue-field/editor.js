@@ -17,6 +17,7 @@
 		{ label: 'Country',         value: 'country' },
 		{ label: 'Postcode',        value: 'postcode' },
 		{ label: 'City & Country',  value: 'locality_country' },
+		{ label: 'Full Address',    value: 'full_address' },
 		{ label: 'Latitude',        value: 'lat' },
 		{ label: 'Longitude',       value: 'lng' },
 		{ label: 'Altitude',        value: 'altitude' },
