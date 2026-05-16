@@ -9,25 +9,13 @@ declare( strict_types=1 );
 
 $post_id = $block->context['postId'] ?? get_the_ID();
 
-if ( ! $post_id ) {
-	// Template editor preview.
-	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source nop-post-source--preview' ] );
-	?>
-	<div <?php echo $wrapper_attrs; ?>>
-		<span class="nop-post-source__label">Originally posted on</span>
-		<a class="nop-post-source__link" href="#" onclick="return false;">Mastodon</a>
-		<span class="nop-post-source__sep">·</span>
-		<span class="nop-post-source__label">Also on</span>
-		<a class="nop-post-source__link" href="#" onclick="return false;">bsky.app</a>
-	</div>
-	<?php
-	return;
-}
+$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
+	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
 
-$platform    = (string) get_post_meta( $post_id, 'nop_indieweb_platform',   true );
-$service     = (string) get_post_meta( $post_id, 'nop_indieweb_service',    true );
-$source_url  = (string) get_post_meta( $post_id, 'nop_indieweb_source_url', true );
-$syndication = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
+$platform    = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_platform',   true ) : '';
+$service     = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_service',    true ) : '';
+$source_url  = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_source_url', true ) : '';
+$syndication = $post_id ? get_post_meta( $post_id, 'nop_indieweb_syndication', true )         : [];
 $syndication = is_array( $syndication ) ? array_filter( $syndication ) : [];
 
 $is_twitter_archive = 'twitter-archive' === $service;
@@ -42,7 +30,23 @@ if ( $source_url ) {
 $has_source = $source_url && $platform && 'entries' !== $platform;
 $has_synds  = ! empty( $syndication );
 
+// Editor preview when no post context or the post has neither source nor
+// syndication — shows the block's footprint so the template editor doesn't
+// display the built-in "Block rendered as empty" placeholder.
 if ( ! $has_source && ! $has_synds && ! $is_twitter_archive ) {
+	if ( ! $is_editor ) {
+		return;
+	}
+	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source nop-post-source--preview' ] );
+	?>
+	<div <?php echo $wrapper_attrs; ?>>
+		<span class="nop-post-source__label">Originally posted on</span>
+		<a class="nop-post-source__link" href="#" onclick="return false;">Mastodon</a>
+		<span class="nop-post-source__sep">·</span>
+		<span class="nop-post-source__label">Also on</span>
+		<a class="nop-post-source__link" href="#" onclick="return false;">bsky.app</a>
+	</div>
+	<?php
 	return;
 }
 

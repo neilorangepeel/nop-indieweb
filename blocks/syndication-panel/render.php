@@ -13,17 +13,13 @@ use NOP\IndieWeb\Syndication\Syndication_Manager;
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 
-// Editor preview when post context is missing — show sample data so the panel
-// is visible while placing the block in a template.
+$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
+	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
+
+$items      = [];
 $is_preview = false;
-if ( ! $post_id ) {
-	$is_preview = true;
-	$items      = [
-		[ 'url' => 'https://bsky.app/profile/example.bsky.social/post/abc',  'slug' => 'bluesky',  'label' => 'Bluesky'  ],
-		[ 'url' => 'https://mastodon.social/@example/123456789',             'slug' => 'mastodon', 'label' => 'Mastodon' ],
-		[ 'url' => 'https://pixelfed.social/p/example/123456789',            'slug' => 'pixelfed', 'label' => 'Pixelfed' ],
-	];
-} else {
+
+if ( $post_id ) {
 	$urls = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
 	$urls = is_array( $urls ) ? array_filter( $urls ) : [];
 
@@ -36,21 +32,33 @@ if ( ! $post_id ) {
 		$urls = array_filter( $urls, fn( $u ) => $u !== $source_url );
 	}
 
-	if ( empty( $urls ) ) {
-		return;
-	}
-
-	$manager = new Syndication_Manager();
-	$items   = [];
-	foreach ( $urls as $url ) {
-		$resolved = $manager->resolve_url( $url );
-		if ( $resolved ) {
-			$items[] = [ 'url' => $url, 'slug' => $resolved['slug'], 'label' => $resolved['label'] ];
-		} else {
-			$host    = wp_parse_url( $url, PHP_URL_HOST );
-			$items[] = [ 'url' => $url, 'slug' => 'unknown', 'label' => $host ?: $url ];
+	if ( $urls ) {
+		$manager = new Syndication_Manager();
+		foreach ( $urls as $url ) {
+			$resolved = $manager->resolve_url( $url );
+			if ( $resolved ) {
+				$items[] = [ 'url' => $url, 'slug' => $resolved['slug'], 'label' => $resolved['label'] ];
+			} else {
+				$host    = wp_parse_url( $url, PHP_URL_HOST );
+				$items[] = [ 'url' => $url, 'slug' => 'unknown', 'label' => $host ?: $url ];
+			}
 		}
 	}
+}
+
+// Editor preview when no post context or the post has no syndication URLs —
+// shows the block's footprint so the template editor doesn't display
+// the built-in "Block rendered as empty" placeholder.
+if ( ! $items ) {
+	if ( ! $is_editor ) {
+		return;
+	}
+	$is_preview = true;
+	$items      = [
+		[ 'url' => 'https://bsky.app/profile/example.bsky.social/post/abc', 'slug' => 'bluesky',  'label' => 'Bluesky'  ],
+		[ 'url' => 'https://mastodon.social/@example/123456789',            'slug' => 'mastodon', 'label' => 'Mastodon' ],
+		[ 'url' => 'https://pixelfed.social/p/example/123456789',           'slug' => 'pixelfed', 'label' => 'Pixelfed' ],
+	];
 }
 
 $wrapper = get_block_wrapper_attributes( [
