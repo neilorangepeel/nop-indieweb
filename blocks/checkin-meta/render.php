@@ -79,7 +79,7 @@ $syndication      = is_array( $syndication ) ? array_filter( $syndication ) : []
 $venue_categories = array_filter( $venue_categories );
 
 $map_url = ( $lat && $lng )
-	? sprintf( 'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=16&layers=M', rawurlencode( $lat ), rawurlencode( $lng ) )
+	? sprintf( 'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=17&layers=M', rawurlencode( $lat ), rawurlencode( $lng ) )
 	: '';
 
 $map_title   = $venue_name ? sprintf( 'Map showing %s', $venue_name ) : 'Location map';

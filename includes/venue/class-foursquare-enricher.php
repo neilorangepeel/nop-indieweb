@@ -20,12 +20,16 @@ namespace NOP\IndieWeb\Venue;
  */
 class Foursquare_Enricher {
 
-	private const ENDPOINT     = 'https://places-api.foursquare.com/places/';
-	private const API_VERSION  = '2025-06-17';
-	private const TIMEOUT      = 6;
-	private const MAX_BYTES    = 64 * 1024;
-	private const CACHE_TTL    = 30 * DAY_IN_SECONDS;
-	private const CACHE_PREFIX = 'nop_fsq_categories_';
+	private const ENDPOINT       = 'https://places-api.foursquare.com/places/';
+	private const API_VERSION    = '2025-06-17';
+	private const TIMEOUT        = 6;
+	private const MAX_BYTES      = 64 * 1024;
+	private const CACHE_TTL      = 30 * DAY_IN_SECONDS;
+	private const CACHE_PREFIX   = 'nop_fsq_categories_';
+	// Foursquare returns categories ordered primary-first. Keeping the top
+	// three avoids long-tail term sprawl while still covering mixed-use
+	// venues (e.g. "Hotel / Bar / Restaurant"). Most venues return 1–2.
+	private const MAX_CATEGORIES = 3;
 
 	/**
 	 * Returns category names for a Foursquare venue ID, in the order the
@@ -86,6 +90,7 @@ class Foursquare_Enricher {
 				$names[] = sanitize_text_field( $name );
 			}
 		}
+		$names = array_slice( $names, 0, self::MAX_CATEGORIES );
 
 		// Cache empty results too — venues with no categories shouldn't be
 		// re-queried on every visit. The 30-day TTL covers the edge case

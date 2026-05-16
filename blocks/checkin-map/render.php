@@ -32,7 +32,7 @@ if ( ! $lat || ! $lng ) {
 }
 
 $map_url = sprintf(
-	'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=16&layers=M',
+	'https://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=17&layers=M',
 	rawurlencode( $lat ),
 	rawurlencode( $lng )
 );
