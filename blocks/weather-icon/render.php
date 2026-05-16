@@ -6,9 +6,9 @@
  * matching Phosphor SVG inside a wp-block-icon wrapper, so it inherits the
  * same color/size context as a stock core/icon block.
  *
- * Outputs nothing on the frontend when the post has no weather meta.
- * Returns a "cloud" placeholder in the editor so the block is visible
- * during composition even on posts that haven't been enriched yet.
+ * Renders nothing when the post has no weather meta, in either the editor
+ * or on the front end. Posts without weather data should look like posts
+ * without weather data — no placeholders.
  *
  * The SVGs use stroke="currentColor" so the icon colour follows whatever
  * text colour the wrapping context (or block inspector) sets.
@@ -21,14 +21,8 @@ $post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ign
 
 $slug = $post_id ? sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_weather_icon', true ) ) : '';
 
-$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
-	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
-
 if ( '' === $slug ) {
-	if ( ! $is_editor ) {
-		return;
-	}
-	$slug = 'cloudy';
+	return;
 }
 
 // Pirate Weather icon vocabulary → Phosphor SVG file. Sleet and snow share

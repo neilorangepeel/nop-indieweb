@@ -4,11 +4,11 @@
  *
  * Reads nop_indieweb_weather_temp_c or _temp_f meta on the current post
  * based on the chosen unit, rounds to an integer for display, and outputs
- * a paragraph. The °C/°F suffix is optional via the inspector.
+ * a span. The °C/°F suffix is optional via the inspector.
  *
- * Outputs nothing on the frontend when the post has no weather meta.
- * Returns a preview value ("12") in the editor so the block is visible
- * during composition.
+ * Renders nothing when the post has no weather meta, in either the editor
+ * or on the front end. Posts without weather data should look like posts
+ * without weather data — no placeholders.
  */
 
 declare( strict_types=1 );
@@ -22,14 +22,8 @@ $post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ign
 $meta_key = 'f' === $unit ? 'nop_indieweb_weather_temp_f' : 'nop_indieweb_weather_temp_c';
 $raw      = $post_id ? (string) get_post_meta( $post_id, $meta_key, true ) : '';
 
-$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
-	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
-
 if ( '' === $raw ) {
-	if ( ! $is_editor ) {
-		return;
-	}
-	$raw = 'f' === $unit ? '54' : '12';
+	return;
 }
 
 // Stored values are floats like "9.3" — display as integer for the inline
