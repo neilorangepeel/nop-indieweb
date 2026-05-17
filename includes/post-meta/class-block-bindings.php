@@ -75,6 +75,19 @@ class Block_Bindings {
 		// manage bindings — which matches the default behaviour WP intends but
 		// which doesn't always land on fresh installs / RC builds.
 		add_filter( 'map_meta_cap', [ $this, 'map_edit_block_binding_cap' ], 10, 2 );
+		// Editor-side registration so the canvas previews bound paragraphs with
+		// the real (or humanised) value rather than the source's generic label.
+		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
+	}
+
+	public function enqueue_editor_assets(): void {
+		wp_enqueue_script(
+			'nop-indieweb-block-bindings-ui',
+			NOP_INDIEWEB_URL . 'assets/js/block-bindings-ui.js',
+			[ 'wp-blocks', 'wp-data' ],
+			NOP_INDIEWEB_VERSION,
+			true
+		);
 	}
 
 	public function map_edit_block_binding_cap( array $caps, string $cap ): array {
