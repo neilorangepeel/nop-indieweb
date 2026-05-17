@@ -11,7 +11,6 @@
  */
 
 :where(
-	.nop-checkin-meta,
 	.nop-film-card,
 	.nop-film-meta,
 	.nop-like-button,
@@ -127,7 +126,6 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 
 /* ── Section-divider pattern (top rule above meta blocks) ─────────────────── */
 
-.nop-checkin-meta,
 .nop-film-meta,
 .nop-rsvp-meta,
 .nop-syndication-panel {
@@ -139,14 +137,6 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 /* Slight tweak — RSVP block sat closer in the original layout */
 .nop-rsvp-meta {
 	margin-block-start: 1.5em;
-}
-
-/* ── Venue field / venue coordinates / venue categories ───────────────────── */
-
-.nop-venue-field,
-.nop-venue-coordinates,
-.nop-venue-categories {
-	margin-block: 0;
 }
 
 /* ── Weather icon / weather temp ──────────────────────────────────────────── */
@@ -318,7 +308,6 @@ a.nop-post-footer__pill--link:focus-visible {
  */
 @media (prefers-color-scheme: dark) {
 	:where(
-		.nop-checkin-meta,
 		.nop-film-card,
 		.nop-film-meta,
 		.nop-like-button,

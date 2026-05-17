@@ -362,16 +362,9 @@ class Plugin {
 			true
 		);
 
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-field' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-coordinates' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-summary' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-categories' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/venue-link' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-link' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );

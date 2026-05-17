@@ -124,7 +124,7 @@ class Swarm extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>{$note}</p>\n<!-- /wp:paragraph -->"
 			: '';
 		// Photos are injected as real image blocks in after_insert() once sideloading completes.
-		// The checkin-meta block lives in the template, not in post content.
+		// Venue meta is surfaced via Block Bindings in the active template.
 
 		$args = [
 			'post_title'   => $title,

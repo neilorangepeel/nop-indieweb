@@ -17,8 +17,9 @@ namespace NOP\IndieWeb\Semantic;
  *   dt-published → <time> element inside core/post-date block
  *   e-content  → wrapper div inside core/post-content block
  *
- * The checkin-meta block handles the venue h-card (p-checkin, u-url,
- * u-syndication) directly in its server-side render.
+ * Venue-related mf2 classes (p-name, p-street-address, p-locality,
+ * p-country-name, p-adr, p-category, u-url) are injected onto bound
+ * core blocks at render time by Block_Bindings::inject_mf2_classes().
  */
 class Semantic_Markup {
 
