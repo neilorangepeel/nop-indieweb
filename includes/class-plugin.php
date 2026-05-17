@@ -516,6 +516,191 @@ HTML,
 HTML,
 		] );
 
+		register_block_pattern( 'nop-indieweb/checkin-data-palette', [
+			'title'         => __( 'Checkin Data Palette', 'nop-indieweb' ),
+			'description'   => __( 'Every meaningful piece of data a check-in post carries — bindings + custom blocks, each labelled. Insert this into a checkin post, then copy whichever pieces you want into your real layout. Not for production use.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'checkin', 'data', 'palette', 'reference', 'design' ],
+			'viewportWidth' => 900,
+			'content'       => <<<'HTML'
+<!-- wp:group {"metadata":{"name":"Checkin Data Palette"},"style":{"spacing":{"blockGap":"2.5rem","padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}},"border":{"width":"1px","color":"#e5e7eb"}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group has-border-color" style="border-color:#e5e7eb;border-width:1px;padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem">
+
+<!-- wp:heading {"level":2,"fontSize":"x-large"} -->
+<h2 class="wp-block-heading has-x-large-font-size">Checkin Data Palette</h2>
+<!-- /wp:heading -->
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}}} -->
+<p class="has-text-color" style="color:#6b7280">Every piece of data this checkin carries, grouped by section. Copy any block into your real layout.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == IDENTITY == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Identity</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-title (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-title /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-date (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-date {"format":"j F Y, G:i"} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-author (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-author {"showAvatar":false} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · nop_kind (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"nop_kind"} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · category (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"category"} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · post_tag (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"post_tag"} /-->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == VENUE == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Venue</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">venue name (binding: field=name) — adds p-name</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"name"}}}}} --><p>The Crown Bar</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">full address (binding: field=full_address, derived) — adds p-adr</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}}} --><p>46 Great Victoria Street, Belfast, United Kingdom</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">street address (binding: field=address) — adds p-street-address</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"address"}}}}} --><p>46 Great Victoria Street</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">locality (binding: field=locality) — adds p-locality</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"locality"}}}}} --><p>Belfast</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">region (binding: field=region) — adds p-region</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"region"}}}}} --><p>County Antrim</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">country (binding: field=country) — adds p-country-name</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"country"}}}}} --><p>United Kingdom</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">postcode (binding: field=postcode) — adds p-postal-code</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"postcode"}}}}} --><p>BT2 7BA</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">locality + country (binding: field=locality_country, derived)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"locality_country"}}}}} --><p>Belfast, United Kingdom</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">coordinates (binding: field=venue_coordinates, derived)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}}} --><p>54.597 ° N · 5.935 ° W</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">latitude (binding: field=lat)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"lat"}}}}} --><p>54.5967</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">longitude (binding: field=lng)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"lng"}}}}} --><p>-5.9347</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · nop_venue_category (core) — adds p-category</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"nop_venue_category","separator":" · "} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">venue link button (button bindings: url=venue_url, text=venue_url_host_label) — adds u-url</p><!-- /wp:paragraph -->
+<!-- wp:buttons --><div class="wp-block-buttons">
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"field":"url"}},"text":{"source":"nop-indieweb/post-meta","args":{"field":"venue_url_host_label"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View on foursquare.com</a></div>
+<!-- /wp:button -->
+</div><!-- /wp:buttons -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == CHECK-IN SOURCE == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Check-in source</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">checkin link button (button bindings: url=nop_indieweb_checkin_url, text=checkin_url_host_label) — adds u-url</p><!-- /wp:paragraph -->
+<!-- wp:buttons --><div class="wp-block-buttons">
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_checkin_url"}},"text":{"source":"nop-indieweb/post-meta","args":{"field":"checkin_url_host_label"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View on swarmapp.com</a></div>
+<!-- /wp:button -->
+</div><!-- /wp:buttons -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == WEATHER == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Weather</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather-icon (custom block — inlines SVG from slug)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/weather-icon /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather-temp (custom block)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/weather-temp /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather summary (binding: key=nop_indieweb_weather_summary)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} --><p>Light Rain</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather temp °C (binding: key=nop_indieweb_weather_temp_c)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_temp_c"}}}}} --><p>9.3</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather temp °F (binding: key=nop_indieweb_weather_temp_f)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_temp_f"}}}}} --><p>48.7</p><!-- /wp:paragraph -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == VISUAL == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Visual</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">checkin-map (custom block — Geoapify static map with marker + attribution overlay)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/checkin-map /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-featured-image (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-featured-image /-->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == CONTENT == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Content</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-content (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-content /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-excerpt (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-excerpt /-->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == INTERACTIONS == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Interactions</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">like-button (custom block — site likes + aggregated webmention likes)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/like-button /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">webmentions (custom block — facepile + threaded replies)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/webmentions /-->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- == PROVENANCE == -->
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Provenance</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">syndication-panel (custom block — "Also on Mastodon · Bluesky · Swarm")</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/syndication-panel /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-source (custom block — originating platform link)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/post-source /-->
+
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
 		register_block_pattern( 'nop-indieweb/note-post', [
 			'title'         => __( 'Note Post', 'nop-indieweb' ),
 			'description'   => __( 'Short-form note layout: inline kind/date header, featured image, content, and a compact interaction row (like · comments · reposts · source).', 'nop-indieweb' ),
