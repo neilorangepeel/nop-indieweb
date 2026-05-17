@@ -142,10 +142,38 @@
 		return humanize( field, key );
 	}
 
+	// Static list of bindable fields shown in the editor's binding picker.
+	// Order matters — appears top-to-bottom in the popover. Keep derived
+	// fields first since they're the most useful starting points.
+	var FIELDS = [
+		{ key: 'full_address',            label: 'Full address (street, city, country)' },
+		{ key: 'locality_country',        label: 'Locality + country' },
+		{ key: 'venue_coordinates',       label: 'Coordinates (formatted)' },
+		{ key: 'venue_url_host_label',    label: 'Venue link label (e.g. "View on foursquare.com")' },
+		{ key: 'checkin_url_host_label',  label: 'Checkin link label (e.g. "View on swarmapp.com")' },
+		{ key: 'name',                    label: 'Venue name' },
+		{ key: 'address',                 label: 'Street address' },
+		{ key: 'locality',                label: 'City / town' },
+		{ key: 'region',                  label: 'Region' },
+		{ key: 'country',                 label: 'Country' },
+		{ key: 'postcode',                label: 'Postcode' },
+		{ key: 'lat',                     label: 'Latitude' },
+		{ key: 'lng',                     label: 'Longitude' },
+	];
+
 	wp.blocks.registerBlockBindingsSource( {
 		name:           'nop-indieweb/post-meta',
 		label:          'IndieWeb Post Meta',
 		usesContext:    [ 'postId', 'postType' ],
+		// WP 6.9+ — populates the binding picker dropdown so users can connect
+		// attributes from the editor UI rather than editing markup.
+		getFieldsList: function () {
+			var list = {};
+			FIELDS.forEach( function ( f ) {
+				list[ f.key ] = { label: f.label, value: PREVIEW_VALUES[ f.key ] || f.label, args: { field: f.key } };
+			} );
+			return list;
+		},
 		getValues: function ( args ) {
 			var select   = args.select;
 			var context  = args.context || {};
