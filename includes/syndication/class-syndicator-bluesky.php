@@ -170,6 +170,17 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	}
 
 	private function upload_thumb( int $post_id, array $session ): ?array {
+		$map_url = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
+		if ( '' !== $map_url ) {
+			return $this->upload_image_blob( [
+				'url'           => $map_url,
+				'alt'           => '',
+				'attachment_id' => 0,
+				'width'         => 1240,
+				'height'        => 620,
+			], $session );
+		}
+
 		$thumbnail_id = get_post_thumbnail_id( $post_id );
 		if ( ! $thumbnail_id ) {
 			return null;

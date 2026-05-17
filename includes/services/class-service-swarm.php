@@ -216,6 +216,11 @@ class Swarm extends Service_Base {
 				$lng,
 				(int) get_post_timestamp( $post_id, 'date_gmt' )
 			);
+
+			$geoapify_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
+			if ( $geoapify_key ) {
+				\NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $geoapify_key );
+			}
 		}
 
 		if ( ! $parsed['photos'] ) {
