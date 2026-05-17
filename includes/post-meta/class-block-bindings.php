@@ -90,7 +90,7 @@ class Block_Bindings {
 		);
 	}
 
-	public function map_edit_block_binding_cap( array $caps, string $cap ): array {
+	public function map_edit_block_binding_cap( array $caps, $cap ): array {
 		return 'edit_block_binding' === $cap ? [ 'edit_blocks' ] : $caps;
 	}
 
