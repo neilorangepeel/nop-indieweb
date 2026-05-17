@@ -22,7 +22,11 @@ use WP_Block;
  *     "args": { "field": "locality" }
  *
  *   Derived field (computed, not stored in meta):
- *     "args": { "field": "locality_country" }  → "Belfast, United Kingdom"
+ *     "args": { "field": "full_address" }            → "46 Great Victoria Street, Belfast, United Kingdom"
+ *     "args": { "field": "locality_country" }        → "Belfast, United Kingdom"
+ *     "args": { "field": "venue_coordinates" }       → "54.597 ° N · 5.935 ° W"
+ *     "args": { "field": "venue_url_host_label" }    → "View on foursquare.com"
+ *     "args": { "field": "checkin_url_host_label" }  → "View on swarmapp.com"
  *
  * Bindable string keys:
  *   nop_indieweb_venue_name, nop_indieweb_venue_url, nop_indieweb_venue_uid,
@@ -30,7 +34,8 @@ use WP_Block;
  *   nop_indieweb_venue_accuracy, nop_indieweb_venue_address,
  *   nop_indieweb_venue_locality, nop_indieweb_venue_region,
  *   nop_indieweb_venue_country, nop_indieweb_venue_postcode,
- *   nop_indieweb_checkin_url, nop_indieweb_service
+ *   nop_indieweb_checkin_url, nop_indieweb_service,
+ *   nop_indieweb_weather_summary, nop_indieweb_weather_temp_c
  *
  * Array keys (returns item count as a string):
  *   nop_indieweb_syndication, nop_indieweb_photos, nop_indieweb_photo_ids
@@ -38,18 +43,42 @@ use WP_Block;
 class Block_Bindings {
 
 	/**
-	 * Meta key → microformat class injected onto the bound block's wrapper element.
-	 * Only applies to content bindings (not url/alt/etc).
+	 * Synthesized meta-key → microformat class for paragraph/heading content
+	 * bindings. The "key" is the resolved key after applying the venue_ shorthand.
 	 */
-	private const MF2_CLASSES = [
+	private const KEY_MF2_CLASSES = [
+		'nop_indieweb_venue_name'     => 'p-name',
 		'nop_indieweb_venue_address'  => 'p-street-address',
 		'nop_indieweb_venue_locality' => 'p-locality',
+		'nop_indieweb_venue_region'   => 'p-region',
 		'nop_indieweb_venue_country'  => 'p-country-name',
+		'nop_indieweb_venue_postcode' => 'p-postal-code',
+	];
+
+	/**
+	 * Derived-field → microformat class for paragraph/heading content
+	 * bindings on fields that don't have a backing meta key.
+	 */
+	private const DERIVED_MF2_CLASSES = [
+		'full_address'     => 'p-adr',
+		'locality_country' => '',
+		'venue_coordinates' => '',
+		'venue_url_host_label'   => '',
+		'checkin_url_host_label' => '',
 	];
 
 	public function register(): void {
 		add_action( 'init', [ $this, 'register_source' ] );
 		add_filter( 'render_block', [ $this, 'inject_mf2_classes' ], 10, 2 );
+		// WP 6.7+ gates the bindings editor UI behind a separate edit_block_binding
+		// cap. Map it to edit_blocks so anyone who can edit block content can also
+		// manage bindings — which matches the default behaviour WP intends but
+		// which doesn't always land on fresh installs / RC builds.
+		add_filter( 'map_meta_cap', [ $this, 'map_edit_block_binding_cap' ], 10, 2 );
+	}
+
+	public function map_edit_block_binding_cap( array $caps, string $cap ): array {
+		return 'edit_block_binding' === $cap ? [ 'edit_blocks' ] : $caps;
 	}
 
 	public function register_source(): void {
@@ -70,42 +99,51 @@ class Block_Bindings {
 	 * Keyed by field shorthand; also covers the resolved meta key for direct-key usage.
 	 */
 	private const PREVIEW_VALUES = [
+		// Venue shorthand fields
+		'name'                            => 'The Crown Bar',
 		'address'                         => '46 Great Victoria Street',
 		'locality'                        => 'Belfast',
+		'region'                          => 'County Antrim',
 		'country'                         => 'United Kingdom',
+		'postcode'                        => 'BT2 7BA',
 		'locality_country'                => 'Belfast, United Kingdom',
+		'full_address'                    => '46 Great Victoria Street, Belfast, United Kingdom',
+		// Derived non-venue fields
+		'venue_coordinates'               => '54.597 ° N · 5.935 ° W',
+		'venue_url_host_label'            => 'View on foursquare.com',
+		'checkin_url_host_label'          => 'View on swarmapp.com',
+		// Full-key forms
+		'nop_indieweb_venue_name'         => 'The Crown Bar',
 		'nop_indieweb_venue_address'      => '46 Great Victoria Street',
 		'nop_indieweb_venue_locality'     => 'Belfast',
 		'nop_indieweb_venue_country'      => 'United Kingdom',
+		'nop_indieweb_weather_summary'    => 'Light Rain',
 	];
 
 	public function get_value( array $source_args, WP_Block $block ): ?string {
 		$post_id = $block->context['postId'] ?? get_the_ID();
+		$field   = sanitize_key( $source_args['field'] ?? '' );
 
-		$field = sanitize_key( $source_args['field'] ?? '' );
+		// Derived fields handled by name before the venue_ shorthand kicks in.
+		if ( $post_id && $field ) {
+			$derived = $this->get_derived_value( $field, (int) $post_id );
+			if ( null !== $derived ) {
+				return $derived;
+			}
+		}
 
-		// Venue field shorthand: field="locality" → nop_indieweb_venue_locality
-		if ( $field && ! isset( $source_args['key'] ) ) {
+		// Venue field shorthand: field="locality" → nop_indieweb_venue_locality.
+		// Otherwise honour an explicit key.
+		if ( $field && ! isset( $source_args['key'] ) && ! isset( self::DERIVED_MF2_CLASSES[ $field ] ) ) {
 			$key = 'nop_indieweb_venue_' . $field;
 		} else {
 			$key = sanitize_key( $source_args['key'] ?? '' );
 		}
 
-		// Try to resolve the real value first.
-		if ( $post_id ) {
-			// Derived field: locality_country → "Belfast, United Kingdom"
-			if ( 'locality_country' === $field ) {
-				$locality = get_post_meta( $post_id, 'nop_indieweb_venue_locality', true );
-				$country  = get_post_meta( $post_id, 'nop_indieweb_venue_country',  true );
-				$parts    = array_filter( [ $locality, $country ] );
-				if ( $parts ) {
-					return implode( ', ', $parts );
-				}
-			} elseif ( $key ) {
-				$value = get_post_meta( $post_id, $key, true );
-				if ( $value ) {
-					return is_array( $value ) ? (string) count( $value ) : (string) $value;
-				}
+		if ( $post_id && $key ) {
+			$value = get_post_meta( $post_id, $key, true );
+			if ( $value ) {
+				return is_array( $value ) ? (string) count( $value ) : (string) $value;
 			}
 		}
 
@@ -123,41 +161,195 @@ class Block_Bindings {
 	}
 
 	/**
-	 * Injects microformat classes onto the rendered wrapper of any core block
-	 * whose content is bound to a venue meta field via nop-indieweb/post-meta
-	 * or core/post-meta. Runs frontend-only (render_block fires only on output).
+	 * Resolves a derived field to its computed string, or null if the field
+	 * isn't a derived one (in which case the caller falls through to normal
+	 * meta lookup).
+	 */
+	private function get_derived_value( string $field, int $post_id ): ?string {
+		switch ( $field ) {
+			case 'full_address':
+				$parts = array_filter( [
+					get_post_meta( $post_id, 'nop_indieweb_venue_address',  true ),
+					get_post_meta( $post_id, 'nop_indieweb_venue_locality', true ),
+					get_post_meta( $post_id, 'nop_indieweb_venue_country',  true ),
+				] );
+				return $parts ? implode( ', ', $parts ) : null;
+
+			case 'locality_country':
+				$parts = array_filter( [
+					get_post_meta( $post_id, 'nop_indieweb_venue_locality', true ),
+					get_post_meta( $post_id, 'nop_indieweb_venue_country',  true ),
+				] );
+				return $parts ? implode( ', ', $parts ) : null;
+
+			case 'venue_coordinates':
+				$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
+				$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+				if ( ! $lat && ! $lng ) {
+					return null;
+				}
+				return sprintf(
+					'%s ° %s · %s ° %s',
+					number_format( abs( $lat ), 3 ),
+					$lat >= 0 ? 'N' : 'S',
+					number_format( abs( $lng ), 3 ),
+					$lng >= 0 ? 'E' : 'W'
+				);
+
+			case 'venue_url_host_label':
+				$url = (string) get_post_meta( $post_id, 'nop_indieweb_venue_url', true );
+				if ( '' === $url ) {
+					return null;
+				}
+				$host = wp_parse_url( $url, PHP_URL_HOST ) ?: $url;
+				return sprintf( 'View on %s', $host );
+
+			case 'checkin_url_host_label':
+				$url = (string) get_post_meta( $post_id, 'nop_indieweb_checkin_url', true );
+				if ( '' === $url ) {
+					return null;
+				}
+				$host = wp_parse_url( $url, PHP_URL_HOST ) ?: $url;
+				return sprintf( 'View on %s', $host );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Injects microformat classes onto the rendered output of bound core
+	 * blocks. Dispatches per block type — different elements (paragraph
+	 * wrapper, button anchor, post-terms anchors) need different class
+	 * placements. Runs frontend-only (render_block fires on output).
 	 */
 	public function inject_mf2_classes( string $html, array $block ): string {
+		$block_name = $block['blockName'] ?? '';
+
+		switch ( $block_name ) {
+			case 'core/paragraph':
+			case 'core/heading':
+				return $this->inject_content_mf2( $html, $block );
+			case 'core/button':
+				return $this->inject_button_mf2( $html, $block );
+			case 'core/post-terms':
+				return $this->inject_post_terms_mf2( $html, $block );
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Paragraph / heading: inject the mf2 class on the wrapper element when
+	 * the `content` attribute is bound to one of our mapped venue fields.
+	 */
+	private function inject_content_mf2( string $html, array $block ): string {
 		$binding = $block['attrs']['metadata']['bindings']['content'] ?? null;
-		if ( ! $binding ) {
+		if ( ! $binding || ! $this->is_our_source( $binding['source'] ?? '' ) ) {
 			return $html;
 		}
 
-		$source = $binding['source'] ?? '';
-		if ( ! in_array( $source, [ 'nop-indieweb/post-meta', 'core/post-meta' ], true ) ) {
+		$class = $this->resolve_content_mf2_class( $binding['args'] ?? [] );
+		if ( '' === $class ) {
 			return $html;
 		}
 
-		// Resolve the meta key from either form: { key } or { field }.
-		$args  = $binding['args'] ?? [];
+		return $this->prepend_class_to_first_tag( $html, $class );
+	}
+
+	/**
+	 * Button: inject `u-url` on the inner `<a>` when the `url` attribute is
+	 * bound to a venue URL or checkin URL.
+	 */
+	private function inject_button_mf2( string $html, array $block ): string {
+		$binding = $block['attrs']['metadata']['bindings']['url'] ?? null;
+		if ( ! $binding || ! $this->is_our_source( $binding['source'] ?? '' ) ) {
+			return $html;
+		}
+
+		$key = $this->resolve_key( $binding['args'] ?? [] );
+		if ( ! in_array( $key, [ 'nop_indieweb_venue_url', 'nop_indieweb_checkin_url' ], true ) ) {
+			return $html;
+		}
+
+		return $this->add_class_to_first_anchor( $html, 'u-url' );
+	}
+
+	/**
+	 * Post Terms: inject `p-category` on each term link when the block is
+	 * rendering the nop_venue_category taxonomy.
+	 */
+	private function inject_post_terms_mf2( string $html, array $block ): string {
+		$taxonomy = $block['attrs']['term'] ?? '';
+		if ( 'nop_venue_category' !== $taxonomy ) {
+			return $html;
+		}
+
+		return preg_replace_callback(
+			'/<a\b([^>]*)>/i',
+			static function ( $m ) {
+				$attrs = $m[1];
+				if ( preg_match( '/\sclass="([^"]*)"/i', $attrs, $cm ) ) {
+					$attrs = preg_replace(
+						'/\sclass="[^"]*"/i',
+						' class="p-category ' . $cm[1] . '"',
+						$attrs,
+						1
+					);
+				} else {
+					$attrs .= ' class="p-category"';
+				}
+				return '<a' . $attrs . '>';
+			},
+			$html
+		) ?? $html;
+	}
+
+	private function is_our_source( string $source ): bool {
+		return in_array( $source, [ 'nop-indieweb/post-meta', 'core/post-meta' ], true );
+	}
+
+	private function resolve_key( array $args ): string {
 		$field = sanitize_key( $args['field'] ?? '' );
-		$key   = $field && ! isset( $args['key'] )
-			? 'nop_indieweb_venue_' . $field
-			: sanitize_key( $args['key'] ?? '' );
+		if ( $field && ! isset( $args['key'] ) ) {
+			return 'nop_indieweb_venue_' . $field;
+		}
+		return sanitize_key( $args['key'] ?? '' );
+	}
 
-		if ( ! isset( self::MF2_CLASSES[ $key ] ) ) {
-			return $html;
+	private function resolve_content_mf2_class( array $args ): string {
+		$field = sanitize_key( $args['field'] ?? '' );
+
+		// Derived fields are mapped by field name.
+		if ( $field && isset( self::DERIVED_MF2_CLASSES[ $field ] ) ) {
+			return self::DERIVED_MF2_CLASSES[ $field ];
 		}
 
-		$class = self::MF2_CLASSES[ $key ];
+		$key = $this->resolve_key( $args );
+		return self::KEY_MF2_CLASSES[ $key ] ?? '';
+	}
 
-		// Prepend the mf2 class to the existing class attribute on the first tag.
+	/**
+	 * Prepends a class to the first opening tag's class attribute, or adds a
+	 * class attribute if none exists.
+	 */
+	private function prepend_class_to_first_tag( string $html, string $class ): string {
 		$replaced = preg_replace( '/(<\w[^>]+\sclass=")/', '$1' . $class . ' ', $html, 1, $count );
 		if ( $count ) {
 			return $replaced;
 		}
-
-		// Fallback: no class attribute on the wrapper — add one to the opening tag.
 		return preg_replace( '/(<\w+)(\s|>)/', '$1 class="' . $class . '"$2', $html, 1 ) ?? $html;
+	}
+
+	/**
+	 * Adds a class to the first `<a>` tag in the HTML.
+	 */
+	private function add_class_to_first_anchor( string $html, string $class ): string {
+		// Anchor with existing class attribute.
+		$replaced = preg_replace( '/(<a\b[^>]*\sclass=")/i', '$1' . $class . ' ', $html, 1, $count );
+		if ( $count ) {
+			return $replaced;
+		}
+		// Anchor without class attribute.
+		return preg_replace( '/(<a\b)(\s|>)/i', '$1 class="' . $class . '"$2', $html, 1 ) ?? $html;
 	}
 }
