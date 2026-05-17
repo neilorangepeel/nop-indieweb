@@ -24,7 +24,7 @@
 					<p>·</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:nop-indieweb/venue-categories {"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} /-->
+					<!-- wp:post-terms {"term":"nop_venue_category","prefix":"","suffix":"","separator":" ","style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} /-->
 				</div>
 				<!-- /wp:group -->
 
@@ -52,7 +52,9 @@
 
 				<!-- wp:post-title {"style":{"typography":{"lineHeight":"1","fontStyle":"normal","fontWeight":"800","letterSpacing":"-0.02em"}},"fontSize":"x-large","fontFamily":"brandon-text"} /-->
 
-				<!-- wp:nop-indieweb/venue-field {"field":"full_address","style":{"typography":{"fontWeight":"400","fontStyle":"normal"}},"fontSize":"small"} /-->
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"style":{"typography":{"fontWeight":"400","fontStyle":"normal"}},"fontSize":"small"} -->
+				<p class="has-small-font-size" style="font-style:normal;font-weight:400">Address</p>
+				<!-- /wp:paragraph -->
 
 				<!-- wp:group {"style":{"spacing":{"blockGap":"6px","margin":{"top":"2px"}},"typography":{"fontWeight":"400","fontStyle":"normal"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
 				<div class="wp-block-group has-small-font-size" style="margin-top:2px;font-style:normal;font-weight:400">
@@ -83,7 +85,9 @@
 
 			<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
 			<div class="wp-block-group">
-				<!-- wp:nop-indieweb/venue-coordinates {"style":{"layout":{"selfStretch":"fill"}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} /-->
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"style":{"layout":{"selfStretch":"fill"}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
+				<p class="has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">Coordinates</p>
+				<!-- /wp:paragraph -->
 
 				<!-- wp:nop-indieweb/like-button /-->
 			</div>

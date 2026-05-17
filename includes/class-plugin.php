@@ -411,21 +411,37 @@ class Plugin {
 <!-- wp:group {"style":{"spacing":{"blockGap":"1rem"}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
 
-<!-- wp:nop-indieweb/venue-categories /-->
+<!-- wp:post-terms {"term":"nop_venue_category","separator":" · "} /-->
 
-<!-- wp:nop-indieweb/venue-field {"field":"name"} /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"name"}}}}} -->
+<p>Venue name</p>
+<!-- /wp:paragraph -->
 
-<!-- wp:nop-indieweb/venue-field {"field":"address"} /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"address"}}}}} -->
+<p>Street address</p>
+<!-- /wp:paragraph -->
 
-<!-- wp:nop-indieweb/venue-field {"field":"locality_country"} /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"locality_country"}}}}} -->
+<p>Locality, country</p>
+<!-- /wp:paragraph -->
 
-<!-- wp:nop-indieweb/venue-coordinates /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}}} -->
+<p>Coordinates</p>
+<!-- /wp:paragraph -->
 
 <!-- wp:nop-indieweb/checkin-map /-->
 
-<!-- wp:nop-indieweb/venue-link /-->
+<!-- wp:buttons -->
+<div class="wp-block-buttons">
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"field":"url"}},"text":{"source":"nop-indieweb/post-meta","args":{"field":"venue_url_host_label"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View venue</a></div>
+<!-- /wp:button -->
 
-<!-- wp:nop-indieweb/checkin-link /-->
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_checkin_url"}},"text":{"source":"nop-indieweb/post-meta","args":{"field":"checkin_url_host_label"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View checkin</a></div>
+<!-- /wp:button -->
+</div>
+<!-- /wp:buttons -->
 
 <!-- wp:post-date {"format":"j F Y, g:i a","isLink":false} /-->
 
