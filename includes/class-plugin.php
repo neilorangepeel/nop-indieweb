@@ -450,6 +450,79 @@ class Plugin {
 HTML,
 		] );
 
+		register_block_pattern( 'nop-indieweb/venue-address', [
+			'title'         => __( 'Venue Address', 'nop-indieweb' ),
+			'description'   => __( 'Single paragraph bound to the full venue address (street, locality, country). Emits p-adr microformat class.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'venue', 'address', 'checkin', 'indieweb' ],
+			'viewportWidth' => 600,
+			'content'       => <<<'HTML'
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"fontSize":"small"} -->
+<p class="has-small-font-size">Address</p>
+<!-- /wp:paragraph -->
+HTML,
+		] );
+
+		register_block_pattern( 'nop-indieweb/venue-link-button', [
+			'title'         => __( 'Venue Link Button', 'nop-indieweb' ),
+			'description'   => __( 'Button linking to the Foursquare venue page. URL and label text both bind to post meta. Emits u-url on the anchor.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'venue', 'link', 'button', 'foursquare', 'checkin' ],
+			'viewportWidth' => 400,
+			'content'       => <<<'HTML'
+<!-- wp:buttons -->
+<div class="wp-block-buttons">
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"field":"url"}},"text":{"source":"nop-indieweb/post-meta","args":{"field":"venue_url_host_label"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View venue</a></div>
+<!-- /wp:button -->
+</div>
+<!-- /wp:buttons -->
+HTML,
+		] );
+
+		register_block_pattern( 'nop-indieweb/checkin-meta-strip', [
+			'title'         => __( 'Checkin Meta Strip', 'nop-indieweb' ),
+			'description'   => __( 'Horizontal header row for a checkin: location pin, "Check-in" label, venue categories, and the post date. Designed to sit above the venue title.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'checkin', 'header', 'meta', 'categories' ],
+			'viewportWidth' => 800,
+			'content'       => <<<'HTML'
+<!-- wp:group {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","textTransform":"uppercase","letterSpacing":"2px"},"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
+<div class="wp-block-group has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:2px;text-transform:uppercase">
+<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"}},"layout":{"type":"flex","flexWrap":"wrap"}} -->
+<div class="wp-block-group">
+<!-- wp:icon {"icon":"core/map-marker","style":{"dimensions":{"width":"1em"}}} /-->
+<!-- wp:paragraph -->
+<p>Check-in</p>
+<!-- /wp:paragraph -->
+<!-- wp:paragraph -->
+<p>·</p>
+<!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"nop_venue_category","separator":" "} /-->
+</div>
+<!-- /wp:group -->
+<!-- wp:post-date {"format":"G:i · d.m.Y"} /-->
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
+		register_block_pattern( 'nop-indieweb/weather-row', [
+			'title'         => __( 'Weather Row', 'nop-indieweb' ),
+			'description'   => __( 'Weather icon + temperature for a checkin, sourced from the snapshotted weather meta. Use beside the venue address.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'weather', 'checkin', 'temperature' ],
+			'viewportWidth' => 400,
+			'content'       => <<<'HTML'
+<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
+<div class="wp-block-group has-small-font-size">
+<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
+<!-- wp:nop-indieweb/weather-temp {"fontSize":"small"} /-->
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
 		register_block_pattern( 'nop-indieweb/note-post', [
 			'title'         => __( 'Note Post', 'nop-indieweb' ),
 			'description'   => __( 'Short-form note layout: inline kind/date header, featured image, content, and a compact interaction row (like · comments · reposts · source).', 'nop-indieweb' ),
