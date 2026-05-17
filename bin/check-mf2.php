@@ -14,9 +14,10 @@
  * Argument is an optional post ID; defaults to the most recent check-in.
  *
  * Exits 0 if all assertions pass, 1 if any fail.
+ *
+ * No strict_types declaration — wp-cli's eval-file wraps this in eval(),
+ * which doesn't allow it.
  */
-
-declare( strict_types=1 );
 
 global $argv;
 $post_id = 0;
