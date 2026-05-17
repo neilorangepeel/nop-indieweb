@@ -154,10 +154,23 @@ class Block_Bindings {
 			&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
 
 		if ( ! $post_id || $is_editor ) {
-			return self::PREVIEW_VALUES[ $field ] ?? self::PREVIEW_VALUES[ $key ] ?? null;
+			return self::PREVIEW_VALUES[ $field ]
+				?? self::PREVIEW_VALUES[ $key ]
+				?? $this->humanize_placeholder( $field, $key );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Last-resort placeholder text shown in the editor when a field has no
+	 * specific preview value. Turns "venue_coordinates" into "Venue coordinates"
+	 * and "nop_indieweb_weather_temp_c" into "Weather temp c" — always
+	 * something more informative than the generic source label.
+	 */
+	private function humanize_placeholder( string $field, string $key ): string {
+		$raw = $field ?: preg_replace( '/^nop_indieweb_/', '', $key );
+		return ucfirst( str_replace( '_', ' ', (string) $raw ) ) ?: 'Venue data';
 	}
 
 	/**
