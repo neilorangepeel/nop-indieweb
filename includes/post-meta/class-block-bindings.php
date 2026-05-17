@@ -356,10 +356,12 @@ class Block_Bindings {
 
 	/**
 	 * Prepends a class to the first opening tag's class attribute, or adds a
-	 * class attribute if none exists.
+	 * class attribute if none exists. The `[^>]*` is permissive enough to
+	 * match tags where `class="` follows immediately (e.g. `<p class="...">`)
+	 * as well as ones with other attributes between the tag name and class.
 	 */
 	private function prepend_class_to_first_tag( string $html, string $class ): string {
-		$replaced = preg_replace( '/(<\w[^>]+\sclass=")/', '$1' . $class . ' ', $html, 1, $count );
+		$replaced = preg_replace( '/(<\w[^>]*\sclass=")/', '$1' . $class . ' ', $html, 1, $count );
 		if ( $count ) {
 			return $replaced;
 		}
