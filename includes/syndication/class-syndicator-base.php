@@ -69,7 +69,7 @@ abstract class Syndicator_Base {
 		$venue_name = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
 
 		if ( $venue_name ) {
-			return sprintf( 'Checked in at %s', $venue_name );
+			return sprintf( '📍 Checked in at %s', $venue_name );
 		}
 		if ( ! $post ) {
 			return '';
