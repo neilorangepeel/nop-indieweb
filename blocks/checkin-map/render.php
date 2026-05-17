@@ -23,12 +23,22 @@ if ( ! $post_id ) {
 	return;
 }
 
+$is_editor = (
+	defined( 'REST_REQUEST' ) && REST_REQUEST &&
+	isset( $_GET['context'] ) && 'edit' === $_GET['context'] // phpcs:ignore WordPress.Security.NonceVerification
+);
+
 $lat         = get_post_meta( $post_id, 'nop_indieweb_venue_lat',  true );
 $lng         = get_post_meta( $post_id, 'nop_indieweb_venue_lng',  true );
 $venue_name  = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
 
 if ( ! $lat || ! $lng ) {
-	return;
+	if ( ! $is_editor ) {
+		return;
+	}
+	$lat        = '54.5967';
+	$lng        = '-5.9347';
+	$venue_name = $venue_name ?: 'The Crown Bar';
 }
 
 $map_url = sprintf(
@@ -41,13 +51,6 @@ $map_title   = $venue_name ? sprintf( 'Map showing %s', $venue_name ) : 'Locatio
 $map_img_url = '';
 $map_w       = 0;
 $map_h       = 0;
-
-// Skip the Geoapify fetch inside the block editor canvas to avoid unnecessary
-// external requests while editing.
-$is_editor = (
-	defined( 'REST_REQUEST' ) && REST_REQUEST &&
-	isset( $_GET['context'] ) && 'edit' === $_GET['context'] // phpcs:ignore WordPress.Security.NonceVerification
-);
 
 if ( ! $is_editor ) {
 	$cached = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
