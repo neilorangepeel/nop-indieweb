@@ -172,10 +172,23 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 
 /* ── Checkin map ──────────────────────────────────────────────────────────── */
 
+.nop-checkin-map {
+	position: relative;
+}
+
 .nop-checkin-map__img {
 	display: block;
 	width:   100%;
 	height:  auto;
+}
+
+/* When the editor sets an explicit aspect ratio on the wrapper, fill it and
+   crop the cached 2:1 source rather than letting the img enforce its own
+   natural ratio. */
+.wp-block-nop-indieweb-checkin-map[style*="aspect-ratio"] .nop-checkin-map__img {
+	width:      100%;
+	height:     100%;
+	object-fit: cover;
 }
 
 .nop-checkin-map__placeholder {
@@ -184,9 +197,21 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	border-radius:    4px;
 }
 
+/* Attribution pill — corner overlay on the map. Matches the convention used
+   by Google/Apple/Mapbox: small text on a semi-transparent backdrop, kept
+   legible against varying map tiles. */
 .nop-checkin-map__caption {
-	margin-block-start: 0.5em;
-	font-size:          0.875em;
+	position:           absolute;
+	right:              6px;
+	bottom:             6px;
+	margin:             0;
+	padding:            2px 6px;
+	background-color:   rgba(255, 255, 255, 0.85);
+	border-radius:      3px;
+	font-size:          0.6875rem;
+	line-height:        1.4;
+	backdrop-filter:    blur(2px);
+	-webkit-backdrop-filter: blur(2px);
 }
 
 /* ── Underline link pattern (used by source/map/event links) ──────────────── */

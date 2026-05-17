@@ -21,6 +21,28 @@
 		"spacing": {
 			"margin": true,
 			"padding": true
+		},
+		"dimensions": {
+			"aspectRatio": true
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true,
+			"__experimentalDefaultControls": {
+				"radius": true
+			}
+		},
+		"shadow": true,
+		"filter": {
+			"duotone": true
 		}
+	},
+	"selectors": {
+		"filter": {
+			"duotone": ".wp-block-nop-indieweb-checkin-map .nop-checkin-map__img"
+		},
+		"border": ".wp-block-nop-indieweb-checkin-map .nop-checkin-map__img"
 	}
 }
