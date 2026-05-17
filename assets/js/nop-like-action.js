@@ -34,8 +34,11 @@
 		var formatLabel = cfg.formatLabel || function ( n ) { return n + ' likes'; };
 
 		roots.forEach( function ( el ) {
-			var btn     = el.querySelector( cfg.buttonSelector );
-			var countEl = btn ? btn.querySelector( cfg.countSelector ) : null;
+			var btn = el.querySelector( cfg.buttonSelector );
+			// Count is scoped to the root, not the button — like-button puts the
+			// count next to the button (sibling), post-footer puts it inside.
+			// Scoping to the root supports both layouts.
+			var countEl = el.querySelector( cfg.countSelector );
 
 			if ( ! btn || btn.disabled || ! countEl ) {
 				return;
