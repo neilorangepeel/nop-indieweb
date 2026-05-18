@@ -23,7 +23,8 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 // ── Configure before running ───────────────────────────────────────────────────
 
 // Root of the extracted Facebook archive (the folder containing your_facebook_activity/).
-$fb_archive = '/Users/neilhainworth/Downloads/Facebook Archive 2026-05-18/facebook-neilhainsworth-18_05_2026-mJCsyV1L';
+// JSON files are copied into bin/ because Studio's PHP WASM cannot reach ~/Downloads.
+$fb_archive = WP_PLUGIN_DIR . '/nop-indieweb/bin/fb-archive';
 
 // WordPress post status for imported checkins.
 $fb_status = 'publish';
@@ -116,12 +117,14 @@ function fb_geocode( string $venue_name, string $api_key ): array {
 }
 
 /**
- * Insert a checkin post and run weather + map enrichment.
+ * Insert a checkin post. Enrichment (FSQ categories, weather, maps) is left
+ * to the dedicated backfill commands so the import stays within the WP-CLI
+ * 120 s timeout even with 200+ geocoding calls in phase 2.
  *
  * $data keys: content, post_date_gmt, source_url, venue_name, venue_lat, venue_lng,
  *             venue_address, venue_locality, venue_postcode, venue_region, venue_country.
  */
-function fb_insert_checkin( array $data, string $pirate_key, string $geoapify_key, array $tags, string $status ): int|WP_Error {
+function fb_insert_checkin( array $data, array $tags, string $status ): int|WP_Error {
 	$venue    = $data['venue_name'] ?? '';
 	$locality = $data['venue_locality'] ?? '';
 	$title    = $venue
@@ -136,8 +139,6 @@ function fb_insert_checkin( array $data, string $pirate_key, string $geoapify_ke
 	$post_date_gmt = $data['post_date_gmt'];
 	$post_date     = get_date_from_gmt( $post_date_gmt );
 
-	$source_url = $data['source_url'] ?? '';
-
 	$post_id = wp_insert_post( [
 		'post_title'    => $title,
 		'post_content'  => $blocks,
@@ -149,8 +150,8 @@ function fb_insert_checkin( array $data, string $pirate_key, string $geoapify_ke
 		'meta_input'    => [
 			'nop_indieweb_service'        => 'facebook',
 			'nop_indieweb_platform'       => 'facebook',
-			'nop_indieweb_source_url'     => $source_url,
-			'nop_indieweb_checkin_url'    => $source_url,
+			'nop_indieweb_source_url'     => $data['source_url'] ?? '',
+			'nop_indieweb_checkin_url'    => $data['source_url'] ?? '',
 			'nop_indieweb_venue_name'     => $venue,
 			'nop_indieweb_venue_lat'      => $data['venue_lat'] ?? '',
 			'nop_indieweb_venue_lng'      => $data['venue_lng'] ?? '',
@@ -169,51 +170,17 @@ function fb_insert_checkin( array $data, string $pirate_key, string $geoapify_ke
 
 	wp_set_object_terms( $post_id, 'checkin', \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
 
-	// Look up FSQ venue categories by name + coordinates. When the API returns a
-	// match we also store the fsq_id so future fetches use the fast direct-lookup
-	// path rather than the search endpoint.
-	$fsq_match = \NOP\IndieWeb\Venue\Foursquare_Enricher::search_venue(
-		$venue,
-		(string) ( $data['venue_lat'] ?? '' ),
-		(string) ( $data['venue_lng'] ?? '' )
-	);
-	if ( $fsq_match ) {
-		if ( $fsq_match['categories'] ) {
-			wp_set_object_terms( $post_id, $fsq_match['categories'], \NOP\IndieWeb\Kind\Venue_Category_Taxonomy::TAXONOMY );
-		}
-		if ( $fsq_match['fsq_id'] ) {
-			update_post_meta( $post_id, 'nop_indieweb_venue_uid', $fsq_match['fsq_id'] );
-			update_post_meta( $post_id, 'nop_indieweb_venue_url', 'https://foursquare.com/v/' . $fsq_match['fsq_id'] );
-		}
-	}
-
-	$lat = (float) ( $data['venue_lat'] ?? 0 );
-	$lng = (float) ( $data['venue_lng'] ?? 0 );
-
-	if ( $lat || $lng ) {
-		$ts = (int) strtotime( $post_date_gmt );
-
-		if ( $pirate_key ) {
-			\NOP\IndieWeb\Weather\Weather_Fetcher::enrich_post( $post_id, $lat, $lng, $ts );
-		}
-		if ( $geoapify_key ) {
-			\NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $geoapify_key );
-		}
-	}
-
 	return $post_id;
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
+// Geoapify is used only for geocoding tagged places (phase 2). FSQ categories,
+// weather, and map images are handled by the backfill commands after import.
 $geoapify_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
-$pirate_key   = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' ) );
 
 if ( ! $geoapify_key ) {
 	WP_CLI::warning( 'No Geoapify key configured — tagged places will be created without coordinates.' );
-}
-if ( ! $pirate_key ) {
-	WP_CLI::warning( 'No Pirate Weather key configured — weather will not be enriched.' );
 }
 
 // ── Phase 1: explicit check-ins ───────────────────────────────────────────────
@@ -274,7 +241,7 @@ foreach ( $checkins as $item ) {
 		'raw'            => $item,
 	];
 
-	$result = fb_insert_checkin( $data, $pirate_key, $geoapify_key, $fb_tags, $fb_status );
+	$result = fb_insert_checkin( $data, $fb_tags, $fb_status );
 	if ( is_wp_error( $result ) ) {
 		WP_CLI::warning( "  fail: {$venue_name} — " . $result->get_error_message() );
 		$p1_failed++;
@@ -361,7 +328,7 @@ foreach ( $places as $item ) {
 		'raw'            => $item,
 	];
 
-	$result = fb_insert_checkin( $data, $pirate_key, $geoapify_key, $fb_tags, $fb_status );
+	$result = fb_insert_checkin( $data, $fb_tags, $fb_status );
 	if ( is_wp_error( $result ) ) {
 		WP_CLI::warning( "  fail: {$name} — " . $result->get_error_message() );
 		$p2_failed++;
