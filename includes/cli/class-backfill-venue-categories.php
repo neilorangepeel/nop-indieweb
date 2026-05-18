@@ -34,12 +34,17 @@ class Backfill_Venue_Categories {
 	 *   search FSQ by venue name and coordinates instead of skipping. Also stores
 	 *   the matched fsq_id as nop_indieweb_venue_uid so future fetches are fast.
 	 *
+	 * [--limit=<n>]
+	 * : Stop after processing this many posts that required an API call. Useful for
+	 *   staying within Studio WP-CLI's 120s timeout. Re-run until complete.
+	 *
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
 		$dry_run     = isset( $assoc_args['dry-run'] );
 		$force       = isset( $assoc_args['force'] );
 		$search_mode = isset( $assoc_args['search-by-name'] );
+		$limit       = isset( $assoc_args['limit'] ) ? (int) $assoc_args['limit'] : 0;
 
 		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' );
 		if ( '' === $api_key ) {
@@ -71,9 +76,15 @@ class Backfill_Venue_Categories {
 		$no_venue   = 0;
 		$no_cats    = 0;
 		$searched   = 0;
+		$api_calls  = 0;
 
 		foreach ( $post_ids as $post_id ) {
 			$progress->tick();
+
+			if ( $limit > 0 && $api_calls >= $limit ) {
+				$skipped += ( $total - $updated - $skipped - $no_venue - $no_cats );
+				break;
+			}
 
 			if ( ! $force ) {
 				$existing = wp_get_post_terms( $post_id, Venue_Category_Taxonomy::TAXONOMY );
@@ -103,6 +114,7 @@ class Backfill_Venue_Categories {
 				}
 
 				$match = Foursquare_Enricher::search_venue( $name, $lat, $lng );
+				$api_calls++;
 				if ( ! $match ) {
 					$no_cats++;
 					continue;
@@ -133,6 +145,7 @@ class Backfill_Venue_Categories {
 			}
 
 			$cats = Foursquare_Enricher::fetch_categories( $venue_id );
+			$api_calls++;
 			if ( ! $cats ) {
 				$no_cats++;
 				continue;
@@ -147,14 +160,16 @@ class Backfill_Venue_Categories {
 		$progress->finish();
 
 		$search_note = $search_mode ? sprintf( ' (%d via name search)', $searched ) : '';
+		$limit_note  = ( $limit > 0 && $api_calls >= $limit ) ? ' [--limit reached, re-run to continue]' : '';
 		WP_CLI::success( sprintf(
-			'%s%d updated%s · %d already tagged · %d without venue ID · %d returned no categories',
+			'%s%d updated%s · %d already tagged · %d without venue ID · %d returned no categories%s',
 			$dry_run ? '[DRY RUN] ' : '',
 			$updated,
 			$search_note,
 			$skipped,
 			$no_venue,
-			$no_cats
+			$no_cats,
+			$limit_note
 		) );
 	}
 }
