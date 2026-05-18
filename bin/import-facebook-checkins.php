@@ -85,38 +85,6 @@ function fb_parse_address( string $raw ): array {
 }
 
 /**
- * Geocode a venue name via Geoapify. Returns ['lat', 'lng', 'locality', 'postcode', 'address', 'country'] or [].
- */
-function fb_geocode( string $venue_name, string $api_key ): array {
-	$url      = add_query_arg(
-		[ 'text' => $venue_name, 'limit' => 1, 'apiKey' => $api_key ],
-		'https://api.geoapify.com/v1/geocode/search'
-	);
-	$response = wp_remote_get( $url, [ 'timeout' => 10 ] );
-	if ( is_wp_error( $response ) ) {
-		return [];
-	}
-	$body    = json_decode( wp_remote_retrieve_body( $response ), true );
-	$feature = $body['features'][0] ?? null;
-	if ( ! $feature ) {
-		return [];
-	}
-	$coords = $feature['geometry']['coordinates'] ?? null;
-	if ( ! $coords || count( $coords ) < 2 ) {
-		return [];
-	}
-	$props = $feature['properties'] ?? [];
-	return [
-		'lat'      => (string) $coords[1],
-		'lng'      => (string) $coords[0],
-		'locality' => $props['city'] ?? $props['county'] ?? $props['state'] ?? '',
-		'postcode' => $props['postcode'] ?? '',
-		'address'  => $props['address_line1'] ?? '',
-		'country'  => $props['country'] ?? '',
-	];
-}
-
-/**
  * Insert a checkin post. Enrichment (FSQ categories, weather, maps) is left
  * to the dedicated backfill commands so the import stays within the WP-CLI
  * 120 s timeout even with 200+ geocoding calls in phase 2.
@@ -174,14 +142,10 @@ function fb_insert_checkin( array $data, array $tags, string $status ): int|WP_E
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-
-// Geoapify is used only for geocoding tagged places (phase 2). FSQ categories,
-// weather, and map images are handled by the backfill commands after import.
-$geoapify_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
-
-if ( ! $geoapify_key ) {
-	WP_CLI::warning( 'No Geoapify key configured — tagged places will be created without coordinates.' );
-}
+// No API calls during import. Run these backfills after:
+//   studio wp nop-indieweb backfill-venue-categories --search-by-name  (coords + FSQ categories)
+//   studio wp nop-indieweb backfill-weather
+//   studio wp nop-indieweb backfill-checkin-maps
 
 // ── Phase 1: explicit check-ins ───────────────────────────────────────────────
 
@@ -267,7 +231,7 @@ $places = json_decode( file_get_contents( $places_file ), true ) ?? [];
 WP_CLI::line( sprintf( 'Phase 2: %d tagged places (125 unique venues to geocode)', count( $places ) ) );
 
 $geocode_cache = [];
-$p2_created = $p2_skipped = $p2_failed = $p2_geocoded = 0;
+$p2_created = $p2_skipped = $p2_failed = 0;
 
 foreach ( $places as $item ) {
 	$ts   = 0;
@@ -297,34 +261,18 @@ foreach ( $places as $item ) {
 		continue;
 	}
 
-	// Geocode — cache results so each unique venue name only hits the API once.
-	$coords = [];
-	if ( $geoapify_key ) {
-		$cache_key = mb_strtolower( trim( $name ) );
-		if ( array_key_exists( $cache_key, $geocode_cache ) ) {
-			$coords = $geocode_cache[ $cache_key ];
-		} else {
-			$coords                       = fb_geocode( $name, $geoapify_key );
-			$geocode_cache[ $cache_key ]  = $coords;
-			if ( $coords ) {
-				$p2_geocoded++;
-			}
-			usleep( 200000 ); // ~5 req/s — well within Geoapify free tier
-		}
-	}
-
 	$data = [
 		'content'        => '',
 		'post_date_gmt'  => gmdate( 'Y-m-d H:i:s', $ts ),
 		'source_url'     => $source_url,
 		'venue_name'     => $name,
-		'venue_lat'      => $coords['lat'] ?? '',
-		'venue_lng'      => $coords['lng'] ?? '',
-		'venue_address'  => $coords['address'] ?? '',
-		'venue_locality' => $coords['locality'] ?? '',
-		'venue_postcode' => $coords['postcode'] ?? '',
+		'venue_lat'      => '',
+		'venue_lng'      => '',
+		'venue_address'  => '',
+		'venue_locality' => '',
+		'venue_postcode' => '',
 		'venue_region'   => '',
-		'venue_country'  => $coords['country'] ?? '',
+		'venue_country'  => '',
 		'raw'            => $item,
 	];
 
@@ -333,16 +281,13 @@ foreach ( $places as $item ) {
 		WP_CLI::warning( "  fail: {$name} — " . $result->get_error_message() );
 		$p2_failed++;
 	} else {
-		$geo_note = $coords ? 'geocoded' : 'no coords';
-		WP_CLI::line( "  created #{$result}: {$name} ({$geo_note})" );
+		WP_CLI::line( "  created #{$result}: {$name}" );
 		$p2_created++;
 	}
-
-	usleep( 150000 );
 }
 
 WP_CLI::success( sprintf(
-	"Done. Phase 1: %d created, %d skipped, %d failed. Phase 2: %d created (%d geocoded), %d skipped, %d failed.",
+	"Done. Phase 1: %d created, %d skipped, %d failed. Phase 2: %d created, %d skipped, %d failed.",
 	$p1_created, $p1_skipped, $p1_failed,
-	$p2_created, $p2_geocoded, $p2_skipped, $p2_failed,
+	$p2_created, $p2_skipped, $p2_failed,
 ) );

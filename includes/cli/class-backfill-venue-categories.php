@@ -103,18 +103,29 @@ class Backfill_Venue_Categories {
 				}
 
 				$match = Foursquare_Enricher::search_venue( $name, $lat, $lng );
-				if ( ! $match || ! $match['categories'] ) {
+				if ( ! $match ) {
 					$no_cats++;
 					continue;
 				}
 
 				if ( ! $dry_run ) {
-					wp_set_object_terms( $post_id, $match['categories'], Venue_Category_Taxonomy::TAXONOMY );
-					// Store the resolved FSQ ID so future runs and fetch_categories() use the fast path.
+					if ( $match['categories'] ) {
+						wp_set_object_terms( $post_id, $match['categories'], Venue_Category_Taxonomy::TAXONOMY );
+					}
 					if ( $match['fsq_id'] ) {
 						update_post_meta( $post_id, 'nop_indieweb_venue_uid', $match['fsq_id'] );
 						update_post_meta( $post_id, 'nop_indieweb_venue_url', 'https://foursquare.com/v/' . $match['fsq_id'] );
 					}
+					// Populate coordinates from FSQ when the post has none (Facebook tagged places).
+					if ( $match['lat'] && $match['lng'] && '' === $lat ) {
+						update_post_meta( $post_id, 'nop_indieweb_venue_lat', $match['lat'] );
+						update_post_meta( $post_id, 'nop_indieweb_venue_lng', $match['lng'] );
+					}
+				}
+
+				if ( ! $match['categories'] ) {
+					$no_cats++;
+					continue;
 				}
 				$searched++;
 				$updated++;

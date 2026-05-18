@@ -137,7 +137,7 @@ class Foursquare_Enricher {
 		$params = [
 			'query'  => $name,
 			'limit'  => 1,
-			'fields' => 'fsq_id,name,categories',
+			'fields' => 'fsq_id,name,categories,geocodes',
 		];
 		if ( $lat && $lng ) {
 			$params['ll'] = "{$lat},{$lng}";
@@ -180,9 +180,9 @@ class Foursquare_Enricher {
 			return [];
 		}
 
-		$fsq_id     = (string) ( $first['fsq_id'] ?? '' );
-		$raw_cats   = is_array( $first['categories'] ?? null ) ? $first['categories'] : [];
-		$cat_names  = [];
+		$fsq_id    = (string) ( $first['fsq_id'] ?? '' );
+		$raw_cats  = is_array( $first['categories'] ?? null ) ? $first['categories'] : [];
+		$cat_names = [];
 		foreach ( $raw_cats as $cat ) {
 			$cat_name = (string) ( $cat['name'] ?? '' );
 			if ( '' !== $cat_name ) {
@@ -191,7 +191,15 @@ class Foursquare_Enricher {
 		}
 		$cat_names = array_slice( $cat_names, 0, self::MAX_CATEGORIES );
 
-		$result = [ 'fsq_id' => $fsq_id, 'categories' => $cat_names ];
+		// FSQ geocodes.main carries the venue's canonical lat/lng — useful for
+		// enriching posts that have no coordinates (e.g. Facebook tagged places).
+		$geocodes = $first['geocodes']['main'] ?? [];
+		$result   = [
+			'fsq_id'     => $fsq_id,
+			'categories' => $cat_names,
+			'lat'        => isset( $geocodes['latitude'] )  ? (string) $geocodes['latitude']  : '',
+			'lng'        => isset( $geocodes['longitude'] ) ? (string) $geocodes['longitude'] : '',
+		];
 		set_transient( $cache_key, $result, self::CACHE_TTL );
 
 		return $result;
