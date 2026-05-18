@@ -19,11 +19,15 @@ class Backfill_Checkin_Maps {
 	 * [--force]
 	 * : Regenerate the map even when one is already cached.
 	 *
+	 * [--limit=<n>]
+	 * : Stop after generating this many map images. Re-run until complete.
+	 *
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
 		$dry_run = isset( $assoc_args['dry-run'] );
 		$force   = isset( $assoc_args['force'] );
+		$limit   = isset( $assoc_args['limit'] ) ? (int) $assoc_args['limit'] : 0;
 
 		$api_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
 		if ( '' === $api_key ) {
@@ -54,9 +58,15 @@ class Backfill_Checkin_Maps {
 		$cached    = 0;
 		$no_coords = 0;
 		$failed    = 0;
+		$api_calls = 0;
 
 		foreach ( $post_ids as $post_id ) {
 			$progress->tick();
+
+			if ( $limit > 0 && $api_calls >= $limit ) {
+				$cached += ( $total - $generated - $cached - $no_coords - $failed );
+				break;
+			}
 
 			$existing = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
 			if ( ! $force && '' !== $existing ) {
@@ -81,6 +91,7 @@ class Backfill_Checkin_Maps {
 			}
 
 			$url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $api_key );
+			$api_calls++;
 			if ( '' === $url ) {
 				$failed++;
 				continue;
@@ -90,13 +101,15 @@ class Backfill_Checkin_Maps {
 
 		$progress->finish();
 
+		$limit_note = ( $limit > 0 && $api_calls >= $limit ) ? ' [--limit reached, re-run to continue]' : '';
 		WP_CLI::success( sprintf(
-			'%s%d generated · %d already cached · %d without coords · %d failed',
+			'%s%d generated · %d already cached · %d without coords · %d failed%s',
 			$dry_run ? '[DRY RUN] ' : '',
 			$generated,
 			$cached,
 			$no_coords,
-			$failed
+			$failed,
+			$limit_note
 		) );
 	}
 }
