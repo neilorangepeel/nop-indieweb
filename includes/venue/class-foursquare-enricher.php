@@ -101,6 +101,99 @@ class Foursquare_Enricher {
 	}
 
 	/**
+	 * Fetches full venue details: categories, address fields, and coordinates.
+	 *
+	 * Returns an array with keys:
+	 *   categories string[]  — sanitized category names, primary-first
+	 *   address    string    — street address
+	 *   locality   string    — city / town
+	 *   region     string    — state / county
+	 *   country    string    — ISO country code (e.g. "GB")
+	 *   postcode   string    — postal code
+	 *
+	 * Note: coordinates are NOT included — FSQ's geocodes field is premium
+	 * (requires billing credits). Use search_venue() for lat/lng.
+	 *
+	 * Returns [] on API error or unconfigured key. Results cached 30 days
+	 * under a separate prefix so they don't collide with fetch_categories().
+	 */
+	public static function fetch_venue_details( string $venue_id ): array {
+		$venue_id = self::normalise_venue_id( $venue_id );
+		if ( '' === $venue_id ) {
+			return [];
+		}
+
+		$cache_key = 'nop_fsq_details_' . $venue_id;
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' );
+		if ( '' === $api_key ) {
+			return [];
+		}
+
+		// geocodes is a premium FSQ field (requires billing credits). We request
+		// only categories + location, which are available on the free tier.
+		// Coordinates come from search_venue() results stored during the
+		// backfill-venue-categories run.
+		$url      = self::ENDPOINT . rawurlencode( $venue_id ) . '?fields=categories,location';
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
+			'timeout'             => self::TIMEOUT,
+			'limit_response_size' => self::MAX_BYTES,
+			'headers'             => [
+				'Authorization'        => 'Bearer ' . $api_key,
+				'Accept'               => 'application/json',
+				'X-Places-Api-Version' => self::API_VERSION,
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'foursquare: details fetch failed', [
+				'venue_id' => $venue_id,
+				'error'    => $response->get_error_message(),
+			] );
+			return [];
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'foursquare: details non-200', [
+				'venue_id' => $venue_id,
+				'code'     => $code,
+			] );
+			return [];
+		}
+
+		$body     = (array) json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$location = is_array( $body['location'] ?? null ) ? $body['location'] : [];
+
+		$raw_cats = is_array( $body['categories'] ?? null ) ? $body['categories'] : [];
+		$names    = [];
+		foreach ( $raw_cats as $cat ) {
+			$name = (string) ( $cat['name'] ?? '' );
+			if ( '' !== $name ) {
+				$names[] = sanitize_text_field( $name );
+			}
+		}
+		$names = array_slice( $names, 0, self::MAX_CATEGORIES );
+
+		$result = [
+			'categories' => $names,
+			'address'    => sanitize_text_field( (string) ( $location['address']  ?? '' ) ),
+			'locality'   => sanitize_text_field( (string) ( $location['locality'] ?? '' ) ),
+			'region'     => sanitize_text_field( (string) ( $location['region']   ?? '' ) ),
+			'country'    => sanitize_text_field( (string) ( $location['country']  ?? '' ) ),
+			'postcode'   => sanitize_text_field( (string) ( $location['postcode'] ?? '' ) ),
+		];
+
+		set_transient( $cache_key, $result, self::CACHE_TTL );
+
+		return $result;
+	}
+
+	/**
 	 * Search FSQ for a venue by name and optional coordinates.
 	 *
 	 * Returns ['fsq_id' => string, 'categories' => string[]] on success, or []
