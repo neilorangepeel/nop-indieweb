@@ -77,8 +77,10 @@ require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-categories.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-checkin-maps.php';
-	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories', \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
-	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',     \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-facebook-checkins.php';
+	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
+	\WP_CLI::add_command( 'nop-indieweb import-facebook-checkins',    \NOP\IndieWeb\Cli\Import_Facebook_Checkins::class );
 }
 
 // Create the tokens table on activation and on every load if the schema is stale.
