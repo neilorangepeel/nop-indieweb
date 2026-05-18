@@ -29,11 +29,17 @@ class Backfill_Venue_Categories {
 	 * [--force]
 	 * : Re-tag every check-in, even ones that already have venue category terms.
 	 *
+	 * [--search-by-name]
+	 * : For check-ins without a Foursquare venue URL (e.g. Facebook imports),
+	 *   search FSQ by venue name and coordinates instead of skipping. Also stores
+	 *   the matched fsq_id as nop_indieweb_venue_uid so future fetches are fast.
+	 *
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
-		$dry_run = isset( $assoc_args['dry-run'] );
-		$force   = isset( $assoc_args['force'] );
+		$dry_run     = isset( $assoc_args['dry-run'] );
+		$force       = isset( $assoc_args['force'] );
+		$search_mode = isset( $assoc_args['search-by-name'] );
 
 		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' );
 		if ( '' === $api_key ) {
@@ -59,11 +65,12 @@ class Backfill_Venue_Categories {
 			return;
 		}
 
-		$progress  = \WP_CLI\Utils\make_progress_bar( $dry_run ? 'Inspecting' : 'Enriching', $total );
-		$updated   = 0;
-		$skipped   = 0;
-		$no_venue  = 0;
-		$no_cats   = 0;
+		$progress   = \WP_CLI\Utils\make_progress_bar( $dry_run ? 'Inspecting' : 'Enriching', $total );
+		$updated    = 0;
+		$skipped    = 0;
+		$no_venue   = 0;
+		$no_cats    = 0;
+		$searched   = 0;
 
 		foreach ( $post_ids as $post_id ) {
 			$progress->tick();
@@ -78,8 +85,39 @@ class Backfill_Venue_Categories {
 
 			$venue_url = (string) get_post_meta( $post_id, 'nop_indieweb_venue_url', true );
 			$venue_id  = Foursquare_Enricher::extract_venue_id( $venue_url );
+
 			if ( '' === $venue_id ) {
-				$no_venue++;
+				if ( ! $search_mode ) {
+					$no_venue++;
+					continue;
+				}
+
+				// No Foursquare URL — search by venue name + coordinates (e.g. Facebook imports).
+				$name = (string) get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+				$lat  = (string) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
+				$lng  = (string) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+
+				if ( '' === $name ) {
+					$no_venue++;
+					continue;
+				}
+
+				$match = Foursquare_Enricher::search_venue( $name, $lat, $lng );
+				if ( ! $match || ! $match['categories'] ) {
+					$no_cats++;
+					continue;
+				}
+
+				if ( ! $dry_run ) {
+					wp_set_object_terms( $post_id, $match['categories'], Venue_Category_Taxonomy::TAXONOMY );
+					// Store the resolved FSQ ID so future runs and fetch_categories() use the fast path.
+					if ( $match['fsq_id'] ) {
+						update_post_meta( $post_id, 'nop_indieweb_venue_uid', $match['fsq_id'] );
+						update_post_meta( $post_id, 'nop_indieweb_venue_url', 'https://foursquare.com/v/' . $match['fsq_id'] );
+					}
+				}
+				$searched++;
+				$updated++;
 				continue;
 			}
 
@@ -97,10 +135,12 @@ class Backfill_Venue_Categories {
 
 		$progress->finish();
 
+		$search_note = $search_mode ? sprintf( ' (%d via name search)', $searched ) : '';
 		WP_CLI::success( sprintf(
-			'%s%d updated · %d already tagged · %d without venue ID · %d returned no categories',
+			'%s%d updated%s · %d already tagged · %d without venue ID · %d returned no categories',
 			$dry_run ? '[DRY RUN] ' : '',
 			$updated,
+			$search_note,
 			$skipped,
 			$no_venue,
 			$no_cats

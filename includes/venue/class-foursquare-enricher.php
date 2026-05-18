@@ -101,6 +101,103 @@ class Foursquare_Enricher {
 	}
 
 	/**
+	 * Search FSQ for a venue by name and optional coordinates.
+	 *
+	 * Returns ['fsq_id' => string, 'categories' => string[]] on success, or []
+	 * when no match is found or the API key is not configured. Results are
+	 * cached for 30 days — the same TTL as fetch_categories() — so repeated
+	 * import runs don't hammer the API for the same venue names.
+	 *
+	 * When lat/lng are supplied the search uses them as a proximity hint so
+	 * "Crown Bar" resolves to the Belfast pub rather than a different city's bar.
+	 * Without coordinates FSQ still finds well-known named places reliably.
+	 */
+	public static function search_venue( string $name, string $lat = '', string $lng = '' ): array {
+		$name = trim( $name );
+		if ( '' === $name ) {
+			return [];
+		}
+
+		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' );
+		if ( '' === $api_key ) {
+			return [];
+		}
+
+		// Round coords to 2 d.p. so nearby GPS variants share the same cache entry.
+		$coord_suffix = ( $lat && $lng )
+			? '|' . round( (float) $lat, 2 ) . ',' . round( (float) $lng, 2 )
+			: '';
+		$cache_key = 'nop_fsq_search_' . md5( strtolower( $name ) . $coord_suffix );
+
+		$cached = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$params = [
+			'query'  => $name,
+			'limit'  => 1,
+			'fields' => 'fsq_id,name,categories',
+		];
+		if ( $lat && $lng ) {
+			$params['ll'] = "{$lat},{$lng}";
+		}
+
+		$url      = add_query_arg( $params, self::ENDPOINT . 'search' );
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
+			'timeout'             => self::TIMEOUT,
+			'limit_response_size' => self::MAX_BYTES,
+			'headers'             => [
+				'Authorization'        => 'Bearer ' . $api_key,
+				'Accept'               => 'application/json',
+				'X-Places-Api-Version' => self::API_VERSION,
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'foursquare: search failed', [
+				'venue'  => $name,
+				'error'  => $response->get_error_message(),
+			] );
+			return [];
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'foursquare: search non-200', [
+				'venue' => $name,
+				'code'  => $code,
+			] );
+			return [];
+		}
+
+		$body    = (array) json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$results = is_array( $body['results'] ?? null ) ? $body['results'] : [];
+		$first   = $results[0] ?? null;
+
+		if ( ! $first ) {
+			set_transient( $cache_key, [], self::CACHE_TTL );
+			return [];
+		}
+
+		$fsq_id     = (string) ( $first['fsq_id'] ?? '' );
+		$raw_cats   = is_array( $first['categories'] ?? null ) ? $first['categories'] : [];
+		$cat_names  = [];
+		foreach ( $raw_cats as $cat ) {
+			$cat_name = (string) ( $cat['name'] ?? '' );
+			if ( '' !== $cat_name ) {
+				$cat_names[] = sanitize_text_field( $cat_name );
+			}
+		}
+		$cat_names = array_slice( $cat_names, 0, self::MAX_CATEGORIES );
+
+		$result = [ 'fsq_id' => $fsq_id, 'categories' => $cat_names ];
+		set_transient( $cache_key, $result, self::CACHE_TTL );
+
+		return $result;
+	}
+
+	/**
 	 * Extracts the venue ID from a Foursquare venue URL like
 	 * https://foursquare.com/v/1621468202284afcdf60c9bc, or passes through
 	 * a bare ID. Returns '' for anything that isn't a foursquare.com URL or
