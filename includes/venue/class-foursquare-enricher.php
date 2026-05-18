@@ -134,11 +134,9 @@ class Foursquare_Enricher {
 			return $cached;
 		}
 
-		$params = [
-			'query'  => $name,
-			'limit'  => 1,
-			'fields' => 'fsq_id,name,categories,geocodes',
-		];
+		// The search endpoint does not support the fields selector — all fields
+		// are returned by default. lat/lng live at the top level (not in geocodes).
+		$params = [ 'query' => $name, 'limit' => 1 ];
 		if ( $lat && $lng ) {
 			$params['ll'] = "{$lat},{$lng}";
 		}
@@ -180,7 +178,8 @@ class Foursquare_Enricher {
 			return [];
 		}
 
-		$fsq_id    = (string) ( $first['fsq_id'] ?? '' );
+		// Search uses fsq_place_id; lat/lng are top-level (not nested in geocodes).
+		$fsq_id    = (string) ( $first['fsq_place_id'] ?? '' );
 		$raw_cats  = is_array( $first['categories'] ?? null ) ? $first['categories'] : [];
 		$cat_names = [];
 		foreach ( $raw_cats as $cat ) {
@@ -191,14 +190,11 @@ class Foursquare_Enricher {
 		}
 		$cat_names = array_slice( $cat_names, 0, self::MAX_CATEGORIES );
 
-		// FSQ geocodes.main carries the venue's canonical lat/lng — useful for
-		// enriching posts that have no coordinates (e.g. Facebook tagged places).
-		$geocodes = $first['geocodes']['main'] ?? [];
-		$result   = [
+		$result = [
 			'fsq_id'     => $fsq_id,
 			'categories' => $cat_names,
-			'lat'        => isset( $geocodes['latitude'] )  ? (string) $geocodes['latitude']  : '',
-			'lng'        => isset( $geocodes['longitude'] ) ? (string) $geocodes['longitude'] : '',
+			'lat'        => isset( $first['latitude'] )  ? (string) $first['latitude']  : '',
+			'lng'        => isset( $first['longitude'] ) ? (string) $first['longitude'] : '',
 		];
 		set_transient( $cache_key, $result, self::CACHE_TTL );
 
