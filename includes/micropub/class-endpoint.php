@@ -327,7 +327,7 @@ class Endpoint {
 
 	private function apply_replace( int $post_id, string $prop, array $values, array &$args ): void {
 		match( $prop ) {
-			'content'     => $args['post_content'] = $values[0] ?? '',
+			'content'     => $args['post_content'] = $this->plain_text_to_block( (string) ( $values[0] ?? '' ) ),
 			'name'        => $args['post_title']   = $values[0] ?? '',
 			'post-status' => $args['post_status']  = sanitize_key( $values[0] ?? '' ),
 			'published'   => $this->apply_date( $values[0] ?? '', $args ),
@@ -339,8 +339,31 @@ class Endpoint {
 	private function apply_add( int $post_id, string $prop, array $values ): void {
 		match( $prop ) {
 			'syndication' => $this->merge_meta( $post_id, 'nop_indieweb_syndication', array_map( 'esc_url_raw', $values ) ),
+			'photo'       => $this->apply_add_photos( $post_id, $values ),
 			default       => null,
 		};
+	}
+
+	private function plain_text_to_block( string $content ): string {
+		$content = trim( $content );
+		if ( $content === '' || str_starts_with( $content, '<!--' ) ) {
+			return $content;
+		}
+		return "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->";
+	}
+
+	private function apply_add_photos( int $post_id, array $urls ): void {
+		$urls = array_values( array_filter( array_map( 'esc_url_raw', $urls ) ) );
+		if ( ! $urls ) {
+			return;
+		}
+		$slug = (string) get_post_meta( $post_id, 'nop_indieweb_service', true );
+		foreach ( $this->services as $service ) {
+			if ( $service instanceof Service_Base && $service->get_slug() === $slug ) {
+				$service->append_photos( $post_id, $urls );
+				return;
+			}
+		}
 	}
 
 	private function apply_delete_prop( int $post_id, string $prop, array &$args ): void {

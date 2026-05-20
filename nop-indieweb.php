@@ -72,6 +72,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-sender.php
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-social-backfeed.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-enricher.php';
+require_once NOP_INDIEWEB_DIR . 'includes/venue/class-geoapify-geocoder.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

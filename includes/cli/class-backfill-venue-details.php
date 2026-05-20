@@ -6,6 +6,7 @@ namespace NOP\IndieWeb\Cli;
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
 use NOP\IndieWeb\Venue\Foursquare_Enricher;
+use NOP\IndieWeb\Venue\Geoapify_Geocoder;
 use WP_CLI;
 
 /**
@@ -62,7 +63,9 @@ class Backfill_Venue_Details {
 				],
 			],
 			'meta_query'     => [
+				'relation' => 'OR',
 				[ 'key' => 'nop_indieweb_venue_uid', 'value' => '', 'compare' => '!=' ],
+				[ 'key' => 'nop_indieweb_venue_url', 'value' => '', 'compare' => '!=' ],
 			],
 		] );
 
@@ -100,6 +103,15 @@ class Backfill_Venue_Details {
 			}
 
 			$venue_id = (string) get_post_meta( $post_id, 'nop_indieweb_venue_uid', true );
+			if ( '' === $venue_id ) {
+				$venue_url = (string) get_post_meta( $post_id, 'nop_indieweb_venue_url', true );
+				$venue_id  = Foursquare_Enricher::extract_venue_id( $venue_url );
+			}
+			if ( '' === $venue_id ) {
+				$no_data++;
+				continue;
+			}
+
 			$details  = Foursquare_Enricher::fetch_venue_details( $venue_id );
 			$api_calls++;
 
@@ -108,14 +120,34 @@ class Backfill_Venue_Details {
 				continue;
 			}
 
+			// If FSQ returned no locality, fall back to Geoapify reverse geocoding.
+			if ( '' === $details['locality'] ) {
+				$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
+				$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+				if ( $lat || $lng ) {
+					$geo = Geoapify_Geocoder::reverse_geocode( $lat, $lng );
+					foreach ( [ 'address', 'locality', 'region', 'country', 'postcode' ] as $field ) {
+						if ( '' === $details[ $field ] && '' !== ( $geo[ $field ] ?? '' ) ) {
+							$details[ $field ] = $geo[ $field ];
+						}
+					}
+				}
+			}
+
 			if ( $dry_run ) {
+				$current_title = get_the_title( $post_id );
+				$venue_name    = (string) get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+				$new_title     = ( $details['locality'] && $venue_name && ! str_contains( $current_title, $details['locality'] ) )
+					? $venue_name . ', ' . $details['locality']
+					: null;
 				WP_CLI::line( sprintf(
-					'  #%d %s → %s, %s [%s]',
+					'  #%d %s → %s, %s [%s]%s',
 					$post_id,
-					get_the_title( $post_id ),
+					$current_title,
 					$details['address'] ?: '(no address)',
 					$details['locality'] ?: '(no locality)',
-					implode( ', ', $details['categories'] ) ?: 'no categories'
+					implode( ', ', $details['categories'] ) ?: 'no categories',
+					$new_title ? " [title → {$new_title}]" : ''
 				) );
 				$updated++;
 				continue;
@@ -138,6 +170,20 @@ class Backfill_Venue_Details {
 			}
 			if ( $details['categories'] ) {
 				wp_set_object_terms( $post_id, $details['categories'], Venue_Category_Taxonomy::TAXONOMY );
+			}
+
+			// Backfill the venue_uid if it was previously missing (derived from URL).
+			if ( '' === (string) get_post_meta( $post_id, 'nop_indieweb_venue_uid', true ) ) {
+				update_post_meta( $post_id, 'nop_indieweb_venue_uid', $venue_id );
+			}
+
+			// Update the post title to include locality when it was missing at ingest time.
+			if ( $details['locality'] ) {
+				$current_title = get_the_title( $post_id );
+				$venue_name    = (string) get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+				if ( $venue_name && ! str_contains( $current_title, $details['locality'] ) ) {
+					wp_update_post( [ 'ID' => $post_id, 'post_title' => $venue_name . ', ' . $details['locality'] ] );
+				}
 			}
 
 			$updated++;

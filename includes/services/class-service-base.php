@@ -423,6 +423,31 @@ abstract class Service_Base {
 		return '';
 	}
 
+	public function append_photos( int $post_id, array $urls ): void {
+		$settings = $this->get_settings();
+		$ids      = [];
+		if ( ! empty( $settings['sideload_photos'] ) ) {
+			$ids = $this->sideload_photos( $urls, $post_id );
+			if ( $ids ) {
+				$existing = (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true );
+				update_post_meta( $post_id, 'nop_indieweb_photo_ids', array_merge( $existing, $ids ) );
+			}
+		}
+		$existing = (array) get_post_meta( $post_id, 'nop_indieweb_photos', true );
+		update_post_meta( $post_id, 'nop_indieweb_photos', array_merge( $existing, $urls ) );
+
+		$blocks = $this->build_photo_blocks( $ids, $ids ? [] : $urls );
+		if ( ! $blocks ) {
+			return;
+		}
+		$post    = get_post( $post_id );
+		$current = rtrim( (string) $post->post_content );
+		wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => ( $current ? $current . "\n\n" : '' ) . $blocks,
+		] );
+	}
+
 	/**
 	 * Sideloads video blobs into the WordPress media library.
 	 *

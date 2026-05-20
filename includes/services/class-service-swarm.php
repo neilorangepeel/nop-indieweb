@@ -72,7 +72,12 @@ class Swarm extends Service_Base {
 			// Venue identity
 			'venue_name'        => sanitize_text_field( $checkin_props['name'][0] ?? '' ),
 			'venue_url'         => esc_url_raw( $checkin_props['url'][0] ?? '' ),
-			'venue_uid'         => sanitize_text_field( $checkin_props['uid'][0] ?? '' ),
+			// uid is preferred; fall back to extracting from the venue URL (OwnYourSwarm
+			// sometimes omits uid while still providing the Foursquare venue URL).
+			'venue_uid'         => sanitize_text_field(
+				$checkin_props['uid'][0]
+				?? \NOP\IndieWeb\Venue\Foursquare_Enricher::extract_venue_id( $checkin_props['url'][0] ?? '' )
+			),
 
 			// Coordinates
 			'venue_lat'         => sanitize_text_field( $checkin_props['latitude'][0] ?? '' ),
