@@ -327,7 +327,7 @@ class Endpoint {
 
 	private function apply_replace( int $post_id, string $prop, array $values, array &$args ): void {
 		match( $prop ) {
-			'content'     => $args['post_content'] = $this->plain_text_to_block( (string) ( $values[0] ?? '' ) ),
+			'content'     => $args['post_content'] = $this->plain_text_to_block( (string) ( $values[0] ?? '' ), $post_id ),
 			'name'        => $args['post_title']   = $values[0] ?? '',
 			'post-status' => $args['post_status']  = sanitize_key( $values[0] ?? '' ),
 			'published'   => $this->apply_date( $values[0] ?? '', $args ),
@@ -344,12 +344,32 @@ class Endpoint {
 		};
 	}
 
-	private function plain_text_to_block( string $content ): string {
+	private function plain_text_to_block( string $content, int $post_id = 0 ): string {
 		$content = trim( $content );
 		if ( $content === '' || str_starts_with( $content, '<!--' ) ) {
 			return $content;
 		}
-		return "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->";
+		$new_paragraph = "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->";
+
+		// When the post already has content (e.g. an image block appended during
+		// ingest), only swap out the paragraph block so image blocks are preserved.
+		if ( $post_id ) {
+			$existing = trim( (string) get_post_field( 'post_content', $post_id ) );
+			if ( $existing ) {
+				$updated = preg_replace(
+					'/<!-- wp:paragraph -->.*?<!-- \/wp:paragraph -->/s',
+					$new_paragraph,
+					$existing,
+					1
+				);
+				if ( null !== $updated && $updated !== $existing ) {
+					return $updated;
+				}
+				return $new_paragraph . "\n\n" . $existing;
+			}
+		}
+
+		return $new_paragraph;
 	}
 
 	private function apply_add_photos( int $post_id, array $urls ): void {
