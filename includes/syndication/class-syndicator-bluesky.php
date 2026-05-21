@@ -127,6 +127,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
+			\NOP\IndieWeb\nop_indieweb_log( "Bluesky syndication failed for post {$post_id}", [ 'code' => $code ] );
 			return null;
 		}
 
@@ -134,6 +136,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$uri  = $body['uri'] ?? null;
 
 		if ( ! $uri ) {
+			\NOP\IndieWeb\nop_indieweb_log( "Bluesky syndication: no URI in response for post {$post_id}", $body );
 			return null;
 		}
 

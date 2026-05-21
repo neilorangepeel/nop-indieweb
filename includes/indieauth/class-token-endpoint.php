@@ -98,7 +98,7 @@ class Token_Endpoint {
 		Token_Store::insert(
 			$raw_token,
 			$client_id,
-			$stored['client_name'] ?? ( parse_url( $client_id, PHP_URL_HOST ) ?? $client_id ),
+			$stored['client_name'] ?? ( wp_parse_url( $client_id, PHP_URL_HOST ) ?? $client_id ),
 			$stored['scope'],
 			(int) $stored['user_id']
 		);

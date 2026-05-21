@@ -46,7 +46,9 @@ class Auth {
 			);
 		}
 
-		Token_Store::touch( $row['token_hash'] );
+		if ( time() - (int) strtotime( $row['last_used_at'] ) > HOUR_IN_SECONDS ) {
+			Token_Store::touch( $row['token_hash'] );
+		}
 
 		return $row;
 	}

@@ -46,6 +46,9 @@ class Plugin {
 
 	private ?Syndication_Manager $syndication_manager = null;
 
+	/** @var Services\Service_Base[] */
+	private array $services = [];
+
 	public static function get_instance(): Plugin {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -57,6 +60,33 @@ class Plugin {
 
 	public function syndication_manager(): ?Syndication_Manager {
 		return $this->syndication_manager;
+	}
+
+	/**
+	 * WP-Cron callback: runs a service's after_insert() in the background.
+	 *
+	 * Retrieves the parsed data from the transient set by Service_Base::handle(),
+	 * finds the matching service by slug, and delegates. The transient is deleted
+	 * whether or not a matching service is found so it doesn't persist indefinitely.
+	 */
+	public function dispatch_after_insert( int $post_id, string $service_slug ): void {
+		$transient_key = 'nop_ia_parsed_' . $post_id;
+		$parsed        = get_transient( $transient_key );
+		delete_transient( $transient_key );
+
+		if ( ! is_array( $parsed ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( "dispatch_after_insert: no parsed data for post {$post_id}" );
+			return;
+		}
+
+		foreach ( $this->services as $service ) {
+			if ( $service instanceof Services\Service_Base && $service->get_slug() === $service_slug ) {
+				$service->run_after_insert( $post_id, $parsed );
+				return;
+			}
+		}
+
+		\NOP\IndieWeb\nop_indieweb_log( "dispatch_after_insert: no service found for slug '{$service_slug}'" );
 	}
 
 	public function boot(): void {
@@ -76,6 +106,12 @@ class Plugin {
 			new Repost(),
 			$note,
 		] );
+		$this->services = $services;
+
+		// Dispatch background after_insert jobs queued by Service_Base::handle().
+		// The cron event carries the post_id and service slug; the parsed data
+		// is retrieved from a short-lived transient set at insert time.
+		add_action( 'nop_indieweb_run_after_insert', [ $this, 'dispatch_after_insert' ], 10, 2 );
 
 		$syndication_manager       = new Syndication_Manager();
 		$this->syndication_manager = $syndication_manager;
@@ -102,6 +138,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_patterns' ] );
 		add_action( 'init', [ $this, 'register_templates' ] );
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
+		add_action( 'rest_api_init', [ $this, 'register_indieauth_metadata_route' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
@@ -739,11 +776,32 @@ HTML,
 		] );
 	}
 
+	public function register_indieauth_metadata_route(): void {
+		register_rest_route( 'nop-indieweb/v1', '/indieauth-metadata', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'indieauth_metadata_response' ],
+			'permission_callback' => '__return_true',
+		] );
+	}
+
+	public function indieauth_metadata_response(): \WP_REST_Response {
+		return new \WP_REST_Response( [
+			'issuer'                                => home_url( '/' ),
+			'authorization_endpoint'                => Auth_Endpoint::url(),
+			'token_endpoint'                        => rest_url( 'nop-indieweb/v1/token' ),
+			'code_challenge_methods_supported'      => [ 'S256' ],
+			'scopes_supported'                      => [ 'create', 'update', 'delete', 'undelete', 'media', 'draft' ],
+			'response_types_supported'              => [ 'code' ],
+			'grant_types_supported'                 => [ 'authorization_code' ],
+		], 200 );
+	}
+
 	public function output_link_tags(): void {
 		printf( "<link rel=\"micropub\" href=\"%s\">\n",               esc_url( rest_url( 'nop-indieweb/v1/micropub' ) ) );
 		printf( "<link rel=\"webmention\" href=\"%s\">\n",             esc_url( rest_url( 'nop-indieweb/v1/webmention' ) ) );
 		printf( "<link rel=\"authorization_endpoint\" href=\"%s\">\n", esc_url( Auth_Endpoint::url() ) );
 		printf( "<link rel=\"token_endpoint\" href=\"%s\">\n",         esc_url( rest_url( 'nop-indieweb/v1/token' ) ) );
+		printf( "<link rel=\"indieauth-metadata\" href=\"%s\">\n",     esc_url( rest_url( 'nop-indieweb/v1/indieauth-metadata' ) ) );
 
 		foreach ( $this->get_me_urls() as $url ) {
 			printf( "<link rel=\"me\" href=\"%s\">\n", esc_url( $url ) );
@@ -761,6 +819,7 @@ HTML,
 		header( sprintf( 'Link: <%s>; rel="webmention"',             rest_url( 'nop-indieweb/v1/webmention' ) ), false );
 		header( sprintf( 'Link: <%s>; rel="authorization_endpoint"', Auth_Endpoint::url() ),                  false );
 		header( sprintf( 'Link: <%s>; rel="token_endpoint"',         rest_url( 'nop-indieweb/v1/token' ) ),  false );
+		header( sprintf( 'Link: <%s>; rel="indieauth-metadata"',     rest_url( 'nop-indieweb/v1/indieauth-metadata' ) ), false );
 
 		foreach ( $this->get_me_urls() as $url ) {
 			header( sprintf( 'Link: <%s>; rel="me"', $url ), false );

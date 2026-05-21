@@ -33,6 +33,7 @@ class Webmention_Endpoint {
 
 	public function register(): void {
 		add_action( 'rest_api_init', [ $this, 'register_route' ] );
+		add_action( 'nop_indieweb_process_webmention', [ $this, 'process_queued' ] );
 	}
 
 	public function register_route(): void {
@@ -101,6 +102,44 @@ class Webmention_Endpoint {
 			return new \WP_Error( 'target_not_found', 'Target URL does not resolve to a post.', [ 'status' => 400 ] );
 		}
 
+		// Queue the heavy work (source fetch, verification, mf2 parsing, storage)
+		// as a background cron job and return 202 Accepted immediately.
+		//
+		// The spec allows asynchronous processing; doing it synchronously ties up a
+		// PHP worker for up to 15 s per webmention and becomes untenable under burst
+		// traffic (e.g. Bridgy relay after a post goes viral).
+		//
+		// The transient key doubles as an idempotency lock: if the same source/target
+		// pair arrives again before the job runs, we return 202 without re-queuing.
+		$job_key = 'nop_wm_pending_' . md5( $source . $target );
+		if ( ! get_transient( $job_key ) ) {
+			set_transient( $job_key, [ 'source' => $source, 'target' => $target, 'post_id' => $post_id ], HOUR_IN_SECONDS );
+			wp_schedule_single_event( time(), 'nop_indieweb_process_webmention', [ $job_key ] );
+		}
+
+		return new \WP_REST_Response( null, 202 );
+	}
+
+	/**
+	 * WP-Cron callback: fetch, verify, parse, and store a queued webmention.
+	 * Registered via Plugin::boot() → Webmention_Endpoint::register().
+	 */
+	public function process_queued( string $job_key ): void {
+		$job = get_transient( $job_key );
+		delete_transient( $job_key );
+
+		if ( ! is_array( $job ) ) {
+			return;
+		}
+
+		$source  = (string) ( $job['source']  ?? '' );
+		$target  = (string) ( $job['target']  ?? '' );
+		$post_id = (int)    ( $job['post_id'] ?? 0  );
+
+		if ( ! $source || ! $target || ! $post_id ) {
+			return;
+		}
+
 		// Fetch the source. wp_safe_remote_get blocks SSRF to private/loopback IPs;
 		// limit_response_size caps the body so a sender cannot stream gigabytes at us.
 		$response = wp_safe_remote_get( $source, [
@@ -117,22 +156,22 @@ class Webmention_Endpoint {
 			$existing_id = $this->find_existing( $source, $post_id );
 			if ( $existing_id ) {
 				wp_delete_comment( $existing_id, true );
-				return new \WP_REST_Response( [ 'status' => 'deleted' ], 200 );
 			}
-			return new \WP_Error( 'source_gone', 'Source is gone.', [ 'status' => 400 ] );
+			return;
 		}
 
 		if ( is_wp_error( $response ) || $http_code < 200 || $http_code >= 300 ) {
-			return new \WP_Error( 'source_fetch_failed', 'Could not fetch source URL.', [ 'status' => 400 ] );
+			\NOP\IndieWeb\nop_indieweb_log( "Webmention: source fetch failed for {$source}", $http_code );
+			return;
 		}
 
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( ! $this->source_links_to_target( $body, $target ) ) {
-			return new \WP_Error( 'no_link', 'Source does not link to target.', [ 'status' => 400 ] );
+			\NOP\IndieWeb\nop_indieweb_log( "Webmention: source does not link to target", compact( 'source', 'target' ) );
+			return;
 		}
 
-		// Deduplicate: update the existing comment rather than creating a duplicate.
 		$existing_id = $this->find_existing( $source, $post_id );
 
 		$parser = new MF2_Parser();
@@ -140,15 +179,10 @@ class Webmention_Endpoint {
 
 		if ( $existing_id ) {
 			$this->update_webmention( $existing_id, $parsed );
-			return new \WP_REST_Response( [ 'status' => 'updated' ], 200 );
+			return;
 		}
 
-		$comment_id = $this->insert_webmention( $post_id, $source, $target, $parsed );
-		if ( is_wp_error( $comment_id ) ) {
-			return new \WP_Error( 'store_failed', 'Failed to store webmention.', [ 'status' => 500 ] );
-		}
-
-		return new \WP_REST_Response( [ 'status' => 'created' ], 201 );
+		$this->insert_webmention( $post_id, $source, $target, $parsed );
 	}
 
 	// ── Validation ─────────────────────────────────────────────────────────────

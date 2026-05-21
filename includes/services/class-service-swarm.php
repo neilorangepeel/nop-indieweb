@@ -238,7 +238,10 @@ class Swarm extends Service_Base {
 
 		// Inject real image/gallery blocks into post content so photos are
 		// first-class WordPress content rather than meta-stored CDN references.
-		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'] );
+		// When falling back to CDN URLs (sideloading disabled), pass a venue-
+		// derived alt so the img tags have meaningful accessible text.
+		$cdn_alt      = $this->derive_photo_alt( $parsed );
+		$photo_blocks = $this->build_photo_blocks( $ids, $ids ? [] : $parsed['photos'], $cdn_alt );
 		if ( $photo_blocks ) {
 			$post = get_post( $post_id );
 			wp_update_post( [
@@ -248,22 +251,26 @@ class Swarm extends Service_Base {
 		}
 	}
 
-	private function set_photo_alt_text( array $ids, array $parsed ): void {
+	private function derive_photo_alt( array $parsed ): string {
 		$venue    = trim( $parsed['venue_name']     ?? '' );
 		$locality = trim( $parsed['venue_locality'] ?? '' );
 		$cats     = is_array( $parsed['venue_categories'] ?? null ) ? $parsed['venue_categories'] : [];
 		$category = $cats ? $cats[0] : '';
 
 		if ( $venue && $category && $locality ) {
-			$alt = sprintf( 'Photo taken at %s, a %s in %s', $venue, $category, $locality );
-		} elseif ( $venue && $locality ) {
-			$alt = sprintf( 'Photo taken at %s, %s', $venue, $locality );
-		} elseif ( $venue ) {
-			$alt = sprintf( 'Photo taken at %s', $venue );
-		} else {
-			$alt = 'Photo from a checkin';
+			return sprintf( 'Photo taken at %s, a %s in %s', $venue, $category, $locality );
 		}
+		if ( $venue && $locality ) {
+			return sprintf( 'Photo taken at %s, %s', $venue, $locality );
+		}
+		if ( $venue ) {
+			return sprintf( 'Photo taken at %s', $venue );
+		}
+		return 'Photo from a checkin';
+	}
 
+	private function set_photo_alt_text( array $ids, array $parsed ): void {
+		$alt = $this->derive_photo_alt( $parsed );
 		foreach ( $ids as $attachment_id ) {
 			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
 			update_post_meta( $attachment_id, '_nop_alt_needs_review', '1' );

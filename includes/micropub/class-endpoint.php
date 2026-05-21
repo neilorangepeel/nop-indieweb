@@ -229,7 +229,7 @@ class Endpoint {
 			return new WP_Error(
 				'nop_indieweb_not_found',
 				'No post found at that URL.',
-				[ 'status' => 400 ]
+				[ 'status' => 404 ]
 			);
 		}
 
@@ -272,7 +272,7 @@ class Endpoint {
 
 		$post_id = url_to_postid( $url );
 		if ( ! $post_id ) {
-			return new WP_Error( 'nop_indieweb_not_found', 'No post found at that URL.', [ 'status' => 400 ] );
+			return new WP_Error( 'nop_indieweb_not_found', 'No post found at that URL.', [ 'status' => 404 ] );
 		}
 
 		if ( ! Auth::can_edit_post( $token, $post_id ) ) {
@@ -309,11 +309,20 @@ class Endpoint {
 
 		if ( $args ) {
 			$args['ID'] = $post_id;
-			wp_update_post( wp_slash( $args ) );
+			$result     = wp_update_post( wp_slash( $args ), true );
+			if ( is_wp_error( $result ) ) {
+				return new WP_Error(
+					'nop_indieweb_update_failed',
+					'Failed to update post: ' . $result->get_error_message(),
+					[ 'status' => 500 ]
+				);
+			}
 		}
 
 		\NOP\IndieWeb\nop_indieweb_log( "Micropub update: post {$post_id}", \NOP\IndieWeb\nop_indieweb_redact_for_log( $payload ) );
-		return new WP_REST_Response( null, 200 );
+		$response = new WP_REST_Response( null, 200 );
+		$response->header( 'Location', get_permalink( $post_id ) );
+		return $response;
 	}
 
 	private function apply_replace( int $post_id, string $prop, array $values, array &$args ): void {

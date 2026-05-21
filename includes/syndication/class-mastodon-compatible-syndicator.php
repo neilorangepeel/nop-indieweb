@@ -63,10 +63,15 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
+			\NOP\IndieWeb\nop_indieweb_log( "{$this->label()} syndication failed for post {$post_id}", [ 'code' => $code ] );
 			return null;
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( empty( $data['url'] ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( "{$this->label()} syndication: no URL in response for post {$post_id}", $data );
+		}
 		return $data['url'] ?? null;
 	}
 

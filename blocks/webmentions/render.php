@@ -38,22 +38,30 @@ if ( comments_open( $post_id ) ) {
 
 // ── Fetch all webmentions ─────────────────────────────────────────────────────
 
+/**
+ * Maximum number of webmentions to fetch per post. Filterable via
+ * nop_indieweb_webmention_fetch_limit for high-traffic posts.
+ */
+$wm_limit = (int) apply_filters( 'nop_indieweb_webmention_fetch_limit', 100 );
+
 $webmentions = get_comments( [
 	'post_id' => $post_id,
 	'type'    => 'webmention',
 	'status'  => 'approve',
-	'number'  => 500,
+	'number'  => $wm_limit,
 	'orderby' => 'comment_date_gmt',
 	'order'   => 'ASC',
 ] );
 
 // ── Fetch all regular WordPress comments ──────────────────────────────────────
 
+$wp_comments_limit = (int) apply_filters( 'nop_indieweb_wp_comments_fetch_limit', 100 );
+
 $wp_comments = get_comments( [
 	'post_id' => $post_id,
 	'type'    => 'comment',
 	'status'  => 'approve',
-	'number'  => 200,
+	'number'  => $wp_comments_limit,
 	'orderby' => 'comment_date_gmt',
 	'order'   => 'ASC',
 ] );

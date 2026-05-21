@@ -155,7 +155,7 @@ class Auth_Endpoint {
 
 	private function render_html( array $params ): void {
 		header( 'Content-Type: text/html; charset=UTF-8' );
-		$client_label  = esc_html( parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
+		$client_label  = esc_html( wp_parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
 		$scope_labels  = $this->describe_scopes( $params['scope'] );
 		$site_name     = get_bloginfo( 'name' );
 		?>
@@ -187,6 +187,7 @@ class Auth_Endpoint {
 			</style>
 		</head>
 		<body>
+		<main>
 		<div class="nop-auth-wrap">
 			<p class="nop-auth-logo"><a href="<?php echo esc_url( home_url() ); ?>"><?php echo esc_html( $site_name ); ?></a></p>
 
@@ -228,6 +229,7 @@ class Auth_Endpoint {
 				</p>
 			</div>
 		</div>
+		</main>
 		</body>
 		</html>
 		<?php
@@ -262,15 +264,15 @@ class Auth_Endpoint {
 
 		// Reject non-HTTP(S) schemes — IndieAuth specifies https/http URLs only.
 		foreach ( [ 'client_id', 'redirect_uri' ] as $key ) {
-			$scheme = strtolower( (string) parse_url( $params[ $key ], PHP_URL_SCHEME ) );
+			$scheme = strtolower( (string) wp_parse_url( $params[ $key ], PHP_URL_SCHEME ) );
 			if ( 'https' !== $scheme && 'http' !== $scheme ) {
 				return new WP_Error( 'invalid_uri_scheme', "{$key} must be an http(s) URL." );
 			}
 		}
 
 		// redirect_uri host must match client_id host (IndieAuth spec §4.2.2).
-		$client_host   = parse_url( $params['client_id'],    PHP_URL_HOST );
-		$redirect_host = parse_url( $params['redirect_uri'], PHP_URL_HOST );
+		$client_host   = wp_parse_url( $params['client_id'],    PHP_URL_HOST );
+		$redirect_host = wp_parse_url( $params['redirect_uri'], PHP_URL_HOST );
 		if ( ! $client_host || $client_host !== $redirect_host ) {
 			return new WP_Error( 'invalid_redirect_uri', 'redirect_uri host must match client_id host.' );
 		}

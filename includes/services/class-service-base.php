@@ -56,6 +56,14 @@ abstract class Service_Base {
 	protected function after_insert( int $post_id, array $parsed ): void {}
 
 	/**
+	 * Public entry point for the background cron dispatcher in Plugin.
+	 * Calls after_insert() with the parsed data retrieved from the transient.
+	 */
+	public function run_after_insert( int $post_id, array $parsed ): void {
+		$this->after_insert( $post_id, $parsed );
+	}
+
+	/**
 	 * Full create lifecycle. Override only if a service needs a different sequence.
 	 *
 	 * @param int $author_id  When > 0, the inserted post's post_author is set to
@@ -110,7 +118,13 @@ abstract class Service_Base {
 
 		\NOP\IndieWeb\nop_indieweb_log( "Post created via {$this->get_slug()}", [ 'post_id' => $post_id ] );
 
-		$this->after_insert( $post_id, $parsed );
+		// Queue after_insert work (weather, map, photo sideloading) as a background
+		// cron job so the Micropub 201 response is sent immediately. OwnYourSwarm has
+		// a ~30 s timeout; running heavy I/O synchronously causes retries that create
+		// duplicate posts. The parsed data is stashed in a transient so the cron
+		// callback can reconstruct the full context without re-parsing the payload.
+		set_transient( 'nop_ia_parsed_' . $post_id, $parsed, HOUR_IN_SECONDS );
+		wp_schedule_single_event( time(), 'nop_indieweb_run_after_insert', [ $post_id, $this->get_slug() ] );
 
 		return $post_id;
 	}
@@ -356,10 +370,18 @@ abstract class Service_Base {
 
 	/**
 	 * Builds WordPress image/gallery block markup from sideloaded attachment IDs or fallback URLs.
-	 * Pass $ids when photos have been sideloaded; pass $urls as a fallback for remote references.
+	 *
+	 * Pass $ids when photos have been sideloaded — WordPress reads alt text from the
+	 * attachment meta at render time, so alt="" in the block markup is correct.
+	 *
+	 * Pass $urls as a fallback for remote CDN references (sideloading disabled). In
+	 * that case the img tag is the final rendered HTML, so $default_alt provides a
+	 * venue-context string (e.g. "Photo taken at The Crown Bar, Belfast") that is
+	 * applied to every image in the set.
 	 */
-	protected function build_photo_blocks( array $ids, array $urls ): string {
+	protected function build_photo_blocks( array $ids, array $urls, string $default_alt = '' ): string {
 		if ( $ids ) {
+			// alt="" is intentional for sideloaded images: WP reads alt from attachment meta.
 			if ( 1 === count( $ids ) ) {
 				$src = wp_get_attachment_url( $ids[0] );
 				return sprintf(
@@ -379,17 +401,20 @@ abstract class Service_Base {
 		}
 
 		if ( $urls ) {
+			$escaped_alt = esc_attr( $default_alt );
 			if ( 1 === count( $urls ) ) {
 				return sprintf(
-					"<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
-					esc_url( $urls[0] )
+					"<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"%s\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $urls[0] ),
+					$escaped_alt
 				);
 			}
 			$inner = '';
 			foreach ( $urls as $url ) {
 				$inner .= sprintf(
-					"\n<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"\"/></figure>\n<!-- /wp:image -->",
-					esc_url( $url )
+					"\n<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"%s\" alt=\"%s\"/></figure>\n<!-- /wp:image -->",
+					esc_url( $url ),
+					$escaped_alt
 				);
 			}
 			return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";

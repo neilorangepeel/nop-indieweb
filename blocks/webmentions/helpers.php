@@ -51,8 +51,8 @@ function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): stri
 		return '';
 	}
 	$labels = [
-		'mastodon' => 'Mastodon',
-		'bluesky'  => 'Bluesky',
+		'mastodon' => __( 'Mastodon', 'nop-indieweb' ),
+		'bluesky'  => __( 'Bluesky',  'nop-indieweb' ),
 	];
 	$label = $labels[ $platform ] ?? ucfirst( $platform );
 	$class = 'nop-webmentions__via nop-webmentions__via--' . sanitize_html_class( $platform );
@@ -61,9 +61,12 @@ function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): stri
 	// Visible only when we know the platform — avoids "Unknown · via Bridgy".
 	$show_bridgy = $via_bridgy && in_array( $platform, [ 'mastodon', 'bluesky' ], true );
 	$bridgy_suffix = $show_bridgy
-		? ' <span class="nop-webmentions__via-bridgy">· via Bridgy</span>'
+		? ' <span class="nop-webmentions__via-bridgy">· ' . esc_html__( 'via Bridgy', 'nop-indieweb' ) . '</span>'
 		: '';
-	$aria = $show_bridgy ? 'via ' . $label . ' (relayed via Bridgy)' : 'via ' . $label;
+	/* translators: %s: platform name e.g. Mastodon */
+	$aria = $show_bridgy
+		? sprintf( __( 'via %s (relayed via Bridgy)', 'nop-indieweb' ), $label )
+		: sprintf( __( 'via %s', 'nop-indieweb' ), $label );
 
 	return '<span class="' . esc_attr( $class ) . '" aria-label="' . esc_attr( $aria ) . '">' . esc_html( $label ) . '</span>' . $bridgy_suffix;
 }
@@ -86,18 +89,36 @@ function nop_wm_liked_by( array $likes ): string {
 	if ( 0 === $count ) {
 		return '';
 	}
+	// Link names to profiles so keyboard users can reach them, matching the
+	// clickable avatars in the facepile that sighted users see.
 	$name = static function ( array $entry ): string {
-		return '<strong>' . esc_html( $entry['author'] ) . '</strong>';
+		$author = esc_html( $entry['author'] );
+		$url    = esc_url( $entry['author_url'] ?? '' );
+		return $url
+			? '<a href="' . $url . '" target="_blank" rel="noopener noreferrer"><strong>' . $author . '</strong></a>'
+			: '<strong>' . $author . '</strong>';
 	};
 	if ( 1 === $count ) {
-		return 'Liked by ' . $name( $likes[0] );
+		/* translators: %s: author name */
+		return sprintf( __( 'Liked by %s', 'nop-indieweb' ), $name( $likes[0] ) );
 	}
 	if ( 2 === $count ) {
-		return 'Liked by ' . $name( $likes[0] ) . ' and ' . $name( $likes[1] );
+		/* translators: 1: first author, 2: second author */
+		return sprintf( __( 'Liked by %1$s and %2$s', 'nop-indieweb' ), $name( $likes[0] ), $name( $likes[1] ) );
 	}
 	$others = $count - 2;
-	return 'Liked by ' . $name( $likes[0] ) . ', ' . $name( $likes[1] )
-	     . ' and ' . $others . ' ' . ( 1 === $others ? 'other' : 'others' );
+	/* translators: 1: first author, 2: second author, 3: number of additional likers */
+	return sprintf(
+		_n(
+			'Liked by %1$s, %2$s and %3$d other',
+			'Liked by %1$s, %2$s and %3$d others',
+			$others,
+			'nop-indieweb'
+		),
+		$name( $likes[0] ),
+		$name( $likes[1] ),
+		$others
+	);
 }
 
 function nop_wm_time_ago( string $date_gmt ): string {
@@ -106,11 +127,15 @@ function nop_wm_time_ago( string $date_gmt ): string {
 		return '';
 	}
 	$diff = time() - $ts;
-	if ( $diff < 60 )      { return 'just now'; }
-	if ( $diff < 3600 )    { return floor( $diff / 60 ) . 'm'; }
-	if ( $diff < 86400 )   { return floor( $diff / 3600 ) . 'h'; }
-	if ( $diff < 604800 )  { return floor( $diff / 86400 ) . 'd'; }
-	if ( $diff < 2592000 ) { return floor( $diff / 604800 ) . 'w'; }
+	if ( $diff < 60 )      { return __( 'just now', 'nop-indieweb' ); }
+	/* translators: %d: number of minutes */
+	if ( $diff < 3600 )    { return sprintf( _x( '%dm', 'minutes abbreviation', 'nop-indieweb' ),  (int) floor( $diff / 60 ) ); }
+	/* translators: %d: number of hours */
+	if ( $diff < 86400 )   { return sprintf( _x( '%dh', 'hours abbreviation', 'nop-indieweb' ),    (int) floor( $diff / 3600 ) ); }
+	/* translators: %d: number of days */
+	if ( $diff < 604800 )  { return sprintf( _x( '%dd', 'days abbreviation', 'nop-indieweb' ),     (int) floor( $diff / 86400 ) ); }
+	/* translators: %d: number of weeks */
+	if ( $diff < 2592000 ) { return sprintf( _x( '%dw', 'weeks abbreviation', 'nop-indieweb' ),    (int) floor( $diff / 604800 ) ); }
 	return (string) wp_date( 'j M Y', $ts );
 }
 
@@ -120,11 +145,15 @@ function nop_wm_time_label( string $date_gmt ): string {
 		return '';
 	}
 	$diff = time() - $ts;
-	if ( $diff < 60 )      { return 'just now'; }
-	if ( $diff < 3600 )    { return floor( $diff / 60 ) . ' minutes ago'; }
-	if ( $diff < 86400 )   { return floor( $diff / 3600 ) . ' hours ago'; }
-	if ( $diff < 604800 )  { return floor( $diff / 86400 ) . ' days ago'; }
-	if ( $diff < 2592000 ) { return floor( $diff / 604800 ) . ' weeks ago'; }
+	if ( $diff < 60 )      { return __( 'just now', 'nop-indieweb' ); }
+	/* translators: %d: number of minutes */
+	if ( $diff < 3600 )    { return sprintf( _n( '%d minute ago', '%d minutes ago', (int) floor( $diff / 60 ), 'nop-indieweb' ),    (int) floor( $diff / 60 ) ); }
+	/* translators: %d: number of hours */
+	if ( $diff < 86400 )   { return sprintf( _n( '%d hour ago',   '%d hours ago',   (int) floor( $diff / 3600 ), 'nop-indieweb' ),  (int) floor( $diff / 3600 ) ); }
+	/* translators: %d: number of days */
+	if ( $diff < 604800 )  { return sprintf( _n( '%d day ago',    '%d days ago',    (int) floor( $diff / 86400 ), 'nop-indieweb' ), (int) floor( $diff / 86400 ) ); }
+	/* translators: %d: number of weeks */
+	if ( $diff < 2592000 ) { return sprintf( _n( '%d week ago',   '%d weeks ago',   (int) floor( $diff / 604800 ), 'nop-indieweb' ), (int) floor( $diff / 604800 ) ); }
 	return (string) wp_date( 'j F Y', $ts );
 }
 

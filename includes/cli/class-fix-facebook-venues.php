@@ -80,16 +80,26 @@ class Fix_Facebook_Venues {
 	}
 
 	private function clear_bad_matches( array $post_ids, bool $dry_run ): int {
+		// Prime the postmeta cache so the loops below serve from memory instead
+		// of issuing one DB query per post per meta key (N×3 without this).
+		update_postmeta_cache( $post_ids );
+
 		// ── Build UID → posts map ─────────────────────────────────────────────
-		$uid_map = [];
+		$uid_map  = [];
+		$progress = WP_CLI\Utils\make_progress_bar(
+			'Analysing venue matches',
+			count( $post_ids )
+		);
 		foreach ( $post_ids as $id ) {
 			$uid  = (string) get_post_meta( $id, 'nop_indieweb_venue_uid', true );
 			$name = (string) get_post_meta( $id, 'nop_indieweb_venue_name', true );
+			$progress->tick();
 			if ( '' === $uid ) {
 				continue;
 			}
 			$uid_map[ $uid ][] = [ 'id' => $id, 'name' => $name ];
 		}
+		$progress->finish();
 
 		$to_clear = [];
 
@@ -189,10 +199,12 @@ class Fix_Facebook_Venues {
 	}
 
 	private function fix_titles( array $post_ids, bool $dry_run ): void {
-		$updated = 0;
-		$skipped = 0;
+		$updated  = 0;
+		$skipped  = 0;
+		$progress = WP_CLI\Utils\make_progress_bar( 'Fixing titles', count( $post_ids ) );
 
 		foreach ( $post_ids as $id ) {
+			$progress->tick();
 			$p        = get_post( $id );
 			$name     = (string) get_post_meta( $id, 'nop_indieweb_venue_name', true );
 			$locality = (string) get_post_meta( $id, 'nop_indieweb_venue_locality', true );
@@ -226,6 +238,7 @@ class Fix_Facebook_Venues {
 			$updated++;
 		}
 
+		$progress->finish();
 		WP_CLI::success( sprintf(
 			'%s%d title(s) updated · %d skipped (already correct or no locality).',
 			$dry_run ? '[DRY RUN] ' : '',
