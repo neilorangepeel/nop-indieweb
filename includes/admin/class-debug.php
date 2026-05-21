@@ -43,7 +43,7 @@ class Debug {
 	// Fires a fake Swarm payload through the service pipeline and redirects back.
 	public function handle_test_post(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized.' );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 		check_admin_referer( 'nop_indieweb_test_payload' );
 
@@ -68,7 +68,7 @@ class Debug {
 
 	public function handle_import_feeds(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized.' );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 		check_admin_referer( 'nop_indieweb_import_feeds' );
 
@@ -86,7 +86,7 @@ class Debug {
 
 	public function handle_backfeed_sync(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized.' );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 		check_admin_referer( 'nop_indieweb_backfeed_sync' );
 
@@ -101,7 +101,7 @@ class Debug {
 
 	public function handle_migrate_kind_taxonomy(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized.' );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 		check_admin_referer( 'nop_indieweb_migrate_kind_taxonomy' );
 

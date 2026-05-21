@@ -127,15 +127,15 @@ function nop_wm_time_ago( string $date_gmt ): string {
 		return '';
 	}
 	$diff = time() - $ts;
-	if ( $diff < 60 )      { return __( 'just now', 'nop-indieweb' ); }
+	if ( $diff < MINUTE_IN_SECONDS )                     { return __( 'just now', 'nop-indieweb' ); }
 	/* translators: %d: number of minutes */
-	if ( $diff < 3600 )    { return sprintf( _x( '%dm', 'minutes abbreviation', 'nop-indieweb' ),  (int) floor( $diff / 60 ) ); }
+	if ( $diff < HOUR_IN_SECONDS )                       { return sprintf( _x( '%dm', 'minutes abbreviation', 'nop-indieweb' ),  (int) floor( $diff / MINUTE_IN_SECONDS ) ); }
 	/* translators: %d: number of hours */
-	if ( $diff < 86400 )   { return sprintf( _x( '%dh', 'hours abbreviation', 'nop-indieweb' ),    (int) floor( $diff / 3600 ) ); }
+	if ( $diff < DAY_IN_SECONDS )                        { return sprintf( _x( '%dh', 'hours abbreviation', 'nop-indieweb' ),    (int) floor( $diff / HOUR_IN_SECONDS ) ); }
 	/* translators: %d: number of days */
-	if ( $diff < 604800 )  { return sprintf( _x( '%dd', 'days abbreviation', 'nop-indieweb' ),     (int) floor( $diff / 86400 ) ); }
+	if ( $diff < WEEK_IN_SECONDS )                       { return sprintf( _x( '%dd', 'days abbreviation', 'nop-indieweb' ),     (int) floor( $diff / DAY_IN_SECONDS ) ); }
 	/* translators: %d: number of weeks */
-	if ( $diff < 2592000 ) { return sprintf( _x( '%dw', 'weeks abbreviation', 'nop-indieweb' ),    (int) floor( $diff / 604800 ) ); }
+	if ( $diff < MONTH_IN_SECONDS )                      { return sprintf( _x( '%dw', 'weeks abbreviation', 'nop-indieweb' ),    (int) floor( $diff / WEEK_IN_SECONDS ) ); }
 	return (string) wp_date( 'j M Y', $ts );
 }
 
@@ -145,15 +145,15 @@ function nop_wm_time_label( string $date_gmt ): string {
 		return '';
 	}
 	$diff = time() - $ts;
-	if ( $diff < 60 )      { return __( 'just now', 'nop-indieweb' ); }
+	if ( $diff < MINUTE_IN_SECONDS )  { return __( 'just now', 'nop-indieweb' ); }
 	/* translators: %d: number of minutes */
-	if ( $diff < 3600 )    { return sprintf( _n( '%d minute ago', '%d minutes ago', (int) floor( $diff / 60 ), 'nop-indieweb' ),    (int) floor( $diff / 60 ) ); }
+	if ( $diff < HOUR_IN_SECONDS )    { return sprintf( _n( '%d minute ago', '%d minutes ago', (int) floor( $diff / MINUTE_IN_SECONDS ), 'nop-indieweb' ),  (int) floor( $diff / MINUTE_IN_SECONDS ) ); }
 	/* translators: %d: number of hours */
-	if ( $diff < 86400 )   { return sprintf( _n( '%d hour ago',   '%d hours ago',   (int) floor( $diff / 3600 ), 'nop-indieweb' ),  (int) floor( $diff / 3600 ) ); }
+	if ( $diff < DAY_IN_SECONDS )     { return sprintf( _n( '%d hour ago',   '%d hours ago',   (int) floor( $diff / HOUR_IN_SECONDS ),   'nop-indieweb' ),  (int) floor( $diff / HOUR_IN_SECONDS ) ); }
 	/* translators: %d: number of days */
-	if ( $diff < 604800 )  { return sprintf( _n( '%d day ago',    '%d days ago',    (int) floor( $diff / 86400 ), 'nop-indieweb' ), (int) floor( $diff / 86400 ) ); }
+	if ( $diff < WEEK_IN_SECONDS )    { return sprintf( _n( '%d day ago',    '%d days ago',    (int) floor( $diff / DAY_IN_SECONDS ),    'nop-indieweb' ),  (int) floor( $diff / DAY_IN_SECONDS ) ); }
 	/* translators: %d: number of weeks */
-	if ( $diff < 2592000 ) { return sprintf( _n( '%d week ago',   '%d weeks ago',   (int) floor( $diff / 604800 ), 'nop-indieweb' ), (int) floor( $diff / 604800 ) ); }
+	if ( $diff < MONTH_IN_SECONDS )   { return sprintf( _n( '%d week ago',   '%d weeks ago',   (int) floor( $diff / WEEK_IN_SECONDS ),   'nop-indieweb' ),  (int) floor( $diff / WEEK_IN_SECONDS ) ); }
 	return (string) wp_date( 'j F Y', $ts );
 }
 

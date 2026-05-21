@@ -63,7 +63,7 @@ class Feed_Importer {
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Forbidden', 403 );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 
 		$platform = sanitize_key( $_GET['nop_indieweb_sync'] );

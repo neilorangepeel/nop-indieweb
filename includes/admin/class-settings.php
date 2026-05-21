@@ -102,7 +102,7 @@ class Settings {
 		check_admin_referer( 'nop_revoke_token_' . $token_id );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized.' );
+			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
 		}
 
 		Token_Store::delete_by_id( $token_id );
