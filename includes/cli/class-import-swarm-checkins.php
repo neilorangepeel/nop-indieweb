@@ -82,16 +82,20 @@ class Import_Swarm_Checkins {
 		$imported = 0;
 
 		for ( $page = 0; $page < $pages; $page++ ) {
-			$offset = $page * self::PAGE_SIZE;
-			$fetch  = min( self::PAGE_SIZE, $total - $offset );
+			$offset    = $page * self::PAGE_SIZE;
+			$fetch     = min( self::PAGE_SIZE, $total - $offset );
+			$page_num  = $page + 1;
+
+			WP_CLI::log( "Fetching page {$page_num}/{$pages} (offset {$offset})…" );
 
 			$data = $this->api_get( $token, $offset, $fetch );
 			if ( is_wp_error( $data ) ) {
-				WP_CLI::warning( "Page {$page} failed: " . $data->get_error_message() );
+				WP_CLI::warning( "Page {$page_num} failed: " . $data->get_error_message() );
 				continue;
 			}
 
-			$items = $data['response']['checkins']['items'] ?? [];
+			$items      = $data['response']['checkins']['items'] ?? [];
+			$page_start = $counts['created'];
 
 			foreach ( $items as $item ) {
 				if ( $imported >= $limit ) {
@@ -119,12 +123,18 @@ class Import_Swarm_Checkins {
 				$country     = (string) ( $location['country'] ?? '' );
 				$postcode    = (string) ( $location['postalCode'] ?? '' );
 
+				$label = $locality ? "{$venue_name}, {$locality}" : $venue_name;
+				$date  = gmdate( 'Y-m-d', $ts );
+
 				if ( $source_url && $this->checkin_exists( $source_url ) ) {
 					if ( $with_photos && $photo_items && ! $dry_run ) {
 						$post_id = $this->find_post_by_checkin_url( $source_url );
 						if ( $post_id && ! get_post_meta( $post_id, 'nop_indieweb_photo_ids', true ) ) {
 							$n = $this->sideload_photos( $post_id, $photo_items );
-							$counts['photos'] += $n;
+							if ( $n ) {
+								WP_CLI::log( "  ↺ {$label} ({$date}) — {$n} photo(s) backfilled" );
+								$counts['photos'] += $n;
+							}
 						}
 					}
 					$counts['skipped']++;
@@ -132,8 +142,8 @@ class Import_Swarm_Checkins {
 				}
 
 				if ( $dry_run ) {
-					$note = $photo_items ? ' (' . count( $photo_items ) . ' photo(s))' : '';
-					WP_CLI::line( "  would create: {$venue_name}{$note}" );
+					$note = $photo_items ? ' [' . count( $photo_items ) . ' photo(s)]' : '';
+					WP_CLI::log( "  + {$label} ({$date}){$note}" );
 					$counts['created']++;
 					$imported++;
 					continue;
@@ -157,18 +167,24 @@ class Import_Swarm_Checkins {
 				], $tags, $status );
 
 				if ( is_wp_error( $post_id ) ) {
-					WP_CLI::warning( "  fail: {$venue_name} — " . $post_id->get_error_message() );
+					WP_CLI::warning( "  ✗ {$label} — " . $post_id->get_error_message() );
 					$counts['failed']++;
 				} else {
 					$counts['created']++;
 					$imported++;
+					$photo_note = '';
 					if ( $with_photos && $photo_items ) {
 						$n = $this->sideload_photos( $post_id, $photo_items );
 						$counts['photos'] += $n;
+						$photo_note = $n ? " [+{$n} photo(s)]" : '';
 					}
+					WP_CLI::log( "  ✓ #{$post_id} {$label} ({$date}){$photo_note}" );
 				}
 			}
 		}
+
+		$page_created = $counts['created'] - $page_start;
+		WP_CLI::log( "  Page {$page_num} done: {$page_created} created · " . ( count( $items ) - $page_created ) . " skipped" );
 
 		$progress->finish();
 
