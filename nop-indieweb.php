@@ -83,12 +83,14 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-weather.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-facebook-venues.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-facebook-checkins.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-swarm-checkins.php';
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-weather',            \NOP\IndieWeb\Cli\Backfill_Weather::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-facebook-venues',         \NOP\IndieWeb\Cli\Fix_Facebook_Venues::class );
 	\WP_CLI::add_command( 'nop-indieweb import-facebook-checkins',    \NOP\IndieWeb\Cli\Import_Facebook_Checkins::class );
+	\WP_CLI::add_command( 'nop-indieweb import-swarm-checkins',       \NOP\IndieWeb\Cli\Import_Swarm_Checkins::class );
 }
 
 // Create the tokens table on activation and on every load if the schema is stale.

@@ -147,6 +147,7 @@ class Plugin {
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
 		add_action( 'rest_api_init', [ $this, 'register_indieauth_metadata_route' ] );
 		add_action( 'rest_api_init', [ $this, 'register_lookup_route' ] );
+		add_action( 'rest_api_init', [ $this, 'register_foursquare_oauth_routes' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
@@ -825,6 +826,78 @@ HTML,
 		}
 
 		return new \WP_REST_Response( [ 'results' => $results ], 200 );
+	}
+
+	public function register_foursquare_oauth_routes(): void {
+		register_rest_route( 'nop-indieweb/v1', '/foursquare-auth', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'foursquare_auth_redirect' ],
+			'permission_callback' => '__return_true',
+		] );
+		register_rest_route( 'nop-indieweb/v1', '/foursquare-callback', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'foursquare_oauth_callback' ],
+			'permission_callback' => '__return_true',
+		] );
+	}
+
+	public function foursquare_auth_redirect(): void {
+		$opts          = get_option( 'nop_indieweb_settings', [] );
+		$client_id     = $opts['venue']['foursquare_client_id'] ?? '';
+		$callback_url  = rest_url( 'nop-indieweb/v1/foursquare-callback' );
+
+		if ( ! $client_id ) {
+			wp_die( 'Foursquare Client ID not configured in plugin settings.' );
+		}
+
+		$url = add_query_arg( [
+			'client_id'     => $client_id,
+			'response_type' => 'code',
+			'redirect_uri'  => $callback_url,
+		], 'https://foursquare.com/oauth2/authenticate' );
+
+		wp_redirect( $url );
+		exit;
+	}
+
+	public function foursquare_oauth_callback( \WP_REST_Request $request ): void {
+		$code  = sanitize_text_field( $request->get_param( 'code' ) ?? '' );
+		$error = sanitize_text_field( $request->get_param( 'error' ) ?? '' );
+
+		if ( $error || ! $code ) {
+			wp_die( 'Foursquare authorisation denied or failed: ' . esc_html( $error ?: 'no code returned' ) );
+		}
+
+		$opts          = get_option( 'nop_indieweb_settings', [] );
+		$client_id     = $opts['venue']['foursquare_client_id'] ?? '';
+		$client_secret = $opts['venue']['foursquare_client_secret'] ?? '';
+		$callback_url  = rest_url( 'nop-indieweb/v1/foursquare-callback' );
+
+		$response = wp_remote_post( 'https://foursquare.com/oauth2/access_token', [
+			'body' => [
+				'client_id'     => $client_id,
+				'client_secret' => $client_secret,
+				'grant_type'    => 'authorization_code',
+				'redirect_uri'  => $callback_url,
+				'code'          => $code,
+			],
+		] );
+
+		if ( is_wp_error( $response ) ) {
+			wp_die( 'Token exchange failed: ' . esc_html( $response->get_error_message() ) );
+		}
+
+		$body  = json_decode( wp_remote_retrieve_body( $response ), true );
+		$token = $body['access_token'] ?? '';
+
+		if ( ! $token ) {
+			wp_die( 'No access token in Foursquare response: ' . esc_html( wp_remote_retrieve_body( $response ) ) );
+		}
+
+		$opts['venue']['foursquare_user_token'] = $token;
+		update_option( 'nop_indieweb_settings', $opts );
+
+		wp_die( '<h2>Foursquare connected!</h2><p>Your personal access token has been saved. You can close this tab and run the importer.</p>' );
 	}
 
 	public function indieauth_metadata_response(): \WP_REST_Response {
