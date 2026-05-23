@@ -275,12 +275,14 @@ class Kind_Taxonomy {
 				'fields'         => [],
 				'layout'         => '',
 				'title_from_url' => false,
+				'sub_panel'      => 'venue',
 			],
 			'watch' => [
 				'label'          => __( 'Watch', 'nop-indieweb' ),
 				'fields'         => [],
 				'layout'         => '',
 				'title_from_url' => false,
+				'sub_panel'      => 'lookup:tmdb',
 			],
 			'listen' => [
 				'label'          => __( 'Listen', 'nop-indieweb' ),

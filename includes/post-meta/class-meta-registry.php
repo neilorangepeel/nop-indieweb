@@ -218,6 +218,10 @@ class Registry {
 				'label'       => __( 'Rewatch', 'nop-indieweb' ),
 				'description' => '1 if this is a rewatch, 0 if first viewing.',
 			] ),
+			'nop_indieweb_film_tmdb_id' => array_merge( $string, [
+				'label'       => __( 'TMDB ID', 'nop-indieweb' ),
+				'description' => 'TMDB movie ID, set by the in-editor lookup picker.',
+			] ),
 
 			// ── Photos ───────────────────────────────────────────────────────────
 			// Source URLs are always stored as a permanent record even when photos are sideloaded.

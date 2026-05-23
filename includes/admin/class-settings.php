@@ -41,6 +41,7 @@ class Settings {
 		'Content'  => [
 			'publishing' => 'Publishing',
 			'reactions'  => 'Reactions',
+			'lookups'    => 'Lookups',
 		],
 		'Advanced' => [ 'advanced' => 'Advanced' ],
 	];
@@ -213,6 +214,9 @@ class Settings {
 			'sideload_poster' => ! empty( $lb['sideload_poster'] ),
 		];
 
+		// — Lookups ———————————————————————————————————————————————————————————————
+		$clean['lookups']['tmdb_api_key'] = sanitize_text_field( $input['lookups']['tmdb_api_key'] ?? '' );
+
 		// — Twitter Archive ——————————————————————————————————————————————————————
 		$clean['twitter_archive_url'] = esc_url_raw( $input['twitter_archive_url'] ?? '' );
 
@@ -285,6 +289,10 @@ class Settings {
 
 				<div id="nop-tab-reactions" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-reactions" tabindex="0" hidden>
 					<?php $this->render_tab_reactions(); ?>
+				</div>
+
+				<div id="nop-tab-lookups" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-lookups" tabindex="0" hidden>
+					<?php $this->render_tab_lookups(); ?>
 				</div>
 
 				<div id="nop-tab-advanced" class="nop-tab-panel" role="tabpanel" aria-labelledby="nop-tablabel-advanced" tabindex="0" hidden>
@@ -1164,6 +1172,34 @@ class Settings {
 						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>>Hold all for manual review</option>
 					</select>
 					<p class="description">Held reactions appear in <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) ); ?>">Comments → Webmentions</a> awaiting your approval.</p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	// ——— Tab: Lookups ————————————————————————————————————————————————————————
+
+	private function render_tab_lookups(): void {
+		?>
+		<p>API keys used for interactive in-editor lookups — searching for a film title, venue, or track without leaving the WordPress editor.</p>
+
+		<h3 class="nop-section-heading">TMDB (Films)</h3>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="nop-tmdb-key">API Key</label></th>
+				<td>
+					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'lookups.tmdb_api_key', '' ); ?>
+					<input type="text" id="nop-tmdb-key"
+					       name="<?php echo self::OPTION_KEY; ?>[lookups][tmdb_api_key]"
+					       value="<?php echo esc_attr( $key ); ?>"
+					       class="regular-text code" autocomplete="off"
+					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+					<p class="description">
+						Used by the Watch kind's Film lookup in the block editor.
+						Get a free key at
+						<a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.
+					</p>
 				</td>
 			</tr>
 		</table>

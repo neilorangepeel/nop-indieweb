@@ -65,6 +65,107 @@
 	display:       block;
 }
 
+/* ── Lookup picker (TMDB / future providers) ───────────────────────────────── */
+
+.nop-lookup-picker {
+	display:        flex;
+	flex-direction: column;
+	gap:            8px;
+	margin-top:     8px;
+}
+
+.nop-lookup-picker__results {
+	list-style:    none;
+	margin:        0;
+	padding:       0;
+	border:        1px solid #c3c4c7;
+	border-radius: 4px;
+	overflow:      hidden;
+	max-height:    240px;
+	overflow-y:    auto;
+}
+
+.nop-lookup-picker__result {
+	display:       flex;
+	align-items:   center;
+	gap:           8px;
+	padding:       6px 10px;
+	cursor:        pointer;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.nop-lookup-picker__result:last-child {
+	border-bottom: none;
+}
+
+.nop-lookup-picker__result:hover,
+.nop-lookup-picker__result:focus {
+	background: #f0f0f1;
+	outline:    none;
+}
+
+.nop-lookup-picker__thumb {
+	width:         36px;
+	height:        54px;
+	object-fit:    cover;
+	border-radius: 2px;
+	flex-shrink:   0;
+	display:       block;
+}
+
+.nop-lookup-picker__result-info {
+	display:        flex;
+	flex-direction: column;
+	gap:            2px;
+}
+
+.nop-lookup-picker__result-title {
+	font-size:   13px;
+	font-weight: 500;
+	color:       #1d2327;
+	line-height: 1.4;
+}
+
+.nop-lookup-picker__result-year {
+	font-size: 11px;
+	color:     #757575;
+}
+
+.nop-lookup-picker__loading,
+.nop-lookup-picker__error {
+	font-size: 12px;
+	color:     #757575;
+	margin:    0;
+}
+
+.nop-lookup-picker__error {
+	color: #cc1818;
+}
+
+.nop-lookup-picker__selected {
+	display:       flex;
+	align-items:   flex-start;
+	gap:           8px;
+	padding:       8px;
+	background:    #f0f0f1;
+	border-radius: 4px;
+}
+
+.nop-lookup-picker__selected-poster {
+	width:         32px;
+	height:        48px;
+	object-fit:    cover;
+	border-radius: 2px;
+	flex-shrink:   0;
+	display:       block;
+}
+
+.nop-lookup-picker__selected-label {
+	font-size:   12px;
+	color:       #1d2327;
+	line-height: 1.4;
+}
+
 /* "Apply layout" offer card — shown after a kind change when the editor isn't empty */
 .nop-layout-offer {
 	margin-top: 8px;

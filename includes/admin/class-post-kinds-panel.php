@@ -25,7 +25,7 @@ class Post_Kinds_Panel {
 		wp_enqueue_script(
 			'nop-indieweb-post-kinds-panel',
 			NOP_INDIEWEB_URL . 'admin/post-kinds-panel.js',
-			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n', 'wp-blocks' ],
+			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n', 'wp-blocks', 'wp-api-fetch' ],
 			NOP_INDIEWEB_VERSION,
 			true
 		);
@@ -51,8 +51,9 @@ class Post_Kinds_Panel {
 			}
 		}
 		wp_localize_script( 'nop-indieweb-post-kinds-panel', 'nopIndieWebKindsPanel', [
-			'terms'  => $kind_terms,
-			'config' => \NOP\IndieWeb\Kind\Kind_Taxonomy::get_editor_panel_config(),
+			'terms'   => $kind_terms,
+			'config'  => \NOP\IndieWeb\Kind\Kind_Taxonomy::get_editor_panel_config(),
+			'restUrl' => rest_url( 'nop-indieweb/v1' ),
 		] );
 	}
 }

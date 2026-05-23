@@ -59,10 +59,11 @@ require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-mastodon.
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-bluesky.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-pixelfed.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
+require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-base.php';
+require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-tmdb.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-debug.php';
-require_once NOP_INDIEWEB_DIR . 'includes/admin/class-checkin-metabox.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-kinds-panel.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-syndication-panel.php';
 require_once NOP_INDIEWEB_DIR . 'includes/importer/class-feed-importer.php';

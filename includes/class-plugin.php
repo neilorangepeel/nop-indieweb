@@ -22,8 +22,8 @@ use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Post_Filter;
 use NOP\IndieWeb\Admin\Debug;
-use NOP\IndieWeb\Admin\Checkin_Metabox;
 use NOP\IndieWeb\Admin\Post_Kinds_Panel;
+use NOP\IndieWeb\Lookup\Lookup_Provider_TMDB;
 use NOP\IndieWeb\Admin\Syndication_Panel;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
@@ -48,6 +48,9 @@ class Plugin {
 
 	/** @var Services\Service_Base[] */
 	private array $services = [];
+
+	/** @var \NOP\IndieWeb\Lookup\Lookup_Provider_Base[] */
+	private array $lookup_providers = [];
 
 	public static function get_instance(): Plugin {
 		if ( null === self::$instance ) {
@@ -134,16 +137,20 @@ class Plugin {
 		( new Semantic_Markup() )->register();
 		( new MF2_Endpoint() )->register();
 
+		$this->lookup_providers = apply_filters( 'nop_indieweb_register_lookup_providers', [
+			new Lookup_Provider_TMDB(),
+		] );
+
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_patterns' ] );
 		add_action( 'init', [ $this, 'register_templates' ] );
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
 		add_action( 'rest_api_init', [ $this, 'register_indieauth_metadata_route' ] );
+		add_action( 'rest_api_init', [ $this, 'register_lookup_route' ] );
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
 			( new Debug( $services ) )->register();
-			( new Checkin_Metabox() )->register();
 			( new Post_Kinds_Panel() )->register();
 			( new Syndication_Panel( $syndication_manager ) )->register();
 		}
@@ -782,6 +789,42 @@ HTML,
 			'callback'            => [ $this, 'indieauth_metadata_response' ],
 			'permission_callback' => '__return_true',
 		] );
+	}
+
+	public function register_lookup_route(): void {
+		register_rest_route( 'nop-indieweb/v1', '/lookup', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'lookup_route_handler' ],
+			'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+			'args'                => [
+				'provider' => [ 'required' => true,  'sanitize_callback' => 'sanitize_key' ],
+				'q'        => [ 'required' => true,  'sanitize_callback' => 'sanitize_text_field' ],
+			],
+		] );
+	}
+
+	public function lookup_route_handler( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$slug     = $request->get_param( 'provider' );
+		$query    = $request->get_param( 'q' );
+		$provider = null;
+
+		foreach ( $this->lookup_providers as $p ) {
+			if ( $p->get_slug() === $slug ) {
+				$provider = $p;
+				break;
+			}
+		}
+
+		if ( ! $provider ) {
+			return new \WP_Error( 'unknown_provider', 'Unknown lookup provider.', [ 'status' => 400 ] );
+		}
+
+		$results = $provider->search( $query );
+		if ( is_wp_error( $results ) ) {
+			return $results;
+		}
+
+		return new \WP_REST_Response( [ 'results' => $results ], 200 );
 	}
 
 	public function indieauth_metadata_response(): \WP_REST_Response {
