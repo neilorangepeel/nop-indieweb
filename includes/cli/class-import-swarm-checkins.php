@@ -104,10 +104,11 @@ class Import_Swarm_Checkins {
 
 				$progress->tick();
 
-				$checkin_id  = (string) ( $item['id'] ?? '' );
-				$source_url  = $checkin_id ? "https://www.swarmapp.com/checkin/{$checkin_id}" : '';
-				$ts          = (int) ( $item['createdAt'] ?? 0 );
-				$shout       = (string) ( $item['shout'] ?? '' );
+				$checkin_id    = (string) ( $item['id'] ?? '' );
+				$source_url    = $checkin_id ? "https://www.swarmapp.com/checkin/{$checkin_id}" : '';
+				$ts            = (int) ( $item['createdAt'] ?? 0 );
+				$tz_offset_min = (int) ( $item['timeZoneOffset'] ?? 0 );
+				$shout         = (string) ( $item['shout'] ?? '' );
 				$venue       = $item['venue'] ?? [];
 				$location    = $venue['location'] ?? [];
 				$categories  = array_column( $venue['categories'] ?? [], 'name' );
@@ -150,8 +151,9 @@ class Import_Swarm_Checkins {
 				}
 
 				$post_id = $this->insert( [
-					'ts'          => $ts,
-					'shout'       => $shout,
+					'ts'            => $ts,
+					'tz_offset_min' => $tz_offset_min,
+					'shout'         => $shout,
 					'source_url'  => $source_url,
 					'venue_name'  => $venue_name,
 					'fsq_id'      => $fsq_id,
@@ -214,7 +216,7 @@ class Import_Swarm_Checkins {
 			: '';
 
 		$post_date_gmt = gmdate( 'Y-m-d H:i:s', $data['ts'] );
-		$post_date     = get_date_from_gmt( $post_date_gmt );
+		$post_date     = gmdate( 'Y-m-d H:i:s', $data['ts'] + ( ( $data['tz_offset_min'] ?? 0 ) * 60 ) );
 
 		$post_id = wp_insert_post( [
 			'post_title'    => $title,
