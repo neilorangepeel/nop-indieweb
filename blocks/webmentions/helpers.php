@@ -164,7 +164,7 @@ function nop_wm_render_empty_state( int $post_id ): void {
 		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
 	echo '<div ' . $wrapper_attrs . '>';
 	echo '<p class="nop-webmentions__empty">' . esc_html( $message ) . '</p>';
-	echo nop_wm_render_comment_form( $post_id ); // phpcs:ignore
+	echo nop_wm_render_comment_form( $post_id, false ); // phpcs:ignore
 	echo '</div>';
 }
 
@@ -172,42 +172,68 @@ function nop_wm_render_empty_state( int $post_id ): void {
  * Compact inline comment form for the bottom of the Responses section.
  * Returns empty string when comments are closed on this post.
  *
- * Drops the "Website" field on purpose — IndieWeb visitors send a webmention,
- * casual visitors don't have a site to type in.
+ * Custom form (not comment_form()) so the textarea appears before name/email —
+ * engage first, ask for details after. Drops the Website and cookies-consent
+ * fields: IndieWeb visitors send a webmention; casual visitors don't need them.
+ *
+ * $show_heading — false in the empty state (invitation text already labels it).
  */
-function nop_wm_render_comment_form( int $post_id ): string {
+function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): string {
 	if ( ! comments_open( $post_id ) ) {
 		return '';
 	}
 
-	$args = [
-		'class_container'      => 'nop-webmentions__form',
-		'class_form'           => 'nop-webmentions__form-form',
-		'class_submit'         => 'nop-webmentions__form-submit',
-		'title_reply'          => '',
-		'title_reply_before'   => '',
-		'title_reply_after'    => '',
-		'comment_notes_before' => '',
-		'comment_notes_after'  => '',
-		'label_submit'         => __( 'Post comment', 'nop-indieweb' ),
-		'comment_field'        => '<p class="nop-webmentions__form-field nop-webmentions__form-field--comment">'
-			. '<label for="comment" class="screen-reader-text">' . esc_html__( 'Comment', 'nop-indieweb' ) . '</label>'
-			. '<textarea id="comment" name="comment" rows="3" placeholder="' . esc_attr__( 'Add a comment…', 'nop-indieweb' ) . '" required></textarea>'
-			. '</p>',
-		'fields'               => [
-			'author' => '<p class="nop-webmentions__form-field nop-webmentions__form-field--author">'
-				. '<label for="author" class="screen-reader-text">' . esc_html__( 'Name', 'nop-indieweb' ) . '</label>'
-				. '<input id="author" name="author" type="text" autocomplete="name" placeholder="' . esc_attr__( 'Your name', 'nop-indieweb' ) . '" required>'
-				. '</p>',
-			'email'  => '<p class="nop-webmentions__form-field nop-webmentions__form-field--email">'
-				. '<label for="email" class="screen-reader-text">' . esc_html__( 'Email', 'nop-indieweb' ) . '</label>'
-				. '<input id="email" name="email" type="email" autocomplete="email" placeholder="' . esc_attr__( 'Email (not published)', 'nop-indieweb' ) . '" required>'
-				. '</p>',
-		],
-	];
+	$post_url  = esc_url( (string) get_permalink( $post_id ) );
+	$logged_in = is_user_logged_in();
+	$commenter = wp_get_current_commenter();
+	$user      = $logged_in ? wp_get_current_user() : null;
 
 	ob_start();
-	comment_form( $args, $post_id );
+	?>
+	<div id="respond" class="nop-webmentions__form">
+		<?php if ( $show_heading ) : ?>
+		<p class="nop-webmentions__form-label"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
+		<?php endif; ?>
+		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo $post_url; ?>#respond" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
+		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>">
+			<?php if ( $logged_in && $user ) : ?>
+			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">
+				<?php
+				printf(
+					/* translators: 1: user display name, 2: logout URL */
+					wp_kses(
+						__( 'Logged in as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
+						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
+					),
+					esc_html( $user->display_name ),
+					esc_url( wp_logout_url( $post_url ) )
+				);
+				?>
+			</p>
+			<?php endif; ?>
+			<p class="nop-webmentions__form-field nop-webmentions__form-field--comment">
+				<label for="comment" class="screen-reader-text"><?php esc_html_e( 'Comment', 'nop-indieweb' ); ?></label>
+				<textarea id="comment" name="comment" rows="3" placeholder="<?php esc_attr_e( 'Add a comment…', 'nop-indieweb' ); ?>" required></textarea>
+			</p>
+			<?php if ( ! $logged_in ) : ?>
+			<p class="nop-webmentions__form-field nop-webmentions__form-field--author">
+				<label for="author" class="screen-reader-text"><?php esc_html_e( 'Name', 'nop-indieweb' ); ?></label>
+				<input id="author" name="author" type="text" value="<?php echo esc_attr( $commenter['comment_author'] ); ?>" autocomplete="name" placeholder="<?php esc_attr_e( 'Your name', 'nop-indieweb' ); ?>" required>
+			</p>
+			<p class="nop-webmentions__form-field nop-webmentions__form-field--email">
+				<label for="email" class="screen-reader-text"><?php esc_html_e( 'Email', 'nop-indieweb' ); ?></label>
+				<input id="email" name="email" type="email" value="<?php echo esc_attr( $commenter['comment_author_email'] ); ?>" autocomplete="email" placeholder="<?php esc_attr_e( 'Email (not published)', 'nop-indieweb' ); ?>" required>
+			</p>
+			<?php endif; ?>
+			<input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( (string) $post_id ); ?>">
+			<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+			<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $post_url ); ?>">
+			<p class="form-submit">
+				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post comment', 'nop-indieweb' ); ?>">
+			</p>
+		</form>
+	</div>
+	<?php
 	return (string) ob_get_clean();
 }
 
