@@ -56,7 +56,7 @@ class Backfill_Weather {
 		$post_ids = get_posts( [
 			'post_type'      => 'post',
 			'post_status'    => 'any',
-			'posts_per_page' => -1,
+			'posts_per_page' => $limit > 0 ? $limit : -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
 			'tax_query'      => [
@@ -107,8 +107,10 @@ class Backfill_Weather {
 			$api_calls++;
 			if ( $ok ) {
 				$enriched++;
+				WP_CLI::log( "  ✓ #{$post_id} weather set (" . gmdate( 'Y-m-d', $ts ) . ")" );
 			} else {
 				$failed++;
+				WP_CLI::log( "  ✗ #{$post_id} failed" );
 			}
 
 			usleep( 250000 );

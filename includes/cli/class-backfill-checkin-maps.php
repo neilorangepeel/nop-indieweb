@@ -34,10 +34,12 @@ class Backfill_Checkin_Maps {
 			WP_CLI::error( 'No Geoapify API key configured (Settings → Swarm → Geoapify API key).' );
 		}
 
-		$post_ids = get_posts( [
+		$query_args = [
 			'post_type'      => 'post',
-			'posts_per_page' => -1,
+			'post_status'    => 'any',
+			'posts_per_page' => $limit > 0 ? $limit : -1,
 			'fields'         => 'ids',
+			'no_found_rows'  => true,
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,
@@ -45,7 +47,14 @@ class Backfill_Checkin_Maps {
 					'terms'    => 'checkin',
 				],
 			],
-		] );
+		];
+		if ( ! $force ) {
+			$query_args['meta_query'] = [
+				[ 'key' => 'nop_indieweb_map_url', 'compare' => 'NOT EXISTS' ],
+			];
+		}
+
+		$post_ids = get_posts( $query_args );
 
 		$total = count( $post_ids );
 		WP_CLI::log( sprintf( 'Found %d check-in post(s).', $total ) );
@@ -94,9 +103,11 @@ class Backfill_Checkin_Maps {
 			$api_calls++;
 			if ( '' === $url ) {
 				$failed++;
+				WP_CLI::log( "  ✗ #{$post_id} map failed" );
 				continue;
 			}
 			$generated++;
+			WP_CLI::log( "  ✓ #{$post_id} map cached" );
 		}
 
 		$progress->finish();
