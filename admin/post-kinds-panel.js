@@ -74,16 +74,28 @@
 		var meta       = props.meta;
 		var editPostFn = props.editPost;
 
-		var venueName  = meta['nop_indieweb_venue_name']      || '';
-		var address    = meta['nop_indieweb_venue_address']    || '';
-		var locality   = meta['nop_indieweb_venue_locality']   || '';
-		var postcode   = meta['nop_indieweb_venue_postcode']   || '';
-		var lat        = meta['nop_indieweb_venue_lat']        || '';
-		var lng        = meta['nop_indieweb_venue_lng']        || '';
-		var cats       = meta['nop_indieweb_venue_categories'] || [];
-		var checkinUrl = meta['nop_indieweb_checkin_url']      || '';
-		var service    = meta['nop_indieweb_service']          || '';
-		var photos     = meta['nop_indieweb_photos']           || [];
+		// Read venue category taxonomy terms — set by the Foursquare enricher.
+		// Fall back to the legacy nop_indieweb_venue_categories meta for older posts.
+		var termIds = useSelect( function ( select ) {
+			return select( 'core/editor' ).getEditedPostAttribute( 'nop_venue_category' ) || [];
+		}, [] );
+		var termNames = useSelect( function ( select ) {
+			return termIds.map( function ( id ) {
+				var term = select( 'core' ).getEntityRecord( 'taxonomy', 'nop_venue_category', id );
+				return term ? term.name : null;
+			} ).filter( Boolean );
+		}, [ termIds ] );
+
+		var venueName  = meta['nop_indieweb_venue_name']   || '';
+		var address    = meta['nop_indieweb_venue_address'] || '';
+		var locality   = meta['nop_indieweb_venue_locality'] || '';
+		var postcode   = meta['nop_indieweb_venue_postcode'] || '';
+		var lat        = meta['nop_indieweb_venue_lat']      || '';
+		var lng        = meta['nop_indieweb_venue_lng']      || '';
+		var cats       = termNames.length > 0 ? termNames : ( meta['nop_indieweb_venue_categories'] || [] );
+		var checkinUrl = meta['nop_indieweb_checkin_url']   || '';
+		var service    = meta['nop_indieweb_service']       || '';
+		var photos     = meta['nop_indieweb_photos']        || [];
 
 		var addrParts    = [ address, locality, postcode ].filter( Boolean );
 		var mapUrl       = ( lat && lng )
@@ -403,12 +415,16 @@
 
 	plugins.registerPlugin( 'nop-indieweb-post-kinds-panel', { render: PostKindsPanel } );
 
-	// Hide the default Gutenberg taxonomy panel for nop_kind.
+	// Hide the default Gutenberg taxonomy panels for nop_kind and nop_venue_category.
+	// nop_kind is managed by the Post Kind selector above; nop_venue_category is
+	// shown read-only in the Venue sub-panel, which only appears for checkin posts.
 	var dispatchStore = data.dispatch( 'core/editor' );
 	if ( dispatchStore && typeof dispatchStore.removeEditorPanel === 'function' ) {
 		dispatchStore.removeEditorPanel( 'taxonomy-panel-nop_kind' );
+		dispatchStore.removeEditorPanel( 'taxonomy-panel-nop_venue_category' );
 	} else {
 		data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_kind' );
+		data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_venue_category' );
 	}
 
 } )(
