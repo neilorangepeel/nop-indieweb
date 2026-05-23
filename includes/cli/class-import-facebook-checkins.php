@@ -27,6 +27,8 @@ class Import_Facebook_Checkins {
 	 *   - posts/places_you_have_been_tagged_in.json (tagged places, name + date only)
 	 *
 	 * Idempotent: skips posts whose nop_indieweb_source_url already exists.
+	 * With --with-photos, already-imported posts that have no photos yet will
+	 * have their archive photos sideloaded without being recreated.
 	 *
 	 * ## OPTIONS
 	 *
@@ -37,16 +39,22 @@ class Import_Facebook_Checkins {
 	 * [--status=<status>]
 	 * : Post status for imported posts. Default: publish
 	 *
+	 * [--with-photos]
+	 * : Sideload photos from the archive into the media library and attach them
+	 *   to their checkin posts. Requires the archive media files to be present.
+	 *   Safe to re-run: skips posts that already have photo_ids set.
+	 *
 	 * [--dry-run]
 	 * : Show what would be imported without creating any posts.
 	 *
 	 * @when after_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
-		$archive = rtrim( $args[0] ?? '', '/' );
-		$status  = $assoc_args['status'] ?? 'publish';
-		$dry_run = isset( $assoc_args['dry-run'] );
-		$tags    = [ 'Facebook' ];
+		$archive     = rtrim( $args[0] ?? '', '/' );
+		$status      = $assoc_args['status'] ?? 'publish';
+		$dry_run     = isset( $assoc_args['dry-run'] );
+		$with_photos = isset( $assoc_args['with-photos'] );
+		$tags        = [ 'Facebook' ];
 
 		if ( ! $archive ) {
 			WP_CLI::error( 'Usage: wp nop-indieweb import-facebook-checkins <path-to-archive>' );
@@ -77,11 +85,12 @@ class Import_Facebook_Checkins {
 				$labels[ $lv['label'] ?? '' ] = $lv;
 			}
 
-			$message    = self::fix_encoding( (string) ( $labels['Message']['value'] ?? '' ) );
-			$place_dict = array_column( $labels['Place tags']['dict'] ?? [], 'value', 'label' );
-			$venue_name = self::fix_encoding( (string) ( $place_dict['Name'] ?? '' ) );
-			$raw_coords = (string) ( $place_dict['Coordinates'] ?? '' );
-			$raw_addr   = self::fix_encoding( (string) ( $place_dict['Address'] ?? '' ) );
+			$message      = self::fix_encoding( (string) ( $labels['Message']['value'] ?? '' ) );
+			$place_dict   = array_column( $labels['Place tags']['dict'] ?? [], 'value', 'label' );
+			$venue_name   = self::fix_encoding( (string) ( $place_dict['Name'] ?? '' ) );
+			$raw_coords   = (string) ( $place_dict['Coordinates'] ?? '' );
+			$raw_addr     = self::fix_encoding( (string) ( $place_dict['Address'] ?? '' ) );
+			$photos_media = $labels['Photos']['media'] ?? [];
 
 			$source_url = (string) ( $labels['URL']['href'] ?? '' );
 			if ( ! $source_url && $fbid ) {
@@ -89,12 +98,22 @@ class Import_Facebook_Checkins {
 			}
 
 			if ( $source_url && $this->source_exists( $source_url ) ) {
+				if ( $with_photos && $photos_media && ! $dry_run ) {
+					$existing_id = $this->find_post_by_source( $source_url );
+					if ( $existing_id && ! get_post_meta( $existing_id, 'nop_indieweb_photo_ids', true ) ) {
+						$count = $this->sideload_archive_photos( $existing_id, $photos_media, $archive );
+						if ( $count ) {
+							WP_CLI::line( "  photos backfilled on #{$existing_id}: {$count} file(s)" );
+						}
+					}
+				}
 				$p1['skipped']++;
 				continue;
 			}
 
 			if ( $dry_run ) {
-				WP_CLI::line( "  would create: {$venue_name}" );
+				$photo_note = $photos_media ? ' (' . count( $photos_media ) . ' photo(s))' : '';
+				WP_CLI::line( "  would create: {$venue_name}{$photo_note}" );
 				$p1['created']++;
 				continue;
 			}
@@ -122,6 +141,12 @@ class Import_Facebook_Checkins {
 				$p1['failed']++;
 			} else {
 				$p1['created']++;
+				if ( $with_photos && $photos_media ) {
+					$count = $this->sideload_archive_photos( $result, $photos_media, $archive );
+					if ( $count ) {
+						WP_CLI::line( "  → {$count} photo(s) attached" );
+					}
+				}
 			}
 		}
 
@@ -266,6 +291,129 @@ class Import_Facebook_Checkins {
 			'meta_key'       => 'nop_indieweb_source_url',
 			'meta_value'     => $source_url,
 		] );
+	}
+
+	private function find_post_by_source( string $source_url ): int {
+		$ids = get_posts( [
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'post_status'    => 'any',
+			'no_found_rows'  => true,
+			'meta_key'       => 'nop_indieweb_source_url',
+			'meta_value'     => $source_url,
+		] );
+		return $ids ? (int) $ids[0] : 0;
+	}
+
+	/**
+	 * Sideloads photos from a Facebook archive into the WP media library.
+	 *
+	 * Each entry in $media_items is a Facebook archive photo object with at
+	 * least a 'uri' key (path relative to the archive root). The file is
+	 * copied to a temp location before sideloading so the archive is untouched.
+	 *
+	 * Returns the number of photos successfully sideloaded.
+	 */
+	private function sideload_archive_photos( int $post_id, array $media_items, string $archive_root ): int {
+		if ( ! function_exists( 'media_handle_sideload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		$attachment_ids = [];
+		$set_featured   = ! has_post_thumbnail( $post_id );
+
+		foreach ( $media_items as $item ) {
+			$rel_uri = (string) ( $item['uri'] ?? '' );
+			if ( ! $rel_uri ) {
+				continue;
+			}
+
+			$src_path = $archive_root . '/' . $rel_uri;
+			if ( ! file_exists( $src_path ) ) {
+				WP_CLI::warning( "  photo not found in archive: {$rel_uri}" );
+				continue;
+			}
+
+			$ext      = strtolower( pathinfo( $src_path, PATHINFO_EXTENSION ) ) ?: 'jpg';
+			$tmp_path = tempnam( sys_get_temp_dir(), 'fb-photo-' ) . '.' . $ext;
+			if ( ! copy( $src_path, $tmp_path ) ) {
+				WP_CLI::warning( "  could not copy photo to temp: {$rel_uri}" );
+				continue;
+			}
+
+			$file = [
+				'name'     => basename( $rel_uri ),
+				'tmp_name' => $tmp_path,
+			];
+
+			$id = media_handle_sideload( $file, $post_id );
+			if ( is_wp_error( $id ) ) {
+				WP_CLI::warning( "  sideload failed ({$rel_uri}): " . $id->get_error_message() );
+				@unlink( $tmp_path );
+				continue;
+			}
+
+			$alt = self::fix_encoding( (string) ( $item['description'] ?? '' ) );
+			if ( $alt ) {
+				update_post_meta( $id, '_wp_attachment_image_alt', $alt );
+			}
+
+			$attachment_ids[] = $id;
+
+			if ( $set_featured ) {
+				set_post_thumbnail( $post_id, $id );
+				$set_featured = false;
+			}
+		}
+
+		if ( ! $attachment_ids ) {
+			return 0;
+		}
+
+		$existing_ids  = (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true );
+		$existing_urls = (array) get_post_meta( $post_id, 'nop_indieweb_photos', true );
+
+		update_post_meta( $post_id, 'nop_indieweb_photo_ids', array_merge( $existing_ids, $attachment_ids ) );
+		update_post_meta( $post_id, 'nop_indieweb_photos', array_merge(
+			$existing_urls,
+			array_filter( array_map( 'wp_get_attachment_url', $attachment_ids ) )
+		) );
+
+		$blocks = $this->build_photo_blocks( $attachment_ids );
+		if ( $blocks ) {
+			$post    = get_post( $post_id );
+			$current = rtrim( (string) $post->post_content );
+			wp_update_post( [
+				'ID'           => $post_id,
+				'post_content' => ( $current ? $current . "\n\n" : '' ) . $blocks,
+			] );
+		}
+
+		return count( $attachment_ids );
+	}
+
+	private function build_photo_blocks( array $ids ): string {
+		if ( ! $ids ) {
+			return '';
+		}
+		if ( 1 === count( $ids ) ) {
+			$src = wp_get_attachment_url( $ids[0] );
+			return sprintf(
+				"<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+				$ids[0], esc_url( $src ), $ids[0]
+			);
+		}
+		$inner = '';
+		foreach ( $ids as $id ) {
+			$src    = wp_get_attachment_url( $id );
+			$inner .= sprintf(
+				"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->",
+				$id, esc_url( $src ), $id
+			);
+		}
+		return "<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\"} -->\n<figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped\">{$inner}\n</figure>\n<!-- /wp:gallery -->";
 	}
 
 	/**
