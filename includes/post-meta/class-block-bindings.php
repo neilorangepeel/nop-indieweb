@@ -126,7 +126,7 @@ class Block_Bindings {
 		'venue_coordinates'               => '54.597 ° N · 5.935 ° W',
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
-		'venue_visit_number'              => '1st visit',
+		'venue_visit_number'              => '1st Visit',
 		// Full-key forms
 		'nop_indieweb_venue_name'         => 'The Crown Bar',
 		'nop_indieweb_venue_address'      => '46 Great Victoria Street',
@@ -245,7 +245,8 @@ class Block_Bindings {
 				if ( ! $n ) {
 					return null;
 				}
-				return \NOP\IndieWeb\nop_indieweb_ordinal( $n ) . ' visit';
+				/* translators: %s = ordinal number, e.g. "1st" */
+				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
 		}
 
 		return null;

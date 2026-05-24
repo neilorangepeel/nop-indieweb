@@ -108,7 +108,7 @@
 		var service    = meta['nop_indieweb_service']       || '';
 		var photos     = meta['nop_indieweb_photos']        || [];
 		var visitNum   = meta['nop_indieweb_venue_visit_number'] || 0;
-		var visitText  = visitNum ? ordinal( visitNum ) + ' visit' : '';
+		var visitText  = visitNum ? i18n.sprintf( __( '%s Visit', 'nop-indieweb' ), ordinal( visitNum ) ) : '';
 
 		var addrParts    = [ address, locality, postcode ].filter( Boolean );
 		var mapUrl       = ( lat && lng )

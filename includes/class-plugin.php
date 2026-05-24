@@ -645,7 +645,7 @@ HTML,
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"lng"}}}}} --><p>-5.9347</p><!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">visit number (binding: field=venue_visit_number, derived) — "1st visit", "2nd visit", etc.</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}}} --><p>1st visit</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}}} --><p>1st Visit</p><!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · nop_venue_category (core) — adds p-category</p><!-- /wp:paragraph -->
 <!-- wp:post-terms {"term":"nop_venue_category","separator":" · "} /-->
