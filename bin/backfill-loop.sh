@@ -19,19 +19,20 @@ while true; do
     echo "[Batch $BATCH] $(date '+%H:%M:%S')"
 
     OUTPUT=$(studio wp nop-indieweb "$CMD" "$LIMIT" 2>&1)
+    CLEAN=$(echo "$OUTPUT" | sed 's/\x1b\[[0-9;]*m//g')
 
     # Print meaningful lines only
-    echo "$OUTPUT" | grep -E "✓|✗|Success:|Found |--limit reached|Error" || true
+    echo "$CLEAN" | grep -E "✓|✗|Success:|Found |--limit reached|Error" || true
 
     # Done when 0 enriched/generated
-    if echo "$OUTPUT" | grep -qE "Success: 0 (enriched|generated)"; then
+    if echo "$CLEAN" | grep -qE "Success: 0 (enriched|generated)"; then
         echo "---"
         echo "Done! $CMD complete after $BATCH batch(es)."
         break
     fi
 
     # Abort on unexpected errors (not timeout)
-    if echo "$OUTPUT" | grep -qE "Error:" && ! echo "$OUTPUT" | grep -q "Timeout"; then
+    if echo "$CLEAN" | grep -qE "Error:" && ! echo "$CLEAN" | grep -q "Timeout"; then
         echo "Error detected — stopping. Check output above."
         break
     fi
