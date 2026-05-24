@@ -252,6 +252,15 @@ class Import_Swarm_Checkins {
 
 		wp_set_object_terms( $post_id, 'checkin', Kind_Taxonomy::TAXONOMY );
 
+		if ( $data['fsq_id'] ) {
+			$visit_number = \NOP\IndieWeb\nop_indieweb_compute_venue_visit_number(
+				$data['fsq_id'],
+				$post_date,
+				$post_id
+			);
+			update_post_meta( $post_id, 'nop_indieweb_venue_visit_number', $visit_number );
+		}
+
 		return $post_id;
 	}
 

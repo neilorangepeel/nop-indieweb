@@ -361,6 +361,45 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 	return $local_url;
 }
 
+function nop_indieweb_ordinal( int $n ): string {
+	$abs = abs( $n );
+	$mod = $abs % 100;
+	if ( $mod >= 11 && $mod <= 13 ) {
+		return $n . 'th';
+	}
+	return match ( $abs % 10 ) {
+		1       => $n . 'st',
+		2       => $n . 'nd',
+		3       => $n . 'rd',
+		default => $n . 'th',
+	};
+}
+
+/**
+ * Counts the number of checkins at a Foursquare venue that predate $post_date,
+ * then returns $prior_count + 1 as the visit ordinal for the given post.
+ * Pass the current post's ID in $exclude_id to avoid counting it if it was
+ * already inserted before this call runs.
+ */
+function nop_indieweb_compute_venue_visit_number( string $venue_id, string $post_date, int $exclude_id = 0 ): int {
+	global $wpdb;
+	$prior = (int) $wpdb->get_var( $wpdb->prepare(
+		"SELECT COUNT(DISTINCT p.ID)
+		 FROM {$wpdb->posts} p
+		 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+		 WHERE m.meta_key IN ('nop_indieweb_venue_uid', 'nop_indieweb_venue_fsq_id')
+		 AND m.meta_value = %s
+		 AND p.post_type = 'post'
+		 AND p.post_status IN ('publish', 'draft', 'private')
+		 AND p.post_date < %s
+		 AND p.ID != %d",
+		$venue_id,
+		$post_date,
+		$exclude_id
+	) );
+	return $prior + 1;
+}
+
 /**
  * One-time migration: flip the existing settings option to autoload=false.
  * Idempotent and cheap — runs on plugins_loaded behind a version flag.

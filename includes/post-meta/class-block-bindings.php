@@ -60,11 +60,12 @@ class Block_Bindings {
 	 * bindings on fields that don't have a backing meta key.
 	 */
 	private const DERIVED_MF2_CLASSES = [
-		'full_address'     => 'p-adr',
-		'locality_country' => '',
-		'venue_coordinates' => '',
+		'full_address'        => 'p-adr',
+		'locality_country'    => '',
+		'venue_coordinates'   => '',
 		'venue_url_host_label'   => '',
 		'checkin_url_host_label' => '',
+		'venue_visit_number'  => '',
 	];
 
 	public function register(): void {
@@ -125,6 +126,7 @@ class Block_Bindings {
 		'venue_coordinates'               => '54.597 ° N · 5.935 ° W',
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
+		'venue_visit_number'              => '1st visit',
 		// Full-key forms
 		'nop_indieweb_venue_name'         => 'The Crown Bar',
 		'nop_indieweb_venue_address'      => '46 Great Victoria Street',
@@ -237,6 +239,13 @@ class Block_Bindings {
 				}
 				$host = wp_parse_url( $url, PHP_URL_HOST ) ?: $url;
 				return sprintf( 'View on %s', $host );
+
+			case 'venue_visit_number':
+				$n = (int) get_post_meta( $post_id, 'nop_indieweb_venue_visit_number', true );
+				if ( ! $n ) {
+					return null;
+				}
+				return \NOP\IndieWeb\nop_indieweb_ordinal( $n ) . ' visit';
 		}
 
 		return null;

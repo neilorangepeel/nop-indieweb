@@ -191,7 +191,18 @@ class Swarm extends Service_Base {
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
-		$settings = $this->get_settings();
+		$settings  = $this->get_settings();
+		$venue_uid = (string) ( $parsed['venue_uid'] ?? '' );
+
+		if ( $venue_uid ) {
+			$post_date   = get_post_field( 'post_date', $post_id );
+			$visit_number = \NOP\IndieWeb\nop_indieweb_compute_venue_visit_number(
+				$venue_uid,
+				(string) $post_date,
+				$post_id
+			);
+			update_post_meta( $post_id, 'nop_indieweb_venue_visit_number', $visit_number );
+		}
 
 		$cats = array_filter( (array) ( $parsed['venue_categories'] ?? [] ) );
 		if ( ! $cats ) {

@@ -49,6 +49,17 @@
 
 	// ── Helpers ─────────────────────────────────────────────────────────────────
 
+	function ordinal( n ) {
+		var abs = Math.abs( n ), mod = abs % 100;
+		if ( mod >= 11 && mod <= 13 ) { return n + 'th'; }
+		switch ( abs % 10 ) {
+			case 1: return n + 'st';
+			case 2: return n + 'nd';
+			case 3: return n + 'rd';
+			default: return n + 'th';
+		}
+	}
+
 	function domainFromUrl( url ) {
 		try { return new URL( url ).hostname; } catch ( e ) { return url; }
 	}
@@ -96,6 +107,8 @@
 		var checkinUrl = meta['nop_indieweb_checkin_url']   || '';
 		var service    = meta['nop_indieweb_service']       || '';
 		var photos     = meta['nop_indieweb_photos']        || [];
+		var visitNum   = meta['nop_indieweb_venue_visit_number'] || 0;
+		var visitText  = visitNum ? ordinal( visitNum ) + ' visit' : '';
 
 		var addrParts    = [ address, locality, postcode ].filter( Boolean );
 		var mapUrl       = ( lat && lng )
@@ -117,6 +130,11 @@
 			addrParts.length > 0 && el( 'div', { className: 'nop-panel-row' },
 				el( 'span', { className: 'nop-panel-label' }, __( 'Address', 'nop-indieweb' ) ),
 				el( 'span', { className: 'nop-panel-value' }, addrParts.join( ', ' ) )
+			),
+
+			visitText && el( 'div', { className: 'nop-panel-row' },
+				el( 'span', { className: 'nop-panel-label' }, __( 'Visit', 'nop-indieweb' ) ),
+				el( 'span', { className: 'nop-panel-value' }, visitText )
 			),
 
 			cats.length > 0 && el( 'div', { className: 'nop-panel-row' },

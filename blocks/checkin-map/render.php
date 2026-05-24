@@ -86,16 +86,18 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 	<?php if ( $is_editor ) : ?>
 	<div class="nop-checkin-map__placeholder" role="img" aria-label="<?php echo esc_attr( $map_title ); ?>"></div>
 	<?php else : ?>
-	<img class="nop-checkin-map__img"
-		src="<?php echo esc_url( $map_img_url ); ?>"
-		width="<?php echo esc_attr( (string) $map_w ); ?>"
-		height="<?php echo esc_attr( (string) $map_h ); ?>"
-		alt="<?php echo esc_attr( $map_title ); ?>"
-		loading="lazy" decoding="async">
+	<a class="nop-checkin-map__link" href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $map_title ); ?> — View on OpenStreetMap">
+		<img class="nop-checkin-map__img"
+			src="<?php echo esc_url( $map_img_url ); ?>"
+			width="<?php echo esc_attr( (string) $map_w ); ?>"
+			height="<?php echo esc_attr( (string) $map_h ); ?>"
+			alt="<?php echo esc_attr( $map_title ); ?>"
+			loading="lazy" decoding="async" aria-hidden="true">
+	</a>
 	<?php endif; ?>
 
 	<p class="nop-checkin-map__caption">
-		<a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer">View on OpenStreetMap</a>
+		<span aria-hidden="true">View on OpenStreetMap</span>
 	</p>
 
 	<?php // Hidden mf2 properties parsed by microformat crawlers. ?>

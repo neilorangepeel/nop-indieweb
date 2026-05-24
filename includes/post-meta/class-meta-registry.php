@@ -82,6 +82,15 @@ class Registry {
 				'description' => 'Foursquare venue ID.',
 			] ),
 
+			'nop_indieweb_venue_visit_number' => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Venue Visit Number', 'nop-indieweb' ),
+				'description'   => 'Ordinal visit number (1 = first visit to this venue).',
+			],
+
 			// ── Coordinates ──────────────────────────────────────────────────────
 			'nop_indieweb_venue_lat'        => array_merge( $string, [
 				'label'       => __( 'Latitude', 'nop-indieweb' ),

@@ -166,6 +166,10 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	position: relative;
 }
 
+.nop-checkin-map__link {
+	display: block;
+}
+
 .nop-checkin-map__img {
 	display: block;
 	width:   100%;
@@ -205,7 +209,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	transition:         background-color 150ms ease, color 150ms ease;
 }
 
-.nop-checkin-map__caption:has(a:hover) {
+.nop-checkin-map:hover .nop-checkin-map__caption {
 	background-color: rgba(0, 0, 0, 0.75);
 	color:            #fff;
 }
