@@ -16,7 +16,7 @@ if ( ! $post_id ) {
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
 		<div class="nop-film-meta__rating">
-			<span class="nop-film-stars" aria-label="4 out of 5 stars">
+			<span class="nop-film-stars" aria-label="<?php echo esc_attr( sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), 4 ) ); ?>">
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
@@ -26,8 +26,8 @@ if ( ! $post_id ) {
 		</div>
 		<div class="nop-film-meta__row">
 			<span class="nop-film-meta__year">2019</span>
-			<span class="nop-film-meta__date">Watched 1 January 2025</span>
-			<a class="nop-film-meta__source" href="#" onclick="return false;">View on Letterboxd</a>
+			<span class="nop-film-meta__date"><?php echo esc_html( sprintf( __( 'Watched %s', 'nop-indieweb' ), '1 January 2025' ) ); ?></span>
+			<a class="nop-film-meta__source" href="#" onclick="return false;"><?php esc_html_e( 'View on Letterboxd', 'nop-indieweb' ); ?></a>
 		</div>
 	</div>
 	<?php
@@ -49,7 +49,8 @@ if ( ! empty( $photo_ids[0] ) ) {
 
 // ── Star markup ───────────────────────────────────────────────────────────────
 
-$star_label = $rating > 0 ? $rating . ' out of 5 stars' : 'Not rated';
+/* translators: %s: numeric rating e.g. 4.5 */
+$star_label = $rating > 0 ? sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), $rating ) : __( 'Not rated', 'nop-indieweb' );
 $stars_html = '<span class="nop-film-stars" aria-label="' . esc_attr( $star_label ) . '">';
 for ( $i = 1; $i <= 5; $i++ ) {
 	if ( $rating >= $i ) {
@@ -94,16 +95,16 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 			<span class="nop-film-meta__year"><?php echo esc_html( $film_year ); ?></span>
 		<?php endif; ?>
 		<?php if ( $date_display ) : ?>
-			<span class="nop-film-meta__date">Watched <?php echo esc_html( $date_display ); ?></span>
+			<span class="nop-film-meta__date"><?php echo esc_html( sprintf( __( 'Watched %s', 'nop-indieweb' ), $date_display ) ); ?></span>
 		<?php endif; ?>
 		<?php if ( $rewatch ) : ?>
-			<span class="nop-film-meta__rewatch">Rewatch</span>
+			<span class="nop-film-meta__rewatch"><?php esc_html_e( 'Rewatch', 'nop-indieweb' ); ?></span>
 		<?php endif; ?>
 		<?php if ( $source_url ) : ?>
 			<a class="nop-film-meta__source"
 			   href="<?php echo esc_url( $source_url ); ?>"
 			   target="_blank"
-			   rel="noopener noreferrer">View on Letterboxd</a>
+			   rel="noopener noreferrer"><?php esc_html_e( 'View on Letterboxd', 'nop-indieweb' ); ?></a>
 		<?php endif; ?>
 	</div>
 	<?php endif; ?>

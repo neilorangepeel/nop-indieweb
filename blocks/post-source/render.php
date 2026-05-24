@@ -40,10 +40,10 @@ if ( ! $has_source && ! $has_synds && ! $is_twitter_archive ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source nop-post-source--preview' ] );
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
-		<span class="nop-post-source__label">Originally posted on</span>
+		<span class="nop-post-source__label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
 		<a class="nop-post-source__link" href="#" onclick="return false;">Mastodon</a>
 		<span class="nop-post-source__sep">·</span>
-		<span class="nop-post-source__label">Also on</span>
+		<span class="nop-post-source__label"><?php esc_html_e( 'Also on', 'nop-indieweb' ); ?></span>
 		<a class="nop-post-source__link" href="#" onclick="return false;">bsky.app</a>
 	</div>
 	<?php
@@ -62,7 +62,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-source__item">
-		<span class="nop-post-source__label">Originally posted on</span>
+		<span class="nop-post-source__label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
 		<a class="nop-post-source__link u-syndication"
 		   href="<?php echo esc_url( $source_url ); ?>"
 		   target="_blank" rel="noopener noreferrer me">
@@ -73,7 +73,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 
 	<?php if ( $has_synds ) : ?>
 	<span class="nop-post-source__item">
-		<span class="nop-post-source__label">Also on</span>
+		<span class="nop-post-source__label"><?php esc_html_e( 'Also on', 'nop-indieweb' ); ?></span>
 		<?php foreach ( array_values( $syndication ) as $i => $url ) : ?>
 			<?php if ( $i > 0 ) : ?><span class="nop-post-source__sep">,</span><?php endif; ?>
 			<a class="nop-post-source__link u-syndication"
@@ -91,9 +91,9 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 	<span class="nop-post-source__item nop-post-source__item--archive">
 		<?php if ( $archive_url ) : ?>
 			<a class="nop-post-source__link nop-post-source__link--archive"
-			   href="<?php echo esc_url( $archive_url ); ?>">Archived Tweet</a>
+			   href="<?php echo esc_url( $archive_url ); ?>"><?php esc_html_e( 'Archived Tweet', 'nop-indieweb' ); ?></a>
 		<?php else : ?>
-			<span class="nop-post-source__label">Archived Tweet</span>
+			<span class="nop-post-source__label"><?php esc_html_e( 'Archived Tweet', 'nop-indieweb' ); ?></span>
 		<?php endif; ?>
 	</span>
 	<?php endif; ?>

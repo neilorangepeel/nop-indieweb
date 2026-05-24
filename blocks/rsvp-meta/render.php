@@ -10,10 +10,10 @@ declare( strict_types=1 );
 $post_id = $block->context['postId'] ?? get_the_ID();
 
 $rsvp_labels = [
-	'yes'        => 'Going',
-	'maybe'      => 'Maybe',
-	'interested' => 'Interested',
-	'no'         => 'Not going',
+	'yes'        => __( 'Going',      'nop-indieweb' ),
+	'maybe'      => __( 'Maybe',      'nop-indieweb' ),
+	'interested' => __( 'Interested', 'nop-indieweb' ),
+	'no'         => __( 'Not going',  'nop-indieweb' ),
 ];
 
 $rsvp_colors = [
@@ -28,10 +28,10 @@ if ( ! $post_id ) {
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
 		<p class="nop-rsvp-meta__status">
-			<span class="nop-rsvp-badge" style="--rsvp-color: #16a34a">Going</span>
+			<span class="nop-rsvp-badge" style="--rsvp-color: #16a34a"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
 		</p>
 		<p class="nop-rsvp-meta__event">
-			Event: <a href="#" onclick="return false;">IndieWebCamp 2025 — indieweb.org</a>
+			<?php esc_html_e( 'Event:', 'nop-indieweb' ); ?> <a href="#" onclick="return false;">IndieWebCamp 2025 — indieweb.org</a>
 		</p>
 	</div>
 	<?php
@@ -47,7 +47,7 @@ if ( ! $rsvp_value && ! $event_url ) {
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--placeholder' ] );
 		echo '<div ' . $wrapper_attrs . '>';
-		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">Set RSVP in sidebar →</span></p>';
+		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">' . esc_html__( 'Set RSVP in sidebar →', 'nop-indieweb' ) . '</span></p>';
 		echo '</div>';
 	}
 	return;
@@ -72,7 +72,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 
 	<?php if ( $event_url ) : ?>
 	<p class="nop-rsvp-meta__event">
-		Event:
+		<?php esc_html_e( 'Event:', 'nop-indieweb' ); ?>
 		<a href="<?php echo esc_url( $event_url ); ?>"
 		   target="_blank"
 		   rel="noopener noreferrer">

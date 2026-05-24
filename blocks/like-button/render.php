@@ -19,7 +19,7 @@ if ( ! $post_id ) {
 	<div <?php echo $wrapper; ?>>
 		<button class="nop-like-button__btn" type="button" aria-pressed="false">
 			<?php echo $icon; ?>
-			<span class="nop-like-button__label">Like</span>
+			<span class="nop-like-button__label"><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 		</button>
 		<span class="nop-like-button__count" hidden>0</span>
 	</div>
@@ -49,7 +49,7 @@ $wrapper = get_block_wrapper_attributes( [
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
 	<span class="nop-like-button__count"
-	      aria-label="<?php echo esc_attr( $count . ' likes' ); ?>"
+	      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $count, 'nop-indieweb' ), $count ) ); ?>"
 	      <?php echo 0 === $count ? 'hidden' : ''; ?>>
 		<?php echo esc_html( (string) $count ); ?>
 	</span>

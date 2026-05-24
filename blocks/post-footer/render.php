@@ -34,7 +34,7 @@ if ( ! $post_id ) {
 		</span>
 		<span class="nop-post-footer__sep" aria-hidden="true">·</span>
 		<span class="nop-post-footer__source">
-			<span class="nop-post-footer__source-label">Originally posted on</span>
+			<span class="nop-post-footer__source-label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
 			<span class="nop-post-footer__source-link">Bluesky</span>
 		</span>
 	</div>
@@ -121,7 +121,7 @@ $wrapper = get_block_wrapper_attributes( [
 	        <?php echo $liked ? 'disabled' : ''; ?>>
 		<?php echo $heart_icon; ?>
 		<span class="nop-post-footer__pill-count"
-		      aria-label="<?php echo esc_attr( $like_count . ' likes' ); ?>"
+		      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
 		      <?php echo 0 === $like_count ? 'hidden' : ''; ?>>
 			<?php echo esc_html( (string) $like_count ); ?>
 		</span>
@@ -140,7 +140,7 @@ $wrapper = get_block_wrapper_attributes( [
 		</span>
 	</a>
 
-	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( $repost_count . ' reposts' ); ?>">
+	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ), $repost_count ) ); ?>">
 		<?php echo $repost_icon; ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
@@ -152,7 +152,7 @@ $wrapper = get_block_wrapper_attributes( [
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-footer__sep" aria-hidden="true">·</span>
 	<span class="nop-post-footer__source">
-		<span class="nop-post-footer__source-label">Originally posted on</span>
+		<span class="nop-post-footer__source-label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
 		<a class="nop-post-footer__source-link u-syndication"
 		   href="<?php echo esc_url( $source_url ); ?>"
 		   target="_blank" rel="noopener noreferrer me">

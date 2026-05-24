@@ -16,8 +16,8 @@ if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map nop-checkin-map--preview' ] );
 	?>
 	<div <?php echo $wrapper_attrs; ?>>
-		<div class="nop-checkin-map__placeholder" role="img" aria-label="Map preview"></div>
-		<p class="nop-checkin-map__caption"><span>View on OpenStreetMap</span></p>
+		<div class="nop-checkin-map__placeholder" role="img" aria-label="<?php esc_attr_e( 'Map preview', 'nop-indieweb' ); ?>"></div>
+		<p class="nop-checkin-map__caption"><span><?php esc_html_e( 'View on OpenStreetMap', 'nop-indieweb' ); ?></span></p>
 	</div>
 	<?php
 	return;
@@ -47,7 +47,8 @@ $map_url = sprintf(
 	rawurlencode( $lng )
 );
 
-$map_title   = $venue_name ? sprintf( 'Map showing %s', $venue_name ) : 'Location map';
+/* translators: %s: venue name */
+$map_title   = $venue_name ? sprintf( __( 'Map showing %s', 'nop-indieweb' ), $venue_name ) : __( 'Location map', 'nop-indieweb' );
 $map_img_url = '';
 $map_w       = 0;
 $map_h       = 0;
@@ -86,7 +87,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 	<?php if ( $is_editor ) : ?>
 	<div class="nop-checkin-map__placeholder" role="img" aria-label="<?php echo esc_attr( $map_title ); ?>"></div>
 	<?php else : ?>
-	<a class="nop-checkin-map__link" href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $map_title ); ?> — View on OpenStreetMap">
+	<a class="nop-checkin-map__link" href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( sprintf( __( '%s — View on OpenStreetMap', 'nop-indieweb' ), $map_title ) ); ?>">
 		<img class="nop-checkin-map__img"
 			src="<?php echo esc_url( $map_img_url ); ?>"
 			width="<?php echo esc_attr( (string) $map_w ); ?>"
@@ -97,7 +98,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 	<?php endif; ?>
 
 	<p class="nop-checkin-map__caption">
-		<span aria-hidden="true">View on OpenStreetMap</span>
+		<span aria-hidden="true"><?php esc_html_e( 'View on OpenStreetMap', 'nop-indieweb' ); ?></span>
 	</p>
 
 	<?php // Hidden mf2 properties parsed by microformat crawlers. ?>

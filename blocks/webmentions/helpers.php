@@ -72,7 +72,8 @@ function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): stri
 }
 
 function nop_wm_reply_link( int|string $comment_id, int $post_id, string $below_element, string $author = '' ): string {
-	$label = $author ? 'Reply to ' . $author : 'Reply';
+	/* translators: %s: commenter's name */
+	$label = $author ? sprintf( __( 'Reply to %s', 'nop-indieweb' ), $author ) : __( 'Reply', 'nop-indieweb' );
 	return '<a class="nop-webmentions__reply-link comment-reply-link" rel="nofollow"'
 	     . ' href="#respond"'
 	     . ' data-commentid="' . esc_attr( (string) $comment_id ) . '"'
@@ -80,7 +81,7 @@ function nop_wm_reply_link( int|string $comment_id, int $post_id, string $below_
 	     . ' data-belowelement="' . esc_attr( $below_element ) . '"'
 	     . ' data-respondelement="respond"'
 	     . ' aria-label="' . esc_attr( $label ) . '">'
-	     . 'Reply'
+	     . esc_html__( 'Reply', 'nop-indieweb' )
 	     . '</a>';
 }
 

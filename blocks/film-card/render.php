@@ -13,7 +13,8 @@ $post_id = $block->context['postId'] ?? get_the_ID();
 // ── Star builder (shared with film-meta) ──────────────────────────────────────
 
 function nop_film_card_stars( float $rating ): string {
-	$label = $rating > 0 ? $rating . ' out of 5 stars' : 'Not rated';
+	/* translators: %s: numeric rating e.g. 4.5 */
+	$label = $rating > 0 ? sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), $rating ) : __( 'Not rated', 'nop-indieweb' );
 	$html  = '<span class="nop-film-stars" aria-label="' . esc_attr( $label ) . '">';
 	for ( $i = 1; $i <= 5; $i++ ) {
 		if ( $rating >= $i ) {
@@ -98,7 +99,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 		<p class="nop-film-card__title">
 			<a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $post_title ); ?></a>
 			<?php if ( $rewatch ) : ?>
-			<span class="nop-film-card__rewatch" aria-label="(rewatch)">↩</span>
+			<span class="nop-film-card__rewatch" aria-label="<?php esc_attr_e( '(rewatch)', 'nop-indieweb' ); ?>">↩</span>
 			<?php endif; ?>
 		</p>
 

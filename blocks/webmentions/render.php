@@ -141,7 +141,8 @@ if ( ! $likes && ! $reposts && ! $replies ) {
 
 $comments_open = comments_open( $post_id );
 $total_count   = count( $likes ) + count( $reposts ) + count( $replies );
-$heading_text  = 1 === $total_count ? '1 Response' : "{$total_count} Responses";
+/* translators: %d: total response count */
+$heading_text  = sprintf( _n( '%d Response', '%d Responses', $total_count, 'nop-indieweb' ), $total_count );
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] );
 ?>
 <div <?php echo $wrapper_attrs; ?>>
@@ -180,7 +181,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 	<div class="nop-webmentions__reposts">
 		<p class="nop-webmentions__section-label">
 			<?php echo nop_wm_repost_icon(); // phpcs:ignore ?>
-			<?php echo esc_html( count( $reposts ) === 1 ? '1 repost' : count( $reposts ) . ' reposts' ); ?>
+			<?php echo esc_html( sprintf( _n( '%d repost', '%d reposts', count( $reposts ), 'nop-indieweb' ), count( $reposts ) ) ); ?>
 		</p>
 		<?php if ( $shown_r ) : ?>
 		<div class="nop-webmentions__facepile" aria-hidden="true">
