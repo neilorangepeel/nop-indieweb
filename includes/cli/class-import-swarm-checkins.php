@@ -232,6 +232,7 @@ class Import_Swarm_Checkins {
 				'nop_indieweb_source_url'       => $data['source_url'],
 				'nop_indieweb_checkin_url'      => $data['source_url'],
 				'nop_indieweb_venue_name'       => $data['venue_name'],
+				'nop_indieweb_venue_uid'        => $data['fsq_id'],
 				'nop_indieweb_venue_fsq_id'     => $data['fsq_id'],
 				'nop_indieweb_venue_lat'        => $data['lat'],
 				'nop_indieweb_venue_lng'        => $data['lng'],

@@ -24,8 +24,8 @@ while true; do
     # Print meaningful lines only
     echo "$CLEAN" | grep -E "✓|✗|Success:|Found |--limit reached|Error" || true
 
-    # Done when 0 enriched/generated
-    if echo "$CLEAN" | grep -qE "Success: 0 (enriched|generated)"; then
+    # Done when 0 enriched/generated/updated
+    if echo "$CLEAN" | grep -qE "Success: 0 (enriched|generated|updated)"; then
         echo "---"
         echo "Done! $CMD complete after $BATCH batch(es)."
         break

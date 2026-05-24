@@ -85,6 +85,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-facebook-checkins.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-swarm-checkins.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-swarm-timestamps.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-micropub-timestamps.php';
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
@@ -93,6 +94,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb import-facebook-checkins',    \NOP\IndieWeb\Cli\Import_Facebook_Checkins::class );
 	\WP_CLI::add_command( 'nop-indieweb import-swarm-checkins',       \NOP\IndieWeb\Cli\Import_Swarm_Checkins::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-swarm-timestamps',        \NOP\IndieWeb\Cli\Fix_Swarm_Timestamps::class );
+	\WP_CLI::add_command( 'nop-indieweb fix-micropub-timestamps',     \NOP\IndieWeb\Cli\Fix_Micropub_Timestamps::class );
 }
 
 // Create the tokens table on activation and on every load if the schema is stale.

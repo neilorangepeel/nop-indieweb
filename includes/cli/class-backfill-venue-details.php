@@ -49,10 +49,27 @@ class Backfill_Venue_Details {
 			WP_CLI::error( 'No Foursquare API key configured (Settings → Swarm → Foursquare API key).' );
 		}
 
+		$meta_query = [
+			'relation' => 'AND',
+			[
+				'relation' => 'OR',
+				[ 'key' => 'nop_indieweb_venue_uid',    'value' => '', 'compare' => '!=' ],
+				[ 'key' => 'nop_indieweb_venue_url',    'value' => '', 'compare' => '!=' ],
+				[ 'key' => 'nop_indieweb_venue_fsq_id', 'value' => '', 'compare' => '!=' ],
+			],
+		];
+		if ( ! $force ) {
+			$meta_query[] = [
+				'relation' => 'OR',
+				[ 'key' => 'nop_indieweb_venue_locality', 'compare' => 'NOT EXISTS' ],
+				[ 'key' => 'nop_indieweb_venue_locality', 'value' => '', 'compare' => '=' ],
+			];
+		}
+
 		$post_ids = get_posts( [
 			'post_type'      => 'post',
 			'post_status'    => 'any',
-			'posts_per_page' => -1,
+			'posts_per_page' => $limit > 0 ? $limit : -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
 			'tax_query'      => [
@@ -62,11 +79,7 @@ class Backfill_Venue_Details {
 					'terms'    => 'checkin',
 				],
 			],
-			'meta_query'     => [
-				'relation' => 'OR',
-				[ 'key' => 'nop_indieweb_venue_uid', 'value' => '', 'compare' => '!=' ],
-				[ 'key' => 'nop_indieweb_venue_url', 'value' => '', 'compare' => '!=' ],
-			],
+			'meta_query'     => $meta_query,
 		] );
 
 		$total = count( $post_ids );
@@ -106,6 +119,9 @@ class Backfill_Venue_Details {
 			if ( '' === $venue_id ) {
 				$venue_url = (string) get_post_meta( $post_id, 'nop_indieweb_venue_url', true );
 				$venue_id  = Foursquare_Enricher::extract_venue_id( $venue_url );
+			}
+			if ( '' === $venue_id ) {
+				$venue_id = (string) get_post_meta( $post_id, 'nop_indieweb_venue_fsq_id', true );
 			}
 			if ( '' === $venue_id ) {
 				$no_data++;
