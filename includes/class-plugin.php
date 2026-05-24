@@ -157,6 +157,9 @@ class Plugin {
 		}
 
 		add_action( 'before_delete_post', [ $this, 'delete_map_image' ] );
+		add_action( 'before_delete_post', [ $this, 'renumber_venue_visits_on_delete' ] );
+		add_action( 'trashed_post',       [ $this, 'renumber_venue_visits_on_status_change' ] );
+		add_action( 'untrashed_post',     [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
@@ -641,6 +644,9 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">longitude (binding: field=lng)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"lng"}}}}} --><p>-5.9347</p><!-- /wp:paragraph -->
 
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">visit number (binding: field=venue_visit_number, derived) — "1st visit", "2nd visit", etc.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}}} --><p>1st visit</p><!-- /wp:paragraph -->
+
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · nop_venue_category (core) — adds p-category</p><!-- /wp:paragraph -->
 <!-- wp:post-terms {"term":"nop_venue_category","separator":" · "} /-->
 
@@ -939,6 +945,53 @@ HTML,
 
 		foreach ( $this->get_me_urls() as $url ) {
 			header( sprintf( 'Link: <%s>; rel="me"', $url ), false );
+		}
+	}
+
+	public function renumber_venue_visits_on_delete( int $post_id ): void {
+		if ( 'post' !== get_post_type( $post_id ) ) {
+			return;
+		}
+		$venue_id = $this->get_checkin_venue_id( $post_id );
+		if ( $venue_id ) {
+			$this->renumber_checkins_for_venue( $venue_id, $post_id );
+		}
+	}
+
+	public function renumber_venue_visits_on_status_change( int $post_id ): void {
+		if ( 'post' !== get_post_type( $post_id ) ) {
+			return;
+		}
+		$venue_id = $this->get_checkin_venue_id( $post_id );
+		if ( $venue_id ) {
+			$this->renumber_checkins_for_venue( $venue_id );
+		}
+	}
+
+	private function get_checkin_venue_id( int $post_id ): string {
+		return (string) ( get_post_meta( $post_id, 'nop_indieweb_venue_uid', true )
+			?: get_post_meta( $post_id, 'nop_indieweb_venue_fsq_id', true ) );
+	}
+
+	private function renumber_checkins_for_venue( string $venue_id, int $exclude_id = 0 ): void {
+		global $wpdb;
+		$exclude = $exclude_id ? $wpdb->prepare( 'AND p.ID != %d', $exclude_id ) : '';
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$post_ids = $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT p.ID
+			 FROM {$wpdb->posts} p
+			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+			 WHERE m.meta_key IN ('nop_indieweb_venue_uid', 'nop_indieweb_venue_fsq_id')
+			 AND m.meta_value = %s
+			 AND p.post_type = 'post'
+			 AND p.post_status IN ('publish', 'draft', 'private')
+			 {$exclude}
+			 ORDER BY p.post_date ASC",
+			$venue_id
+		) );
+		// phpcs:enable
+		foreach ( $post_ids as $i => $post_id ) {
+			update_post_meta( (int) $post_id, 'nop_indieweb_venue_visit_number', $i + 1 );
 		}
 	}
 
