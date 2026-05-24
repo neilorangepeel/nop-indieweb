@@ -196,8 +196,8 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
    legible against varying map tiles. */
 .nop-checkin-map__caption {
 	position:           absolute;
-	right:              6px;
-	bottom:             6px;
+	right:              1rem;
+	bottom:             1rem;
 	margin:             0;
 	padding:            2px 6px;
 	background-color:   rgba(255, 255, 255, 0.85);
