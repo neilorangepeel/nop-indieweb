@@ -372,8 +372,8 @@ class Import_Facebook_Checkins {
 			return 0;
 		}
 
-		$existing_ids  = (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true );
-		$existing_urls = (array) get_post_meta( $post_id, 'nop_indieweb_photos', true );
+		$existing_ids  = array_filter( (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true ) );
+		$existing_urls = array_filter( (array) get_post_meta( $post_id, 'nop_indieweb_photos', true ) );
 
 		update_post_meta( $post_id, 'nop_indieweb_photo_ids', array_merge( $existing_ids, $attachment_ids ) );
 		update_post_meta( $post_id, 'nop_indieweb_photos', array_merge(
