@@ -320,7 +320,7 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 	$marker_color = apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
 
 	$api_url = sprintf(
-		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=17&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
+		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=18&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( $marker_color ),
