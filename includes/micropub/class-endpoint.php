@@ -356,13 +356,15 @@ class Endpoint {
 		if ( $post_id ) {
 			$existing = trim( (string) get_post_field( 'post_content', $post_id ) );
 			if ( $existing ) {
+				$count   = 0;
 				$updated = preg_replace(
 					'/<!-- wp:paragraph -->.*?<!-- \/wp:paragraph -->/s',
 					$new_paragraph,
 					$existing,
-					1
+					1,
+					$count
 				);
-				if ( null !== $updated && $updated !== $existing ) {
+				if ( null !== $updated && $count > 0 ) {
 					return $updated;
 				}
 				return $new_paragraph . "\n\n" . $existing;
