@@ -30,3 +30,6 @@ bin
 node_modules
 vendor
 build
+
+# Remediation tracking doc (dev only)
+PLUGIN-CHECK-REMEDIATION.md
