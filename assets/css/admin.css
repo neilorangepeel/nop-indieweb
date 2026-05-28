@@ -18,8 +18,11 @@
 	--nop-surface:        #fff;
 	--nop-border:         #c3c4c7; /* matches WP core card / table borders */
 	--nop-border-subtle:  #dcdcde; /* WP "subtle" divider */
+	--nop-text:           #1d2327; /* WP primary text */
 	--nop-text-muted:     #646970; /* WP secondary / helper text */
 	--nop-text-error:     #d63638; /* WP error red */
+	--nop-success:        #00a32a; /* WP success green */
+	--nop-success-strong: #007017; /* darker success — readable as text on white */
 	--nop-code-bg:        #f0f0f1;
 	--nop-radius:         3px;     /* WP core uses 3 px for cards / inputs */
 }
@@ -47,7 +50,7 @@
 }
 
 .nop-test-result.is-success {
-	color: #007017; /* WP success green, slightly darker than #00a32a for contrast against white */
+	color: var(--nop-success-strong);
 }
 
 .nop-test-result.is-error {
@@ -64,7 +67,7 @@
 /* Last-sync timestamp shown next to the Sync now button. */
 .nop-last-sync {
 	margin-left: 12px;
-	color:       #646970;
+	color:       var(--nop-text-muted);
 	font-size:   13px;
 }
 
@@ -358,8 +361,8 @@
 }
 
 .nop-setup-step.is-done .nop-setup-step__icon {
-	background:   #00a32a; /* WP success green */
-	border-color: #00a32a;
+	background:   var(--nop-success);
+	border-color: var(--nop-success);
 	color:        #fff;
 }
 
@@ -377,7 +380,7 @@
 	font-size:   13px;
 	font-weight: 600;
 	line-height: 1.4;
-	color:       #1d2327;
+	color:       var(--nop-text);
 }
 
 .nop-setup-step.is-done .nop-setup-step__label {
@@ -457,7 +460,7 @@
 .nop-network-card__name {
 	font-size:   13px;
 	font-weight: 600;
-	color:       #1d2327;
+	color:       var(--nop-text);
 }
 
 .nop-network-card__status {
@@ -480,7 +483,7 @@
 .nop-overview-stat {
 	font-size:   13px;
 	margin:      8px 0 20px;
-	color:       #1d2327;
+	color:       var(--nop-text);
 }
 
 /* ── Token field (category / tag picker) ────────────────────────────────────── */
@@ -606,7 +609,7 @@
 	text-align: left;
 	font-size: 13px;
 	cursor: pointer;
-	color: #1d2327;
+	color: var(--nop-text);
 }
 
 .nop-token-field__suggestion:hover,
@@ -712,7 +715,7 @@
 	font-weight:    500;
 	line-height:    1.6;
 	background:     var(--nop-code-bg);
-	color:          #1d2327;
+	color:          var(--nop-text);
 	white-space:    nowrap;
 }
 
