@@ -159,7 +159,7 @@ class Social_Backfeed {
 			return '';
 		}
 		// `acct` is bare username for local accounts; username@domain for remote.
-		$handle = str_contains( $acct, '@' ) ? "@{$acct}" : "@{$acct}@" . (string) parse_url( $instance, PHP_URL_HOST );
+		$handle = str_contains( $acct, '@' ) ? "@{$acct}" : "@{$acct}@" . (string) wp_parse_url( $instance, PHP_URL_HOST );
 		return $handle;
 	}
 

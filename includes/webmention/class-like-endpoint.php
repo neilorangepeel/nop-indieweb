@@ -149,7 +149,7 @@ class Like_Endpoint {
 	}
 
 	private function ip_hash(): string {
-		$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		// Strip IPv6-mapped IPv4 prefix so ::ffff:127.0.0.1 and 127.0.0.1 hash identically.
 		if ( str_starts_with( $ip, '::ffff:' ) ) {
 			$ip = substr( $ip, 7 );

@@ -122,7 +122,7 @@ class Auth_Endpoint {
 			'challenge_method' => $resolved['code_challenge_method'],
 			'me'               => home_url( '/' ),
 			'user_id'          => get_current_user_id(),
-			'client_name'      => parse_url( $resolved['client_id'], PHP_URL_HOST ) ?? $resolved['client_id'],
+			'client_name'      => wp_parse_url( $resolved['client_id'], PHP_URL_HOST ) ?? $resolved['client_id'],
 		], 10 * MINUTE_IN_SECONDS );
 
 		$redirect = add_query_arg( [
@@ -169,6 +169,7 @@ class Auth_Endpoint {
 		<head>
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
+			<?php /* translators: %s: site name */ ?>
 			<title><?php printf( esc_html__( 'Authorize — %s', 'nop-indieweb' ), esc_html( $site_name ) ); ?></title>
 			<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/login.css' ) ); ?>">
 			<style>

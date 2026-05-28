@@ -186,6 +186,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 	<div class="nop-webmentions__reposts">
 		<p class="nop-webmentions__section-label">
 			<?php echo nop_wm_repost_icon(); // phpcs:ignore ?>
+			<?php /* translators: %d: number of reposts */ ?>
 			<?php echo esc_html( sprintf( _n( '%d repost', '%d reposts', count( $reposts ), 'nop-indieweb' ), count( $reposts ) ) ); ?>
 		</p>
 		<?php if ( $shown_r ) : ?>

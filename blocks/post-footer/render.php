@@ -125,6 +125,7 @@ $wrapper = get_block_wrapper_attributes( [
 	        aria-label="<?php echo esc_attr( $liked ? __( 'Liked', 'nop-indieweb' ) : __( 'Like', 'nop-indieweb' ) ); ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
 		<?php echo $heart_icon; ?>
+		<?php /* translators: %d: number of likes */ ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
 		      <?php echo 0 === $like_count ? 'hidden' : ''; ?>>
@@ -134,7 +135,9 @@ $wrapper = get_block_wrapper_attributes( [
 
 	<a class="nop-post-footer__pill nop-post-footer__pill--link"
 	   href="#comments"
-	   aria-label="<?php echo esc_attr( $reply_count > 0
+	   aria-label="<?php
+	       /* translators: %d: number of comments */
+	       echo esc_attr( $reply_count > 0
 	       ? sprintf( _n( 'Jump to %d comment', 'Jump to %d comments', $reply_count, 'nop-indieweb' ), $reply_count )
 	       : __( 'Jump to the reply form', 'nop-indieweb' ) ); ?>">
 		<?php echo $comment_icon; ?>
@@ -145,6 +148,7 @@ $wrapper = get_block_wrapper_attributes( [
 		</span>
 	</a>
 
+	<?php /* translators: %d: number of reposts */ ?>
 	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ), $repost_count ) ); ?>">
 		<?php echo $repost_icon; ?>
 		<span class="nop-post-footer__pill-count"
