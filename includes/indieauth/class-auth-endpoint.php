@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\IndieAuth;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use WP_Error;
 use WP_REST_Request;
 

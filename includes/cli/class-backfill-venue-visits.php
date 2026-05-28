@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use WP_CLI;
 
 /**

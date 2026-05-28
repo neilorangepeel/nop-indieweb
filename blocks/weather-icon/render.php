@@ -1,4 +1,9 @@
 <?php
+
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 /**
  * Weather Icon block — server-side render.
  *

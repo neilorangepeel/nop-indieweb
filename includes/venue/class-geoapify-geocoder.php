@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Venue;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Reverse-geocodes a lat/lng pair via the Geoapify Geocoding API.
  *

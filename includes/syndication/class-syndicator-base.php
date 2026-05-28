@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Syndication;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 abstract class Syndicator_Base {
 
 	abstract public function slug(): string;

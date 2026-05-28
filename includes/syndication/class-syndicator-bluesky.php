@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Syndication;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class Syndicator_Bluesky extends Syndicator_Base {
 
 	public function slug(): string  { return 'bluesky'; }

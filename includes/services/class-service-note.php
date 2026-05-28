@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Services;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Handles generic h-entry Micropub posts — notes, short-form content, and
  * posts arriving via Bridgy from Mastodon or Bluesky (PESOS direction).

@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Admin;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\IndieAuth\Token_Store;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 

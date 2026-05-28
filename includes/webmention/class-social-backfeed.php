@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Webmention;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Polls Mastodon and Bluesky APIs for interactions on syndicated posts and
  * stores them as webmention-type comments so they appear in the webmentions

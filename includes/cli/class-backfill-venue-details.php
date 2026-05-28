@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
 use NOP\IndieWeb\Venue\Foursquare_Enricher;

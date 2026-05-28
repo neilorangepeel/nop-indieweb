@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Importer;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Services\Note;
 use NOP\IndieWeb\Services\Letterboxd;
 

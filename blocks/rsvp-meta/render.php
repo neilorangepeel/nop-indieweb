@@ -7,6 +7,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = $block->context['postId'] ?? get_the_ID();
 
 $rsvp_labels = [

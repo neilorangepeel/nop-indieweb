@@ -9,6 +9,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
            ( $block->context['postId'] ?? get_the_ID() );
 

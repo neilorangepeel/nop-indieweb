@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // Returns the full URL to the Micropub REST endpoint.
 function nop_indieweb_endpoint_url(): string {
 	return rest_url( 'nop-indieweb/v1/micropub' );

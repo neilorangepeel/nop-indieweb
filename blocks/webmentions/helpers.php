@@ -9,6 +9,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 function nop_wm_avatar_wrap( array $entry, int $size ): string {
 	$author     = $entry['author'] ?? '';
 	$url        = esc_url( $entry['author_url'] ?? '' );

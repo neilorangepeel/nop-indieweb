@@ -9,6 +9,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Syndication\Syndication_Manager;
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );

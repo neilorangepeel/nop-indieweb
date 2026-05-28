@@ -17,6 +17,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $unit         = ( ( $attributes['unit'] ?? 'c' ) === 'f' ) ? 'f' : 'c';
 $show_symbol  = ! isset( $attributes['showSymbol'] ) || (bool) $attributes['showSymbol'];
 
