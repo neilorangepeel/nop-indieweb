@@ -1196,29 +1196,33 @@ class Settings {
 		$receive_enabled = $settings['receive_enabled'] ?? true;
 		$approval        = $settings['approval'] ?? 'bridgy_only';
 		?>
-		<p>Reactions are likes, reposts, and replies sent to your posts from other sites via the <a href="https://webmention.net" target="_blank" rel="noopener">Webmention</a> standard. <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> can backfeed reactions from Mastodon and Bluesky automatically.</p>
+		<p><?php echo wp_kses( __( 'Reactions are likes, reposts, and replies sent to your posts from other sites via the <a href="https://webmention.net" target="_blank" rel="noopener">Webmention</a> standard. <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> can backfeed reactions from Mastodon and Bluesky automatically.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Accept reactions</th>
+				<th scope="row"><?php esc_html_e( 'Accept reactions', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
 						<input type="checkbox" name="<?php echo "{$prefix}[receive_enabled]"; ?>" value="1"
 						       <?php checked( $receive_enabled ); ?>>
-						Accept incoming webmentions from other sites
+						<?php esc_html_e( 'Accept incoming webmentions from other sites', 'nop-indieweb' ); ?>
 					</label>
-					<p class="description">Uncheck to stop accepting new reactions. Existing ones are kept.</p>
+					<p class="description"><?php esc_html_e( 'Uncheck to stop accepting new reactions. Existing ones are kept.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="nop-webmention-approval">Approval</label></th>
+				<th scope="row"><label for="nop-webmention-approval"><?php esc_html_e( 'Approval', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<select id="nop-webmention-approval" name="<?php echo "{$prefix}[approval]"; ?>">
-						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>>Auto-approve Bridgy, hold everything else</option>
-						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>>Auto-approve all</option>
-						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>>Hold all for manual review</option>
+						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>><?php esc_html_e( 'Auto-approve Bridgy, hold everything else', 'nop-indieweb' ); ?></option>
+						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>><?php esc_html_e( 'Auto-approve all', 'nop-indieweb' ); ?></option>
+						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>><?php esc_html_e( 'Hold all for manual review', 'nop-indieweb' ); ?></option>
 					</select>
-					<p class="description">Held reactions appear in <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) ); ?>">Comments → Webmentions</a> awaiting your approval.</p>
+					<p class="description"><?php echo wp_kses( sprintf(
+						/* translators: %s: link to the Comments → Webmentions admin screen */
+						__( 'Held reactions appear in <a href="%s">Comments → Webmentions</a> awaiting your approval.', 'nop-indieweb' ),
+						esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) )
+					), [ 'a' => [ 'href' => [] ] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -1229,12 +1233,12 @@ class Settings {
 
 	private function render_tab_lookups(): void {
 		?>
-		<p>API keys used for interactive in-editor lookups — searching for a film title, venue, or track without leaving the WordPress editor.</p>
+		<p><?php esc_html_e( 'API keys used for interactive in-editor lookups — searching for a film title, venue, or track without leaving the WordPress editor.', 'nop-indieweb' ); ?></p>
 
-		<h3 class="nop-section-heading">TMDB (Films)</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'TMDB (Films)', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-tmdb-key">API Key</label></th>
+				<th scope="row"><label for="nop-tmdb-key"><?php esc_html_e( 'API Key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'lookups.tmdb_api_key', '' ); ?>
 					<input type="text" id="nop-tmdb-key"
@@ -1243,9 +1247,7 @@ class Settings {
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Used by the Watch kind's Film lookup in the block editor.
-						Get a free key at
-						<a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.
+						<?php echo wp_kses( __( 'Used by the Watch kind\'s Film lookup in the block editor. Get a free key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
@@ -1292,7 +1294,7 @@ class Settings {
 		<h3 class="nop-section-heading">Map</h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-geoapify-key">Geoapify API key</label></th>
+				<th scope="row"><label for="nop-geoapify-key"><?php esc_html_e( 'Geoapify API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ); ?>
 					<input type="text" id="nop-geoapify-key"
@@ -1301,19 +1303,16 @@ class Settings {
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Used to generate static map images for check-in posts.
-						Get a free key (3 000 req/day) at
-						<a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>.
-						Leave blank to use the built-in tile fallback instead.
+						<?php echo wp_kses( __( 'Used to generate static map images for check-in posts. Get a free key (3 000 req/day) at <a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>. Leave blank to use the built-in tile fallback instead.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Weather</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Weather', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-pirate-weather-key">Pirate Weather API key</label></th>
+				<th scope="row"><label for="nop-pirate-weather-key"><?php esc_html_e( 'Pirate Weather API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $weather_key = \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' ); ?>
 					<input type="text" id="nop-pirate-weather-key"
@@ -1322,19 +1321,16 @@ class Settings {
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Snapshots the weather at each check-in's location and time, stored on the post.
-						Get a free key (10 000 req/day) at
-						<a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>.
-						Leave blank to skip weather enrichment.
+						<?php echo wp_kses( __( 'Snapshots the weather at each check-in\'s location and time, stored on the post. Get a free key (10 000 req/day) at <a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>. Leave blank to skip weather enrichment.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Venue Categories</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Venue Categories', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-foursquare-key">Foursquare API key</label></th>
+				<th scope="row"><label for="nop-foursquare-key"><?php esc_html_e( 'Foursquare API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $fsq_key = \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' ); ?>
 					<input type="text" id="nop-foursquare-key"
@@ -1343,25 +1339,21 @@ class Settings {
 					       class="regular-text code" autocomplete="off"
 					       placeholder="fsq3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Looks up Foursquare's venue categories (e.g. "Yoga Studio", "Park") on each check-in,
-						since OwnYourSwarm doesn't forward them. Each venue's categories are cached for 30 days.
-						Get a free Service API key at
-						<a href="https://location.foursquare.com/developer/" target="_blank" rel="noopener">location.foursquare.com/developer</a>.
-						Leave blank to skip venue category enrichment.
+						<?php echo wp_kses( __( 'Looks up Foursquare\'s venue categories (e.g. "Yoga Studio", "Park") on each check-in, since OwnYourSwarm doesn\'t forward them. Each venue\'s categories are cached for 30 days. Get a free Service API key at <a href="https://location.foursquare.com/developer/" target="_blank" rel="noopener">location.foursquare.com/developer</a>. Leave blank to skip venue category enrichment.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts created from Swarm check-ins.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Applied to posts created from Swarm check-ins.', 'nop-indieweb' ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'        => 'swarm',
 			'prefix'      => $prefix,
 			'settings'    => $settings,
 			'tag_default' => 'Swarm',
-			'last_aria'   => 'Save Swarm photos to media library',
+			'last_aria'   => __( 'Save Swarm photos to media library', 'nop-indieweb' ),
 		] );
 	}
 
