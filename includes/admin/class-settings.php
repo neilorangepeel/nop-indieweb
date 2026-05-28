@@ -73,7 +73,7 @@ class Settings {
 		check_ajax_referer( 'nop_test_connection' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Unauthorized', 403 );
+			wp_send_json_error( __( 'Unauthorized', 'nop-indieweb' ), 403 );
 		}
 
 		$slug      = sanitize_key( $_POST['service'] ?? '' );
@@ -93,8 +93,8 @@ class Settings {
 
 	public function add_page(): void {
 		add_options_page(
-			'IndieWeb Settings',
-			'IndieWeb',
+			__( 'IndieWeb Settings', 'nop-indieweb' ),
+			__( 'IndieWeb', 'nop-indieweb' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			[ $this, 'render_page' ]
@@ -247,9 +247,9 @@ class Settings {
 		?>
 		<div class="wrap nop-indieweb-settings">
 
-			<h1>IndieWeb</h1>
+			<h1><?php esc_html_e( 'IndieWeb', 'nop-indieweb' ); ?></h1>
 
-			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="Settings sections">
+			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Settings sections', 'nop-indieweb' ); ?>">
 				<?php foreach ( self::tab_groups() as $tabs ) : ?>
 					<?php foreach ( $tabs as $slug => $label ) : ?>
 						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
@@ -264,7 +264,10 @@ class Settings {
 								echo 'advanced' === $slug ? ' nop-tab--advanced' : '';
 								echo 'publishing' === $slug ? ' nop-tab--group-start' : '';
 						   ?>"
-						   <?php if ( ! $tab_enabled ) : ?>title="<?php echo esc_attr( $label ); ?> is not enabled"<?php endif; ?>>
+						   <?php if ( ! $tab_enabled ) : ?>title="<?php
+						   	/* translators: %s: settings tab name, e.g. Mastodon */
+						   	echo esc_attr( sprintf( __( '%s is not enabled', 'nop-indieweb' ), $label ) );
+						   ?>"<?php endif; ?>>
 							<?php echo esc_html( $label ); ?>
 						</a>
 					<?php endforeach; ?>
@@ -315,7 +318,7 @@ class Settings {
 				</div>
 
 				<div class="nop-settings-footer">
-					<?php submit_button( 'Save Changes', 'primary', 'submit', false ); ?>
+					<?php submit_button( __( 'Save Changes', 'nop-indieweb' ), 'primary', 'submit', false ); ?>
 				</div>
 			</form>
 
