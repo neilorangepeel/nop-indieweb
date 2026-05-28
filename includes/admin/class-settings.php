@@ -1007,29 +1007,29 @@ class Settings {
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd'] ?? [];
 		$username = $settings['username'] ?? '';
 		?>
-		<p>Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.</p>
+		<p><?php esc_html_e( 'Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.', 'nop-indieweb' ); ?></p>
 
-		<h3 class="nop-section-heading">Import</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Import', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Import posts</th>
+				<th scope="row"><?php esc_html_e( 'Import posts', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
 						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
 						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
-						Automatically import your Letterboxd diary as WordPress posts (hourly)
+						<?php esc_html_e( 'Automatically import your Letterboxd diary as WordPress posts (hourly)', 'nop-indieweb' ); ?>
 					</label>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="letterboxd-username">Username</label></th>
+				<th scope="row"><label for="letterboxd-username"><?php esc_html_e( 'Username', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<input type="text" id="letterboxd-username" name="<?php echo "{$prefix}[username]"; ?>"
 					       value="<?php echo esc_attr( $username ); ?>"
 					       class="regular-text" placeholder="your-letterboxd-username">
 					<?php if ( $username ) : ?>
 					<p class="description">
-						Feed: <a href="https://letterboxd.com/<?php echo esc_attr( $username ); ?>/rss/" target="_blank" rel="noopener">
+						<?php esc_html_e( 'Feed:', 'nop-indieweb' ); ?> <a href="https://letterboxd.com/<?php echo esc_attr( $username ); ?>/rss/" target="_blank" rel="noopener">
 							letterboxd.com/<?php echo esc_html( $username ); ?>/rss/
 						</a>
 					</p>
@@ -1038,27 +1038,27 @@ class Settings {
 			</tr>
 			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
 			<tr>
-				<th scope="row">Sync now</th>
+				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
 				<td>
 					<a href="<?php echo esc_url( wp_nonce_url(
 						add_query_arg( 'nop_indieweb_sync', 'letterboxd', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ),
 						'nop_indieweb_sync_letterboxd'
-					) ); ?>" class="button">Import from Letterboxd now</a>
+					) ); ?>" class="button"><?php esc_html_e( 'Import from Letterboxd now', 'nop-indieweb' ); ?></a>
 				</td>
 			</tr>
 			<?php endif; ?>
 		</table>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts imported from Letterboxd.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Applied to posts imported from Letterboxd.', 'nop-indieweb' ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'         => 'letterboxd',
 			'prefix'       => $prefix,
 			'settings'     => $settings,
-			'last_label'   => 'Poster',
+			'last_label'   => __( 'Poster', 'nop-indieweb' ),
 			'last_field'   => 'sideload_poster',
-			'last_aria'    => 'Save film poster to media library',
+			'last_aria'    => __( 'Save film poster to media library', 'nop-indieweb' ),
 		] );
 	}
 
@@ -1070,16 +1070,16 @@ class Settings {
 		$entries_settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
 		$entries_prefix   = self::OPTION_KEY . '[services][entries]';
 		?>
-		<h3 class="nop-section-heading nop-section-heading--first">Notes</h3>
-		<p class="description nop-section-intro">Short posts sent via any Micropub client (Quill, iA Writer, etc.).</p>
+		<h3 class="nop-section-heading nop-section-heading--first"><?php esc_html_e( 'Notes', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Short posts sent via any Micropub client (Quill, iA Writer, etc.).', 'nop-indieweb' ); ?></p>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col">Enable</th>
-					<th scope="col">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
-					<th scope="col" class="nop-kinds-table__enable">Photos</th>
+					<th scope="col"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></th>
+					<th scope="col" class="nop-kinds-table__enable"><?php esc_html_e( 'Photos', 'nop-indieweb' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1088,7 +1088,7 @@ class Settings {
 						<input type="checkbox"
 						       name="<?php echo esc_attr( "{$entries_prefix}[enabled]" ); ?>"
 						       value="1"
-						       aria-label="Enable notes"
+						       aria-label="<?php esc_attr_e( 'Enable notes', 'nop-indieweb' ); ?>"
 						       <?php checked( $entries_settings['enabled'] ?? true ); ?>>
 					</td>
 					<td>
@@ -1116,24 +1116,24 @@ class Settings {
 			</tbody>
 		</table>
 
-		<h3 class="nop-section-heading">Interaction posts</h3>
-		<p class="description nop-section-intro">Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don't exist.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Interaction posts', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don\'t exist.', 'nop-indieweb' ); ?></p>
 		<?php
 		$kinds = [
-			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of'        ],
-			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to'        ],
-			'like'     => [ 'label' => 'Like',      'micropub' => 'like-of'            ],
-			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of'          ],
-			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp' ],
+			'bookmark' => [ 'label' => __( 'Bookmark', 'nop-indieweb' ), 'micropub' => 'bookmark-of'        ],
+			'reply'    => [ 'label' => __( 'Reply', 'nop-indieweb' ),    'micropub' => 'in-reply-to'        ],
+			'like'     => [ 'label' => __( 'Like', 'nop-indieweb' ),     'micropub' => 'like-of'            ],
+			'repost'   => [ 'label' => __( 'Repost', 'nop-indieweb' ),   'micropub' => 'repost-of'          ],
+			'rsvp'     => [ 'label' => __( 'RSVP', 'nop-indieweb' ),     'micropub' => 'in-reply-to + rsvp' ],
 		];
 		?>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col">Kind</th>
-					<th scope="col">Enable</th>
-					<th scope="col">Status</th>
-					<th scope="col">Category</th>
+					<th scope="col"><?php esc_html_e( 'Kind', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
