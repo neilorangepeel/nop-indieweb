@@ -112,6 +112,14 @@ add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
 
+// Load translations. On `init` (not plugins_loaded) per WP 6.7+, which warns
+// when a text domain is loaded before init. Lets the strings wrapped in __()
+// across the plugin resolve from a .mo file in wp-content/languages/plugins/
+// or this plugin's own languages/ directory once translations exist.
+add_action( 'init', function () {
+	load_plugin_textdomain( 'nop-indieweb', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
+
 /**
  * One-time migration: moves nop_indieweb_mastodon_profile_url and
  * nop_indieweb_pixelfed_profile_url standalone options into the plugin
