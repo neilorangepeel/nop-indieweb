@@ -365,26 +365,39 @@ class Settings {
 		$steps = [
 			[
 				'done'  => $has_post,
-				'label' => 'Publish your first IndieWeb post',
-				'body'  => 'Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> to post location checkins, or enable Mastodon or Bluesky in their tabs to start syndicating. Your Micropub endpoint is <code>' . esc_html( $micropub_url ) . '</code>.',
-				'link'  => [ 'href' => $debug_url, 'text' => 'Test with the Debug panel' ],
+				'label' => __( 'Publish your first IndieWeb post', 'nop-indieweb' ),
+				/* translators: %s: Micropub endpoint URL, wrapped in a <code> tag */
+				'body'  => sprintf(
+					wp_kses(
+						__( 'Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> to post location checkins, or enable Mastodon or Bluesky in their tabs to start syndicating. Your Micropub endpoint is <code>%s</code>.', 'nop-indieweb' ),
+						[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ], 'code' => [] ]
+					),
+					esc_html( $micropub_url )
+				),
+				'link'  => [ 'href' => $debug_url, 'text' => __( 'Test with the Debug panel', 'nop-indieweb' ) ],
 			],
 			[
 				'done'  => $is_live,
-				'label' => 'Go live',
-				'body'  => 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Posts tab, or enable Mastodon or Bluesky to start syndicating.',
-				'link'  => [ 'href' => '#nop-tab-post-kinds', 'text' => 'Open Posts tab' ],
+				'label' => __( 'Go live', 'nop-indieweb' ),
+				'body'  => wp_kses(
+					__( 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Posts tab, or enable Mastodon or Bluesky to start syndicating.', 'nop-indieweb' ),
+					[ 'strong' => [] ]
+				),
+				'link'  => [ 'href' => '#nop-tab-post-kinds', 'text' => __( 'Open Posts tab', 'nop-indieweb' ) ],
 			],
 			[
 				'done'  => $has_syndication,
-				'label' => 'Connect Mastodon or Bluesky',
-				'body'  => 'Add your credentials in the Mastodon or Bluesky tabs to syndicate posts outward automatically. Once connected, you can set up <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> to receive posts back to your site too.',
-				'link'  => [ 'href' => '#nop-tab-mastodon', 'text' => 'Open Mastodon tab' ],
+				'label' => __( 'Connect Mastodon or Bluesky', 'nop-indieweb' ),
+				'body'  => wp_kses(
+					__( 'Add your credentials in the Mastodon or Bluesky tabs to syndicate posts outward automatically. Once connected, you can set up <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> to receive posts back to your site too.', 'nop-indieweb' ),
+					[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
+				),
+				'link'  => [ 'href' => '#nop-tab-mastodon', 'text' => __( 'Open Mastodon tab', 'nop-indieweb' ) ],
 			],
 		];
 		?>
 		<div class="nop-setup-guide">
-			<p class="nop-setup-guide__heading">Quick setup</p>
+			<p class="nop-setup-guide__heading"><?php esc_html_e( 'Quick setup', 'nop-indieweb' ); ?></p>
 			<ol class="nop-setup-guide__list">
 				<?php foreach ( $steps as $step ) : ?>
 					<li class="nop-setup-step <?php echo $step['done'] ? 'is-done' : ''; ?>">
@@ -432,34 +445,34 @@ class Settings {
 
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Micropub</th>
+				<th scope="row"><?php esc_html_e( 'Micropub', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $micropub_url; ?>" target="_blank" rel="noopener"><?php echo $micropub_url; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $micropub_url ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $micropub_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Your publishing endpoint — point Micropub clients (Quill, Ulysses, iA Writer) here.</p>
+					<p class="description"><?php esc_html_e( 'Your publishing endpoint — point Micropub clients (Quill, Ulysses, iA Writer) here.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">Webmention</th>
+				<th scope="row"><?php esc_html_e( 'Webmention', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $webmention_url; ?>" target="_blank" rel="noopener"><?php echo $webmention_url; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $webmention_url ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $webmention_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Advertised automatically via <code>&lt;link rel="webmention"&gt;</code> — other sites discover it without any setup.</p>
+					<p class="description"><?php echo wp_kses( __( 'Advertised automatically via <code>&lt;link rel="webmention"&gt;</code> — other sites discover it without any setup.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Networks</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Networks', 'nop-indieweb' ); ?></h3>
 		<div class="nop-network-cards">
 			<?php foreach ( $networks as $network ) : ?>
 			<div class="nop-network-card <?php echo $network['active'] ? 'nop-network-card--active' : 'nop-network-card--inactive'; ?>"
@@ -469,7 +482,7 @@ class Settings {
 					<strong class="nop-network-card__name"><?php echo esc_html( $network['label'] ); ?></strong>
 				</div>
 				<p class="nop-network-card__status">
-					<?php echo esc_html( $network['active'] ? 'Active' : 'Not configured' ); ?>
+					<?php echo esc_html( $network['active'] ? __( 'Active', 'nop-indieweb' ) : __( 'Not configured', 'nop-indieweb' ) ); ?>
 				</p>
 				<?php if ( $network['active'] && $network['actions'] ) : ?>
 				<p class="nop-network-card__actions"><?php echo esc_html( implode( ' · ', $network['actions'] ) ); ?></p>
@@ -479,41 +492,49 @@ class Settings {
 				<?php endif; ?>
 				<a href="#nop-tab-<?php echo esc_attr( $network['tab'] ); ?>"
 				   class="nop-setup-link nop-network-card__link">
-					<?php echo $network['active'] ? 'Configure' : 'Set up'; ?> →
+					<?php echo esc_html( $network['active'] ? __( 'Configure', 'nop-indieweb' ) : __( 'Set up', 'nop-indieweb' ) ); ?> →
 				</a>
 			</div>
 			<?php endforeach; ?>
 		</div>
 
-		<?php if ( $approved_wm > 0 || $pending_wm > 0 ) : ?>
-		<h3 class="nop-section-heading">Reactions</h3>
+		<?php if ( $approved_wm > 0 || $pending_wm > 0 ) :
+			$moderated_url = esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) );
+		?>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Reactions', 'nop-indieweb' ); ?></h3>
 		<p class="nop-overview-stat">
 			<?php if ( $approved_wm > 0 ) : ?>
 				<strong><?php echo esc_html( number_format_i18n( $approved_wm ) ); ?></strong>
-				<?php echo esc_html( $approved_wm === 1 ? 'reaction received' : 'reactions received' ); ?>
+				<?php echo esc_html( _n( 'reaction received', 'reactions received', $approved_wm, 'nop-indieweb' ) ); ?>
 				<?php if ( $pending_wm > 0 ) : ?>
-					— <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) ); ?>">
-						<?php echo esc_html( $pending_wm ); ?> pending approval
+					— <a href="<?php echo $moderated_url; ?>">
+						<?php
+						/* translators: %s: number of pending reactions */
+						echo esc_html( sprintf( _n( '%s pending approval', '%s pending approval', $pending_wm, 'nop-indieweb' ), number_format_i18n( $pending_wm ) ) );
+						?>
 					</a>
 				<?php endif; ?>
 			<?php else : ?>
-				<?php echo esc_html( $pending_wm ); ?> reaction<?php echo $pending_wm === 1 ? '' : 's'; ?> pending approval —
-				<a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) ); ?>">review them</a>
+				<?php
+				/* translators: %s: number of pending reactions */
+				echo esc_html( sprintf( _n( '%s reaction pending approval', '%s reactions pending approval', $pending_wm, 'nop-indieweb' ), number_format_i18n( $pending_wm ) ) );
+				?>
+				— <a href="<?php echo $moderated_url; ?>"><?php esc_html_e( 'review them', 'nop-indieweb' ); ?></a>
 			<?php endif; ?>
 		</p>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Identity</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Identity', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-me-urls">Profile URLs</label></th>
+				<th scope="row"><label for="nop-me-urls"><?php esc_html_e( 'Profile URLs', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<textarea id="nop-me-urls"
 					          name="<?php echo self::OPTION_KEY; ?>[me_urls]"
 					          rows="4"
 					          class="large-text code"
 					          placeholder="https://github.com/yourusername&#10;https://linkedin.com/in/yourusername"><?php echo esc_textarea( \NOP\IndieWeb\nop_indieweb_get_option( 'me_urls', '' ) ); ?></textarea>
-					<p class="description">One URL per line. Output as <code>&lt;link rel="me"&gt;</code> — used by IndieAuth and profile verification. Your configured social networks are added automatically.</p>
+					<p class="description"><?php echo wp_kses( __( 'One URL per line. Output as <code>&lt;link rel="me"&gt;</code> — used by IndieAuth and profile verification. Your configured social networks are added automatically.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -554,45 +575,49 @@ class Settings {
 			}
 		}
 
+		$post_out = __( 'Post out', 'nop-indieweb' );
+		$import   = __( 'Import', 'nop-indieweb' );
+		$synced   = __( 'Synced', 'nop-indieweb' );
+
 		return [
 			'mastodon'   => [
 				'label'      => 'Mastodon',
 				'color'      => '#6364FF',
 				'active'     => $mastodon_ok,
-				'actions'    => $mastodon_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $mastodon_ok ? $this->human_time_diff( $mastodon['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $mastodon_ok ? [ $post_out, $import ] : [],
+				'last_label' => $mastodon_ok ? $this->human_time_diff( $mastodon['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'mastodon',
 			],
 			'bluesky'    => [
 				'label'      => 'Bluesky',
 				'color'      => '#0085FF',
 				'active'     => $bluesky_ok,
-				'actions'    => $bluesky_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $bluesky_ok ? $this->human_time_diff( $bluesky['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $bluesky_ok ? [ $post_out, $import ] : [],
+				'last_label' => $bluesky_ok ? $this->human_time_diff( $bluesky['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'bluesky',
 			],
 			'pixelfed'   => [
 				'label'      => 'Pixelfed',
 				'color'      => '#1A9C5B',
 				'active'     => $pixelfed_ok,
-				'actions'    => $pixelfed_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $pixelfed_ok ? [ $post_out, $import ] : [],
+				'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'pixelfed',
 			],
 			'letterboxd' => [
 				'label'      => 'Letterboxd',
 				'color'      => '#00C030',
 				'active'     => $lboxd_ok,
-				'actions'    => $lboxd_ok ? [ 'Import' ] : [],
-				'last_label' => $lboxd_ok ? $this->human_time_diff( $lboxd['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $lboxd_ok ? [ $import ] : [],
+				'last_label' => $lboxd_ok ? $this->human_time_diff( $lboxd['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'letterboxd',
 			],
 			'swarm'      => [
 				'label'      => 'Swarm',
 				'color'      => '#FC8D1D',
 				'active'     => $swarm_ok,
-				'actions'    => $swarm_ok ? [ 'Receive check-ins' ] : [],
-				'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, 'Last check-in' ) : null,
+				'actions'    => $swarm_ok ? [ __( 'Receive check-ins', 'nop-indieweb' ) ] : [],
+				'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null,
 				'tab'        => 'swarm',
 			],
 		];
@@ -606,8 +631,12 @@ class Settings {
 		if ( ! $ts ) {
 			return null;
 		}
-		$diff = $prefix ? "{$prefix} " . human_time_diff( $ts ) . ' ago' : human_time_diff( $ts ) . ' ago';
-		return $diff;
+		if ( $prefix ) {
+			/* translators: 1: label e.g. "Synced", 2: human time difference e.g. "3 hours" */
+			return sprintf( __( '%1$s %2$s ago', 'nop-indieweb' ), $prefix, human_time_diff( $ts ) );
+		}
+		/* translators: %s: human time difference e.g. "3 hours" */
+		return sprintf( __( '%s ago', 'nop-indieweb' ), human_time_diff( $ts ) );
 	}
 
 	// ——— Tab: Advanced ——————————————————————————————————————————————————————
