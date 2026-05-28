@@ -356,7 +356,7 @@ class Import_Facebook_Checkins {
 			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				WP_CLI::warning( "  sideload failed ({$rel_uri}): " . $id->get_error_message() );
-				@unlink( $tmp_path );
+				wp_delete_file( $tmp_path );
 				continue;
 			}
 

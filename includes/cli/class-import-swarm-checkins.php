@@ -296,7 +296,7 @@ class Import_Swarm_Checkins {
 
 			if ( filesize( $tmp ) > $cap_bytes ) {
 				WP_CLI::warning( "  photo too large, skipping: {$url}" );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 
@@ -308,7 +308,7 @@ class Import_Swarm_Checkins {
 			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				WP_CLI::warning( "  sideload failed: " . $id->get_error_message() );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 
