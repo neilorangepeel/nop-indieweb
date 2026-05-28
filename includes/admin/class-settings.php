@@ -662,49 +662,49 @@ class Settings {
 			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
 		?>
 
-		<h3 class="nop-section-heading nop-section-heading--first">IndieAuth</h3>
-		<p class="description nop-section-intro">These endpoints are advertised automatically in your site's <code>&lt;head&gt;</code> — Micropub clients discover them without any setup.</p>
+		<h3 class="nop-section-heading nop-section-heading--first"><?php esc_html_e( 'IndieAuth', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'These endpoints are advertised automatically in your site\'s <code>&lt;head&gt;</code> — Micropub clients discover them without any setup.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Authorization Endpoint</th>
+				<th scope="row"><?php esc_html_e( 'Authorization Endpoint', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $auth_url; ?>" target="_blank" rel="noopener"><?php echo $auth_url; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $auth_url ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $auth_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Micropub clients redirect here so you can approve their access.</p>
+					<p class="description"><?php esc_html_e( 'Micropub clients redirect here so you can approve their access.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">Token Endpoint</th>
+				<th scope="row"><?php esc_html_e( 'Token Endpoint', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $token_url; ?>" target="_blank" rel="noopener"><?php echo $token_url; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $token_url ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $token_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Clients exchange their authorization code here for a Bearer token.</p>
+					<p class="description"><?php esc_html_e( 'Clients exchange their authorization code here for a Bearer token.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Active Sessions</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Active Sessions', 'nop-indieweb' ); ?></h3>
 
 		<?php if ( empty( $sessions ) ) : ?>
-			<p class="nop-sessions-empty">No applications authorized yet. Connect a Micropub client to see sessions here.</p>
+			<p class="nop-sessions-empty"><?php esc_html_e( 'No applications authorized yet. Connect a Micropub client to see sessions here.', 'nop-indieweb' ); ?></p>
 		<?php else : ?>
 			<table class="nop-sessions-table">
 				<thead>
 					<tr>
-						<th>Application</th>
-						<th>Permissions</th>
-						<th>Authorized</th>
-						<th>Last used</th>
+						<th><?php esc_html_e( 'Application', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Permissions', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Authorized', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Last used', 'nop-indieweb' ); ?></th>
 						<th></th>
 					</tr>
 				</thead>
@@ -724,8 +724,11 @@ class Settings {
 								?>
 								<a href="<?php echo esc_url( $revoke_url ); ?>"
 								   class="nop-revoke-link"
-								   data-confirm="<?php echo esc_attr( sprintf( 'Revoke access for %s?', $session['client_name'] ?: $session['client_id'] ) ); ?>">
-									Revoke
+								   data-confirm="<?php
+								   	/* translators: %s: authorized application name */
+								   	echo esc_attr( sprintf( __( 'Revoke access for %s?', 'nop-indieweb' ), $session['client_name'] ?: $session['client_id'] ) );
+								   ?>">
+									<?php esc_html_e( 'Revoke', 'nop-indieweb' ); ?>
 								</a>
 							</td>
 						</tr>
@@ -734,52 +737,49 @@ class Settings {
 			</table>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Microformats</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Microformats', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Markup</th>
+				<th scope="row"><?php esc_html_e( 'Markup', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
 						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[mf2_enabled]" value="1"
 						       <?php checked( $mf2_enabled ); ?>>
-						Add microformats2 markup to IndieWeb posts
+						<?php esc_html_e( 'Add microformats2 markup to IndieWeb posts', 'nop-indieweb' ); ?>
 					</label>
 					<p class="description">
-						Injected at render time — nothing is stored in your database.
-						Deactivating the plugin removes it automatically.
+						<?php esc_html_e( 'Injected at render time — nothing is stored in your database. Deactivating the plugin removes it automatically.', 'nop-indieweb' ); ?>
 					</p>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">JSON endpoint</th>
+				<th scope="row"><?php esc_html_e( 'JSON endpoint', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $mf2_url; ?>" target="_blank" rel="noopener"><?php echo $mf2_url; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $mf2_url ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $mf2_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
 					<p class="description">
-						Served at <code>rel="alternate" type="application/mf2+json"</code>. Services like
-						<a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> and
-						<a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> use this for richer data.
+						<?php echo wp_kses( __( 'Served at <code>rel="alternate" type="application/mf2+json"</code>. Services like <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> and <a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> use this for richer data.', 'nop-indieweb' ), [ 'code' => [], 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Developer</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Developer', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Debug mode</th>
+				<th scope="row"><?php esc_html_e( 'Debug mode', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
 						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[debug_mode]" value="1"
 						       <?php checked( $debug_mode ); ?>>
-						Enable debug logging
+						<?php esc_html_e( 'Enable debug logging', 'nop-indieweb' ); ?>
 					</label>
-					<p class="description">Writes plugin activity to <code>wp-content/debug.log</code> when WP_DEBUG_LOG is enabled.</p>
+					<p class="description"><?php echo wp_kses( __( 'Writes plugin activity to <code>wp-content/debug.log</code> when WP_DEBUG_LOG is enabled.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
