@@ -1,0 +1,91 @@
+=== NOP IndieWeb ===
+Contributors: neilorangepeel
+Tags: indieweb, micropub, webmention, indieauth, posse
+Requires at least: 6.7
+Tested up to: 6.8
+Requires PHP: 8.0
+Stable tag: 0.2.9
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+IndieWeb toolkit for WordPress: Micropub endpoint, IndieAuth server, Webmentions, post kinds, and POSSE syndication to Mastodon, Bluesky and Pixelfed.
+
+== Description ==
+
+NOP IndieWeb turns a WordPress site into a full IndieWeb citizen. It owns your content on your own domain and (optionally) syndicates it out to the social web — the POSSE pattern (Publish on your Own Site, Syndicate Elsewhere).
+
+**Core features**
+
+* **Micropub endpoint** — publish from any Micropub client (Quill, iA Writer, OwnYourSwarm, etc.).
+* **IndieAuth server** — sign in to Micropub clients with your own domain; manage authorized apps and revoke tokens from the settings screen.
+* **Webmentions** — send and receive Webmentions; a unified "Responses" block shows likes, reposts and replies as a facepile plus threaded conversation, alongside native WordPress comments.
+* **Post kinds** — notes, replies, likes, reposts, bookmarks, RSVPs, checkins, and film-diary "watch" entries, each with its own template and microformats2 markup.
+* **POSSE syndication** — automatically cross-post to Mastodon, Bluesky and Pixelfed on publish, recording the syndication link back on the post.
+* **Inbound import** — pull your own posts back from Mastodon, Bluesky, Pixelfed and Letterboxd on a schedule.
+* **Check-in enrichment** — Swarm/Foursquare check-ins gain venue categories, a static map image, and a weather snapshot.
+* **Block bindings** — bind venue, weather and syndication metadata to core blocks in the editor, with microformats2 classes injected at render time.
+
+All microformats markup is injected at render time and stored nothing extra in your database; deactivating the plugin removes it cleanly.
+
+== External services ==
+
+This plugin connects to a number of third-party services. Each is optional and only contacted when you enable and configure the corresponding feature. No data is sent to any of them unless you opt in by entering credentials or enabling a feature.
+
+**Mastodon (and Mastodon-compatible instances)**
+Used to syndicate your posts to, and import your posts from, your Mastodon account. When enabled, the post content, media, and a link back to your site are sent to the instance URL you configure, authenticated with the access token you provide. Also used, unauthenticated, to fetch your public posts during import.
+Terms vary by instance; see your instance's own policy. Example: https://mastodon.social/terms and https://mastodon.social/privacy-policy
+
+**Bluesky (AT Protocol)**
+Used to syndicate to and import from your Bluesky account via bsky.social / public.api.bsky.app. Post content, media, and a link back are sent when syndicating, authenticated with the app password you provide.
+Terms: https://bsky.social/about/support/tos — Privacy: https://bsky.social/about/support/privacy-policy
+
+**Pixelfed**
+Used to syndicate to and import from your Pixelfed account. Behaves like Mastodon (same API). Data is sent to the instance URL you configure.
+Terms vary by instance; see your instance's policy.
+
+**Letterboxd**
+Used to import your public film diary as posts, by fetching your public RSS feed at letterboxd.com. Only your username is sent (as part of the feed URL). No authentication.
+Terms: https://letterboxd.com/terms-of-use/ — Privacy: https://letterboxd.com/privacy-policy/
+
+**Foursquare / Swarm (OwnYourSwarm + Foursquare Places API)**
+Check-ins arrive via the Micropub endpoint from OwnYourSwarm. If you supply a Foursquare API key, the plugin looks up each venue's categories at the Foursquare Places API. The venue ID is sent.
+Terms: https://foursquare.com/legal/terms — Privacy: https://foursquare.com/legal/privacy
+
+**Geoapify Static Maps**
+If you supply a Geoapify API key, the plugin fetches a static map image for each check-in's coordinates from maps.geoapify.com and caches it locally. The latitude/longitude and your API key are sent.
+Terms: https://www.geoapify.com/terms-and-conditions/ — Privacy: https://www.geoapify.com/privacy-policy/
+
+**Pirate Weather**
+If you supply a Pirate Weather API key, the plugin fetches the weather at each check-in's coordinates and time from pirateweather.net. The latitude/longitude, timestamp and your API key are sent.
+Terms/Privacy: https://pirateweather.net/
+
+**TMDB (The Movie Database)**
+If you supply a TMDB API key, the in-editor film lookup for "watch" posts queries api.themoviedb.org for titles and poster images. Your search query and API key are sent.
+Terms: https://www.themoviedb.org/terms-of-use — Privacy: https://www.themoviedb.org/privacy-policy
+
+**Webmention recipients and Bridgy**
+When you publish a post that links to other sites, the plugin discovers and sends Webmentions to those sites (the target URLs you linked to). If you use https://brid.gy, it relays reactions from Mastodon/Bluesky back to your site as Webmentions.
+Bridgy: https://brid.gy/about
+
+== Installation ==
+
+1. Upload the plugin to `wp-content/plugins/nop-indieweb` (or install via the Plugins screen) and activate it.
+2. Go to **Settings → IndieWeb**.
+3. Work through the Quick Setup guide on the Overview tab: connect a Micropub client, enable the networks you want, and add any optional API keys.
+4. Add the IndieWeb blocks (Responses, Like, Post Footer, Check-in Map, etc.) to your templates, or use the bundled block patterns.
+
+== Frequently Asked Questions ==
+
+= Do I need any of the third-party API keys? =
+No. Everything that needs a key (maps, weather, venue categories, film lookups) is optional and degrades gracefully when the key is absent. The core Micropub, IndieAuth and Webmention features need no external keys.
+
+= Does it work with a block theme? =
+Yes. It ships block templates for each post kind and registers its blocks for Full Site Editing. It also works with classic themes that render post content and comments.
+
+= Where are my syndication credentials stored? =
+In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
+
+== Changelog ==
+
+= 0.2.9 =
+* Hardening pass ahead of public release: IndieAuth/OAuth CSRF protection, internationalization of the admin UI and front-end scripts, accessibility improvements to the settings UI, and WordPress.org coding-standards compliance.
