@@ -22,29 +22,44 @@ class Settings {
 	private const OPTION_KEY = 'nop_indieweb_settings';
 	private const PAGE_SLUG  = 'nop-indieweb-settings';
 
-	private const POST_STATUSES = [
-		'publish' => 'Published',
-		'draft'   => 'Draft',
-		'private' => 'Private',
-	];
 	private const VALID_STATUS_KEYS = [ 'publish', 'draft', 'private' ];
 
-	private const TAB_GROUPS = [
-		''         => [ 'overview'    => 'Overview' ],
-		'Networks' => [
-			'mastodon'   => 'Mastodon',
-			'bluesky'    => 'Bluesky',
-			'pixelfed'   => 'Pixelfed',
-			'letterboxd' => 'Letterboxd',
-			'swarm'      => 'Swarm',
-		],
-		'Content'  => [
-			'publishing' => 'Publishing',
-			'reactions'  => 'Reactions',
-			'lookups'    => 'Lookups',
-		],
-		'Advanced' => [ 'advanced' => 'Advanced' ],
-	];
+	/**
+	 * Post-status slug → translated label. A method rather than a const because
+	 * __() can't run in a constant expression (and the .pot scanner only picks
+	 * up string literals passed to the translation functions).
+	 */
+	private static function post_statuses(): array {
+		return [
+			'publish' => __( 'Published', 'nop-indieweb' ),
+			'draft'   => __( 'Draft', 'nop-indieweb' ),
+			'private' => __( 'Private', 'nop-indieweb' ),
+		];
+	}
+
+	/**
+	 * Tab groups: group key → [ slug => translated label ]. Method (not a const)
+	 * for the same i18n reason as post_statuses(). The empty-string and group-name
+	 * keys are internal routing values, not shown verbatim, so they stay literal.
+	 */
+	private static function tab_groups(): array {
+		return [
+			''         => [ 'overview' => __( 'Overview', 'nop-indieweb' ) ],
+			'Networks' => [
+				'mastodon'   => __( 'Mastodon', 'nop-indieweb' ),
+				'bluesky'    => __( 'Bluesky', 'nop-indieweb' ),
+				'pixelfed'   => __( 'Pixelfed', 'nop-indieweb' ),
+				'letterboxd' => __( 'Letterboxd', 'nop-indieweb' ),
+				'swarm'      => __( 'Swarm', 'nop-indieweb' ),
+			],
+			'Content'  => [
+				'publishing' => __( 'Publishing', 'nop-indieweb' ),
+				'reactions'  => __( 'Reactions', 'nop-indieweb' ),
+				'lookups'    => __( 'Lookups', 'nop-indieweb' ),
+			],
+			'Advanced' => [ 'advanced' => __( 'Advanced', 'nop-indieweb' ) ],
+		];
+	}
 
 	public function register(): void {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
@@ -235,7 +250,7 @@ class Settings {
 			<h1>IndieWeb</h1>
 
 			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="Settings sections">
-				<?php foreach ( self::TAB_GROUPS as $tabs ) : ?>
+				<?php foreach ( self::tab_groups() as $tabs ) : ?>
 					<?php foreach ( $tabs as $slug => $label ) : ?>
 						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
 						<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
@@ -1046,7 +1061,7 @@ class Settings {
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$entries_prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $entries_settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1108,7 +1123,7 @@ class Settings {
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1390,7 +1405,7 @@ class Settings {
 				<tr>
 					<td class="nop-kinds-table__status">
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
