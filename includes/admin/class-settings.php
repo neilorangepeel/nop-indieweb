@@ -1101,15 +1101,15 @@ class Settings {
 						</select>
 					</td>
 					<td>
-						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? '', $category_names, __( 'Add category…', 'nop-indieweb' ), __( 'Category name', 'nop-indieweb' ) ); ?>
 					</td>
 					<td>
-						<?php $this->render_token_field( 'nop-entries-svc-tags', "{$entries_prefix}[post_tags]", $entries_settings['post_tags'] ?? '', $tag_names, 'Add tags…', 'Tag name' ); ?>
+						<?php $this->render_token_field( 'nop-entries-svc-tags', "{$entries_prefix}[post_tags]", $entries_settings['post_tags'] ?? '', $tag_names, __( 'Add tags…', 'nop-indieweb' ), __( 'Tag name', 'nop-indieweb' ) ); ?>
 					</td>
 					<td class="nop-kinds-table__enable">
 						<input type="checkbox" name="<?php echo esc_attr( "{$entries_prefix}[sideload_photos]" ); ?>" value="1"
-						       title="Save photos to your media library."
-						       aria-label="Save photos: notes"
+						       title="<?php esc_attr_e( 'Save photos to your media library.', 'nop-indieweb' ); ?>"
+						       aria-label="<?php esc_attr_e( 'Save photos: notes', 'nop-indieweb' ); ?>"
 						       <?php checked( $entries_settings['sideload_photos'] ?? true ); ?>>
 					</td>
 				</tr>
@@ -1150,7 +1150,10 @@ class Settings {
 						<input type="checkbox"
 						       name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>"
 						       value="1"
-						       aria-label="<?php echo esc_attr( sprintf( 'Accept %s posts via Micropub', strtolower( $kind['label'] ) ) ); ?>"
+						       aria-label="<?php
+					       	/* translators: %s: interaction kind name, e.g. Bookmark */
+					       	echo esc_attr( sprintf( __( 'Accept %s posts via Micropub', 'nop-indieweb' ), $kind['label'] ) );
+					       ?>"
 						       <?php checked( $settings['enabled'] ?? true ); ?>>
 					</td>
 					<td>
@@ -1163,25 +1166,25 @@ class Settings {
 						</select>
 					</td>
 					<td>
-						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? '', $category_names, __( 'Add category…', 'nop-indieweb' ), __( 'Category name', 'nop-indieweb' ) ); ?>
 					</td>
 				</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
 
-		<h3 class="nop-section-heading">Twitter Archive</h3>
-		<p class="description nop-section-intro">Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Twitter Archive', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
+				<th scope="row"><label for="twitter-archive-url"><?php esc_html_e( 'Archive URL', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<input type="url" id="twitter-archive-url"
 					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
 					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
 					       class="regular-text"
 					       placeholder="https://yoursite.com/twitter-archive/">
-					<p class="description">Optional link displayed on archived tweet posts. Leave blank to show the label without a link.</p>
+					<p class="description"><?php esc_html_e( 'Optional link displayed on archived tweet posts. Leave blank to show the label without a link.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -1262,36 +1265,36 @@ class Settings {
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
 		$endpoint = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 		?>
-		<p>Swarm by Foursquare lets you check in to places. Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> and every check-in automatically becomes a post on your site.</p>
+		<p><?php echo wp_kses( __( 'Swarm by Foursquare lets you check in to places. Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> and every check-in automatically becomes a post on your site.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 
-		<h3 class="nop-section-heading">Enable</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Accept check-ins</th>
+				<th scope="row"><?php esc_html_e( 'Accept check-ins', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
 						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
 						       <?php checked( $settings['enabled'] ?? false ); ?>>
-						Accept check-ins from OwnYourSwarm
+						<?php esc_html_e( 'Accept check-ins from OwnYourSwarm', 'nop-indieweb' ); ?>
 					</label>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">Your Micropub endpoint</th>
+				<th scope="row"><?php esc_html_e( 'Your Micropub endpoint', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
 							<a href="<?php echo $endpoint; ?>" target="_blank" rel="noopener"><?php echo $endpoint; ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $endpoint ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $endpoint ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Paste this into OwnYourSwarm as your Micropub endpoint. It will ask you to sign in to your site to authorize — that's normal.</p>
+					<p class="description"><?php esc_html_e( 'Paste this into OwnYourSwarm as your Micropub endpoint. It will ask you to sign in to your site to authorize — that\'s normal.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Map</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Map', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row"><label for="nop-geoapify-key"><?php esc_html_e( 'Geoapify API key', 'nop-indieweb' ); ?></label></th>
@@ -1442,8 +1445,8 @@ class Settings {
 							"{$prefix}[post_category]",
 							$settings['post_category'] ?? '',
 							$category_names,
-							'Add category…',
-							'Category name'
+							__( 'Add category…', 'nop-indieweb' ),
+							__( 'Category name', 'nop-indieweb' )
 						); ?>
 					</td>
 					<td>
@@ -1452,8 +1455,8 @@ class Settings {
 							"{$prefix}[post_tags]",
 							$settings['post_tags'] ?? $tag_default,
 							$tag_names,
-							'Add tags…',
-							'Tag name'
+							__( 'Add tags…', 'nop-indieweb' ),
+							__( 'Tag name', 'nop-indieweb' )
 						); ?>
 					</td>
 					<td class="nop-kinds-table__enable">
