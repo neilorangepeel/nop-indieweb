@@ -944,7 +944,7 @@ class Settings {
 				</td>
 			</tr>
 			<?php if ( ! empty( $settings['import_enabled'] ) ) :
-				$last_sync = $this->human_time_diff( $settings['import_last_at'] ?? null, 'Last imported' );
+				$last_sync = $this->human_time_diff( $settings['import_last_at'] ?? null, __( 'Last imported', 'nop-indieweb' ) );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
@@ -1410,18 +1410,18 @@ class Settings {
 		$slug        = $args['slug'];
 		$prefix      = $args['prefix'];
 		$settings    = $args['settings'];
-		$last_label  = $args['last_label']  ?? 'Photos';
+		$last_label  = $args['last_label']  ?? __( 'Photos', 'nop-indieweb' );
 		$last_field  = $args['last_field']  ?? 'sideload_photos';
 		$last_def    = $args['last_default'] ?? true;
-		$last_aria   = $args['last_aria']   ?? 'Save photos to media library';
+		$last_aria   = $args['last_aria']   ?? __( 'Save photos to media library', 'nop-indieweb' );
 		$tag_default = $args['tag_default'] ?? '';
 		?>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
+					<th scope="col" class="nop-kinds-table__status"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></th>
 					<th scope="col" class="nop-kinds-table__enable"><?php echo esc_html( $last_label ); ?></th>
 				</tr>
 			</thead>
@@ -1469,8 +1469,8 @@ class Settings {
 
 	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
 		?>
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'     => "{$slug}-in",
