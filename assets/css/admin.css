@@ -610,7 +610,8 @@
 }
 
 .nop-token-field__suggestion:hover,
-.nop-token-field__suggestion:focus {
+.nop-token-field__suggestion:focus,
+.nop-token-field__suggestion.is-active {
 	background: var(--wp-admin-theme-color, #2271b1);
 	color: #fff;
 	outline: none;
@@ -625,7 +626,8 @@
 }
 
 .nop-token-field__suggestion--new:hover,
-.nop-token-field__suggestion--new:focus {
+.nop-token-field__suggestion--new:focus,
+.nop-token-field__suggestion--new.is-active {
 	color: #fff;
 }
 
