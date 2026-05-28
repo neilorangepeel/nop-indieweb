@@ -402,13 +402,17 @@ class Plugin {
 
 		// Shared like-action handler used by both the like-button view.js and the
 		// post-footer view.js. Avoids shipping the same fetch/animation logic twice.
+		// Depends on wp-i18n so its user-facing strings (the like count label and
+		// the save-failed message) resolve through wp.i18n.__(); the script falls
+		// back to English if wp-i18n is somehow absent.
 		wp_register_script(
 			'nop-like-action',
 			NOP_INDIEWEB_URL . 'assets/js/nop-like-action.js',
-			[],
+			[ 'wp-i18n' ],
 			NOP_INDIEWEB_VERSION,
 			true
 		);
+		wp_set_script_translations( 'nop-like-action', 'nop-indieweb' );
 
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
