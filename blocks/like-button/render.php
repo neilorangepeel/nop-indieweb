@@ -23,7 +23,7 @@ if ( ! $post_id ) {
 	?>
 	<div <?php echo wp_kses_data( $wrapper ); ?>>
 		<button class="nop-like-button__btn" type="button" aria-pressed="false">
-			<?php echo wp_kses( $icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+			<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-like-button__label"><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 		</button>
 		<span class="nop-like-button__count" hidden>0</span>
@@ -50,7 +50,7 @@ $wrapper = get_block_wrapper_attributes( [
 	        type="button"
 	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
-		<?php echo wp_kses( $icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+		<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
 	<?php /* translators: %d: number of likes */ ?>

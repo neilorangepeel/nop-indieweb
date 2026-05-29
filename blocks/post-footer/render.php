@@ -26,15 +26,15 @@ if ( ! $post_id ) {
 	?>
 	<div <?php echo wp_kses_data( $wrapper ); ?>>
 		<button class="nop-post-footer__pill nop-post-footer__pill--like" type="button" aria-pressed="false" disabled>
-			<?php echo wp_kses( $heart_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+			<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="12 likes">12</span>
 		</button>
 		<span class="nop-post-footer__pill">
-			<?php echo wp_kses( $comment_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+			<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="4 comments">4</span>
 		</span>
 		<span class="nop-post-footer__pill">
-			<?php echo wp_kses( $repost_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+			<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="4 reposts">4</span>
 		</span>
 		<span class="nop-post-footer__sep" aria-hidden="true">·</span>
@@ -124,7 +124,7 @@ $wrapper = get_block_wrapper_attributes( [
 	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
 	        aria-label="<?php echo esc_attr( $liked ? __( 'Liked', 'nop-indieweb' ) : __( 'Like', 'nop-indieweb' ) ); ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
-		<?php echo wp_kses( $heart_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+		<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<?php /* translators: %d: number of likes */ ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
@@ -140,7 +140,7 @@ $wrapper = get_block_wrapper_attributes( [
 	       echo esc_attr( $reply_count > 0
 	       ? sprintf( _n( 'Jump to %d comment', 'Jump to %d comments', $reply_count, 'nop-indieweb' ), $reply_count )
 	       : __( 'Jump to the reply form', 'nop-indieweb' ) ); ?>">
-		<?php echo wp_kses( $comment_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+		<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
 		      <?php echo 0 === $reply_count ? 'hidden' : ''; ?>>
@@ -150,7 +150,7 @@ $wrapper = get_block_wrapper_attributes( [
 
 	<?php /* translators: %d: number of reposts */ ?>
 	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ), $repost_count ) ); ?>">
-		<?php echo wp_kses( $repost_icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
+		<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
 		      <?php echo 0 === $repost_count ? 'hidden' : ''; ?>>
