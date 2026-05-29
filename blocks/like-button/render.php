@@ -21,9 +21,9 @@ $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 if ( ! $post_id ) {
 	$wrapper = get_block_wrapper_attributes( [ 'class' => 'nop-like-button' ] );
 	?>
-	<div <?php echo $wrapper; ?>>
+	<div <?php echo wp_kses_data( $wrapper ); ?>>
 		<button class="nop-like-button__btn" type="button" aria-pressed="false">
-			<?php echo $icon; ?>
+			<?php echo wp_kses( $icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
 			<span class="nop-like-button__label"><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 		</button>
 		<span class="nop-like-button__count" hidden>0</span>
@@ -45,12 +45,12 @@ $wrapper = get_block_wrapper_attributes( [
 	'data-nonce'    => $nonce,
 ] );
 ?>
-<div <?php echo $wrapper; ?>>
+<div <?php echo wp_kses_data( $wrapper ); ?>>
 	<button class="nop-like-button__btn"
 	        type="button"
 	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
-		<?php echo $icon; ?>
+		<?php echo wp_kses( $icon, \NOP\IndieWeb\nop_indieweb_kses_svg() ); ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
 	<?php /* translators: %d: number of likes */ ?>

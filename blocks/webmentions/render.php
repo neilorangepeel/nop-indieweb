@@ -23,7 +23,7 @@ $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions nop-webmentions--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-webmentions__facepile" aria-hidden="true">
 			<?php for ( $i = 0; $i < 4; $i++ ) : ?>
 			<div class="nop-webmentions__avatar-wrap">
@@ -150,7 +150,7 @@ $total_count   = count( $likes ) + count( $reposts ) + count( $replies );
 $heading_text  = sprintf( _n( '%d Response', '%d Responses', $total_count, 'nop-indieweb' ), $total_count );
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<h2 class="nop-webmentions__heading"><?php echo esc_html( $heading_text ); ?></h2>
 

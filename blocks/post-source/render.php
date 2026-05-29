@@ -44,7 +44,7 @@ if ( ! $has_source && ! $has_synds && ! $is_twitter_archive ) {
 	}
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source nop-post-source--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<span class="nop-post-source__label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
 		<a class="nop-post-source__link" href="#" onclick="return false;">Mastodon</a>
 		<span class="nop-post-source__sep">·</span>
@@ -63,7 +63,7 @@ $platform_labels = [
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-source__item">

@@ -71,7 +71,7 @@ $wrapper = get_block_wrapper_attributes( [
 	'aria-label' => __( 'Also on', 'nop-indieweb' ),
 ] );
 ?>
-<aside <?php echo $wrapper; ?>>
+<aside <?php echo wp_kses_data( $wrapper ); ?>>
 	<p class="nop-syndication-panel__heading"><?php esc_html_e( 'Also on', 'nop-indieweb' ); ?></p>
 	<ul class="nop-syndication-panel__list">
 		<?php foreach ( $items as $item ) : ?>

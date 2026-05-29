@@ -19,7 +19,7 @@ $post_id = $block->context['postId'] ?? get_the_ID();
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta nop-film-meta--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-film-meta__rating">
 			<?php /* translators: %s: star rating out of 5, e.g. "4" */ ?>
 			<span class="nop-film-stars" aria-label="<?php echo esc_attr( sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), 4 ) ); ?>">
@@ -83,7 +83,7 @@ if ( $watch_date ) {
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<?php if ( $poster_url ) : ?>
 	<img class="nop-film-meta__poster"
@@ -93,7 +93,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 	<?php endif; ?>
 
 	<div class="nop-film-meta__rating">
-		<?php echo $stars_html; ?>
+		<?php echo wp_kses_post( $stars_html ); ?>
 	</div>
 
 	<?php if ( $film_year || $date_display || $rewatch || $source_url ) : ?>

@@ -31,7 +31,7 @@ $rsvp_colors = [
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<p class="nop-rsvp-meta__status">
 			<span class="nop-rsvp-badge" style="--rsvp-color: #16a34a"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
 		</p>
@@ -65,7 +65,7 @@ $event_host = $event_url ? ( wp_parse_url( $event_url, PHP_URL_HOST ) ?? $event_
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<?php if ( $rsvp_value ) : ?>
 	<p class="nop-rsvp-meta__status">

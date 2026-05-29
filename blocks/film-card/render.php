@@ -39,7 +39,7 @@ function nop_film_card_stars( float $rating ): string {
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card nop-film-card--placeholder' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-film-card__poster-wrap">
 			<div class="nop-film-card__poster nop-film-card__poster--empty"></div>
 		</div>
@@ -83,7 +83,7 @@ $post_title = get_the_title( $post_id );
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<a class="nop-film-card__poster-wrap" href="<?php echo esc_url( $permalink ); ?>" tabindex="-1" aria-hidden="true">
 		<?php if ( $poster_url ) : ?>
