@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Services;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_Error;
 
@@ -175,7 +180,7 @@ abstract class Service_Base {
 			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $id->get_error_message() );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 			$attachment_ids[] = (int) $id;
@@ -232,18 +237,18 @@ abstract class Service_Base {
 		for ( $hop = 0; $hop <= $max_hops; $hop++ ) {
 			$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
 			if ( 'https' !== $scheme && 'http' !== $scheme ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
 			}
 
 			if ( ! \NOP\IndieWeb\nop_indieweb_is_safe_url( $url ) ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_blocked_ip', 'URL resolves to a private or reserved IP range.' );
 			}
 
 			$url_key = strtolower( $url );
 			if ( isset( $visited[ $url_key ] ) ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_redirect_loop', 'Redirect loop.' );
 			}
 			$visited[ $url_key ] = true;
@@ -257,7 +262,7 @@ abstract class Service_Base {
 			] );
 
 			if ( is_wp_error( $response ) ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return $response;
 			}
 
@@ -266,18 +271,18 @@ abstract class Service_Base {
 				break;
 			}
 			if ( $code < 300 || $code >= 400 ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_bad_status', "Upstream returned HTTP {$code}." );
 			}
 
 			$location = wp_remote_retrieve_header( $response, 'location' );
 			if ( ! $location ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_bad_redirect', '3xx without Location header.' );
 			}
 			$next = \WP_Http::make_absolute_url( $location, $url );
 			if ( ! is_string( $next ) || '' === $next ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_bad_redirect', 'Could not resolve redirect target.' );
 			}
 
@@ -289,18 +294,18 @@ abstract class Service_Base {
 			$url = $next;
 
 			if ( $hop === $max_hops ) {
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_too_many_redirects', 'Exceeded redirect cap.' );
 			}
 		}
 
 		$bytes = @filesize( $tmp );
 		if ( false === $bytes || $bytes === 0 ) {
-			@unlink( $tmp );
+			wp_delete_file( $tmp );
 			return new WP_Error( 'nop_empty_body', 'Downloaded file was empty.' );
 		}
 		if ( $bytes > $cap_bytes ) {
-			@unlink( $tmp );
+			wp_delete_file( $tmp );
 			return new WP_Error( 'nop_too_large', "File exceeds cap ({$bytes} > {$cap_bytes})." );
 		}
 
@@ -360,6 +365,7 @@ abstract class Service_Base {
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [ [
 				'key'   => $meta_key,
 				'value' => $key,
@@ -510,7 +516,7 @@ abstract class Service_Base {
 					'url'   => $url,
 					'error' => $id->get_error_message(),
 				] );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 

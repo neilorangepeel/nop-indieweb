@@ -9,13 +9,18 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
            ( $block->context['postId'] ?? get_the_ID() );
 
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map nop-checkin-map--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-checkin-map__placeholder" role="img" aria-label="<?php esc_attr_e( 'Map preview', 'nop-indieweb' ); ?>"></div>
 		<p class="nop-checkin-map__caption"><span><?php esc_html_e( 'View on OpenStreetMap', 'nop-indieweb' ); ?></span></p>
 	</div>
@@ -82,11 +87,12 @@ if ( ! $map_img_url && ! $is_editor ) {
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<?php if ( $is_editor ) : ?>
 	<div class="nop-checkin-map__placeholder" role="img" aria-label="<?php echo esc_attr( $map_title ); ?>"></div>
 	<?php else : ?>
+	<?php /* translators: %s: map title, e.g. "Map showing The Crown Bar" */ ?>
 	<a class="nop-checkin-map__link" href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( sprintf( __( '%s — View on OpenStreetMap', 'nop-indieweb' ), $map_title ) ); ?>">
 		<img class="nop-checkin-map__img"
 			src="<?php echo esc_url( $map_img_url ); ?>"

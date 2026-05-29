@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\IndieAuth;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Database abstraction for IndieAuth-issued Bearer tokens.
  *
@@ -77,6 +82,7 @@ class Token_Store {
 	): bool {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->insert(
 			self::table_name(),
 			[
@@ -100,6 +106,10 @@ class Token_Store {
 	public static function find_by_token( string $raw_token ): ?array {
 		global $wpdb;
 
+		// The table name is a constant identifier ($wpdb->prefix + a fixed
+		// suffix), which prepare() placeholders cannot bind; the user value is
+		// bound with %s.
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				'SELECT * FROM ' . self::table_name() . ' WHERE token_hash = %s',
@@ -107,6 +117,7 @@ class Token_Store {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		return $row ?: null;
 	}
@@ -115,7 +126,11 @@ class Token_Store {
 	public static function get_by_user( int $user_id ): array {
 		global $wpdb;
 
-		return $wpdb->get_results(
+		// The table name is a constant identifier ($wpdb->prefix + a fixed
+		// suffix), which prepare() placeholders cannot bind; the user value is
+		// bound with %d.
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT id, client_id, client_name, scope, issued_at, last_used_at
 				   FROM ' . self::table_name() . '
@@ -125,6 +140,9 @@ class Token_Store {
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		return $rows;
 	}
 
 	// ── Update ────────────────────────────────────────────────────────────────
@@ -132,6 +150,7 @@ class Token_Store {
 	/** Updates last_used_at to now for the given token hash. */
 	public static function touch( string $token_hash ): void {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$wpdb->update(
 			self::table_name(),
 			[ 'last_used_at' => current_time( 'mysql', true ) ],
@@ -146,6 +165,7 @@ class Token_Store {
 	/** Revokes by database row ID. Used from the admin sessions UI. */
 	public static function delete_by_id( int $id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->delete(
 			self::table_name(),
 			[ 'id' => $id ],
@@ -156,6 +176,7 @@ class Token_Store {
 	/** Revokes by raw token value. Used by the token endpoint's revoke action. */
 	public static function revoke_by_raw( string $raw_token ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->delete(
 			self::table_name(),
 			[ 'token_hash' => hash( 'sha256', $raw_token ) ],

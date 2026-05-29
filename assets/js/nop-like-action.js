@@ -25,13 +25,23 @@
 ( function () {
 	'use strict';
 
+	// Resolve wp.i18n.__ when available, else identity — keeps this script
+	// working even if wp-i18n didn't load, and lets the strings be extracted.
+	var i18n = ( window.wp && window.wp.i18n ) ? window.wp.i18n : null;
+	var __   = i18n ? i18n.__ : function ( s ) { return s; };
+	var sprintf = i18n && i18n.sprintf ? i18n.sprintf : function ( fmt, n ) { return fmt.replace( '%d', n ); };
+
 	function attachLikeAction( cfg ) {
 		var roots = document.querySelectorAll( cfg.rootSelector );
 		if ( ! roots.length ) {
 			return;
 		}
 
-		var formatLabel = cfg.formatLabel || function ( n ) { return n + ' likes'; };
+		var formatLabel = cfg.formatLabel || function ( n ) {
+			/* translators: %d: number of likes */
+			return sprintf( __( '%d likes', 'nop-indieweb' ), n );
+		};
+		var failMessage = cfg.failMessage || __( 'Could not save like. Please try again.', 'nop-indieweb' );
 
 		roots.forEach( function ( el ) {
 			var btn = el.querySelector( cfg.buttonSelector );
@@ -99,7 +109,7 @@
 						countEl.textContent = previousCount;
 						countEl.setAttribute( 'aria-label', formatLabel( previousCount ) );
 						countEl.hidden = previousCount === 0;
-						statusEl.textContent = 'Could not save like. Please try again.';
+						statusEl.textContent = failMessage;
 					} );
 			} );
 		} );

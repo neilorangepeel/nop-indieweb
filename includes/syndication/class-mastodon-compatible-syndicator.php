@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Syndication;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Shared base for syndicators that speak the Mastodon HTTP API:
  *   POST /api/v1/statuses     — create a post

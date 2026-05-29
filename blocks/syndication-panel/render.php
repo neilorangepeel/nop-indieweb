@@ -9,6 +9,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Syndication\Syndication_Manager;
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
@@ -66,7 +71,7 @@ $wrapper = get_block_wrapper_attributes( [
 	'aria-label' => __( 'Also on', 'nop-indieweb' ),
 ] );
 ?>
-<aside <?php echo $wrapper; ?>>
+<aside <?php echo wp_kses_data( $wrapper ); ?>>
 	<p class="nop-syndication-panel__heading"><?php esc_html_e( 'Also on', 'nop-indieweb' ); ?></p>
 	<ul class="nop-syndication-panel__list">
 		<?php foreach ( $items as $item ) : ?>

@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.2.9
+ * Version:     0.3.0
  * Requires at least: 6.7
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NOP_INDIEWEB_VERSION', '0.2.9' );
+define( 'NOP_INDIEWEB_VERSION', '0.3.0' );
 define( 'NOP_INDIEWEB_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 define( 'NOP_INDIEWEB_FILE',    __FILE__ );
@@ -112,6 +112,15 @@ add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
 
+// Load translations. On `init` (not plugins_loaded) per WP 6.7+, which warns
+// when a text domain is loaded before init. Lets the strings wrapped in __()
+// across the plugin resolve from a .mo file in wp-content/languages/plugins/
+// or this plugin's own languages/ directory once translations exist.
+add_action( 'init', function () {
+	// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- explicit load supports distribution outside the wp.org directory
+	load_plugin_textdomain( 'nop-indieweb', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
+
 /**
  * One-time migration: moves nop_indieweb_mastodon_profile_url and
  * nop_indieweb_pixelfed_profile_url standalone options into the plugin
@@ -145,6 +154,7 @@ function maybe_migrate_swarm_source_url(): void {
 		'post_status'    => 'any',
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_query'     => [
 			[ 'key' => 'nop_indieweb_service', 'value' => 'swarm' ],
 		],

@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // Returns the full URL to the Micropub REST endpoint.
 function nop_indieweb_endpoint_url(): string {
 	return rest_url( 'nop-indieweb/v1/micropub' );
@@ -102,6 +107,7 @@ function nop_indieweb_log( string $message, mixed $context = null ): void {
 	if ( null !== $context ) {
 		$entry .= ' ' . wp_json_encode( nop_indieweb_redact_for_log( $context ) );
 	}
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-gated diagnostic logging (only runs when debug_mode is enabled)
 	error_log( $entry );
 }
 
@@ -176,14 +182,41 @@ function nop_indieweb_is_safe_url( string $url ): bool {
  * @return string|\WP_Error  Final resolved URL on success.
  */
 function nop_indieweb_resolve_url_safely( string $url, array $args = [], int $max_hops = 3 ): string|\WP_Error {
-	$visited = [];
-
 	// Intermediate hops don't need streaming or huge bodies — we just need the
 	// status line and Location header. Force a 1 MB cap unless the caller set
 	// something smaller, and strip any stream/filename options.
 	$hop_args = $args + [ 'redirection' => 0 ];
 	$hop_args['limit_response_size'] = min( (int) ( $args['limit_response_size'] ?? PHP_INT_MAX ), 1024 * 1024 );
 	unset( $hop_args['stream'], $hop_args['filename'] );
+
+	// strict_ip_check=false: this helper has always leaned on wp_safe_remote_get's
+	// own per-hop host/IP validation rather than the extra is_safe_url pre-resolve.
+	$result = nop_indieweb_walk_safe_redirects( $url, $hop_args, $max_hops, false );
+	return is_wp_error( $result ) ? $result : $result['url'];
+}
+
+/**
+ * Shared redirect-walker behind nop_indieweb_resolve_url_safely() and
+ * nop_indieweb_strict_remote_get().
+ *
+ * Walks the redirect chain one hop at a time with redirection=0, re-validating
+ * scheme and (optionally) the resolved IP on every hop, detecting loops, and
+ * stripping Authorization on cross-host redirects — the logic both callers must
+ * keep identical. The streaming download path (Service_Base::safe_download_to_tmp)
+ * keeps its own loop because it truncates each hop's body to a tmp file and so
+ * doesn't fit this buffered-response shape.
+ *
+ * @param string $url             Starting URL.
+ * @param array  $hop_args        Per-hop wp_safe_remote_get args (must include redirection=0).
+ *                                Copied locally before dropping Authorization across hosts.
+ * @param int    $max_hops        Maximum redirect chain length.
+ * @param bool   $strict_ip_check When true, also run nop_indieweb_is_safe_url()
+ *                                before each hop (blocks 169.254/16 etc. that
+ *                                wp_safe_remote_get misses).
+ * @return array{url:string,response:array}|\WP_Error  Final URL + response, or error.
+ */
+function nop_indieweb_walk_safe_redirects( string $url, array $hop_args, int $max_hops, bool $strict_ip_check ): array|\WP_Error {
+	$visited = [];
 
 	for ( $hop = 0; $hop <= $max_hops; $hop++ ) {
 		$url_key = strtolower( $url );
@@ -197,6 +230,13 @@ function nop_indieweb_resolve_url_safely( string $url, array $args = [], int $ma
 			return new \WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
 		}
 
+		// Block private + reserved IP ranges that wp_safe_remote_get doesn't —
+		// notably 169.254/16 where cloud-metadata services live. The overlap with
+		// wp_safe_remote_get's own check below is intentional belt-and-braces.
+		if ( $strict_ip_check && ! nop_indieweb_is_safe_url( $url ) ) {
+			return new \WP_Error( 'nop_blocked_ip', 'URL resolves to a private or reserved IP range.' );
+		}
+
 		// wp_safe_remote_get validates the URL's resolved IP isn't private/loopback.
 		$response = wp_safe_remote_get( $url, $hop_args );
 		if ( is_wp_error( $response ) ) {
@@ -205,12 +245,12 @@ function nop_indieweb_resolve_url_safely( string $url, array $args = [], int $ma
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $code < 300 || $code >= 400 ) {
-			return $url;
+			return [ 'url' => $url, 'response' => $response ];
 		}
 
 		$location = wp_remote_retrieve_header( $response, 'location' );
 		if ( ! $location ) {
-			return $url;
+			return [ 'url' => $url, 'response' => $response ];
 		}
 
 		$next = \WP_Http::make_absolute_url( $location, $url );
@@ -246,61 +286,12 @@ function nop_indieweb_resolve_url_safely( string $url, array $args = [], int $ma
  * @return array|\WP_Error  Same shape as wp_safe_remote_get.
  */
 function nop_indieweb_strict_remote_get( string $url, array $args = [], int $max_hops = 3 ): array|\WP_Error {
-	$visited  = [];
 	$hop_args = $args + [ 'redirection' => 0 ];
 
-	for ( $hop = 0; $hop <= $max_hops; $hop++ ) {
-		$url_key = strtolower( $url );
-		if ( isset( $visited[ $url_key ] ) ) {
-			return new \WP_Error( 'nop_redirect_loop', 'Redirect loop detected.' );
-		}
-		$visited[ $url_key ] = true;
-
-		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
-		if ( 'http' !== $scheme && 'https' !== $scheme ) {
-			return new \WP_Error( 'nop_invalid_scheme', 'URL must use http(s).' );
-		}
-
-		// Block private + reserved IP ranges that wp_safe_remote_get doesn't —
-		// notably 169.254/16 where cloud-metadata services live.
-		if ( ! nop_indieweb_is_safe_url( $url ) ) {
-			return new \WP_Error( 'nop_blocked_ip', 'URL resolves to a private or reserved IP range.' );
-		}
-
-		// wp_safe_remote_get also rejects 127.x/10.x/172.16-32/192.168 — overlap
-		// is intentional belt-and-braces in case the host's DNS answer changes
-		// between our pre-resolve and WP's own resolve.
-		$response = wp_safe_remote_get( $url, $hop_args );
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( $code < 300 || $code >= 400 ) {
-			return $response;
-		}
-
-		$location = wp_remote_retrieve_header( $response, 'location' );
-		if ( ! $location ) {
-			return $response;
-		}
-
-		$next = \WP_Http::make_absolute_url( $location, $url );
-		if ( ! is_string( $next ) || '' === $next ) {
-			return new \WP_Error( 'nop_bad_redirect', 'Could not resolve redirect target.' );
-		}
-
-		// Strip Authorization on cross-host redirects — matches WP core / cURL.
-		$prev_host = strtolower( (string) wp_parse_url( $url,  PHP_URL_HOST ) );
-		$next_host = strtolower( (string) wp_parse_url( $next, PHP_URL_HOST ) );
-		if ( $prev_host !== $next_host && isset( $hop_args['headers']['Authorization'] ) ) {
-			unset( $hop_args['headers']['Authorization'] );
-		}
-
-		$url = $next;
-	}
-
-	return new \WP_Error( 'nop_too_many_redirects', 'Exceeded redirect cap.' );
+	// strict_ip_check=true: also pre-resolve and reject private/reserved ranges
+	// (169.254/16 etc.) that wp_safe_remote_get's own check misses.
+	$result = nop_indieweb_walk_safe_redirects( $url, $hop_args, $max_hops, true );
+	return is_wp_error( $result ) ? $result : $result['response'];
 }
 
 /**
@@ -383,6 +374,7 @@ function nop_indieweb_ordinal( int $n ): string {
  */
 function nop_indieweb_compute_venue_visit_number( string $venue_id, string $post_date, int $exclude_id = 0 ): int {
 	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 	$prior = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT COUNT(DISTINCT p.ID)
 		 FROM {$wpdb->posts} p
@@ -410,6 +402,7 @@ function nop_indieweb_maybe_disable_settings_autoload(): void {
 	}
 
 	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 	$wpdb->update(
 		$wpdb->options,
 		[ 'autoload' => 'no' ],

@@ -43,10 +43,13 @@ $comment_ids = $wpdb->get_col(
 );
 
 if ( $comment_ids ) {
+	// $ids is a comma-joined list of intval-cast integers — safe to interpolate;
+	// $wpdb->prepare() can't bind a variable-length IN() list cleanly. One-off
+	// data cleanup at uninstall, so DirectQuery/NoCaching don't apply.
 	$ids = implode( ',', array_map( 'intval', $comment_ids ) );
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 	$wpdb->query( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$ids})" );
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 	$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$ids})" );
 }
 
@@ -58,6 +61,8 @@ if ( $maps_dir && is_dir( $maps_dir ) ) {
 	foreach ( (array) glob( $maps_dir . '/checkin-map-*.png' ) as $file ) {
 		wp_delete_file( $file );
 	}
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged -- removing our own now-empty cache dir at uninstall; WP_Filesystem is not bootstrapped in the uninstall context
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged -- removing our own now-empty cache dir at uninstall; WP_Filesystem is not bootstrapped in the uninstall context
 	@rmdir( $maps_dir );
 }
 

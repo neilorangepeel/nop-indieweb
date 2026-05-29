@@ -11,6 +11,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 require_once __DIR__ . '/helpers.php';
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
@@ -18,7 +23,7 @@ $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions nop-webmentions--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-webmentions__facepile" aria-hidden="true">
 			<?php for ( $i = 0; $i < 4; $i++ ) : ?>
 			<div class="nop-webmentions__avatar-wrap">
@@ -145,7 +150,7 @@ $total_count   = count( $likes ) + count( $reposts ) + count( $replies );
 $heading_text  = sprintf( _n( '%d Response', '%d Responses', $total_count, 'nop-indieweb' ), $total_count );
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<h2 class="nop-webmentions__heading"><?php echo esc_html( $heading_text ); ?></h2>
 
@@ -181,6 +186,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 	<div class="nop-webmentions__reposts">
 		<p class="nop-webmentions__section-label">
 			<?php echo nop_wm_repost_icon(); // phpcs:ignore ?>
+			<?php /* translators: %d: number of reposts */ ?>
 			<?php echo esc_html( sprintf( _n( '%d repost', '%d reposts', count( $reposts ), 'nop-indieweb' ), count( $reposts ) ) ); ?>
 		</p>
 		<?php if ( $shown_r ) : ?>
@@ -217,7 +223,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 			<div class="nop-webmentions__reply-body">
 				<p class="nop-webmentions__reply-meta">
 					<?php if ( $profile_url ) : ?>
-					<a href="<?php echo $profile_url; ?>" target="_blank" rel="noopener noreferrer">
+					<a href="<?php echo esc_url( $profile_url ); ?>" target="_blank" rel="noopener noreferrer">
 						<strong><?php echo esc_html( $author_name ); ?></strong>
 					</a>
 					<?php else : ?>
@@ -230,7 +236,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 					<?php echo $platform_tag; // phpcs:ignore ?>
 					<?php endif; ?>
 					<?php if ( $time_display ) : ?>
-					<a href="<?php echo $reply_url; ?>" class="nop-webmentions__reply-time" target="_blank" rel="noopener noreferrer">
+					<a href="<?php echo esc_url( $reply_url ); ?>" class="nop-webmentions__reply-time" target="_blank" rel="noopener noreferrer">
 						<time datetime="<?php echo esc_attr( $time_iso ); ?>" aria-label="<?php echo esc_attr( $time_label ); ?>"><?php echo esc_html( $time_display ); ?></time>
 					</a>
 					<?php endif; ?>

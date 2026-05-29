@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_CLI;
 
@@ -291,7 +296,7 @@ class Import_Swarm_Checkins {
 
 			if ( filesize( $tmp ) > $cap_bytes ) {
 				WP_CLI::warning( "  photo too large, skipping: {$url}" );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 
@@ -303,7 +308,7 @@ class Import_Swarm_Checkins {
 			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				WP_CLI::warning( "  sideload failed: " . $id->get_error_message() );
-				@unlink( $tmp );
+				wp_delete_file( $tmp );
 				continue;
 			}
 
@@ -369,6 +374,7 @@ class Import_Swarm_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'OR',
 				[ 'key' => 'nop_indieweb_source_url',  'value' => $url ],
@@ -383,6 +389,7 @@ class Import_Swarm_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'OR',
 				[ 'key' => 'nop_indieweb_source_url',  'value' => $url ],

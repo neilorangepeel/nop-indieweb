@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Admin;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\IndieAuth\Token_Store;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 
@@ -22,29 +27,44 @@ class Settings {
 	private const OPTION_KEY = 'nop_indieweb_settings';
 	private const PAGE_SLUG  = 'nop-indieweb-settings';
 
-	private const POST_STATUSES = [
-		'publish' => 'Published',
-		'draft'   => 'Draft',
-		'private' => 'Private',
-	];
 	private const VALID_STATUS_KEYS = [ 'publish', 'draft', 'private' ];
 
-	private const TAB_GROUPS = [
-		''         => [ 'overview'    => 'Overview' ],
-		'Networks' => [
-			'mastodon'   => 'Mastodon',
-			'bluesky'    => 'Bluesky',
-			'pixelfed'   => 'Pixelfed',
-			'letterboxd' => 'Letterboxd',
-			'swarm'      => 'Swarm',
-		],
-		'Content'  => [
-			'publishing' => 'Publishing',
-			'reactions'  => 'Reactions',
-			'lookups'    => 'Lookups',
-		],
-		'Advanced' => [ 'advanced' => 'Advanced' ],
-	];
+	/**
+	 * Post-status slug → translated label. A method rather than a const because
+	 * __() can't run in a constant expression (and the .pot scanner only picks
+	 * up string literals passed to the translation functions).
+	 */
+	private static function post_statuses(): array {
+		return [
+			'publish' => __( 'Published', 'nop-indieweb' ),
+			'draft'   => __( 'Draft', 'nop-indieweb' ),
+			'private' => __( 'Private', 'nop-indieweb' ),
+		];
+	}
+
+	/**
+	 * Tab groups: group key → [ slug => translated label ]. Method (not a const)
+	 * for the same i18n reason as post_statuses(). The empty-string and group-name
+	 * keys are internal routing values, not shown verbatim, so they stay literal.
+	 */
+	private static function tab_groups(): array {
+		return [
+			''         => [ 'overview' => __( 'Overview', 'nop-indieweb' ) ],
+			'Networks' => [
+				'mastodon'   => __( 'Mastodon', 'nop-indieweb' ),
+				'bluesky'    => __( 'Bluesky', 'nop-indieweb' ),
+				'pixelfed'   => __( 'Pixelfed', 'nop-indieweb' ),
+				'letterboxd' => __( 'Letterboxd', 'nop-indieweb' ),
+				'swarm'      => __( 'Swarm', 'nop-indieweb' ),
+			],
+			'Content'  => [
+				'publishing' => __( 'Publishing', 'nop-indieweb' ),
+				'reactions'  => __( 'Reactions', 'nop-indieweb' ),
+				'lookups'    => __( 'Lookups', 'nop-indieweb' ),
+			],
+			'Advanced' => [ 'advanced' => __( 'Advanced', 'nop-indieweb' ) ],
+		];
+	}
 
 	public function register(): void {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
@@ -58,7 +78,7 @@ class Settings {
 		check_ajax_referer( 'nop_test_connection' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Unauthorized', 403 );
+			wp_send_json_error( __( 'Unauthorized', 'nop-indieweb' ), 403 );
 		}
 
 		$slug      = sanitize_key( $_POST['service'] ?? '' );
@@ -78,8 +98,8 @@ class Settings {
 
 	public function add_page(): void {
 		add_options_page(
-			'IndieWeb Settings',
-			'IndieWeb',
+			__( 'IndieWeb Settings', 'nop-indieweb' ),
+			__( 'IndieWeb', 'nop-indieweb' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			[ $this, 'render_page' ]
@@ -232,10 +252,10 @@ class Settings {
 		?>
 		<div class="wrap nop-indieweb-settings">
 
-			<h1>IndieWeb</h1>
+			<h1><?php esc_html_e( 'IndieWeb', 'nop-indieweb' ); ?></h1>
 
-			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="Settings sections">
-				<?php foreach ( self::TAB_GROUPS as $tabs ) : ?>
+			<div class="nav-tab-wrapper nop-nav-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Settings sections', 'nop-indieweb' ); ?>">
+				<?php foreach ( self::tab_groups() as $tabs ) : ?>
 					<?php foreach ( $tabs as $slug => $label ) : ?>
 						<?php $tab_enabled = $this->is_tab_enabled( $slug ); ?>
 						<a href="#nop-tab-<?php echo esc_attr( $slug ); ?>"
@@ -249,7 +269,10 @@ class Settings {
 								echo 'advanced' === $slug ? ' nop-tab--advanced' : '';
 								echo 'publishing' === $slug ? ' nop-tab--group-start' : '';
 						   ?>"
-						   <?php if ( ! $tab_enabled ) : ?>title="<?php echo esc_attr( $label ); ?> is not enabled"<?php endif; ?>>
+						   <?php if ( ! $tab_enabled ) : ?>title="<?php
+						   	/* translators: %s: settings tab name, e.g. Mastodon */
+						   	echo esc_attr( sprintf( __( '%s is not enabled', 'nop-indieweb' ), $label ) );
+						   ?>"<?php endif; ?>>
 							<?php echo esc_html( $label ); ?>
 						</a>
 					<?php endforeach; ?>
@@ -300,95 +323,17 @@ class Settings {
 				</div>
 
 				<div class="nop-settings-footer">
-					<?php submit_button( 'Save Changes', 'primary', 'submit', false ); ?>
+					<?php submit_button( __( 'Save Changes', 'nop-indieweb' ), 'primary', 'submit', false ); ?>
 				</div>
 			</form>
 
 		</div>
 		<?php
 	}
-
-	// ——— Setup guide —————————————————————————————————————————————————————————
-
-	private function render_setup_guide(): void {
-		$swarm     = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
-		$mastodon  = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['mastodon'] ?? [];
-		$bluesky   = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['bluesky'] ?? [];
-
-		$swarm_configured    = ! empty( $swarm['enabled'] );
-		$mastodon_configured = ! empty( $mastodon['enabled'] ) && ! empty( $mastodon['instance'] ) && ! empty( $mastodon['access_token'] );
-		$bluesky_configured  = ! empty( $bluesky['enabled'] ) && ! empty( $bluesky['handle'] ) && ! empty( $bluesky['app_password'] );
-
-		// Step 1: any IndieWeb post exists
-		$has_post = ! empty( get_posts( [
-			'post_type'      => 'post',
-			'post_status'    => 'any',
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => true,
-			'meta_query'     => [ [ 'key' => 'nop_indieweb_service', 'compare' => 'EXISTS' ] ],
-		] ) );
-
-		// Step 2: any service is publishing live
-		$swarm_live = $swarm_configured && ( $swarm['post_status'] ?? 'draft' ) === 'publish';
-		$is_live    = $swarm_live || $mastodon_configured || $bluesky_configured;
-
-		// Step 3: at least one syndicator connected (outbound)
-		$has_syndication = $mastodon_configured || $bluesky_configured;
-
-		// Hide guide once the essentials are done
-		if ( $has_post && $is_live && $has_syndication ) {
-			return;
-		}
-
-		$micropub_url = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
-		$debug_url    = esc_url( admin_url( 'options-general.php?page=nop-indieweb-debug' ) );
-
-		$steps = [
-			[
-				'done'  => $has_post,
-				'label' => 'Publish your first IndieWeb post',
-				'body'  => 'Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> to post location checkins, or enable Mastodon or Bluesky in their tabs to start syndicating. Your Micropub endpoint is <code>' . esc_html( $micropub_url ) . '</code>.',
-				'link'  => [ 'href' => $debug_url, 'text' => 'Test with the Debug panel' ],
-			],
-			[
-				'done'  => $is_live,
-				'label' => 'Go live',
-				'body'  => 'Services default to Draft while you get set up. Switch <strong>Post Status</strong> to Published in the Posts tab, or enable Mastodon or Bluesky to start syndicating.',
-				'link'  => [ 'href' => '#nop-tab-post-kinds', 'text' => 'Open Posts tab' ],
-			],
-			[
-				'done'  => $has_syndication,
-				'label' => 'Connect Mastodon or Bluesky',
-				'body'  => 'Add your credentials in the Mastodon or Bluesky tabs to syndicate posts outward automatically. Once connected, you can set up <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> to receive posts back to your site too.',
-				'link'  => [ 'href' => '#nop-tab-mastodon', 'text' => 'Open Mastodon tab' ],
-			],
-		];
-		?>
-		<div class="nop-setup-guide">
-			<p class="nop-setup-guide__heading">Quick setup</p>
-			<ol class="nop-setup-guide__list">
-				<?php foreach ( $steps as $step ) : ?>
-					<li class="nop-setup-step <?php echo $step['done'] ? 'is-done' : ''; ?>">
-						<span class="nop-setup-step__icon" aria-hidden="true"></span>
-						<div class="nop-setup-step__content">
-							<span class="nop-setup-step__label"><?php echo esc_html( $step['label'] ); ?></span>
-							<?php if ( ! $step['done'] && $step['body'] ) : ?>
-								<p class="nop-setup-step__body"><?php echo wp_kses_post( $step['body'] ); ?></p>
-								<?php if ( $step['link'] ) : ?>
-									<a href="<?php echo esc_url( $step['link']['href'] ); ?>" class="nop-setup-link">
-										<?php echo esc_html( $step['link']['text'] ); ?> →
-									</a>
-								<?php endif; ?>
-							<?php endif; ?>
-						</div>
-					</li>
-				<?php endforeach; ?>
-			</ol>
-		</div>
-		<?php
-	}
-
+	/**
+	 * Whether a service/syndicator tab is currently enabled — drives the
+	 * muted "inactive" styling on the nav tabs.
+	 */
 	private function is_tab_enabled( string $slug ): bool {
 		$syndicators = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] );
 		$services    = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] );
@@ -405,43 +350,29 @@ class Settings {
 	// ——— Tab: Overview ————————————————————————————————————————————————————————
 
 	private function render_tab_overview(): void {
+		$networks  = $this->get_network_status();
+		$reactions = $this->get_reaction_stats();
+
 		$micropub_url   = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 		$webmention_url = esc_url( rest_url( 'nop-indieweb/v1/webmention' ) );
-		$networks       = $this->get_network_status();
-		$approved_wm    = (int) get_comments( [ 'type' => 'webmention', 'count' => true, 'status' => 'approve' ] );
-		$pending_wm     = (int) get_comments( [ 'type' => 'webmention', 'count' => true, 'status' => 'hold' ] );
+		$auth_url       = esc_url( Auth_Endpoint::url() );
+		$token_url      = esc_url( rest_url( 'nop-indieweb/v1/token' ) );
+
+		$example_post = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency admin lookup, not a hot path
+			'meta_key'       => 'nop_indieweb_service',
+		] );
+		$mf2_url = $example_post
+			? esc_url( rest_url( 'nop-indieweb/v1/mf2/' . $example_post[0] ) )
+			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
 		?>
 
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Micropub</th>
-				<td>
-					<div class="nop-url-copy-row">
-						<code class="nop-url-display">
-							<a href="<?php echo $micropub_url; ?>" target="_blank" rel="noopener"><?php echo $micropub_url; ?></a>
-						</code>
-						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $micropub_url ); ?>">Copy</button>
-					</div>
-					<p class="description">Your publishing endpoint — point Micropub clients (Quill, Ulysses, iA Writer) here.</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Webmention</th>
-				<td>
-					<div class="nop-url-copy-row">
-						<code class="nop-url-display">
-							<a href="<?php echo $webmention_url; ?>" target="_blank" rel="noopener"><?php echo $webmention_url; ?></a>
-						</code>
-						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $webmention_url ); ?>">Copy</button>
-					</div>
-					<p class="description">Advertised automatically via <code>&lt;link rel="webmention"&gt;</code> — other sites discover it without any setup.</p>
-				</td>
-			</tr>
-		</table>
-
-		<h3 class="nop-section-heading">Networks</h3>
+		<h3 class="nop-section-heading nop-section-heading--first"><?php esc_html_e( 'Networks', 'nop-indieweb' ); ?></h3>
 		<div class="nop-network-cards">
 			<?php foreach ( $networks as $network ) : ?>
 			<div class="nop-network-card <?php echo $network['active'] ? 'nop-network-card--active' : 'nop-network-card--inactive'; ?>"
@@ -451,7 +382,7 @@ class Settings {
 					<strong class="nop-network-card__name"><?php echo esc_html( $network['label'] ); ?></strong>
 				</div>
 				<p class="nop-network-card__status">
-					<?php echo esc_html( $network['active'] ? 'Active' : 'Not configured' ); ?>
+					<?php echo esc_html( $network['active'] ? __( 'Active', 'nop-indieweb' ) : __( 'Not configured', 'nop-indieweb' ) ); ?>
 				</p>
 				<?php if ( $network['active'] && $network['actions'] ) : ?>
 				<p class="nop-network-card__actions"><?php echo esc_html( implode( ' · ', $network['actions'] ) ); ?></p>
@@ -461,47 +392,164 @@ class Settings {
 				<?php endif; ?>
 				<a href="#nop-tab-<?php echo esc_attr( $network['tab'] ); ?>"
 				   class="nop-setup-link nop-network-card__link">
-					<?php echo $network['active'] ? 'Configure' : 'Set up'; ?> →
+					<?php echo esc_html( $network['active'] ? __( 'Configure', 'nop-indieweb' ) : __( 'Set up', 'nop-indieweb' ) ); ?> →
 				</a>
 			</div>
 			<?php endforeach; ?>
 		</div>
 
-		<?php if ( $approved_wm > 0 || $pending_wm > 0 ) : ?>
-		<h3 class="nop-section-heading">Reactions</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Reactions', 'nop-indieweb' ); ?></h3>
+		<?php
+		$reaction_metrics = [
+			[ 'count' => $reactions['likes'],    'label' => _n( 'Like', 'Likes', $reactions['likes'], 'nop-indieweb' ) ],
+			[ 'count' => $reactions['comments'], 'label' => _n( 'Comment', 'Comments', $reactions['comments'], 'nop-indieweb' ) ],
+			[ 'count' => $reactions['reposts'],  'label' => _n( 'Repost', 'Reposts', $reactions['reposts'], 'nop-indieweb' ) ],
+		];
+		?>
+		<div class="nop-reaction-stats">
+			<?php foreach ( $reaction_metrics as $metric ) : ?>
+			<div class="nop-reaction-stat">
+				<span class="nop-reaction-stat__num"><?php echo esc_html( number_format_i18n( $metric['count'] ) ); ?></span>
+				<span class="nop-reaction-stat__label"><?php echo esc_html( $metric['label'] ); ?></span>
+			</div>
+			<?php endforeach; ?>
+		</div>
+
+		<?php
+		// Per-network breakdown — only webmention-backed reactions carry a source
+		// platform, so this covers likes + reposts relayed from each network
+		// (native comments have no platform and are excluded here).
+		$network_lines = [];
+		foreach ( $reactions['networks'] as $net ) {
+			if ( $net['likes'] || $net['reposts'] ) {
+				$network_lines[] = sprintf(
+					/* translators: 1: network name, 2: like count, 3: repost count */
+					__( '%1$s — %2$s likes · %3$s reposts', 'nop-indieweb' ),
+					$net['label'],
+					number_format_i18n( $net['likes'] ),
+					number_format_i18n( $net['reposts'] )
+				);
+			}
+		}
+		if ( $network_lines ) :
+		?>
+		<p class="nop-reaction-breakdown"><?php echo esc_html( implode( '   ·   ', $network_lines ) ); ?></p>
+		<?php endif; ?>
+
+		<?php if ( $reactions['pending'] > 0 ) :
+			$moderated_url = esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) );
+		?>
 		<p class="nop-overview-stat">
-			<?php if ( $approved_wm > 0 ) : ?>
-				<strong><?php echo esc_html( number_format_i18n( $approved_wm ) ); ?></strong>
-				<?php echo esc_html( $approved_wm === 1 ? 'reaction received' : 'reactions received' ); ?>
-				<?php if ( $pending_wm > 0 ) : ?>
-					— <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) ); ?>">
-						<?php echo esc_html( $pending_wm ); ?> pending approval
-					</a>
-				<?php endif; ?>
-			<?php else : ?>
-				<?php echo esc_html( $pending_wm ); ?> reaction<?php echo $pending_wm === 1 ? '' : 's'; ?> pending approval —
-				<a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention&comment_status=moderated' ) ); ?>">review them</a>
-			<?php endif; ?>
+			<a href="<?php echo esc_url( $moderated_url ); ?>">
+				<?php
+				/* translators: %s: number of pending reactions */
+				echo esc_html( sprintf( _n( '%s pending approval', '%s pending approval', $reactions['pending'], 'nop-indieweb' ), number_format_i18n( $reactions['pending'] ) ) );
+				?> →
+			</a>
 		</p>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Identity</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Identity & Endpoints', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'Your <code>rel="me"</code> identities and the endpoints other services use to talk to your site. All endpoints are advertised automatically in your <code>&lt;head&gt;</code> — clients discover them without any setup.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-me-urls">Profile URLs</label></th>
+				<th scope="row"><label for="nop-me-urls"><?php esc_html_e( 'Profile URLs', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<textarea id="nop-me-urls"
-					          name="<?php echo self::OPTION_KEY; ?>[me_urls]"
+					          name="<?php echo esc_attr( self::OPTION_KEY ); ?>[me_urls]"
 					          rows="4"
 					          class="large-text code"
 					          placeholder="https://github.com/yourusername&#10;https://linkedin.com/in/yourusername"><?php echo esc_textarea( \NOP\IndieWeb\nop_indieweb_get_option( 'me_urls', '' ) ); ?></textarea>
-					<p class="description">One URL per line. Output as <code>&lt;link rel="me"&gt;</code> — used by IndieAuth and profile verification. Your configured social networks are added automatically.</p>
+					<p class="description"><?php echo wp_kses( __( 'One URL per line. Output as <code>&lt;link rel="me"&gt;</code> — used by IndieAuth and profile verification. Your configured social networks are added automatically.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 				</td>
 			</tr>
+			<?php
+			$endpoints = [
+				[ 'label' => __( 'Micropub', 'nop-indieweb' ),              'url' => $micropub_url,   'desc' => __( 'Your publishing endpoint — point Micropub clients (Quill, Ulysses, iA Writer) here.', 'nop-indieweb' ) ],
+				[ 'label' => __( 'Webmention', 'nop-indieweb' ),            'url' => $webmention_url, 'desc' => __( 'Receives likes, replies, and reposts other sites send to your posts.', 'nop-indieweb' ) ],
+				[ 'label' => __( 'Authorization', 'nop-indieweb' ),         'url' => $auth_url,       'desc' => __( 'IndieAuth — Micropub clients redirect here so you can approve their access.', 'nop-indieweb' ) ],
+				[ 'label' => __( 'Token', 'nop-indieweb' ),                 'url' => $token_url,      'desc' => __( 'IndieAuth — clients exchange their authorization code here for a Bearer token.', 'nop-indieweb' ) ],
+				[ 'label' => __( 'Microformats (mf2 JSON)', 'nop-indieweb' ), 'url' => $mf2_url,      'desc' => __( 'Machine-readable mf2+json of a post — used by Bridgy, XRay, and other IndieWeb services.', 'nop-indieweb' ) ],
+			];
+			foreach ( $endpoints as $endpoint ) :
+			?>
+			<tr>
+				<th scope="row"><?php echo esc_html( $endpoint['label'] ); ?></th>
+				<td>
+					<div class="nop-url-copy-row">
+						<code class="nop-url-display">
+							<a href="<?php echo esc_url( $endpoint['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $endpoint['url'] ); ?></a>
+						</code>
+						<button type="button" class="button button-secondary nop-copy-btn"
+						        data-copy="<?php echo esc_attr( $endpoint['url'] ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
+					</div>
+					<p class="description"><?php echo esc_html( $endpoint['desc'] ); ?></p>
+				</td>
+			</tr>
+			<?php endforeach; ?>
 		</table>
-
-		<?php $this->render_setup_guide(); ?>
 		<?php
+	}
+
+	/**
+	 * Aggregates reaction counts for the Overview tab: site-wide like, comment,
+	 * and repost totals, a pending-moderation count, and a per-network split for
+	 * the webmention-backed metrics (likes + reposts carry a source platform;
+	 * native comments do not, so they're excluded from the per-network lines).
+	 *
+	 * @return array{likes:int,comments:int,reposts:int,pending:int,networks:array<string,array{label:string,likes:int,reposts:int}>}
+	 */
+	private function get_reaction_stats(): array {
+		$count_wm = static function ( string $type, ?string $platform = null ): int {
+			$meta_query = [ [ 'key' => 'webmention_type', 'value' => $type ] ];
+			if ( null !== $platform ) {
+				$meta_query[] = [ 'key' => 'webmention_platform', 'value' => $platform ];
+			}
+			return (int) get_comments( [
+				'type'       => 'webmention',
+				'status'     => 'approve',
+				'count'      => true,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency admin overview metric, not a hot path
+				'meta_query' => $meta_query,
+			] );
+		};
+
+		$likes   = $count_wm( 'like' );
+		$reposts = $count_wm( 'repost' );
+
+		// Comments = native WordPress comments + webmention replies (any webmention
+		// that isn't a like or repost).
+		$native_comments = (int) get_comments( [ 'type' => 'comment', 'status' => 'approve', 'count' => true ] );
+		$wm_replies      = (int) get_comments( [
+			'type'       => 'webmention',
+			'status'     => 'approve',
+			'count'      => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency admin overview metric, not a hot path
+			'meta_query' => [
+				'relation' => 'OR',
+				[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
+				[ 'key' => 'webmention_type', 'value' => [ 'like', 'repost' ], 'compare' => 'NOT IN' ],
+			],
+		] );
+
+		$pending = (int) get_comments( [ 'type' => 'webmention', 'status' => 'hold', 'count' => true ] );
+
+		$networks = [];
+		foreach ( [ 'mastodon' => 'Mastodon', 'bluesky' => 'Bluesky' ] as $slug => $label ) {
+			$networks[ $slug ] = [
+				'label'   => $label,
+				'likes'   => $count_wm( 'like', $slug ),
+				'reposts' => $count_wm( 'repost', $slug ),
+			];
+		}
+
+		return [
+			'likes'    => $likes,
+			'comments' => $native_comments + $wm_replies,
+			'reposts'  => $reposts,
+			'pending'  => $pending,
+			'networks' => $networks,
+		];
 	}
 
 	private function get_network_status(): array {
@@ -529,6 +577,7 @@ class Settings {
 				'posts_per_page' => 1,
 				'no_found_rows'  => true,
 				'fields'         => 'ids',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 				'meta_query'     => [ [ 'key' => 'nop_indieweb_service', 'value' => 'swarm' ] ],
 			] );
 			if ( $last ) {
@@ -536,45 +585,49 @@ class Settings {
 			}
 		}
 
+		$post_out = __( 'Post out', 'nop-indieweb' );
+		$import   = __( 'Import', 'nop-indieweb' );
+		$synced   = __( 'Synced', 'nop-indieweb' );
+
 		return [
 			'mastodon'   => [
 				'label'      => 'Mastodon',
 				'color'      => '#6364FF',
 				'active'     => $mastodon_ok,
-				'actions'    => $mastodon_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $mastodon_ok ? $this->human_time_diff( $mastodon['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $mastodon_ok ? [ $post_out, $import ] : [],
+				'last_label' => $mastodon_ok ? $this->human_time_diff( $mastodon['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'mastodon',
 			],
 			'bluesky'    => [
 				'label'      => 'Bluesky',
 				'color'      => '#0085FF',
 				'active'     => $bluesky_ok,
-				'actions'    => $bluesky_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $bluesky_ok ? $this->human_time_diff( $bluesky['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $bluesky_ok ? [ $post_out, $import ] : [],
+				'last_label' => $bluesky_ok ? $this->human_time_diff( $bluesky['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'bluesky',
 			],
 			'pixelfed'   => [
 				'label'      => 'Pixelfed',
 				'color'      => '#1A9C5B',
 				'active'     => $pixelfed_ok,
-				'actions'    => $pixelfed_ok ? [ 'Post out', 'Import' ] : [],
-				'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $pixelfed_ok ? [ $post_out, $import ] : [],
+				'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'pixelfed',
 			],
 			'letterboxd' => [
 				'label'      => 'Letterboxd',
 				'color'      => '#00C030',
 				'active'     => $lboxd_ok,
-				'actions'    => $lboxd_ok ? [ 'Import' ] : [],
-				'last_label' => $lboxd_ok ? $this->human_time_diff( $lboxd['import_last_at'] ?? null, 'Synced' ) : null,
+				'actions'    => $lboxd_ok ? [ $import ] : [],
+				'last_label' => $lboxd_ok ? $this->human_time_diff( $lboxd['import_last_at'] ?? null, $synced ) : null,
 				'tab'        => 'letterboxd',
 			],
 			'swarm'      => [
 				'label'      => 'Swarm',
 				'color'      => '#FC8D1D',
 				'active'     => $swarm_ok,
-				'actions'    => $swarm_ok ? [ 'Receive check-ins' ] : [],
-				'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, 'Last check-in' ) : null,
+				'actions'    => $swarm_ok ? [ __( 'Receive check-ins', 'nop-indieweb' ) ] : [],
+				'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null,
 				'tab'        => 'swarm',
 			],
 		];
@@ -588,76 +641,34 @@ class Settings {
 		if ( ! $ts ) {
 			return null;
 		}
-		$diff = $prefix ? "{$prefix} " . human_time_diff( $ts ) . ' ago' : human_time_diff( $ts ) . ' ago';
-		return $diff;
+		if ( $prefix ) {
+			/* translators: 1: label e.g. "Synced", 2: human time difference e.g. "3 hours" */
+			return sprintf( __( '%1$s %2$s ago', 'nop-indieweb' ), $prefix, human_time_diff( $ts ) );
+		}
+		/* translators: %s: human time difference e.g. "3 hours" */
+		return sprintf( __( '%s ago', 'nop-indieweb' ), human_time_diff( $ts ) );
 	}
 
 	// ——— Tab: Advanced ——————————————————————————————————————————————————————
 
 	private function render_tab_advanced(): void {
-		$auth_url  = esc_url( Auth_Endpoint::url() );
-		$token_url = esc_url( rest_url( 'nop-indieweb/v1/token' ) );
-		$sessions  = Token_Store::get_by_user( get_current_user_id() );
-
-		$mf2_enabled  = \NOP\IndieWeb\nop_indieweb_get_option( 'mf2_enabled', true );
-		$debug_mode   = \NOP\IndieWeb\nop_indieweb_get_option( 'debug_mode', false );
-
-		$example_post = get_posts( [
-			'post_type'      => 'post',
-			'post_status'    => 'publish',
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => true,
-			'meta_key'       => 'nop_indieweb_service',
-		] );
-		$mf2_url = $example_post
-			? esc_url( rest_url( 'nop-indieweb/v1/mf2/' . $example_post[0] ) )
-			: esc_url( rest_url( 'nop-indieweb/v1/mf2/{post_id}' ) );
+		$sessions    = Token_Store::get_by_user( get_current_user_id() );
+		$mf2_enabled = \NOP\IndieWeb\nop_indieweb_get_option( 'mf2_enabled', true );
+		$debug_mode  = \NOP\IndieWeb\nop_indieweb_get_option( 'debug_mode', false );
 		?>
 
-		<h3 class="nop-section-heading nop-section-heading--first">IndieAuth</h3>
-		<p class="description nop-section-intro">These endpoints are advertised automatically in your site's <code>&lt;head&gt;</code> — Micropub clients discover them without any setup.</p>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row">Authorization Endpoint</th>
-				<td>
-					<div class="nop-url-copy-row">
-						<code class="nop-url-display">
-							<a href="<?php echo $auth_url; ?>" target="_blank" rel="noopener"><?php echo $auth_url; ?></a>
-						</code>
-						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $auth_url ); ?>">Copy</button>
-					</div>
-					<p class="description">Micropub clients redirect here so you can approve their access.</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">Token Endpoint</th>
-				<td>
-					<div class="nop-url-copy-row">
-						<code class="nop-url-display">
-							<a href="<?php echo $token_url; ?>" target="_blank" rel="noopener"><?php echo $token_url; ?></a>
-						</code>
-						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $token_url ); ?>">Copy</button>
-					</div>
-					<p class="description">Clients exchange their authorization code here for a Bearer token.</p>
-				</td>
-			</tr>
-		</table>
-
-		<h3 class="nop-section-heading">Active Sessions</h3>
+		<h3 class="nop-section-heading nop-section-heading--first"><?php esc_html_e( 'Active Sessions', 'nop-indieweb' ); ?></h3>
 
 		<?php if ( empty( $sessions ) ) : ?>
-			<p class="nop-sessions-empty">No applications authorized yet. Connect a Micropub client to see sessions here.</p>
+			<p class="nop-sessions-empty"><?php esc_html_e( 'No applications authorized yet. Connect a Micropub client to see sessions here.', 'nop-indieweb' ); ?></p>
 		<?php else : ?>
 			<table class="nop-sessions-table">
 				<thead>
 					<tr>
-						<th>Application</th>
-						<th>Permissions</th>
-						<th>Authorized</th>
-						<th>Last used</th>
+						<th><?php esc_html_e( 'Application', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Permissions', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Authorized', 'nop-indieweb' ); ?></th>
+						<th><?php esc_html_e( 'Last used', 'nop-indieweb' ); ?></th>
 						<th></th>
 					</tr>
 				</thead>
@@ -677,8 +688,11 @@ class Settings {
 								?>
 								<a href="<?php echo esc_url( $revoke_url ); ?>"
 								   class="nop-revoke-link"
-								   data-confirm="<?php echo esc_attr( sprintf( 'Revoke access for %s?', $session['client_name'] ?: $session['client_id'] ) ); ?>">
-									Revoke
+								   data-confirm="<?php
+								   	/* translators: %s: authorized application name */
+								   	echo esc_attr( sprintf( __( 'Revoke access for %s?', 'nop-indieweb' ), $session['client_name'] ?: $session['client_id'] ) );
+								   ?>">
+									<?php esc_html_e( 'Revoke', 'nop-indieweb' ); ?>
 								</a>
 							</td>
 						</tr>
@@ -687,52 +701,34 @@ class Settings {
 			</table>
 		<?php endif; ?>
 
-		<h3 class="nop-section-heading">Microformats</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Microformats', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Markup</th>
+				<th scope="row"><?php esc_html_e( 'Markup', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[mf2_enabled]" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[mf2_enabled]" value="1"
 						       <?php checked( $mf2_enabled ); ?>>
-						Add microformats2 markup to IndieWeb posts
+						<?php esc_html_e( 'Add microformats2 markup to IndieWeb posts', 'nop-indieweb' ); ?>
 					</label>
 					<p class="description">
-						Injected at render time — nothing is stored in your database.
-						Deactivating the plugin removes it automatically.
-					</p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">JSON endpoint</th>
-				<td>
-					<div class="nop-url-copy-row">
-						<code class="nop-url-display">
-							<a href="<?php echo $mf2_url; ?>" target="_blank" rel="noopener"><?php echo $mf2_url; ?></a>
-						</code>
-						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $mf2_url ); ?>">Copy</button>
-					</div>
-					<p class="description">
-						Served at <code>rel="alternate" type="application/mf2+json"</code>. Services like
-						<a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> and
-						<a href="https://xray.p3k.io" target="_blank" rel="noopener">XRay</a> use this for richer data.
+						<?php esc_html_e( 'Injected at render time — nothing is stored in your database. Deactivating the plugin removes it automatically.', 'nop-indieweb' ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Developer</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Developer', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Debug mode</th>
+				<th scope="row"><?php esc_html_e( 'Debug mode', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[debug_mode]" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[debug_mode]" value="1"
 						       <?php checked( $debug_mode ); ?>>
-						Enable debug logging
+						<?php esc_html_e( 'Enable debug logging', 'nop-indieweb' ); ?>
 					</label>
-					<p class="description">Writes plugin activity to <code>wp-content/debug.log</code> when WP_DEBUG_LOG is enabled.</p>
+					<p class="description"><?php echo wp_kses( __( 'Writes plugin activity to <code>wp-content/debug.log</code> when WP_DEBUG_LOG is enabled.', 'nop-indieweb' ), [ 'code' => [] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -881,6 +877,20 @@ class Settings {
 		</p>
 		<?php endif; ?>
 
+		<p class="description nop-section-intro">
+			<?php
+			echo wp_kses(
+				sprintf(
+					/* translators: 1: network name e.g. Mastodon, 2: Bridgy link markup */
+					__( 'Once connected, set up %2$s to receive likes and replies from %1$s back on your own site as webmentions.', 'nop-indieweb' ),
+					esc_html( $config['label'] ),
+					'<a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a>'
+				),
+				[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
+			);
+			?>
+		</p>
+
 		<?php $this->render_inbound_defaults( $slug, $prefix, $settings ); ?>
 
 		<h3 class="nop-section-heading"><?php esc_html_e( 'Import', 'nop-indieweb' ); ?></h3>
@@ -897,7 +907,7 @@ class Settings {
 				</td>
 			</tr>
 			<?php if ( ! empty( $settings['import_enabled'] ) ) :
-				$last_sync = $this->human_time_diff( $settings['import_last_at'] ?? null, 'Last imported' );
+				$last_sync = $this->human_time_diff( $settings['import_last_at'] ?? null, __( 'Last imported', 'nop-indieweb' ) );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
@@ -960,29 +970,29 @@ class Settings {
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['letterboxd'] ?? [];
 		$username = $settings['username'] ?? '';
 		?>
-		<p>Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.</p>
+		<p><?php esc_html_e( 'Imports your Letterboxd diary as WordPress posts — one post per film watched. No API key required; Letterboxd diary feeds are public.', 'nop-indieweb' ); ?></p>
 
-		<h3 class="nop-section-heading">Import</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Import', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Import posts</th>
+				<th scope="row"><?php esc_html_e( 'Import posts', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[import_enabled]" ); ?>" value="1"
 						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
-						Automatically import your Letterboxd diary as WordPress posts (hourly)
+						<?php esc_html_e( 'Automatically import your Letterboxd diary as WordPress posts (hourly)', 'nop-indieweb' ); ?>
 					</label>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="letterboxd-username">Username</label></th>
+				<th scope="row"><label for="letterboxd-username"><?php esc_html_e( 'Username', 'nop-indieweb' ); ?></label></th>
 				<td>
-					<input type="text" id="letterboxd-username" name="<?php echo "{$prefix}[username]"; ?>"
+					<input type="text" id="letterboxd-username" name="<?php echo esc_attr( "{$prefix}[username]" ); ?>"
 					       value="<?php echo esc_attr( $username ); ?>"
 					       class="regular-text" placeholder="your-letterboxd-username">
 					<?php if ( $username ) : ?>
 					<p class="description">
-						Feed: <a href="https://letterboxd.com/<?php echo esc_attr( $username ); ?>/rss/" target="_blank" rel="noopener">
+						<?php esc_html_e( 'Feed:', 'nop-indieweb' ); ?> <a href="https://letterboxd.com/<?php echo esc_attr( $username ); ?>/rss/" target="_blank" rel="noopener">
 							letterboxd.com/<?php echo esc_html( $username ); ?>/rss/
 						</a>
 					</p>
@@ -991,27 +1001,27 @@ class Settings {
 			</tr>
 			<?php if ( ! empty( $settings['import_enabled'] ) ) : ?>
 			<tr>
-				<th scope="row">Sync now</th>
+				<th scope="row"><?php esc_html_e( 'Sync now', 'nop-indieweb' ); ?></th>
 				<td>
 					<a href="<?php echo esc_url( wp_nonce_url(
 						add_query_arg( 'nop_indieweb_sync', 'letterboxd', admin_url( 'options-general.php?page=nop-indieweb-settings' ) ),
 						'nop_indieweb_sync_letterboxd'
-					) ); ?>" class="button">Import from Letterboxd now</a>
+					) ); ?>" class="button"><?php esc_html_e( 'Import from Letterboxd now', 'nop-indieweb' ); ?></a>
 				</td>
 			</tr>
 			<?php endif; ?>
 		</table>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts imported from Letterboxd.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Applied to posts imported from Letterboxd.', 'nop-indieweb' ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'         => 'letterboxd',
 			'prefix'       => $prefix,
 			'settings'     => $settings,
-			'last_label'   => 'Poster',
+			'last_label'   => __( 'Poster', 'nop-indieweb' ),
 			'last_field'   => 'sideload_poster',
-			'last_aria'    => 'Save film poster to media library',
+			'last_aria'    => __( 'Save film poster to media library', 'nop-indieweb' ),
 		] );
 	}
 
@@ -1023,16 +1033,16 @@ class Settings {
 		$entries_settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['entries'] ?? [];
 		$entries_prefix   = self::OPTION_KEY . '[services][entries]';
 		?>
-		<h3 class="nop-section-heading nop-section-heading--first">Notes</h3>
-		<p class="description nop-section-intro">Short posts sent via any Micropub client (Quill, iA Writer, etc.).</p>
+		<h3 class="nop-section-heading nop-section-heading--first"><?php esc_html_e( 'Notes', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Short posts sent via any Micropub client (Quill, iA Writer, etc.).', 'nop-indieweb' ); ?></p>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col">Enable</th>
-					<th scope="col">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
-					<th scope="col" class="nop-kinds-table__enable">Photos</th>
+					<th scope="col"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></th>
+					<th scope="col" class="nop-kinds-table__enable"><?php esc_html_e( 'Photos', 'nop-indieweb' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1041,12 +1051,12 @@ class Settings {
 						<input type="checkbox"
 						       name="<?php echo esc_attr( "{$entries_prefix}[enabled]" ); ?>"
 						       value="1"
-						       aria-label="Enable notes"
+						       aria-label="<?php esc_attr_e( 'Enable notes', 'nop-indieweb' ); ?>"
 						       <?php checked( $entries_settings['enabled'] ?? true ); ?>>
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$entries_prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $entries_settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1054,39 +1064,39 @@ class Settings {
 						</select>
 					</td>
 					<td>
-						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( 'nop-entries-svc-category', "{$entries_prefix}[post_category]", $entries_settings['post_category'] ?? '', $category_names, __( 'Add category…', 'nop-indieweb' ), __( 'Category name', 'nop-indieweb' ) ); ?>
 					</td>
 					<td>
-						<?php $this->render_token_field( 'nop-entries-svc-tags', "{$entries_prefix}[post_tags]", $entries_settings['post_tags'] ?? '', $tag_names, 'Add tags…', 'Tag name' ); ?>
+						<?php $this->render_token_field( 'nop-entries-svc-tags', "{$entries_prefix}[post_tags]", $entries_settings['post_tags'] ?? '', $tag_names, __( 'Add tags…', 'nop-indieweb' ), __( 'Tag name', 'nop-indieweb' ) ); ?>
 					</td>
 					<td class="nop-kinds-table__enable">
 						<input type="checkbox" name="<?php echo esc_attr( "{$entries_prefix}[sideload_photos]" ); ?>" value="1"
-						       title="Save photos to your media library."
-						       aria-label="Save photos: notes"
+						       title="<?php esc_attr_e( 'Save photos to your media library.', 'nop-indieweb' ); ?>"
+						       aria-label="<?php esc_attr_e( 'Save photos: notes', 'nop-indieweb' ); ?>"
 						       <?php checked( $entries_settings['sideload_photos'] ?? true ); ?>>
 					</td>
 				</tr>
 			</tbody>
 		</table>
 
-		<h3 class="nop-section-heading">Interaction posts</h3>
-		<p class="description nop-section-intro">Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don't exist.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Interaction posts', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Likes, bookmarks, replies, and reposts sent via Micropub. Categories are created automatically if they don\'t exist.', 'nop-indieweb' ); ?></p>
 		<?php
 		$kinds = [
-			'bookmark' => [ 'label' => 'Bookmark', 'micropub' => 'bookmark-of'        ],
-			'reply'    => [ 'label' => 'Reply',     'micropub' => 'in-reply-to'        ],
-			'like'     => [ 'label' => 'Like',      'micropub' => 'like-of'            ],
-			'repost'   => [ 'label' => 'Repost',    'micropub' => 'repost-of'          ],
-			'rsvp'     => [ 'label' => 'RSVP',      'micropub' => 'in-reply-to + rsvp' ],
+			'bookmark' => [ 'label' => __( 'Bookmark', 'nop-indieweb' ), 'micropub' => 'bookmark-of'        ],
+			'reply'    => [ 'label' => __( 'Reply', 'nop-indieweb' ),    'micropub' => 'in-reply-to'        ],
+			'like'     => [ 'label' => __( 'Like', 'nop-indieweb' ),     'micropub' => 'like-of'            ],
+			'repost'   => [ 'label' => __( 'Repost', 'nop-indieweb' ),   'micropub' => 'repost-of'          ],
+			'rsvp'     => [ 'label' => __( 'RSVP', 'nop-indieweb' ),     'micropub' => 'in-reply-to + rsvp' ],
 		];
 		?>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col">Kind</th>
-					<th scope="col">Enable</th>
-					<th scope="col">Status</th>
-					<th scope="col">Category</th>
+					<th scope="col"><?php esc_html_e( 'Kind', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1103,12 +1113,15 @@ class Settings {
 						<input type="checkbox"
 						       name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>"
 						       value="1"
-						       aria-label="<?php echo esc_attr( sprintf( 'Accept %s posts via Micropub', strtolower( $kind['label'] ) ) ); ?>"
+						       aria-label="<?php
+					       	/* translators: %s: interaction kind name, e.g. Bookmark */
+					       	echo esc_attr( sprintf( __( 'Accept %s posts via Micropub', 'nop-indieweb' ), $kind['label'] ) );
+					       ?>"
 						       <?php checked( $settings['enabled'] ?? true ); ?>>
 					</td>
 					<td>
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1116,25 +1129,25 @@ class Settings {
 						</select>
 					</td>
 					<td>
-						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? '', $category_names, 'Add category…', 'Category name' ); ?>
+						<?php $this->render_token_field( "nop-{$slug}-category", "{$prefix}[post_category]", $settings['post_category'] ?? '', $category_names, __( 'Add category…', 'nop-indieweb' ), __( 'Category name', 'nop-indieweb' ) ); ?>
 					</td>
 				</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>
 
-		<h3 class="nop-section-heading">Twitter Archive</h3>
-		<p class="description nop-section-intro">Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Twitter Archive', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'Posts imported from a static <a href="https://github.com/timhutton/twitter-archive-parser" target="_blank" rel="noopener">Twitter archive</a> show an "Archived Tweet" label that can link out to the source.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="twitter-archive-url">Archive URL</label></th>
+				<th scope="row"><label for="twitter-archive-url"><?php esc_html_e( 'Archive URL', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<input type="url" id="twitter-archive-url"
-					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[twitter_archive_url]"
 					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
 					       class="regular-text"
 					       placeholder="https://yoursite.com/twitter-archive/">
-					<p class="description">Optional link displayed on archived tweet posts. Leave blank to show the label without a link.</p>
+					<p class="description"><?php esc_html_e( 'Optional link displayed on archived tweet posts. Leave blank to show the label without a link.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -1149,29 +1162,33 @@ class Settings {
 		$receive_enabled = $settings['receive_enabled'] ?? true;
 		$approval        = $settings['approval'] ?? 'bridgy_only';
 		?>
-		<p>Reactions are likes, reposts, and replies sent to your posts from other sites via the <a href="https://webmention.net" target="_blank" rel="noopener">Webmention</a> standard. <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> can backfeed reactions from Mastodon and Bluesky automatically.</p>
+		<p><?php echo wp_kses( __( 'Reactions are likes, reposts, and replies sent to your posts from other sites via the <a href="https://webmention.net" target="_blank" rel="noopener">Webmention</a> standard. <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> can backfeed reactions from Mastodon and Bluesky automatically.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Accept reactions</th>
+				<th scope="row"><?php esc_html_e( 'Accept reactions', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[receive_enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[receive_enabled]" ); ?>" value="1"
 						       <?php checked( $receive_enabled ); ?>>
-						Accept incoming webmentions from other sites
+						<?php esc_html_e( 'Accept incoming webmentions from other sites', 'nop-indieweb' ); ?>
 					</label>
-					<p class="description">Uncheck to stop accepting new reactions. Existing ones are kept.</p>
+					<p class="description"><?php esc_html_e( 'Uncheck to stop accepting new reactions. Existing ones are kept.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="nop-webmention-approval">Approval</label></th>
+				<th scope="row"><label for="nop-webmention-approval"><?php esc_html_e( 'Approval', 'nop-indieweb' ); ?></label></th>
 				<td>
-					<select id="nop-webmention-approval" name="<?php echo "{$prefix}[approval]"; ?>">
-						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>>Auto-approve Bridgy, hold everything else</option>
-						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>>Auto-approve all</option>
-						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>>Hold all for manual review</option>
+					<select id="nop-webmention-approval" name="<?php echo esc_attr( "{$prefix}[approval]" ); ?>">
+						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>><?php esc_html_e( 'Auto-approve Bridgy, hold everything else', 'nop-indieweb' ); ?></option>
+						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>><?php esc_html_e( 'Auto-approve all', 'nop-indieweb' ); ?></option>
+						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>><?php esc_html_e( 'Hold all for manual review', 'nop-indieweb' ); ?></option>
 					</select>
-					<p class="description">Held reactions appear in <a href="<?php echo esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) ); ?>">Comments → Webmentions</a> awaiting your approval.</p>
+					<p class="description"><?php echo wp_kses( sprintf(
+						/* translators: %s: link to the Comments → Webmentions admin screen */
+						__( 'Held reactions appear in <a href="%s">Comments → Webmentions</a> awaiting your approval.', 'nop-indieweb' ),
+						esc_url( admin_url( 'edit-comments.php?comment_type=webmention' ) )
+					), [ 'a' => [ 'href' => [] ] ] ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -1182,23 +1199,21 @@ class Settings {
 
 	private function render_tab_lookups(): void {
 		?>
-		<p>API keys used for interactive in-editor lookups — searching for a film title, venue, or track without leaving the WordPress editor.</p>
+		<p><?php esc_html_e( 'API keys used for interactive in-editor lookups — searching for a film title, venue, or track without leaving the WordPress editor.', 'nop-indieweb' ); ?></p>
 
-		<h3 class="nop-section-heading">TMDB (Films)</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'TMDB (Films)', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-tmdb-key">API Key</label></th>
+				<th scope="row"><label for="nop-tmdb-key"><?php esc_html_e( 'API Key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'lookups.tmdb_api_key', '' ); ?>
 					<input type="text" id="nop-tmdb-key"
-					       name="<?php echo self::OPTION_KEY; ?>[lookups][tmdb_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[lookups][tmdb_api_key]"
 					       value="<?php echo esc_attr( $key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Used by the Watch kind's Film lookup in the block editor.
-						Get a free key at
-						<a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.
+						<?php echo wp_kses( __( 'Used by the Watch kind\'s Film lookup in the block editor. Get a free key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
@@ -1213,108 +1228,98 @@ class Settings {
 		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] )['swarm'] ?? [];
 		$endpoint = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 		?>
-		<p>Swarm by Foursquare lets you check in to places. Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> and every check-in automatically becomes a post on your site.</p>
+		<p><?php echo wp_kses( __( 'Swarm by Foursquare lets you check in to places. Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> and every check-in automatically becomes a post on your site.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 
-		<h3 class="nop-section-heading">Enable</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Enable', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row">Accept check-ins</th>
+				<th scope="row"><?php esc_html_e( 'Accept check-ins', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>" value="1"
 						       <?php checked( $settings['enabled'] ?? false ); ?>>
-						Accept check-ins from OwnYourSwarm
+						<?php esc_html_e( 'Accept check-ins from OwnYourSwarm', 'nop-indieweb' ); ?>
 					</label>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row">Your Micropub endpoint</th>
+				<th scope="row"><?php esc_html_e( 'Your Micropub endpoint', 'nop-indieweb' ); ?></th>
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $endpoint; ?>" target="_blank" rel="noopener"><?php echo $endpoint; ?></a>
+							<a href="<?php echo esc_url( $endpoint ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $endpoint ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
-						        data-copy="<?php echo esc_attr( $endpoint ); ?>">Copy</button>
+						        data-copy="<?php echo esc_attr( $endpoint ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
 					</div>
-					<p class="description">Paste this into OwnYourSwarm as your Micropub endpoint. It will ask you to sign in to your site to authorize — that's normal.</p>
+					<p class="description"><?php esc_html_e( 'Paste this into OwnYourSwarm as your Micropub endpoint. It will ask you to sign in to your site to authorize — that\'s normal.', 'nop-indieweb' ); ?></p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Map</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Map', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-geoapify-key">Geoapify API key</label></th>
+				<th scope="row"><label for="nop-geoapify-key"><?php esc_html_e( 'Geoapify API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ); ?>
 					<input type="text" id="nop-geoapify-key"
-					       name="<?php echo self::OPTION_KEY; ?>[maps][geoapify_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[maps][geoapify_api_key]"
 					       value="<?php echo esc_attr( $key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Used to generate static map images for check-in posts.
-						Get a free key (3 000 req/day) at
-						<a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>.
-						Leave blank to use the built-in tile fallback instead.
+						<?php echo wp_kses( __( 'Used to generate static map images for check-in posts. Get a free key (3 000 req/day) at <a href="https://www.geoapify.com/" target="_blank" rel="noopener">geoapify.com</a>. Leave blank to use the built-in tile fallback instead.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Weather</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Weather', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-pirate-weather-key">Pirate Weather API key</label></th>
+				<th scope="row"><label for="nop-pirate-weather-key"><?php esc_html_e( 'Pirate Weather API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $weather_key = \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' ); ?>
 					<input type="text" id="nop-pirate-weather-key"
-					       name="<?php echo self::OPTION_KEY; ?>[weather][pirate_weather_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[weather][pirate_weather_api_key]"
 					       value="<?php echo esc_attr( $weather_key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Snapshots the weather at each check-in's location and time, stored on the post.
-						Get a free key (10 000 req/day) at
-						<a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>.
-						Leave blank to skip weather enrichment.
+						<?php echo wp_kses( __( 'Snapshots the weather at each check-in\'s location and time, stored on the post. Get a free key (10 000 req/day) at <a href="https://pirateweather.net/" target="_blank" rel="noopener">pirateweather.net</a>. Leave blank to skip weather enrichment.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Venue Categories</h3>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Venue Categories', 'nop-indieweb' ); ?></h3>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="nop-foursquare-key">Foursquare API key</label></th>
+				<th scope="row"><label for="nop-foursquare-key"><?php esc_html_e( 'Foursquare API key', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<?php $fsq_key = \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' ); ?>
 					<input type="text" id="nop-foursquare-key"
-					       name="<?php echo self::OPTION_KEY; ?>[venue][foursquare_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[venue][foursquare_api_key]"
 					       value="<?php echo esc_attr( $fsq_key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="fsq3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
 					<p class="description">
-						Looks up Foursquare's venue categories (e.g. "Yoga Studio", "Park") on each check-in,
-						since OwnYourSwarm doesn't forward them. Each venue's categories are cached for 30 days.
-						Get a free Service API key at
-						<a href="https://location.foursquare.com/developer/" target="_blank" rel="noopener">location.foursquare.com/developer</a>.
-						Leave blank to skip venue category enrichment.
+						<?php echo wp_kses( __( 'Looks up Foursquare\'s venue categories (e.g. "Yoga Studio", "Park") on each check-in, since OwnYourSwarm doesn\'t forward them. Each venue\'s categories are cached for 30 days. Get a free Service API key at <a href="https://location.foursquare.com/developer/" target="_blank" rel="noopener">location.foursquare.com/developer</a>. Leave blank to skip venue category enrichment.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?>
 					</p>
 				</td>
 			</tr>
 		</table>
 
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts created from Swarm check-ins.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php esc_html_e( 'Applied to posts created from Swarm check-ins.', 'nop-indieweb' ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'        => 'swarm',
 			'prefix'      => $prefix,
 			'settings'    => $settings,
 			'tag_default' => 'Swarm',
-			'last_aria'   => 'Save Swarm photos to media library',
+			'last_aria'   => __( 'Save Swarm photos to media library', 'nop-indieweb' ),
 		] );
 	}
 
@@ -1371,18 +1376,18 @@ class Settings {
 		$slug        = $args['slug'];
 		$prefix      = $args['prefix'];
 		$settings    = $args['settings'];
-		$last_label  = $args['last_label']  ?? 'Photos';
+		$last_label  = $args['last_label']  ?? __( 'Photos', 'nop-indieweb' );
 		$last_field  = $args['last_field']  ?? 'sideload_photos';
 		$last_def    = $args['last_default'] ?? true;
-		$last_aria   = $args['last_aria']   ?? 'Save photos to media library';
+		$last_aria   = $args['last_aria']   ?? __( 'Save photos to media library', 'nop-indieweb' );
 		$tag_default = $args['tag_default'] ?? '';
 		?>
 		<table class="nop-kinds-table">
 			<thead>
 				<tr>
-					<th scope="col" class="nop-kinds-table__status">Status</th>
-					<th scope="col">Category</th>
-					<th scope="col">Tags</th>
+					<th scope="col" class="nop-kinds-table__status"><?php esc_html_e( 'Status', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Category', 'nop-indieweb' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></th>
 					<th scope="col" class="nop-kinds-table__enable"><?php echo esc_html( $last_label ); ?></th>
 				</tr>
 			</thead>
@@ -1390,7 +1395,7 @@ class Settings {
 				<tr>
 					<td class="nop-kinds-table__status">
 						<select name="<?php echo esc_attr( "{$prefix}[post_status]" ); ?>">
-							<?php foreach ( self::POST_STATUSES as $value => $label ) : ?>
+							<?php foreach ( self::post_statuses() as $value => $label ) : ?>
 								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['post_status'] ?? 'publish', $value ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
@@ -1403,8 +1408,8 @@ class Settings {
 							"{$prefix}[post_category]",
 							$settings['post_category'] ?? '',
 							$category_names,
-							'Add category…',
-							'Category name'
+							__( 'Add category…', 'nop-indieweb' ),
+							__( 'Category name', 'nop-indieweb' )
 						); ?>
 					</td>
 					<td>
@@ -1413,8 +1418,8 @@ class Settings {
 							"{$prefix}[post_tags]",
 							$settings['post_tags'] ?? $tag_default,
 							$tag_names,
-							'Add tags…',
-							'Tag name'
+							__( 'Add tags…', 'nop-indieweb' ),
+							__( 'Tag name', 'nop-indieweb' )
 						); ?>
 					</td>
 					<td class="nop-kinds-table__enable">
@@ -1430,8 +1435,8 @@ class Settings {
 
 	private function render_inbound_defaults( string $slug, string $name_prefix, array $settings ): void {
 		?>
-		<h3 class="nop-section-heading">Inbound Defaults</h3>
-		<p class="description nop-section-intro">Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.</p>
+		<h3 class="nop-section-heading"><?php esc_html_e( 'Inbound Defaults', 'nop-indieweb' ); ?></h3>
+		<p class="description nop-section-intro"><?php echo wp_kses( __( 'Applied to posts received via <a href="https://brid.gy" target="_blank" rel="noopener">Bridgy</a> from this platform.', 'nop-indieweb' ), [ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ] ); ?></p>
 		<?php
 		$this->render_defaults_table( [
 			'slug'     => "{$slug}-in",

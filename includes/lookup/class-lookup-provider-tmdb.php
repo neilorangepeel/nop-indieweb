@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Lookup;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class Lookup_Provider_TMDB extends Lookup_Provider_Base {
 
 	private const API_BASE    = 'https://api.themoviedb.org/3';

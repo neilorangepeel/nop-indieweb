@@ -1,0 +1,35 @@
+# Files and directories excluded from the distributed plugin zip.
+# Used by `wp dist-archive` / build tooling when packaging for WordPress.org.
+# Anything listed here stays in the repo but never ships to users.
+
+# Version control & CI
+.git
+.github
+.gitignore
+.gitattributes
+.distignore
+
+# Editor / OS cruft
+.DS_Store
+.idea
+.vscode
+
+# AI / agent tooling
+.claude
+CLAUDE.md
+AGENTS.md
+
+# Project docs that aren't the wp.org readme
+ROADMAP.md
+SPEC.md
+
+# Developer-only CLI scripts and one-off migrations (not part of the plugin runtime)
+bin
+
+# Build / dependency artifacts
+node_modules
+vendor
+build
+
+# Remediation tracking doc (dev only)
+PLUGIN-CHECK-REMEDIATION.md

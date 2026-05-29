@@ -17,6 +17,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $unit         = ( ( $attributes['unit'] ?? 'c' ) === 'f' ) ? 'f' : 'c';
 $show_symbol  = ! isset( $attributes['showSymbol'] ) || (bool) $attributes['showSymbol'];
 
@@ -46,4 +51,4 @@ if ( $show_symbol ) {
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-weather-temp' ] );
 ?>
-<span <?php echo $wrapper_attrs; ?>><?php echo esc_html( $display ); ?></span>
+<span <?php echo wp_kses_data( $wrapper_attrs ); ?>><?php echo esc_html( $display ); ?></span>

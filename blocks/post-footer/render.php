@@ -8,6 +8,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $heart_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
 
 $comment_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
@@ -19,17 +24,17 @@ $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 if ( ! $post_id ) {
 	$wrapper = get_block_wrapper_attributes( [ 'class' => 'nop-post-footer nop-post-footer--preview' ] );
 	?>
-	<div <?php echo $wrapper; ?>>
+	<div <?php echo wp_kses_data( $wrapper ); ?>>
 		<button class="nop-post-footer__pill nop-post-footer__pill--like" type="button" aria-pressed="false" disabled>
-			<?php echo $heart_icon; ?>
+			<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="12 likes">12</span>
 		</button>
 		<span class="nop-post-footer__pill">
-			<?php echo $comment_icon; ?>
+			<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="4 comments">4</span>
 		</span>
 		<span class="nop-post-footer__pill">
-			<?php echo $repost_icon; ?>
+			<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="4 reposts">4</span>
 		</span>
 		<span class="nop-post-footer__sep" aria-hidden="true">·</span>
@@ -59,6 +64,7 @@ if ( ! isset( $counts[ $post_id ] ) ) {
 		'type'       => 'webmention',
 		'status'     => 'approve',
 		'count'      => true,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_query' => [ [
 			'relation' => 'OR',
 			[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
@@ -71,7 +77,9 @@ if ( ! isset( $counts[ $post_id ] ) ) {
 		'type'       => 'webmention',
 		'status'     => 'approve',
 		'count'      => true,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_key'   => 'webmention_type',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_value' => 'repost',
 	] );
 
@@ -112,16 +120,16 @@ $wrapper = get_block_wrapper_attributes( [
 	'data-nonce'    => $nonce,
 ] );
 ?>
-<div <?php echo $wrapper; ?>>
+<div <?php echo wp_kses_data( $wrapper ); ?>>
 
 	<button class="nop-post-footer__pill nop-post-footer__pill--like<?php echo $liked ? ' is-liked' : ''; ?>"
 	        type="button"
 	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
 	        aria-label="<?php echo esc_attr( $liked ? __( 'Liked', 'nop-indieweb' ) : __( 'Like', 'nop-indieweb' ) ); ?>"
 	        <?php echo $liked ? 'disabled' : ''; ?>>
-		<?php echo $heart_icon; ?>
+		<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
-		      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
+		      aria-label="<?php /* translators: %d: number of likes */ echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
 		      <?php echo 0 === $like_count ? 'hidden' : ''; ?>>
 			<?php echo esc_html( (string) $like_count ); ?>
 		</span>
@@ -129,10 +137,12 @@ $wrapper = get_block_wrapper_attributes( [
 
 	<a class="nop-post-footer__pill nop-post-footer__pill--link"
 	   href="#comments"
-	   aria-label="<?php echo esc_attr( $reply_count > 0
+	   aria-label="<?php
+	       echo esc_attr( $reply_count > 0
+	       /* translators: %d: number of comments */
 	       ? sprintf( _n( 'Jump to %d comment', 'Jump to %d comments', $reply_count, 'nop-indieweb' ), $reply_count )
 	       : __( 'Jump to the reply form', 'nop-indieweb' ) ); ?>">
-		<?php echo $comment_icon; ?>
+		<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
 		      <?php echo 0 === $reply_count ? 'hidden' : ''; ?>>
@@ -140,8 +150,9 @@ $wrapper = get_block_wrapper_attributes( [
 		</span>
 	</a>
 
+	<?php /* translators: %d: number of reposts */ ?>
 	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ), $repost_count ) ); ?>">
-		<?php echo $repost_icon; ?>
+		<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
 		      <?php echo 0 === $repost_count ? 'hidden' : ''; ?>>

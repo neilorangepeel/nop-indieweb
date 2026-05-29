@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Admin;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_Query;
 
@@ -26,6 +31,7 @@ class Post_Filter {
 		}
 
 		$terms   = get_terms( [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'hide_empty' => true ] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$current = sanitize_key( $_GET['nop_kind'] ?? '' );
 
 		echo "<select name='nop_kind' id='filter-by-post-kind'>";
@@ -50,6 +56,7 @@ class Post_Filter {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$kind = sanitize_key( $_GET['nop_kind'] ?? '' );
 		if ( ! $kind ) {
 			return;

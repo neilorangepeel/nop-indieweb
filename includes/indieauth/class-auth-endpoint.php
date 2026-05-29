@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\IndieAuth;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use WP_Error;
 use WP_REST_Request;
 
@@ -52,6 +57,7 @@ class Auth_Endpoint {
 		$user_id = wp_validate_auth_cookie( '', 'logged_in' );
 		if ( ! $user_id ) {
 			$redirect_to = add_query_arg( $request->get_params(), static::url() );
+			// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-origin redirect (OAuth/IndieAuth client or provider); target validated above, wp_safe_redirect would wrongly block it
 			wp_redirect( wp_login_url( $redirect_to ), 302 );
 			exit;
 		}
@@ -117,7 +123,7 @@ class Auth_Endpoint {
 			'challenge_method' => $resolved['code_challenge_method'],
 			'me'               => home_url( '/' ),
 			'user_id'          => get_current_user_id(),
-			'client_name'      => parse_url( $resolved['client_id'], PHP_URL_HOST ) ?? $resolved['client_id'],
+			'client_name'      => wp_parse_url( $resolved['client_id'], PHP_URL_HOST ) ?? $resolved['client_id'],
 		], 10 * MINUTE_IN_SECONDS );
 
 		$redirect = add_query_arg( [
@@ -127,6 +133,7 @@ class Auth_Endpoint {
 
 		// wp_safe_redirect blocks cross-origin redirects — use wp_redirect since
 		// redirect_uri was just re-validated against client_id by validate_request().
+		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-origin redirect (OAuth/IndieAuth client or provider); target validated above, wp_safe_redirect would wrongly block it
 		wp_redirect( $redirect, 302 );
 		exit;
 	}
@@ -155,7 +162,7 @@ class Auth_Endpoint {
 
 	private function render_html( array $params ): void {
 		header( 'Content-Type: text/html; charset=UTF-8' );
-		$client_label  = esc_html( wp_parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
+		$client_label  = wp_parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'];
 		$scope_labels  = $this->describe_scopes( $params['scope'] );
 		$site_name     = get_bloginfo( 'name' );
 		?>
@@ -164,7 +171,9 @@ class Auth_Endpoint {
 		<head>
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
+			<?php /* translators: %s: site name */ ?>
 			<title><?php printf( esc_html__( 'Authorize — %s', 'nop-indieweb' ), esc_html( $site_name ) ); ?></title>
+			<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- standalone consent page rendered outside the normal wp_head() pipeline, so wp_enqueue_style has no hook to attach to ?>
 			<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/login.css' ) ); ?>">
 			<style>
 				body { background: #f0f0f1; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -195,7 +204,7 @@ class Auth_Endpoint {
 				<h1><?php esc_html_e( 'Authorize Application', 'nop-indieweb' ); ?></h1>
 				<p class="nop-auth-subtitle"><?php esc_html_e( 'Review the permissions below before approving.', 'nop-indieweb' ); ?></p>
 
-				<p class="nop-auth-client"><?php echo $client_label; ?></p>
+				<p class="nop-auth-client"><?php echo esc_html( $client_label ); ?></p>
 
 				<div class="nop-auth-scopes">
 					<p class="nop-auth-scopes-label"><?php esc_html_e( 'Requesting permission to', 'nop-indieweb' ); ?></p>

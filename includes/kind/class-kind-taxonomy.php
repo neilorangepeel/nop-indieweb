@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Kind;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Registers the nop_kind taxonomy and keeps nop_indieweb_post_kind meta in sync.
  *
@@ -115,6 +120,7 @@ class Kind_Taxonomy {
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [ [
 				'key'     => 'nop_indieweb_post_kind',
 				'compare' => 'EXISTS',

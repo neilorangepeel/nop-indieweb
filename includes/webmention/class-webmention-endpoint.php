@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Webmention;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Webmention receiver — accepts, verifies, and stores inbound webmentions.
  *
@@ -225,7 +230,7 @@ class Webmention_Endpoint {
 			return true;
 		}
 
-		$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+		$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		if ( ! $ip ) {
 			return true;
 		}
@@ -247,7 +252,9 @@ class Webmention_Endpoint {
 		$comments = get_comments( [
 			'post_id'    => $post_id,
 			'type'       => 'webmention',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'   => 'webmention_source',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_value' => $source,
 			'number'     => 1,
 			'fields'     => 'ids',

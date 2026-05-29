@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_CLI;
 
@@ -45,6 +50,7 @@ class Fix_Micropub_Timestamps {
 			'posts_per_page' => $limit > 0 ? $limit * 3 : -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,
@@ -52,6 +58,7 @@ class Fix_Micropub_Timestamps {
 					'terms'    => 'checkin',
 				],
 			],
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'AND',
 				[ 'key' => 'nop_indieweb_service',     'value' => 'swarm' ],

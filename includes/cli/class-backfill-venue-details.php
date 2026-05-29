@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
 use NOP\IndieWeb\Venue\Foursquare_Enricher;
@@ -72,6 +77,7 @@ class Backfill_Venue_Details {
 			'posts_per_page' => $limit > 0 ? $limit : -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,
@@ -79,6 +85,7 @@ class Backfill_Venue_Details {
 					'terms'    => 'checkin',
 				],
 			],
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => $meta_query,
 		] );
 

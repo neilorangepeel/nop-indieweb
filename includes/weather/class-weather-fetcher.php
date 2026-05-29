@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Weather;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Enriches a post with weather data for a known location + time.
  *
@@ -36,6 +41,7 @@ class Weather_Fetcher {
 		}
 
 		$url = sprintf(
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
 			'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,daily,alerts',
 			self::ENDPOINT,
 			rawurlencode( $api_key ),

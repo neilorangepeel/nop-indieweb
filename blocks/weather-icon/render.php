@@ -20,6 +20,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
            ( $block->context['postId'] ?? get_the_ID() );
 
@@ -77,4 +82,4 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 	'class' => 'wp-block-icon nop-weather-icon nop-weather-icon--' . $slug,
 ] );
 ?>
-<span <?php echo $wrapper_attrs; ?>><?php echo $svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — SVG is from a bundled file we control ?></span>
+<span <?php echo wp_kses_data( $wrapper_attrs ); ?>><?php echo $svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?></span>

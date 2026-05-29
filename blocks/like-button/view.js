@@ -12,6 +12,8 @@
 		return;
 	}
 
+	var __ = ( window.wp && window.wp.i18n ) ? window.wp.i18n.__ : function ( s ) { return s; };
+
 	window.nopIndieWeb.attachLikeAction( {
 		rootSelector:   '.nop-like-button',
 		buttonSelector: '.nop-like-button__btn',
@@ -20,7 +22,7 @@
 		onLiked: function ( _el, btn ) {
 			var label = btn.querySelector( '.nop-like-button__label' );
 			if ( label ) {
-				label.textContent = 'Liked';
+				label.textContent = __( 'Liked', 'nop-indieweb' );
 			}
 		},
 	} );

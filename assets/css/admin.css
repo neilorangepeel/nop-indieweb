@@ -18,8 +18,11 @@
 	--nop-surface:        #fff;
 	--nop-border:         #c3c4c7; /* matches WP core card / table borders */
 	--nop-border-subtle:  #dcdcde; /* WP "subtle" divider */
+	--nop-text:           #1d2327; /* WP primary text */
 	--nop-text-muted:     #646970; /* WP secondary / helper text */
 	--nop-text-error:     #d63638; /* WP error red */
+	--nop-success:        #00a32a; /* WP success green */
+	--nop-success-strong: #007017; /* darker success — readable as text on white */
 	--nop-code-bg:        #f0f0f1;
 	--nop-radius:         3px;     /* WP core uses 3 px for cards / inputs */
 }
@@ -47,7 +50,7 @@
 }
 
 .nop-test-result.is-success {
-	color: #007017; /* WP success green, slightly darker than #00a32a for contrast against white */
+	color: var(--nop-success-strong);
 }
 
 .nop-test-result.is-error {
@@ -64,7 +67,7 @@
 /* Last-sync timestamp shown next to the Sync now button. */
 .nop-last-sync {
 	margin-left: 12px;
-	color:       #646970;
+	color:       var(--nop-text-muted);
 	font-size:   13px;
 }
 
@@ -116,7 +119,7 @@
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color:          var(--nop-text-muted);
-	margin:         0;
+	margin:         20px 0 0;
 	padding:        20px 0 0;
 	border-top:     1px solid var(--nop-border-subtle);
 }
@@ -125,6 +128,12 @@
 .nop-section-heading--first {
 	border-top:  none;
 	padding-top: 0;
+	margin-top:  0;
+}
+
+/* form-table th already provides 20px bottom padding — no extra margin needed */
+.form-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 /* Description that follows a section heading. Gives the same spacing the
@@ -250,6 +259,11 @@
 	width:           100%;
 	max-width:       700px;
 	font-size:       13px;
+	margin-bottom:   12px; /* cell padding 8px + this = 20px visual gap before next heading */
+}
+
+.nop-sessions-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 .nop-sessions-table th,
@@ -289,116 +303,45 @@
 	text-decoration: underline;
 }
 
-/* ── Setup guide ────────────────────────────────────────────────────────────── */
+/* ── Reaction stats (Overview tab) ────────────────────────────────────────────── */
 
-.nop-setup-guide {
-	margin:        20px 0 0;
-	padding:       14px 16px;
-	background:    var(--nop-surface);
-	border:        1px solid var(--nop-border);
-	border-radius: var(--nop-radius);
-	max-width:     640px;
+.nop-reaction-stats {
+	display:               grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap:                   10px;
+	margin:                12px 0 0;
+	max-width:             520px;
 }
 
-.nop-setup-guide__heading {
-	margin:      0 0 12px;
-	font-size:   11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color:       var(--nop-text-muted);
-}
-
-.nop-setup-guide__list {
-	margin:  0;
-	padding: 0;
-	list-style: none;
-}
-
-.nop-setup-step {
-	display:       flex;
-	gap:           10px;
-	align-items:   flex-start;
-	padding:       8px 0;
-	border-bottom: 1px solid var(--nop-border-subtle);
-}
-
-.nop-setup-step:last-child {
-	border-bottom: none;
-	padding-bottom: 0;
-}
-
-.nop-setup-step:first-child {
-	padding-top: 0;
-}
-
-/* The icon circle — number when pending, tick when done */
-.nop-setup-step__icon {
-	flex-shrink:    0;
+.nop-reaction-stat {
 	display:        flex;
-	align-items:    center;
-	justify-content: center;
-	width:          22px;
-	height:         22px;
-	border-radius:  50%;
-	border:         2px solid var(--nop-border);
+	flex-direction: column;
+	gap:            2px;
+	padding:        14px 16px;
+	background:     var(--nop-surface);
+	border:         1px solid var(--nop-border);
+	border-radius:  var(--nop-radius);
+}
+
+.nop-reaction-stat__num {
+	font-size:   24px;
+	font-weight: 600;
+	line-height: 1.1;
+	color:       var(--nop-text);
+}
+
+.nop-reaction-stat__label {
 	font-size:      11px;
 	font-weight:    600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 	color:          var(--nop-text-muted);
-	margin-top:     1px;
-	counter-increment: setup-step;
 }
 
-.nop-setup-guide__list {
-	counter-reset: setup-step;
-}
-
-.nop-setup-step__icon::before {
-	content: counter(setup-step);
-}
-
-.nop-setup-step.is-done .nop-setup-step__icon {
-	background:   #00a32a; /* WP success green */
-	border-color: #00a32a;
-	color:        #fff;
-}
-
-.nop-setup-step.is-done .nop-setup-step__icon::before {
-	content: '✓';
-}
-
-.nop-setup-step__content {
-	flex: 1;
-	min-width: 0;
-}
-
-.nop-setup-step__label {
-	display:     block;
-	font-size:   13px;
-	font-weight: 600;
-	line-height: 1.4;
-	color:       #1d2327;
-}
-
-.nop-setup-step.is-done .nop-setup-step__label {
-	color:           var(--nop-text-muted);
-	font-weight:     400;
-	text-decoration: line-through;
-}
-
-.nop-setup-step__body {
-	margin:    4px 0 6px;
+.nop-reaction-breakdown {
+	margin:    10px 0 0;
 	font-size: 12px;
 	color:     var(--nop-text-muted);
-	line-height: 1.5;
-}
-
-.nop-setup-step__body code {
-	background:    var(--nop-code-bg);
-	padding:       1px 5px;
-	border-radius: var(--nop-radius);
-	font-size:     11px;
-	word-break:    break-all;
 }
 
 .nop-setup-link {
@@ -457,7 +400,7 @@
 .nop-network-card__name {
 	font-size:   13px;
 	font-weight: 600;
-	color:       #1d2327;
+	color:       var(--nop-text);
 }
 
 .nop-network-card__status {
@@ -480,7 +423,7 @@
 .nop-overview-stat {
 	font-size:   13px;
 	margin:      8px 0 20px;
-	color:       #1d2327;
+	color:       var(--nop-text);
 }
 
 /* ── Token field (category / tag picker) ────────────────────────────────────── */
@@ -606,11 +549,12 @@
 	text-align: left;
 	font-size: 13px;
 	cursor: pointer;
-	color: #1d2327;
+	color: var(--nop-text);
 }
 
 .nop-token-field__suggestion:hover,
-.nop-token-field__suggestion:focus {
+.nop-token-field__suggestion:focus,
+.nop-token-field__suggestion.is-active {
 	background: var(--wp-admin-theme-color, #2271b1);
 	color: #fff;
 	outline: none;
@@ -625,7 +569,8 @@
 }
 
 .nop-token-field__suggestion--new:hover,
-.nop-token-field__suggestion--new:focus {
+.nop-token-field__suggestion--new:focus,
+.nop-token-field__suggestion--new.is-active {
 	color: #fff;
 }
 
@@ -635,6 +580,11 @@
 	border-collapse: collapse;
 	width:           100%;
 	font-size:       13px;
+	margin-bottom:   13px; /* cell padding 7px + this = 20px visual gap before next heading */
+}
+
+.nop-kinds-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 .nop-kinds-table th,
@@ -710,7 +660,7 @@
 	font-weight:    500;
 	line-height:    1.6;
 	background:     var(--nop-code-bg);
-	color:          #1d2327;
+	color:          var(--nop-text);
 	white-space:    nowrap;
 }
 

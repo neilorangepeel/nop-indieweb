@@ -8,6 +8,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = $block->context['postId'] ?? get_the_ID();
 
 // ── Star builder (shared with film-meta) ──────────────────────────────────────
@@ -34,12 +39,12 @@ function nop_film_card_stars( float $rating ): string {
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card nop-film-card--placeholder' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-film-card__poster-wrap">
 			<div class="nop-film-card__poster nop-film-card__poster--empty"></div>
 		</div>
 		<div class="nop-film-card__body">
-			<?php echo nop_film_card_stars( 4 ); ?>
+			<?php echo wp_kses_post( nop_film_card_stars( 4 ) ); ?>
 			<p class="nop-film-card__title">Portrait of a Lady on Fire</p>
 			<p class="nop-film-card__meta">2019 · 12 Apr 2025</p>
 		</div>
@@ -78,7 +83,7 @@ $post_title = get_the_title( $post_id );
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<a class="nop-film-card__poster-wrap" href="<?php echo esc_url( $permalink ); ?>" tabindex="-1" aria-hidden="true">
 		<?php if ( $poster_url ) : ?>
@@ -93,7 +98,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 
 	<div class="nop-film-card__body">
 		<?php if ( $rating > 0 ) : ?>
-		<?php echo nop_film_card_stars( $rating ); ?>
+		<?php echo wp_kses_post( nop_film_card_stars( $rating ) ); ?>
 		<?php endif; ?>
 
 		<p class="nop-film-card__title">

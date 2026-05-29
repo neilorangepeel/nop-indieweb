@@ -9,6 +9,11 @@
  */
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 function nop_wm_avatar_wrap( array $entry, int $size ): string {
 	$author     = $entry['author'] ?? '';
 	$url        = esc_url( $entry['author_url'] ?? '' );
@@ -63,9 +68,10 @@ function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): stri
 	$bridgy_suffix = $show_bridgy
 		? ' <span class="nop-webmentions__via-bridgy">· ' . esc_html__( 'via Bridgy', 'nop-indieweb' ) . '</span>'
 		: '';
-	/* translators: %s: platform name e.g. Mastodon */
 	$aria = $show_bridgy
+		/* translators: %s: platform name e.g. Mastodon */
 		? sprintf( __( 'via %s (relayed via Bridgy)', 'nop-indieweb' ), $label )
+		/* translators: %s: platform name e.g. Mastodon */
 		: sprintf( __( 'via %s', 'nop-indieweb' ), $label );
 
 	return '<span class="' . esc_attr( $class ) . '" aria-label="' . esc_attr( $aria ) . '">' . esc_html( $label ) . '</span>' . $bridgy_suffix;
@@ -108,8 +114,8 @@ function nop_wm_liked_by( array $likes ): string {
 		return sprintf( __( 'Liked by %1$s and %2$s', 'nop-indieweb' ), $name( $likes[0] ), $name( $likes[1] ) );
 	}
 	$others = $count - 2;
-	/* translators: 1: first author, 2: second author, 3: number of additional likers */
 	return sprintf(
+		/* translators: 1: first author, 2: second author, 3: number of additional likers */
 		_n(
 			'Liked by %1$s, %2$s and %3$d other',
 			'Liked by %1$s, %2$s and %3$d others',
@@ -163,7 +169,7 @@ function nop_wm_render_empty_state( int $post_id ): void {
 	$message       = comments_open( $post_id )
 		? __( 'Be the first to respond — comment below, or reply from your own site.', 'nop-indieweb' )
 		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
-	echo '<div ' . $wrapper_attrs . '>';
+	echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
 	echo '<p class="nop-webmentions__empty">' . esc_html( $message ) . '</p>';
 	echo nop_wm_render_comment_form( $post_id, false ); // phpcs:ignore
 	echo '</div>';
@@ -195,15 +201,15 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): 
 		<?php if ( $show_heading ) : ?>
 		<p class="nop-webmentions__form-label"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
 		<?php endif; ?>
-		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo $post_url; ?>#respond" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
+		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo esc_url( $post_url . '#respond' ); ?>" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
 		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>">
 			<?php if ( $logged_in && $user ) : ?>
 			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">
 				<?php
 				printf(
-					/* translators: 1: user display name, 2: logout URL */
 					wp_kses(
-						__( 'Logged in as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
+						/* translators: 1: user display name, 2: logout URL */
+						__( 'Logged in as <strong>%1\$s</strong>. <a href="%2\$s">Log out?</a>', 'nop-indieweb' ),
 						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
 					),
 					esc_html( $user->display_name ),

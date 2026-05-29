@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Syndication;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 
 	public function slug(): string  { return 'pixelfed'; }

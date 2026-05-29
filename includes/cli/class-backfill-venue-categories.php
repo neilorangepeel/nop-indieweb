@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Venue\Foursquare_Enricher;
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
@@ -55,6 +60,7 @@ class Backfill_Venue_Categories {
 			'post_type'      => 'post',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,

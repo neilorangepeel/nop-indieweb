@@ -72,14 +72,28 @@
 		document.querySelectorAll( '.nop-copy-btn' ).forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
 				var text = btn.dataset.copy;
-				navigator.clipboard.writeText( text ).then( function () {
+
+				var showCopied = function () {
 					btn.textContent = 'Copied ✓';
 					btn.disabled = true;
 					setTimeout( function () {
 						btn.textContent = 'Copy';
 						btn.disabled = false;
 					}, 2000 );
-				} );
+				};
+
+				var showFailed = function () {
+					// Insecure context (http://) or an old browser with no async
+					// clipboard API — restore the label so the button isn't stuck.
+					btn.textContent = 'Press ⌘/Ctrl-C';
+					setTimeout( function () { btn.textContent = 'Copy'; }, 2000 );
+				};
+
+				if ( navigator.clipboard && navigator.clipboard.writeText ) {
+					navigator.clipboard.writeText( text ).then( showCopied ).catch( showFailed );
+				} else {
+					showFailed();
+				}
 			} );
 		} );
 
@@ -189,6 +203,44 @@
 			? hidden.value.split( ',' ).map( function ( s ) { return s.trim(); } ).filter( Boolean )
 			: [];
 
+		// ── Combobox a11y wiring ──────────────────────────────────────────────────
+		// Promote the text input to a WAI-ARIA combobox that owns the suggestion
+		// listbox, so keyboard and screen-reader users can reach the autocomplete
+		// options — not just mouse users.
+
+		var listboxId = ( textInput.id || ( 'nop-tf-' + Math.random().toString( 36 ).slice( 2 ) ) ) + '-listbox';
+		suggestions.id = listboxId;
+		textInput.setAttribute( 'role', 'combobox' );
+		textInput.setAttribute( 'aria-autocomplete', 'list' );
+		textInput.setAttribute( 'aria-expanded', 'false' );
+		textInput.setAttribute( 'aria-controls', listboxId );
+
+		// Index of the keyboard-highlighted option (-1 = none).
+		var activeIndex = -1;
+
+		function options() {
+			return Array.prototype.slice.call( suggestions.querySelectorAll( '[role="option"]' ) );
+		}
+
+		function setActive( index ) {
+			var opts = options();
+			if ( ! opts.length ) {
+				activeIndex = -1;
+				textInput.removeAttribute( 'aria-activedescendant' );
+				return;
+			}
+			activeIndex = ( index + opts.length ) % opts.length; // wrap at the ends
+			opts.forEach( function ( opt, i ) {
+				var isActive = i === activeIndex;
+				opt.classList.toggle( 'is-active', isActive );
+				opt.setAttribute( 'aria-selected', isActive ? 'true' : 'false' );
+				if ( isActive ) {
+					textInput.setAttribute( 'aria-activedescendant', opt.id );
+					opt.scrollIntoView( { block: 'nearest' } );
+				}
+			} );
+		}
+
 		// ── Rendering ───────────────────────────────────────────────────────────
 
 		function render() {
@@ -295,12 +347,24 @@
 				suggestions.appendChild( li );
 			}
 
+			// Give options ids so aria-activedescendant can point at the active one.
+			options().forEach( function ( opt, i ) {
+				opt.id = listboxId + '-opt-' + i;
+				opt.setAttribute( 'aria-selected', 'false' );
+			} );
+
 			suggestions.hidden = ! suggestions.children.length;
+			textInput.setAttribute( 'aria-expanded', suggestions.hidden ? 'false' : 'true' );
+			activeIndex = -1;
+			textInput.removeAttribute( 'aria-activedescendant' );
 		}
 
 		function hideSuggestions() {
 			suggestions.hidden = true;
 			suggestions.innerHTML = '';
+			textInput.setAttribute( 'aria-expanded', 'false' );
+			activeIndex = -1;
+			textInput.removeAttribute( 'aria-activedescendant' );
 		}
 
 		// ── Events ───────────────────────────────────────────────────────────────
@@ -332,8 +396,31 @@
 		} );
 
 		textInput.addEventListener( 'keydown', function ( e ) {
+			var open = ! suggestions.hidden && options().length;
+
+			// Arrow keys move the highlight through the open suggestion list.
+			if ( open && ( e.key === 'ArrowDown' || e.key === 'ArrowUp' ) ) {
+				e.preventDefault();
+				setActive( activeIndex + ( e.key === 'ArrowDown' ? 1 : -1 ) );
+				return;
+			}
+
+			// Escape closes the list without committing.
+			if ( e.key === 'Escape' && open ) {
+				e.preventDefault();
+				hideSuggestions();
+				return;
+			}
+
 			if ( e.key === 'Enter' || e.key === ',' ) {
 				e.preventDefault();
+				// Enter commits the highlighted suggestion when one is active,
+				// otherwise whatever has been typed.
+				var opts = options();
+				if ( e.key === 'Enter' && open && activeIndex > -1 && opts[ activeIndex ] ) {
+					opts[ activeIndex ].dispatchEvent( new MouseEvent( 'mousedown' ) );
+					return;
+				}
 				if ( textInput.value.trim() ) addToken( textInput.value.trim() );
 			}
 			// Backspace on an empty input removes the last token.

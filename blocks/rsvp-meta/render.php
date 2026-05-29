@@ -7,6 +7,11 @@
 
 declare( strict_types=1 );
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $post_id = $block->context['postId'] ?? get_the_ID();
 
 $rsvp_labels = [
@@ -26,7 +31,7 @@ $rsvp_colors = [
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--preview' ] );
 	?>
-	<div <?php echo $wrapper_attrs; ?>>
+	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<p class="nop-rsvp-meta__status">
 			<span class="nop-rsvp-badge" style="--rsvp-color: #16a34a"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
 		</p>
@@ -46,7 +51,7 @@ if ( ! $rsvp_value && ! $event_url ) {
 	// doesn't trigger a "block rendered as empty" error before data is entered.
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--placeholder' ] );
-		echo '<div ' . $wrapper_attrs . '>';
+		echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
 		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">' . esc_html__( 'Set RSVP in sidebar →', 'nop-indieweb' ) . '</span></p>';
 		echo '</div>';
 	}
@@ -60,7 +65,7 @@ $event_host = $event_url ? ( wp_parse_url( $event_url, PHP_URL_HOST ) ?? $event_
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 ?>
-<div <?php echo $wrapper_attrs; ?>>
+<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 
 	<?php if ( $rsvp_value ) : ?>
 	<p class="nop-rsvp-meta__status">

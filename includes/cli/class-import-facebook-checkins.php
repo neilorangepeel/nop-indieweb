@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Cli;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use WP_CLI;
 
@@ -288,7 +293,9 @@ class Import_Facebook_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'       => 'nop_indieweb_source_url',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_value'     => $source_url,
 		] );
 	}
@@ -299,7 +306,9 @@ class Import_Facebook_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'       => 'nop_indieweb_source_url',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_value'     => $source_url,
 		] );
 		return $ids ? (int) $ids[0] : 0;
@@ -351,7 +360,7 @@ class Import_Facebook_Checkins {
 			$id = media_handle_sideload( $file, $post_id );
 			if ( is_wp_error( $id ) ) {
 				WP_CLI::warning( "  sideload failed ({$rel_uri}): " . $id->get_error_message() );
-				@unlink( $tmp_path );
+				wp_delete_file( $tmp_path );
 				continue;
 			}
 

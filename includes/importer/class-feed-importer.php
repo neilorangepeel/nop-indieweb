@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Importer;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Services\Note;
 use NOP\IndieWeb\Services\Letterboxd;
 
@@ -506,6 +511,7 @@ class Feed_Importer {
 	private function was_syndicated_from_wordpress( string $url ): bool {
 		global $wpdb;
 		$like  = '%' . $wpdb->esc_like( $url ) . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$count = (int) $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(*) FROM {$wpdb->postmeta}
 			 WHERE meta_key = 'nop_indieweb_syndication'

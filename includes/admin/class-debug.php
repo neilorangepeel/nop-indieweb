@@ -3,6 +3,11 @@ declare( strict_types=1 );
 
 namespace NOP\IndieWeb\Admin;
 
+// Prevent direct file access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use NOP\IndieWeb\Services\Service_Base;
 
 /**
@@ -122,7 +127,9 @@ class Debug {
 
 		$last_payload = get_transient( 'nop_indieweb_last_payload' );
 		$last_post_id = get_transient( 'nop_indieweb_last_post_id' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$test_result  = sanitize_key( $_GET['test_result'] ?? '' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$test_post_id = absint( $_GET['test_post_id'] ?? 0 );
 		$endpoint     = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 		?>
@@ -132,7 +139,7 @@ class Debug {
 			<?php if ( 'success' === $test_result && $test_post_id ) : ?>
 				<div class="notice notice-success is-dismissible">
 					<p>
-						Test payload created post #<?php echo $test_post_id; ?> —
+						Test payload created post #<?php echo (int) $test_post_id; ?> —
 						<a href="<?php echo esc_url( get_permalink( $test_post_id ) ); ?>">View</a> &nbsp;|&nbsp;
 						<a href="<?php echo esc_url( get_edit_post_link( $test_post_id ) ); ?>">Edit</a>
 					</p>
@@ -147,12 +154,12 @@ class Debug {
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row">URL</th>
-					<td><code><?php echo $endpoint; ?></code></td>
+					<td><code><?php echo esc_html( $endpoint ); ?></code></td>
 				</tr>
 				<tr>
 					<th scope="row">Config check</th>
 					<td>
-						<code>curl "<?php echo $endpoint; ?>?q=config"</code>
+						<code>curl "<?php echo esc_url( $endpoint ); ?>?q=config"</code>
 						<p class="description">Run in your terminal — should return a JSON object.</p>
 					</td>
 				</tr>
@@ -168,7 +175,8 @@ class Debug {
 
 			<h2>Feed Importer</h2>
 			<p>Imports your own posts from Mastodon, Pixelfed, Bluesky, and Letterboxd into WordPress. Runs automatically once per hour via WP-Cron.</p>
-			<?php if ( 'success' === sanitize_key( $_GET['import_result'] ?? '' ) ) : ?>
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag
+			if ( 'success' === sanitize_key( $_GET['import_result'] ?? '' ) ) : ?>
 			<div class="notice notice-success is-dismissible"><p>Feed import complete.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -179,7 +187,8 @@ class Debug {
 
 			<h2>Social Backfeed</h2>
 			<p>Polls Mastodon, Bluesky, and Pixelfed for new interactions on all syndicated posts. Runs automatically once per hour via WP-Cron.</p>
-			<?php if ( 'success' === sanitize_key( $_GET['backfeed_result'] ?? '' ) ) : ?>
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag
+			if ( 'success' === sanitize_key( $_GET['backfeed_result'] ?? '' ) ) : ?>
 			<div class="notice notice-success is-dismissible"><p>Backfeed sync complete.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -191,11 +200,13 @@ class Debug {
 			<h2>Kind Taxonomy Migration</h2>
 			<p>Assigns the <code>nop_kind</code> taxonomy term to every post that already has a <code>nop_indieweb_post_kind</code> meta value. Safe to run multiple times — already-migrated posts are a no-op.</p>
 			<?php
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 			$migrate_result = sanitize_key( $_GET['migrate_result'] ?? '' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 			$migrate_count  = absint( $_GET['migrate_count'] ?? 0 );
 			if ( 'success' === $migrate_result ) :
 			?>
-			<div class="notice notice-success is-dismissible"><p>Migration complete — <?php echo $migrate_count; ?> post(s) updated.</p></div>
+			<div class="notice notice-success is-dismissible"><p>Migration complete — <?php echo (int) $migrate_count; ?> post(s) updated.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'nop_indieweb_migrate_kind_taxonomy' ); ?>
@@ -216,7 +227,7 @@ class Debug {
 				<pre class="nop-payload-dump"><?php echo esc_html( wp_json_encode( $last_payload, JSON_PRETTY_PRINT ) ); ?></pre>
 				<?php if ( $last_post_id ) : ?>
 					<p>
-						Created post #<?php echo $last_post_id; ?> —
+						Created post #<?php echo (int) $last_post_id; ?> —
 						<a href="<?php echo esc_url( get_permalink( $last_post_id ) ); ?>">View</a> &nbsp;|&nbsp;
 						<a href="<?php echo esc_url( get_edit_post_link( $last_post_id ) ); ?>">Edit</a>
 					</p>
@@ -252,28 +263,29 @@ class Debug {
 	}
 
 	private function build_curl_example( string $endpoint ): string {
-		return <<<EOT
-curl -X POST "{$endpoint}" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": ["h-entry"],
-    "properties": {
-      "published": ["2026-05-10T12:00:00+01:00"],
-      "content": ["Checked in at The Crown Bar"],
-      "checkin": [{
-        "type": ["h-card"],
-        "properties": {
-          "name": ["The Crown Bar"],
-          "url": ["https://foursquare.com/v/example"],
-          "latitude": ["54.5955"],
-          "longitude": ["-5.9321"]
-        }
-      }],
-      "syndication": ["https://www.swarmapp.com/checkin/example"]
-    }
-  }'
-EOT;
+		$lines = [
+			'curl -X POST "' . $endpoint . '" \\',
+			'  -H "Authorization: Bearer YOUR_TOKEN" \\',
+			'  -H "Content-Type: application/json" \\',
+			"  -d '{",
+			'    "type": ["h-entry"],',
+			'    "properties": {',
+			'      "published": ["2026-05-10T12:00:00+01:00"],',
+			'      "content": ["Checked in at The Crown Bar"],',
+			'      "checkin": [{',
+			'        "type": ["h-card"],',
+			'        "properties": {',
+			'          "name": ["The Crown Bar"],',
+			'          "url": ["https://foursquare.com/v/example"],',
+			'          "latitude": ["54.5955"],',
+			'          "longitude": ["-5.9321"]',
+			'        }',
+			'      }],',
+			'      "syndication": ["https://www.swarmapp.com/checkin/example"]',
+			'    }',
+			"  }'",
+		];
+		return implode( "\n", $lines );
 	}
 
 	public function enqueue_assets( string $hook ): void {
