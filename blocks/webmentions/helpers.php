@@ -168,7 +168,7 @@ function nop_wm_render_empty_state( int $post_id ): void {
 	$message       = comments_open( $post_id )
 		? __( 'Be the first to respond — comment below, or reply from your own site.', 'nop-indieweb' )
 		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
-	echo '<div ' . $wrapper_attrs . '>';
+	echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
 	echo '<p class="nop-webmentions__empty">' . esc_html( $message ) . '</p>';
 	echo nop_wm_render_comment_form( $post_id, false ); // phpcs:ignore
 	echo '</div>';
@@ -200,7 +200,7 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): 
 		<?php if ( $show_heading ) : ?>
 		<p class="nop-webmentions__form-label"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
 		<?php endif; ?>
-		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo $post_url; ?>#respond" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
+		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo esc_url( $post_url . '#respond' ); ?>" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
 		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>">
 			<?php if ( $logged_in && $user ) : ?>
 			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">

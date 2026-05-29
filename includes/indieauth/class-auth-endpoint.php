@@ -160,7 +160,7 @@ class Auth_Endpoint {
 
 	private function render_html( array $params ): void {
 		header( 'Content-Type: text/html; charset=UTF-8' );
-		$client_label  = esc_html( wp_parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'] );
+		$client_label  = wp_parse_url( $params['client_id'], PHP_URL_HOST ) ?? $params['client_id'];
 		$scope_labels  = $this->describe_scopes( $params['scope'] );
 		$site_name     = get_bloginfo( 'name' );
 		?>
@@ -201,7 +201,7 @@ class Auth_Endpoint {
 				<h1><?php esc_html_e( 'Authorize Application', 'nop-indieweb' ); ?></h1>
 				<p class="nop-auth-subtitle"><?php esc_html_e( 'Review the permissions below before approving.', 'nop-indieweb' ); ?></p>
 
-				<p class="nop-auth-client"><?php echo $client_label; ?></p>
+				<p class="nop-auth-client"><?php echo esc_html( $client_label ); ?></p>
 
 				<div class="nop-auth-scopes">
 					<p class="nop-auth-scopes-label"><?php esc_html_e( 'Requesting permission to', 'nop-indieweb' ); ?></p>
