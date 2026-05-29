@@ -371,9 +371,9 @@ class Settings {
 			[
 				'done'  => $has_post,
 				'label' => __( 'Publish your first IndieWeb post', 'nop-indieweb' ),
-				/* translators: %s: Micropub endpoint URL, wrapped in a <code> tag */
 				'body'  => sprintf(
 					wp_kses(
+						/* translators: %s: Micropub endpoint URL, wrapped in a <code> tag */
 						__( 'Connect <a href="https://ownyourswarm.p3k.io" target="_blank" rel="noopener">OwnYourSwarm</a> to post location checkins, or enable Mastodon or Bluesky in their tabs to start syndicating. Your Micropub endpoint is <code>%s</code>.', 'nop-indieweb' ),
 						[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ], 'code' => [] ]
 					),

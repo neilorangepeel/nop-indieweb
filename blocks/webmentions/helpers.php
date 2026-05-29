@@ -113,8 +113,8 @@ function nop_wm_liked_by( array $likes ): string {
 		return sprintf( __( 'Liked by %1$s and %2$s', 'nop-indieweb' ), $name( $likes[0] ), $name( $likes[1] ) );
 	}
 	$others = $count - 2;
-	/* translators: 1: first author, 2: second author, 3: number of additional likers */
 	return sprintf(
+		/* translators: 1: first author, 2: second author, 3: number of additional likers */
 		_n(
 			'Liked by %1$s, %2$s and %3$d other',
 			'Liked by %1$s, %2$s and %3$d others',
@@ -206,9 +206,9 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): 
 			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">
 				<?php
 				printf(
-					/* translators: 1: user display name, 2: logout URL */
 					wp_kses(
-						__( 'Logged in as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
+						/* translators: 1: user display name, 2: logout URL */
+						__( 'Logged in as <strong>%1\$s</strong>. <a href="%2\$s">Log out?</a>', 'nop-indieweb' ),
 						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
 					),
 					esc_html( $user->display_name ),
