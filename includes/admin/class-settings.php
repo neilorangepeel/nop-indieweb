@@ -330,6 +330,22 @@ class Settings {
 		</div>
 		<?php
 	}
+	/**
+	 * Whether a service/syndicator tab is currently enabled — drives the
+	 * muted "inactive" styling on the nav tabs.
+	 */
+	private function is_tab_enabled( string $slug ): bool {
+		$syndicators = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] );
+		$services    = \NOP\IndieWeb\nop_indieweb_get_option( 'services', [] );
+		return match( $slug ) {
+			'mastodon'   => (bool) ( $syndicators['mastodon']['enabled']         ?? false ),
+			'bluesky'    => (bool) ( $syndicators['bluesky']['enabled']          ?? false ),
+			'pixelfed'   => (bool) ( $syndicators['pixelfed']['enabled']         ?? false ),
+			'letterboxd' => (bool) ( $services['letterboxd']['import_enabled']   ?? false ),
+			'swarm'      => (bool) ( $services['swarm']['enabled']               ?? false ),
+			default      => true,
+		};
+	}
 
 	// ——— Tab: Overview ————————————————————————————————————————————————————————
 
