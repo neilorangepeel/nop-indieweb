@@ -44,7 +44,7 @@ if ( ! $post_id ) {
 			<div class="nop-film-card__poster nop-film-card__poster--empty"></div>
 		</div>
 		<div class="nop-film-card__body">
-			<?php echo nop_film_card_stars( 4 ); ?>
+			<?php echo wp_kses_post( nop_film_card_stars( 4 ) ); ?>
 			<p class="nop-film-card__title">Portrait of a Lady on Fire</p>
 			<p class="nop-film-card__meta">2019 · 12 Apr 2025</p>
 		</div>
@@ -98,7 +98,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-card' ] );
 
 	<div class="nop-film-card__body">
 		<?php if ( $rating > 0 ) : ?>
-		<?php echo nop_film_card_stars( $rating ); ?>
+		<?php echo wp_kses_post( nop_film_card_stars( $rating ) ); ?>
 		<?php endif; ?>
 
 		<p class="nop-film-card__title">

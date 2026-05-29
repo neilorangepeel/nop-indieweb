@@ -454,7 +454,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $micropub_url; ?>" target="_blank" rel="noopener"><?php echo $micropub_url; ?></a>
+							<a href="<?php echo esc_url( $micropub_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $micropub_url ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $micropub_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -467,7 +467,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $webmention_url; ?>" target="_blank" rel="noopener"><?php echo $webmention_url; ?></a>
+							<a href="<?php echo esc_url( $webmention_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $webmention_url ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $webmention_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -512,7 +512,7 @@ class Settings {
 				<strong><?php echo esc_html( number_format_i18n( $approved_wm ) ); ?></strong>
 				<?php echo esc_html( _n( 'reaction received', 'reactions received', $approved_wm, 'nop-indieweb' ) ); ?>
 				<?php if ( $pending_wm > 0 ) : ?>
-					— <a href="<?php echo $moderated_url; ?>">
+					— <a href="<?php echo esc_url( $moderated_url ); ?>">
 						<?php
 						/* translators: %s: number of pending reactions */
 						echo esc_html( sprintf( _n( '%s pending approval', '%s pending approval', $pending_wm, 'nop-indieweb' ), number_format_i18n( $pending_wm ) ) );
@@ -524,7 +524,7 @@ class Settings {
 				/* translators: %s: number of pending reactions */
 				echo esc_html( sprintf( _n( '%s reaction pending approval', '%s reactions pending approval', $pending_wm, 'nop-indieweb' ), number_format_i18n( $pending_wm ) ) );
 				?>
-				— <a href="<?php echo $moderated_url; ?>"><?php esc_html_e( 'review them', 'nop-indieweb' ); ?></a>
+				— <a href="<?php echo esc_url( $moderated_url ); ?>"><?php esc_html_e( 'review them', 'nop-indieweb' ); ?></a>
 			<?php endif; ?>
 		</p>
 		<?php endif; ?>
@@ -535,7 +535,7 @@ class Settings {
 				<th scope="row"><label for="nop-me-urls"><?php esc_html_e( 'Profile URLs', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<textarea id="nop-me-urls"
-					          name="<?php echo self::OPTION_KEY; ?>[me_urls]"
+					          name="<?php echo esc_attr( self::OPTION_KEY ); ?>[me_urls]"
 					          rows="4"
 					          class="large-text code"
 					          placeholder="https://github.com/yourusername&#10;https://linkedin.com/in/yourusername"><?php echo esc_textarea( \NOP\IndieWeb\nop_indieweb_get_option( 'me_urls', '' ) ); ?></textarea>
@@ -675,7 +675,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $auth_url; ?>" target="_blank" rel="noopener"><?php echo $auth_url; ?></a>
+							<a href="<?php echo esc_url( $auth_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $auth_url ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $auth_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -688,7 +688,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $token_url; ?>" target="_blank" rel="noopener"><?php echo $token_url; ?></a>
+							<a href="<?php echo esc_url( $token_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $token_url ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $token_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -748,7 +748,7 @@ class Settings {
 				<th scope="row"><?php esc_html_e( 'Markup', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[mf2_enabled]" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[mf2_enabled]" value="1"
 						       <?php checked( $mf2_enabled ); ?>>
 						<?php esc_html_e( 'Add microformats2 markup to IndieWeb posts', 'nop-indieweb' ); ?>
 					</label>
@@ -762,7 +762,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $mf2_url; ?>" target="_blank" rel="noopener"><?php echo $mf2_url; ?></a>
+							<a href="<?php echo esc_url( $mf2_url ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $mf2_url ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $mf2_url ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -780,7 +780,7 @@ class Settings {
 				<th scope="row"><?php esc_html_e( 'Debug mode', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo self::OPTION_KEY; ?>[debug_mode]" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[debug_mode]" value="1"
 						       <?php checked( $debug_mode ); ?>>
 						<?php esc_html_e( 'Enable debug logging', 'nop-indieweb' ); ?>
 					</label>
@@ -1020,7 +1020,7 @@ class Settings {
 				<th scope="row"><?php esc_html_e( 'Import posts', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[import_enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[import_enabled]" ); ?>" value="1"
 						       <?php checked( $settings['import_enabled'] ?? false ); ?>>
 						<?php esc_html_e( 'Automatically import your Letterboxd diary as WordPress posts (hourly)', 'nop-indieweb' ); ?>
 					</label>
@@ -1029,7 +1029,7 @@ class Settings {
 			<tr>
 				<th scope="row"><label for="letterboxd-username"><?php esc_html_e( 'Username', 'nop-indieweb' ); ?></label></th>
 				<td>
-					<input type="text" id="letterboxd-username" name="<?php echo "{$prefix}[username]"; ?>"
+					<input type="text" id="letterboxd-username" name="<?php echo esc_attr( "{$prefix}[username]" ); ?>"
 					       value="<?php echo esc_attr( $username ); ?>"
 					       class="regular-text" placeholder="your-letterboxd-username">
 					<?php if ( $username ) : ?>
@@ -1185,7 +1185,7 @@ class Settings {
 				<th scope="row"><label for="twitter-archive-url"><?php esc_html_e( 'Archive URL', 'nop-indieweb' ); ?></label></th>
 				<td>
 					<input type="url" id="twitter-archive-url"
-					       name="<?php echo self::OPTION_KEY; ?>[twitter_archive_url]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[twitter_archive_url]"
 					       value="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_get_option( 'twitter_archive_url', '' ) ); ?>"
 					       class="regular-text"
 					       placeholder="https://yoursite.com/twitter-archive/">
@@ -1211,7 +1211,7 @@ class Settings {
 				<th scope="row"><?php esc_html_e( 'Accept reactions', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[receive_enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[receive_enabled]" ); ?>" value="1"
 						       <?php checked( $receive_enabled ); ?>>
 						<?php esc_html_e( 'Accept incoming webmentions from other sites', 'nop-indieweb' ); ?>
 					</label>
@@ -1221,7 +1221,7 @@ class Settings {
 			<tr>
 				<th scope="row"><label for="nop-webmention-approval"><?php esc_html_e( 'Approval', 'nop-indieweb' ); ?></label></th>
 				<td>
-					<select id="nop-webmention-approval" name="<?php echo "{$prefix}[approval]"; ?>">
+					<select id="nop-webmention-approval" name="<?php echo esc_attr( "{$prefix}[approval]" ); ?>">
 						<option value="bridgy_only" <?php selected( $approval, 'bridgy_only' ); ?>><?php esc_html_e( 'Auto-approve Bridgy, hold everything else', 'nop-indieweb' ); ?></option>
 						<option value="auto_all"    <?php selected( $approval, 'auto_all' ); ?>><?php esc_html_e( 'Auto-approve all', 'nop-indieweb' ); ?></option>
 						<option value="manual_all"  <?php selected( $approval, 'manual_all' ); ?>><?php esc_html_e( 'Hold all for manual review', 'nop-indieweb' ); ?></option>
@@ -1250,7 +1250,7 @@ class Settings {
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'lookups.tmdb_api_key', '' ); ?>
 					<input type="text" id="nop-tmdb-key"
-					       name="<?php echo self::OPTION_KEY; ?>[lookups][tmdb_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[lookups][tmdb_api_key]"
 					       value="<?php echo esc_attr( $key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
@@ -1278,7 +1278,7 @@ class Settings {
 				<th scope="row"><?php esc_html_e( 'Accept check-ins', 'nop-indieweb' ); ?></th>
 				<td>
 					<label>
-						<input type="checkbox" name="<?php echo "{$prefix}[enabled]"; ?>" value="1"
+						<input type="checkbox" name="<?php echo esc_attr( "{$prefix}[enabled]" ); ?>" value="1"
 						       <?php checked( $settings['enabled'] ?? false ); ?>>
 						<?php esc_html_e( 'Accept check-ins from OwnYourSwarm', 'nop-indieweb' ); ?>
 					</label>
@@ -1289,7 +1289,7 @@ class Settings {
 				<td>
 					<div class="nop-url-copy-row">
 						<code class="nop-url-display">
-							<a href="<?php echo $endpoint; ?>" target="_blank" rel="noopener"><?php echo $endpoint; ?></a>
+							<a href="<?php echo esc_url( $endpoint ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $endpoint ); ?></a>
 						</code>
 						<button type="button" class="button button-secondary nop-copy-btn"
 						        data-copy="<?php echo esc_attr( $endpoint ); ?>"><?php esc_html_e( 'Copy', 'nop-indieweb' ); ?></button>
@@ -1306,7 +1306,7 @@ class Settings {
 				<td>
 					<?php $key = \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ); ?>
 					<input type="text" id="nop-geoapify-key"
-					       name="<?php echo self::OPTION_KEY; ?>[maps][geoapify_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[maps][geoapify_api_key]"
 					       value="<?php echo esc_attr( $key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
@@ -1324,7 +1324,7 @@ class Settings {
 				<td>
 					<?php $weather_key = \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' ); ?>
 					<input type="text" id="nop-pirate-weather-key"
-					       name="<?php echo self::OPTION_KEY; ?>[weather][pirate_weather_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[weather][pirate_weather_api_key]"
 					       value="<?php echo esc_attr( $weather_key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
@@ -1342,7 +1342,7 @@ class Settings {
 				<td>
 					<?php $fsq_key = \NOP\IndieWeb\nop_indieweb_get_option( 'venue.foursquare_api_key', '' ); ?>
 					<input type="text" id="nop-foursquare-key"
-					       name="<?php echo self::OPTION_KEY; ?>[venue][foursquare_api_key]"
+					       name="<?php echo esc_attr( self::OPTION_KEY ); ?>[venue][foursquare_api_key]"
 					       value="<?php echo esc_attr( $fsq_key ); ?>"
 					       class="regular-text code" autocomplete="off"
 					       placeholder="fsq3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
