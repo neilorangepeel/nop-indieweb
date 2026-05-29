@@ -5,8 +5,38 @@ Working doc for getting **NOP IndieWeb** through the WordPress.org Plugin Check
 review team runs. Grouped into sprints; each task has enough context to start
 cold in a fresh session.
 
-> This file is a dev artifact. Add it to `.distignore` (or delete it) before
-> packaging so it doesn't ship or trip `unexpected_markdown_file`.
+> This file is a dev artifact. It is already in `.distignore`, so it won't ship
+> or trip `unexpected_markdown_file` in the packaged zip.
+
+---
+
+## ✅ CURRENT STATUS — zero shipped errors
+
+`studio wp plugin check nop-indieweb --severity=error` → **TOTAL=56,
+SHIPPED=0**. All 56 remaining errors are in `bin/` developer scripts that
+`.distignore` excludes from the distributed zip. Shipped errors went from ~190
+→ 0 over commits `c23022a…3e5cd75` on `review-hardening`.
+
+**Done:** readme.txt + External Services; `Tested up to: 7.0`; ABSPATH guards
+on all shipped PHP; `wp_delete_file()`/`wp_parse_url()`/`$_SERVER` unslash;
+`.distignore` (clears all zip-only findings); full output-escaping pass
+(wrappers→`wp_kses_data`, SVG icons→justified `phpcs:ignore` — **never**
+`wp_kses`, which lowercases the case-sensitive `viewBox` and breaks the glyph;
+stars→`wp_kses_post`; URLs→idempotent `esc_url` at output; `name=""`→`esc_attr`);
+translators-comment adjacency; heredoc→`implode`; custom-table SQL wrapped in
+`phpcs:disable/enable` with justification.
+
+**Remaining: 72 shipped WARNINGS** — all justify-or-accept, none block
+submission (SlowDBQuery, DirectDatabaseQuery/NoCaching, NonceVerification on
+read-only `$_GET`, intentional cross-origin SafeRedirect, debug-gated
+`error_log`, and the `load_plugin_textdomain` wp.org auto-handles). That's the
+optional **Sprint 5** below. The **baseline numbers further down are the
+pre-work figures** — kept for reference, not current.
+
+> ⚠️ Tooling notes for the next session: the shell intermittently dropped
+> output and an auto-reindenter shifted line numbers mid-edit. Always do a
+> fresh `--severity=error` run and re-read each file immediately before editing;
+> trust the run's line numbers over any cached list.
 
 ---
 
