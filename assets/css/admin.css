@@ -119,7 +119,7 @@
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color:          var(--nop-text-muted);
-	margin:         0;
+	margin:         20px 0 0;
 	padding:        20px 0 0;
 	border-top:     1px solid var(--nop-border-subtle);
 }
@@ -128,6 +128,12 @@
 .nop-section-heading--first {
 	border-top:  none;
 	padding-top: 0;
+	margin-top:  0;
+}
+
+/* form-table th already provides 20px bottom padding — no extra margin needed */
+.form-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 /* Description that follows a section heading. Gives the same spacing the
@@ -253,6 +259,11 @@
 	width:           100%;
 	max-width:       700px;
 	font-size:       13px;
+	margin-bottom:   12px; /* cell padding 8px + this = 20px visual gap before next heading */
+}
+
+.nop-sessions-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 .nop-sessions-table th,
@@ -569,6 +580,11 @@
 	border-collapse: collapse;
 	width:           100%;
 	font-size:       13px;
+	margin-bottom:   13px; /* cell padding 7px + this = 20px visual gap before next heading */
+}
+
+.nop-kinds-table + .nop-section-heading {
+	margin-top: 0;
 }
 
 .nop-kinds-table th,
