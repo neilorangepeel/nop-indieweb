@@ -257,28 +257,29 @@ class Debug {
 	}
 
 	private function build_curl_example( string $endpoint ): string {
-		return <<<EOT
-curl -X POST "{$endpoint}" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": ["h-entry"],
-    "properties": {
-      "published": ["2026-05-10T12:00:00+01:00"],
-      "content": ["Checked in at The Crown Bar"],
-      "checkin": [{
-        "type": ["h-card"],
-        "properties": {
-          "name": ["The Crown Bar"],
-          "url": ["https://foursquare.com/v/example"],
-          "latitude": ["54.5955"],
-          "longitude": ["-5.9321"]
-        }
-      }],
-      "syndication": ["https://www.swarmapp.com/checkin/example"]
-    }
-  }'
-EOT;
+		$lines = [
+			'curl -X POST "' . $endpoint . '" \\',
+			'  -H "Authorization: Bearer YOUR_TOKEN" \\',
+			'  -H "Content-Type: application/json" \\',
+			"  -d '{",
+			'    "type": ["h-entry"],',
+			'    "properties": {',
+			'      "published": ["2026-05-10T12:00:00+01:00"],',
+			'      "content": ["Checked in at The Crown Bar"],',
+			'      "checkin": [{',
+			'        "type": ["h-card"],',
+			'        "properties": {',
+			'          "name": ["The Crown Bar"],',
+			'          "url": ["https://foursquare.com/v/example"],',
+			'          "latitude": ["54.5955"],',
+			'          "longitude": ["-5.9321"]',
+			'        }',
+			'      }],',
+			'      "syndication": ["https://www.swarmapp.com/checkin/example"]',
+			'    }',
+			"  }'",
+		];
+		return implode( "\n", $lines );
 	}
 
 	public function enqueue_assets( string $hook ): void {

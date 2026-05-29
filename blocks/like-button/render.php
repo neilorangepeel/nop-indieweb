@@ -53,9 +53,8 @@ $wrapper = get_block_wrapper_attributes( [
 		<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
-	<?php /* translators: %d: number of likes */ ?>
 	<span class="nop-like-button__count"
-	      aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', $count, 'nop-indieweb' ), $count ) ); ?>"
+	      aria-label="<?php /* translators: %d: number of likes */ echo esc_attr( sprintf( _n( '%d like', '%d likes', $count, 'nop-indieweb' ), $count ) ); ?>"
 	      <?php echo 0 === $count ? 'hidden' : ''; ?>>
 		<?php echo esc_html( (string) $count ); ?>
 	</span>

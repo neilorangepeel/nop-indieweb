@@ -58,6 +58,8 @@ if ( $maps_dir && is_dir( $maps_dir ) ) {
 	foreach ( (array) glob( $maps_dir . '/checkin-map-*.png' ) as $file ) {
 		wp_delete_file( $file );
 	}
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged -- removing our own now-empty cache dir at uninstall; WP_Filesystem is not bootstrapped in the uninstall context
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.PHP.NoSilencedErrors.Discouraged -- removing our own now-empty cache dir at uninstall; WP_Filesystem is not bootstrapped in the uninstall context
 	@rmdir( $maps_dir );
 }
 

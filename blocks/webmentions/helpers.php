@@ -68,9 +68,10 @@ function nop_wm_platform_tag( string $platform, bool $via_bridgy = false ): stri
 	$bridgy_suffix = $show_bridgy
 		? ' <span class="nop-webmentions__via-bridgy">· ' . esc_html__( 'via Bridgy', 'nop-indieweb' ) . '</span>'
 		: '';
-	/* translators: %s: platform name e.g. Mastodon */
 	$aria = $show_bridgy
+		/* translators: %s: platform name e.g. Mastodon */
 		? sprintf( __( 'via %s (relayed via Bridgy)', 'nop-indieweb' ), $label )
+		/* translators: %s: platform name e.g. Mastodon */
 		: sprintf( __( 'via %s', 'nop-indieweb' ), $label );
 
 	return '<span class="' . esc_attr( $class ) . '" aria-label="' . esc_attr( $aria ) . '">' . esc_html( $label ) . '</span>' . $bridgy_suffix;

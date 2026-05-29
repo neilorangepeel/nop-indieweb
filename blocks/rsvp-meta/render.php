@@ -51,7 +51,7 @@ if ( ! $rsvp_value && ! $event_url ) {
 	// doesn't trigger a "block rendered as empty" error before data is entered.
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--placeholder' ] );
-		echo '<div ' . $wrapper_attrs . '>';
+		echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
 		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">' . esc_html__( 'Set RSVP in sidebar →', 'nop-indieweb' ) . '</span></p>';
 		echo '</div>';
 	}

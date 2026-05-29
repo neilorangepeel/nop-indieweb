@@ -105,6 +105,10 @@ class Token_Store {
 	public static function find_by_token( string $raw_token ): ?array {
 		global $wpdb;
 
+		// The table name is a constant identifier ($wpdb->prefix + a fixed
+		// suffix), which prepare() placeholders cannot bind; the user value is
+		// bound with %s.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				'SELECT * FROM ' . self::table_name() . ' WHERE token_hash = %s',
@@ -120,6 +124,10 @@ class Token_Store {
 	public static function get_by_user( int $user_id ): array {
 		global $wpdb;
 
+		// The table name is a constant identifier ($wpdb->prefix + a fixed
+		// suffix), which prepare() placeholders cannot bind; the user value is
+		// bound with %d.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT id, client_id, client_name, scope, issued_at, last_used_at
