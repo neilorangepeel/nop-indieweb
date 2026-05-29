@@ -43,13 +43,14 @@ $comment_ids = $wpdb->get_col(
 );
 
 if ( $comment_ids ) {
-	$ids          = array_map( 'intval', $comment_ids );
-	$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off cleanup of plugin data at uninstall; no caching applies
-	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$placeholders})", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a generated list of %d tokens, values bound by prepare()
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off cleanup of plugin data at uninstall; no caching applies
-	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$placeholders})", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a generated list of %d tokens, values bound by prepare()
+	// $ids is a comma-joined list of intval-cast integers — safe to interpolate;
+	// $wpdb->prepare() can't bind a variable-length IN() list cleanly. One-off
+	// data cleanup at uninstall, so DirectQuery/NoCaching don't apply.
+	$ids = implode( ',', array_map( 'intval', $comment_ids ) );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+	$wpdb->query( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$ids})" );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+	$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$ids})" );
 }
 
 // ── Cached map images ────────────────────────────────────────────────────────
