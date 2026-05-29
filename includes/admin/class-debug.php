@@ -175,7 +175,8 @@ class Debug {
 
 			<h2>Feed Importer</h2>
 			<p>Imports your own posts from Mastodon, Pixelfed, Bluesky, and Letterboxd into WordPress. Runs automatically once per hour via WP-Cron.</p>
-			<?php if ( 'success' === sanitize_key( $_GET['import_result'] ?? '' ) ) : ?>
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag
+			if ( 'success' === sanitize_key( $_GET['import_result'] ?? '' ) ) : ?>
 			<div class="notice notice-success is-dismissible"><p>Feed import complete.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -186,7 +187,8 @@ class Debug {
 
 			<h2>Social Backfeed</h2>
 			<p>Polls Mastodon, Bluesky, and Pixelfed for new interactions on all syndicated posts. Runs automatically once per hour via WP-Cron.</p>
-			<?php if ( 'success' === sanitize_key( $_GET['backfeed_result'] ?? '' ) ) : ?>
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag
+			if ( 'success' === sanitize_key( $_GET['backfeed_result'] ?? '' ) ) : ?>
 			<div class="notice notice-success is-dismissible"><p>Backfeed sync complete.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
