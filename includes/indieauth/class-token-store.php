@@ -108,7 +108,7 @@ class Token_Store {
 		// The table name is a constant identifier ($wpdb->prefix + a fixed
 		// suffix), which prepare() placeholders cannot bind; the user value is
 		// bound with %s.
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
 				'SELECT * FROM ' . self::table_name() . ' WHERE token_hash = %s',
@@ -116,6 +116,7 @@ class Token_Store {
 			),
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		return $row ?: null;
 	}
@@ -127,8 +128,8 @@ class Token_Store {
 		// The table name is a constant identifier ($wpdb->prefix + a fixed
 		// suffix), which prepare() placeholders cannot bind; the user value is
 		// bound with %d.
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		return $wpdb->get_results(
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				'SELECT id, client_id, client_name, scope, issued_at, last_used_at
 				   FROM ' . self::table_name() . '
@@ -138,6 +139,9 @@ class Token_Store {
 			),
 			ARRAY_A
 		) ?: [];
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		return $rows;
 	}
 
 	// ── Update ────────────────────────────────────────────────────────────────
