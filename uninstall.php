@@ -43,11 +43,13 @@ $comment_ids = $wpdb->get_col(
 );
 
 if ( $comment_ids ) {
-	$ids = implode( ',', array_map( 'intval', $comment_ids ) );
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$wpdb->query( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$ids})" );
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$wpdb->query( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$ids})" );
+	$ids          = array_map( 'intval', $comment_ids );
+	$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off cleanup of plugin data at uninstall; no caching applies
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ({$placeholders})", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a generated list of %d tokens, values bound by prepare()
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off cleanup of plugin data at uninstall; no caching applies
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_ID IN ({$placeholders})", $ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a generated list of %d tokens, values bound by prepare()
 }
 
 // ── Cached map images ────────────────────────────────────────────────────────
