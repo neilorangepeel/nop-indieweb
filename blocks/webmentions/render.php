@@ -223,7 +223,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 			<div class="nop-webmentions__reply-body">
 				<p class="nop-webmentions__reply-meta">
 					<?php if ( $profile_url ) : ?>
-					<a href="<?php echo $profile_url; ?>" target="_blank" rel="noopener noreferrer">
+					<a href="<?php echo esc_url( $profile_url ); ?>" target="_blank" rel="noopener noreferrer">
 						<strong><?php echo esc_html( $author_name ); ?></strong>
 					</a>
 					<?php else : ?>
@@ -236,7 +236,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions' ] 
 					<?php echo $platform_tag; // phpcs:ignore ?>
 					<?php endif; ?>
 					<?php if ( $time_display ) : ?>
-					<a href="<?php echo $reply_url; ?>" class="nop-webmentions__reply-time" target="_blank" rel="noopener noreferrer">
+					<a href="<?php echo esc_url( $reply_url ); ?>" class="nop-webmentions__reply-time" target="_blank" rel="noopener noreferrer">
 						<time datetime="<?php echo esc_attr( $time_iso ); ?>" aria-label="<?php echo esc_attr( $time_label ); ?>"><?php echo esc_html( $time_display ); ?></time>
 					</a>
 					<?php endif; ?>
