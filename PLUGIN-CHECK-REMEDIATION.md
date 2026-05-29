@@ -10,33 +10,9 @@ cold in a fresh session.
 
 ---
 
-## ✅ CURRENT STATUS — zero shipped errors
+## ✅ CURRENT STATUS — zero shipped errors AND warnings
 
-`studio wp plugin check nop-indieweb --severity=error` → **TOTAL=56,
-SHIPPED=0**. All 56 remaining errors are in `bin/` developer scripts that
-`.distignore` excludes from the distributed zip. Shipped errors went from ~190
-→ 0 over commits `c23022a…3e5cd75` on `review-hardening`.
-
-**Done:** readme.txt + External Services; `Tested up to: 7.0`; ABSPATH guards
-on all shipped PHP; `wp_delete_file()`/`wp_parse_url()`/`$_SERVER` unslash;
-`.distignore` (clears all zip-only findings); full output-escaping pass
-(wrappers→`wp_kses_data`, SVG icons→justified `phpcs:ignore` — **never**
-`wp_kses`, which lowercases the case-sensitive `viewBox` and breaks the glyph;
-stars→`wp_kses_post`; URLs→idempotent `esc_url` at output; `name=""`→`esc_attr`);
-translators-comment adjacency; heredoc→`implode`; custom-table SQL wrapped in
-`phpcs:disable/enable` with justification.
-
-**Remaining: 72 shipped WARNINGS** — all justify-or-accept, none block
-submission (SlowDBQuery, DirectDatabaseQuery/NoCaching, NonceVerification on
-read-only `$_GET`, intentional cross-origin SafeRedirect, debug-gated
-`error_log`, and the `load_plugin_textdomain` wp.org auto-handles). That's the
-optional **Sprint 5** below. The **baseline numbers further down are the
-pre-work figures** — kept for reference, not current.
-
-> ⚠️ Tooling notes for the next session: the shell intermittently dropped
-> output and an auto-reindenter shifted line numbers mid-edit. Always do a
-> fresh `--severity=error` run and re-read each file immediately before editing;
-> trust the run's line numbers over any cached list.
+`studio wp plugin check nop-indieweb` → **SHIPPED ERROR=0, WARNING=0**. Every remaining finding is in a `bin/` developer script that `.distignore` excludes from the distributed zip. (Started at ~190 shipped errors + ~95 warnings.) Sprint 5 is complete — all DB/redirect/nonce warnings carry a justified `phpcs:ignore`. Next: **Sprint 6** — build the zip and run the checker against the extracted package to confirm, then submit.
 
 ---
 
