@@ -171,6 +171,7 @@ class Auth_Endpoint {
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<?php /* translators: %s: site name */ ?>
 			<title><?php printf( esc_html__( 'Authorize — %s', 'nop-indieweb' ), esc_html( $site_name ) ); ?></title>
+			<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- standalone consent page rendered outside the normal wp_head() pipeline, so wp_enqueue_style has no hook to attach to ?>
 			<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/login.css' ) ); ?>">
 			<style>
 				body { background: #f0f0f1; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }

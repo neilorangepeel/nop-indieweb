@@ -137,7 +137,7 @@ class Debug {
 			<?php if ( 'success' === $test_result && $test_post_id ) : ?>
 				<div class="notice notice-success is-dismissible">
 					<p>
-						Test payload created post #<?php echo $test_post_id; ?> —
+						Test payload created post #<?php echo (int) $test_post_id; ?> —
 						<a href="<?php echo esc_url( get_permalink( $test_post_id ) ); ?>">View</a> &nbsp;|&nbsp;
 						<a href="<?php echo esc_url( get_edit_post_link( $test_post_id ) ); ?>">Edit</a>
 					</p>
@@ -152,12 +152,12 @@ class Debug {
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row">URL</th>
-					<td><code><?php echo $endpoint; ?></code></td>
+					<td><code><?php echo esc_html( $endpoint ); ?></code></td>
 				</tr>
 				<tr>
 					<th scope="row">Config check</th>
 					<td>
-						<code>curl "<?php echo $endpoint; ?>?q=config"</code>
+						<code>curl "<?php echo esc_url( $endpoint ); ?>?q=config"</code>
 						<p class="description">Run in your terminal — should return a JSON object.</p>
 					</td>
 				</tr>
@@ -200,7 +200,7 @@ class Debug {
 			$migrate_count  = absint( $_GET['migrate_count'] ?? 0 );
 			if ( 'success' === $migrate_result ) :
 			?>
-			<div class="notice notice-success is-dismissible"><p>Migration complete — <?php echo $migrate_count; ?> post(s) updated.</p></div>
+			<div class="notice notice-success is-dismissible"><p>Migration complete — <?php echo (int) $migrate_count; ?> post(s) updated.</p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<?php wp_nonce_field( 'nop_indieweb_migrate_kind_taxonomy' ); ?>
@@ -221,7 +221,7 @@ class Debug {
 				<pre class="nop-payload-dump"><?php echo esc_html( wp_json_encode( $last_payload, JSON_PRETTY_PRINT ) ); ?></pre>
 				<?php if ( $last_post_id ) : ?>
 					<p>
-						Created post #<?php echo $last_post_id; ?> —
+						Created post #<?php echo (int) $last_post_id; ?> —
 						<a href="<?php echo esc_url( get_permalink( $last_post_id ) ); ?>">View</a> &nbsp;|&nbsp;
 						<a href="<?php echo esc_url( get_edit_post_link( $last_post_id ) ); ?>">Edit</a>
 					</p>

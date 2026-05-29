@@ -363,8 +363,8 @@ class Plugin {
 			foreach ( $templates as $id => $template ) {
 				$path = $dir . $template['file'];
 				if ( ! is_readable( $path ) ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-					trigger_error( "NOP IndieWeb: template file missing: {$path}", E_USER_WARNING );
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- developer warning to the error log, not browser output; $path is a server-side plugin file path
+					trigger_error( esc_html( "NOP IndieWeb: template file missing: {$path}" ), E_USER_WARNING );
 					continue;
 				}
 				$contents[ $id ] = file_get_contents( $path );
