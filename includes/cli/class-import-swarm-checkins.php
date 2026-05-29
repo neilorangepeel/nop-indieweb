@@ -374,6 +374,7 @@ class Import_Swarm_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'OR',
 				[ 'key' => 'nop_indieweb_source_url',  'value' => $url ],
@@ -388,6 +389,7 @@ class Import_Swarm_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'OR',
 				[ 'key' => 'nop_indieweb_source_url',  'value' => $url ],

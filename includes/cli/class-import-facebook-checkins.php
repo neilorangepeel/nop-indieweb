@@ -293,7 +293,9 @@ class Import_Facebook_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'       => 'nop_indieweb_source_url',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_value'     => $source_url,
 		] );
 	}
@@ -304,7 +306,9 @@ class Import_Facebook_Checkins {
 			'fields'         => 'ids',
 			'post_status'    => 'any',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'       => 'nop_indieweb_source_url',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_value'     => $source_url,
 		] );
 		return $ids ? (int) $ids[0] : 0;

@@ -127,7 +127,9 @@ class Debug {
 
 		$last_payload = get_transient( 'nop_indieweb_last_payload' );
 		$last_post_id = get_transient( 'nop_indieweb_last_post_id' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$test_result  = sanitize_key( $_GET['test_result'] ?? '' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$test_post_id = absint( $_GET['test_post_id'] ?? 0 );
 		$endpoint     = esc_url( \NOP\IndieWeb\nop_indieweb_endpoint_url() );
 		?>
@@ -196,7 +198,9 @@ class Debug {
 			<h2>Kind Taxonomy Migration</h2>
 			<p>Assigns the <code>nop_kind</code> taxonomy term to every post that already has a <code>nop_indieweb_post_kind</code> meta value. Safe to run multiple times — already-migrated posts are a no-op.</p>
 			<?php
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 			$migrate_result = sanitize_key( $_GET['migrate_result'] ?? '' );
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 			$migrate_count  = absint( $_GET['migrate_count'] ?? 0 );
 			if ( 'success' === $migrate_result ) :
 			?>

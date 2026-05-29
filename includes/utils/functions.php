@@ -107,6 +107,7 @@ function nop_indieweb_log( string $message, mixed $context = null ): void {
 	if ( null !== $context ) {
 		$entry .= ' ' . wp_json_encode( nop_indieweb_redact_for_log( $context ) );
 	}
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-gated diagnostic logging (only runs when debug_mode is enabled)
 	error_log( $entry );
 }
 
@@ -373,6 +374,7 @@ function nop_indieweb_ordinal( int $n ): string {
  */
 function nop_indieweb_compute_venue_visit_number( string $venue_id, string $post_date, int $exclude_id = 0 ): int {
 	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 	$prior = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT COUNT(DISTINCT p.ID)
 		 FROM {$wpdb->posts} p
@@ -400,6 +402,7 @@ function nop_indieweb_maybe_disable_settings_autoload(): void {
 	}
 
 	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 	$wpdb->update(
 		$wpdb->options,
 		[ 'autoload' => 'no' ],

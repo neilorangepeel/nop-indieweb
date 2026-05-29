@@ -881,6 +881,7 @@ HTML,
 			'state'         => $state,
 		], 'https://foursquare.com/oauth2/authenticate' );
 
+		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-origin redirect (OAuth/IndieAuth client or provider); target validated above, wp_safe_redirect would wrongly block it
 		wp_redirect( $url );
 		exit;
 	}
@@ -1024,6 +1025,7 @@ HTML,
 		global $wpdb;
 		$exclude = $exclude_id ? $wpdb->prepare( 'AND p.ID != %d', $exclude_id ) : '';
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$post_ids = $wpdb->get_col( $wpdb->prepare(
 			"SELECT DISTINCT p.ID
 			 FROM {$wpdb->posts} p

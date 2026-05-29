@@ -41,6 +41,7 @@ class Weather_Fetcher {
 		}
 
 		$url = sprintf(
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
 			'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,daily,alerts',
 			self::ENDPOINT,
 			rawurlencode( $api_key ),

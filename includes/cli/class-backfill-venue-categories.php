@@ -60,6 +60,7 @@ class Backfill_Venue_Categories {
 			'post_type'      => 'post',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,

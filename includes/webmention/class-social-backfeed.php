@@ -319,6 +319,7 @@ class Social_Backfeed {
 			'post_status'    => 'publish',
 			'posts_per_page' => 100,
 			'fields'         => 'ids',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_key'       => 'nop_indieweb_syndication',
 			'no_found_rows'  => true,
 		] );
@@ -327,6 +328,7 @@ class Social_Backfeed {
 
 	private function get_known_platform_ids( int $post_id ): array {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$rows = $wpdb->get_col( $wpdb->prepare(
 			"SELECT cm.meta_value
 			 FROM {$wpdb->commentmeta} cm

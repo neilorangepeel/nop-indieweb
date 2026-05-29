@@ -64,6 +64,7 @@ if ( ! isset( $counts[ $post_id ] ) ) {
 		'type'       => 'webmention',
 		'status'     => 'approve',
 		'count'      => true,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_query' => [ [
 			'relation' => 'OR',
 			[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
@@ -76,7 +77,9 @@ if ( ! isset( $counts[ $post_id ] ) ) {
 		'type'       => 'webmention',
 		'status'     => 'approve',
 		'count'      => true,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_key'   => 'webmention_type',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_value' => 'repost',
 	] );
 

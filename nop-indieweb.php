@@ -117,6 +117,7 @@ add_action( 'plugins_loaded', function () {
 // across the plugin resolve from a .mo file in wp-content/languages/plugins/
 // or this plugin's own languages/ directory once translations exist.
 add_action( 'init', function () {
+	// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- explicit load supports distribution outside the wp.org directory
 	load_plugin_textdomain( 'nop-indieweb', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 } );
 
@@ -153,6 +154,7 @@ function maybe_migrate_swarm_source_url(): void {
 		'post_status'    => 'any',
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 		'meta_query'     => [
 			[ 'key' => 'nop_indieweb_service', 'value' => 'swarm' ],
 		],

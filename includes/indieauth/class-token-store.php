@@ -82,6 +82,7 @@ class Token_Store {
 	): bool {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->insert(
 			self::table_name(),
 			[
@@ -149,6 +150,7 @@ class Token_Store {
 	/** Updates last_used_at to now for the given token hash. */
 	public static function touch( string $token_hash ): void {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$wpdb->update(
 			self::table_name(),
 			[ 'last_used_at' => current_time( 'mysql', true ) ],
@@ -163,6 +165,7 @@ class Token_Store {
 	/** Revokes by database row ID. Used from the admin sessions UI. */
 	public static function delete_by_id( int $id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->delete(
 			self::table_name(),
 			[ 'id' => $id ],
@@ -173,6 +176,7 @@ class Token_Store {
 	/** Revokes by raw token value. Used by the token endpoint's revoke action. */
 	public static function revoke_by_raw( string $raw_token ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		return (bool) $wpdb->delete(
 			self::table_name(),
 			[ 'token_hash' => hash( 'sha256', $raw_token ) ],

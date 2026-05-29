@@ -45,6 +45,7 @@ class Fix_Swarm_Timestamps {
 			'posts_per_page' => $limit > 0 ? $limit : -1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'tax_query'      => [
 				[
 					'taxonomy' => Kind_Taxonomy::TAXONOMY,
@@ -52,6 +53,7 @@ class Fix_Swarm_Timestamps {
 					'terms'    => 'checkin',
 				],
 			],
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query'     => [
 				'relation' => 'AND',
 				[ 'key' => 'nop_indieweb_service',     'value' => 'swarm' ],

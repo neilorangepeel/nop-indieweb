@@ -57,6 +57,7 @@ class Auth_Endpoint {
 		$user_id = wp_validate_auth_cookie( '', 'logged_in' );
 		if ( ! $user_id ) {
 			$redirect_to = add_query_arg( $request->get_params(), static::url() );
+			// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-origin redirect (OAuth/IndieAuth client or provider); target validated above, wp_safe_redirect would wrongly block it
 			wp_redirect( wp_login_url( $redirect_to ), 302 );
 			exit;
 		}
@@ -132,6 +133,7 @@ class Auth_Endpoint {
 
 		// wp_safe_redirect blocks cross-origin redirects — use wp_redirect since
 		// redirect_uri was just re-validated against client_id by validate_request().
+		// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- intentional cross-origin redirect (OAuth/IndieAuth client or provider); target validated above, wp_safe_redirect would wrongly block it
 		wp_redirect( $redirect, 302 );
 		exit;
 	}

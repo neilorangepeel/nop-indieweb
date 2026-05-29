@@ -123,6 +123,7 @@ class Like_Endpoint {
 			'type'       => 'webmention',
 			'status'     => 'approve',
 			'count'      => true,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query' => [ [ 'key' => 'webmention_type', 'value' => 'like' ] ],
 		] );
 	}
@@ -134,6 +135,7 @@ class Like_Endpoint {
 			'status'     => 'approve',
 			'number'     => 1,
 			'fields'     => 'ids',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query' => [
 				[ 'key' => 'webmention_type',    'value' => 'like' ],
 				[ 'key' => 'webmention_ip_hash', 'value' => $this->ip_hash() ],

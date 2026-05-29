@@ -37,6 +37,7 @@ class Backfill_Venue_Visits {
 
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$venue_ids = $wpdb->get_col(
 			"SELECT DISTINCT meta_value
 			 FROM {$wpdb->postmeta}
@@ -51,6 +52,7 @@ class Backfill_Venue_Visits {
 		WP_CLI::log( "Found {$venue_count} unique venue(s)." );
 
 		foreach ( $venue_ids as $venue_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 			$post_ids = $wpdb->get_col( $wpdb->prepare(
 				"SELECT DISTINCT p.ID
 				 FROM {$wpdb->posts} p
