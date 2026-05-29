@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.9
+Stable tag: 0.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.3.0 =
+* Redesigned the Settings → IndieWeb Overview tab: Networks, then a Reactions dashboard (likes/comments/reposts with a per-network breakdown and pending-moderation link), then a merged "Identity & Endpoints" section gathering profile URLs and all discovery endpoints (Micropub, Webmention, IndieAuth, mf2). Removed the Quick-setup checklist; onboarding now lives in each service tab.
 
 = 0.2.9 =
 * Hardening pass ahead of public release: IndieAuth/OAuth CSRF protection, internationalization of the admin UI and front-end scripts, accessibility improvements to the settings UI, and WordPress.org coding-standards compliance.
