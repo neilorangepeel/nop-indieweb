@@ -290,6 +290,58 @@ html, body {
 .caption-field:focus { border-color: var(--text); outline: 2px solid var(--highlight); outline-offset: -1px; }
 .caption-field::placeholder { color: var(--text-2); }
 
+/* Tags */
+.tags-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 8px 10px;
+	min-height: 44px;
+	transition: border-color 0.15s;
+	cursor: text;
+}
+.tags-field:focus-within { border-color: var(--text); outline: 2px solid var(--highlight); outline-offset: -1px; }
+.tag-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--highlight);
+	color: var(--text);
+	border-radius: var(--radius);
+	padding: 3px 8px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.tag-chip__remove {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	font-size: 15px;
+	line-height: 1;
+	color: var(--text);
+	opacity: 0.6;
+	font-family: inherit;
+}
+.tag-chip__remove:hover { opacity: 1; }
+.tag-input {
+	flex: 1;
+	min-width: 80px;
+	border: none;
+	outline: none;
+	font-size: 14px;
+	font-family: inherit;
+	color: var(--text);
+	background: transparent;
+	padding: 2px 0;
+}
+.tag-input::placeholder { color: var(--text-2); }
+
 /* Syndicators */
 .syndicate-details {
 	margin-bottom: 16px;
@@ -531,6 +583,22 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			></textarea>
 		</div>
 
+		<!-- Tags (note + photo only) -->
+		<div class="field-group" id="fieldTags" hidden>
+			<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
+			<div class="tags-field" id="tagsField">
+				<input
+					type="text"
+					id="tagInput"
+					class="tag-input"
+					placeholder="<?php esc_attr_e( 'Add a tag…', 'nop-indieweb' ); ?>"
+					autocomplete="off"
+					autocorrect="off"
+					autocapitalize="off"
+				>
+			</div>
+		</div>
+
 		<!-- Syndicators (populated by JS from q=config, hidden until active networks exist) -->
 		<details class="syndicate-details" id="syndicateDetails" hidden>
 			<summary class="syndicate-summary"><?php esc_html_e( 'Syndicate to', 'nop-indieweb' ); ?></summary>
@@ -588,16 +656,17 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  contentRequired: true,  contentPlaceholder: 'Write a note…' },
-		photo:    { urlProp: null,           hasContent: true,  contentRequired: false, contentPlaceholder: 'Write a caption…' },
-		reply:    { urlProp: 'in-reply-to',  hasContent: true,  contentRequired: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
-		like:     { urlProp: 'like-of',      hasContent: false, urlLabel: 'Like URL' },
-		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  contentRequired: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
-		repost:   { urlProp: 'repost-of',    hasContent: false, urlLabel: 'Repost URL' },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  contentRequired: true,  contentPlaceholder: 'Write a note…' },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  contentRequired: false, contentPlaceholder: 'Write a caption…' },
+		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, contentRequired: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
+		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL' },
+		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
+		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL' },
 	};
 
-	var currentType  = 'note';
+	var currentType   = 'note';
 	var selectedFiles = [];
+	var currentTags   = [];
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 
@@ -605,12 +674,16 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	var fieldUrl     = document.getElementById( 'fieldUrl' );
 	var fieldPhoto   = document.getElementById( 'fieldPhoto' );
 	var fieldContent = document.getElementById( 'fieldContent' );
+	var fieldTags    = document.getElementById( 'fieldTags' );
 	var urlInput     = document.getElementById( 'typeUrl' );
 	var urlLabel     = document.getElementById( 'urlLabel' );
 	var contentInput = document.getElementById( 'content' );
 	var picker       = document.getElementById( 'photoPicker' );
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
+
+	// Show tags field for the default type (note).
+	fieldTags.hidden = false;
 
 	// ── Syndicators ───────────────────────────────────────────────────────────
 
@@ -635,6 +708,56 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		.catch( function () {} );
 	} )();
 
+	// ── Tags ─────────────────────────────────────────────────────────────────
+
+	var tagInput  = document.getElementById( 'tagInput' );
+	var tagsField = document.getElementById( 'tagsField' );
+
+	tagsField.addEventListener( 'click', function () { tagInput.focus(); } );
+
+	tagInput.addEventListener( 'keydown', function (e) {
+		if ( e.key === 'Enter' || e.key === ',' ) {
+			e.preventDefault();
+			addTag( tagInput.value );
+		} else if ( e.key === 'Backspace' && tagInput.value === '' && currentTags.length ) {
+			currentTags.pop();
+			renderTags();
+		}
+	} );
+
+	tagInput.addEventListener( 'blur', function () {
+		addTag( tagInput.value );
+	} );
+
+	function addTag( raw ) {
+		var tag = raw.trim().replace( /^,+|,+$/g, '' ).trim();
+		if ( tag && ! currentTags.includes( tag ) ) {
+			currentTags.push( tag );
+			renderTags();
+		}
+		tagInput.value = '';
+	}
+
+	function renderTags() {
+		var chips = currentTags.map( function (tag, i) {
+			return '<span class="tag-chip">'
+				+ escHtml( tag )
+				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '">×</button>'
+				+ '</span>';
+		} ).join( '' );
+		tagsField.innerHTML = chips;
+		tagsField.appendChild( tagInput );
+		tagInput.focus();
+	}
+
+	tagsField.addEventListener( 'click', function (e) {
+		var btn = e.target.closest( '.tag-chip__remove' );
+		if ( btn ) {
+			currentTags.splice( parseInt( btn.dataset.index, 10 ), 1 );
+			renderTags();
+		}
+	} );
+
 	// ── Type switching ────────────────────────────────────────────────────────
 
 	document.getElementById( 'typeBar' ).addEventListener( 'click', function (e) {
@@ -656,6 +779,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		fieldUrl.hidden     = ! cfg.urlProp;
 		fieldPhoto.hidden   = type !== 'photo';
 		fieldContent.hidden = ! cfg.hasContent;
+		fieldTags.hidden    = ! cfg.hasTags;
 
 		if ( cfg.urlProp ) {
 			urlLabel.textContent = cfg.urlLabel || 'URL';
@@ -667,7 +791,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		urlInput.value     = '';
 		contentInput.value = '';
 		selectedFiles      = [];
+		currentTags        = [];
 		thumbs.innerHTML   = '';
+		renderTags();
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 
 		updatePostBtn();
@@ -809,6 +935,10 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			props.photo = photoUrls;
 		}
 
+		if ( currentTags.length ) {
+			props.category = currentTags.slice();
+		}
+
 		var synTo = Array.from(
 			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' )
 		).map( function (cb) { return cb.value; } );
@@ -879,11 +1009,13 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 
 	function resetForm() {
 		selectedFiles      = [];
+		currentTags        = [];
 		contentInput.value = '';
 		urlInput.value     = '';
 		thumbs.innerHTML   = '';
 		photoInput.value   = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
+		renderTags();
 		switchType( 'note' );
 		showView( 'compose' );
 	}
