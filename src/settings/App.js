@@ -33,6 +33,8 @@ export default function App() {
 		history.replaceState( null, '', '#' + tabName );
 	};
 
+	const onTabSwitch = handleTabSelect;
+
 	if ( ! settings ) {
 		return (
 			<div className="nop-settings-loading">
@@ -52,7 +54,7 @@ export default function App() {
 			>
 				{ ( tab ) => {
 					switch ( tab.name ) {
-						case 'overview':  return <OverviewTab  { ...tabProps } />;
+						case 'overview':  return <OverviewTab  { ...tabProps } onTabSwitch={ onTabSwitch } />;
 						case 'networks':  return <NetworksTab  { ...tabProps } />;
 						case 'content':   return <ContentTab   { ...tabProps } />;
 						case 'reactions': return <ReactionsTab { ...tabProps } />;

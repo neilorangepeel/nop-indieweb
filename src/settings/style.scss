@@ -48,6 +48,64 @@
 	gap: 12px;
 }
 
+// Endpoint rows — label + URL code + Copy button
+.nop-endpoint-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.nop-url-copy-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	&__label {
+		width: 120px;
+		flex-shrink: 0;
+		font-size: 12px;
+		color: var(--nop-text-muted, #646970);
+	}
+}
+
+.nop-url-display {
+	flex: 1;
+	font-size: 12px;
+	background: var(--nop-code-bg, #f0f0f1);
+	padding: 4px 8px;
+	border-radius: 3px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+// me_urls textarea
+.nop-me-urls textarea {
+	font-family: monospace;
+	font-size: 12px;
+}
+
+// Pending reactions — muted link
+.nop-reaction-stat--pending .nop-reaction-stat__num {
+	color: var(--nop-text-muted, #646970);
+}
+
+// Network card configure button — matches link style
+.nop-network-card__link {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	font-size: inherit;
+	color: var(--wp-admin-theme-color, #3858e9);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+
+	&:hover {
+		opacity: 0.8;
+	}
+}
+
 // TabPanel tweaks — tighten the default WP component styling
 .nop-settings-app .components-tab-panel__tabs {
 	border-bottom: 1px solid #dcdcde;
