@@ -107,6 +107,22 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 			return $ids;
 		}
 
+		// Same race condition as Bluesky: photo blocks aren't in post_content yet
+		// when syndication fires, but CDN URLs are already in meta.
+		$cdn_photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+		if ( is_array( $cdn_photos ) && $cdn_photos ) {
+			$ids = [];
+			foreach ( array_slice( array_filter( $cdn_photos ), 0, 4 ) as $url ) {
+				$id = $this->upload_image( $instance, $token, (string) $url, '' );
+				if ( $id ) {
+					$ids[] = $id;
+				}
+			}
+			if ( $ids ) {
+				return $ids;
+			}
+		}
+
 		$thumbnail_id = get_post_thumbnail_id( $post_id );
 		if ( ! $thumbnail_id ) {
 			return [];
