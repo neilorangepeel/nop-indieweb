@@ -88,13 +88,13 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 
 :root {
 	--bg:        #ffffff;
-	--surface:   #ffffff;
+	--surface:   #f7f7f7;
 	--text:      #111111;
 	--text-2:    #686868;
 	--accent:    #503AA8;
-	--accent-bg: #FFEE5833;
+	--accent-bg: #FFEE5826;
 	--highlight: #FFEE58;
-	--border:    #e0e0e0;
+	--border:    #e8e8e8;
 	--danger:    #c0392b;
 	--radius:    2px;
 	--radius-sm: 2px;
@@ -102,79 +102,125 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html, body {
+html {
 	height: 100%;
+	height: -webkit-fill-available;
+}
+body {
+	height: 100%;
+	min-height: -webkit-fill-available;
+	overflow: hidden;
 	background: var(--bg);
 	color: var(--text);
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
-	overscroll-behavior: none;
 }
 
-.page {
+/* ── App shell ──────────────────────────────────────────────────────────── */
+
+.app {
 	display: flex;
 	flex-direction: column;
-	min-height: 100%;
-	padding-top: calc(var(--safe-top) + 16px);
-	padding-bottom: calc(var(--safe-bottom) + 24px);
-	padding-left: 16px;
-	padding-right: 16px;
-	max-width: 480px;
-	margin: 0 auto;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
 }
 
-/* Header */
-.header {
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.app-header {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 20px;
+	padding: 10px 16px;
+	padding-top: calc(var(--safe-top) + 10px);
+	border-bottom: 1px solid var(--border);
+	flex-shrink: 0;
+	background: var(--bg);
 }
-.header h1 {
+.app-header__left { display: flex; flex-direction: column; gap: 1px; }
+.app-title {
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	line-height: 1.1;
+}
+.app-site {
+	font-size: 11px;
+	color: var(--text-2);
+	letter-spacing: 0.01em;
+}
+.app-clock {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 1px;
+}
+.app-clock__time {
 	font-size: 22px;
 	font-weight: 700;
-	letter-spacing: -0.3px;
+	letter-spacing: -0.5px;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum";
 }
-.header-site {
-	font-size: 13px;
+.app-clock__date {
+	font-size: 11px;
 	color: var(--text-2);
+	letter-spacing: 0.01em;
 }
 
-/* Type bar */
+/* ── View container ──────────────────────────────────────────────────────── */
+
+.view-container {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+}
+
+#view-compose,
+#view-progress,
+#view-success {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* ── Type bar ────────────────────────────────────────────────────────────── */
+
 .type-bar {
 	display: flex;
-	overflow-x: auto;
-	gap: 8px;
-	margin-bottom: 20px;
-	scrollbar-width: none;
-	-ms-overflow-style: none;
-	-webkit-overflow-scrolling: touch;
+	flex-shrink: 0;
+	gap: 6px;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--border);
+	background: var(--bg);
 }
-.type-bar::-webkit-scrollbar { display: none; }
-
 .type-btn {
 	display: flex;
 	flex: 1;
 	flex-direction: column;
 	align-items: center;
-	gap: 4px;
-	padding: 10px 8px;
+	gap: 3px;
+	padding: 8px 4px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
-	background: var(--surface);
-	font-size: 11px;
-	font-weight: 600;
+	background: var(--bg);
+	font-size: 10px;
+	font-weight: 700;
 	font-family: inherit;
 	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	letter-spacing: 0.05em;
 	cursor: pointer;
-	white-space: nowrap;
 	color: var(--text-2);
 	-webkit-tap-highlight-color: transparent;
 	transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 .type-btn__icon {
-	font-size: 18px;
+	font-size: 16px;
 	line-height: 1;
 }
 .type-btn.is-active {
@@ -182,15 +228,39 @@ html, body {
 	border-color: var(--highlight);
 	color: var(--text);
 }
-.type-btn:active { opacity: 0.7; }
+.type-btn:active { opacity: 0.65; }
 
-/* Fields */
+/* ── Compose scroll area ─────────────────────────────────────────────────── */
+
+.compose-scroll {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* ── Bottom bar ──────────────────────────────────────────────────────────── */
+
+.bottom-bar {
+	flex-shrink: 0;
+	padding: 10px 16px;
+	padding-bottom: calc(var(--safe-bottom) + 10px);
+	border-top: 1px solid var(--border);
+	background: var(--bg);
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────────── */
+
 .field-label {
 	display: block;
-	font-size: 12px;
-	font-weight: 600;
+	font-size: 11px;
+	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.06em;
 	color: var(--text-2);
 	margin-bottom: 6px;
 }
@@ -203,14 +273,11 @@ html, body {
 	white-space: nowrap;
 	border: 0;
 }
-.field-group {
-	margin-bottom: 12px;
-}
+.field-group { display: flex; flex-direction: column; }
 
-/* URL input */
 .url-field {
 	width: 100%;
-	background: var(--surface);
+	background: var(--bg);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	padding: 12px 14px;
@@ -218,7 +285,6 @@ html, body {
 	font-family: inherit;
 	color: var(--text);
 	outline: none;
-	transition: border-color 0.15s;
 }
 .url-field:focus { border-color: var(--text); outline: 2px solid var(--highlight); outline-offset: -1px; }
 .url-field::placeholder { color: var(--text-2); }
@@ -228,54 +294,33 @@ html, body {
 	background: var(--surface);
 	border: 2px dashed var(--border);
 	border-radius: var(--radius);
-	padding: 28px 20px;
+	padding: 24px 16px;
 	text-align: center;
 	cursor: pointer;
 	transition: border-color 0.15s, background 0.15s;
 	-webkit-tap-highlight-color: transparent;
 }
 .photo-picker:active,
-.photo-picker.drag-over {
-	border-color: var(--highlight);
-	background: var(--accent-bg);
-}
+.photo-picker.drag-over { border-color: var(--highlight); background: var(--accent-bg); }
 .photo-picker input[type="file"] { display: none; }
-.photo-picker-icon {
-	font-size: 36px;
-	margin-bottom: 8px;
-	display: block;
-}
-.photo-picker p {
-	font-size: 15px;
-	font-weight: 500;
-	color: var(--text);
-}
-.photo-picker small {
-	font-size: 12px;
-	color: var(--text-2);
-	display: block;
-	margin-top: 4px;
-}
+.photo-picker-icon { font-size: 32px; margin-bottom: 6px; display: block; }
+.photo-picker p { font-size: 15px; font-weight: 500; }
+.photo-picker small { font-size: 12px; color: var(--text-2); display: block; margin-top: 3px; }
 
-/* Thumbnails */
 .thumbnails {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-	gap: 6px;
+	grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+	gap: 5px;
 	margin-top: 8px;
 }
 .thumbnails img {
-	width: 100%;
-	aspect-ratio: 1;
-	object-fit: cover;
-	border-radius: var(--radius-sm);
-	display: block;
+	width: 100%; aspect-ratio: 1; object-fit: cover;
+	border-radius: var(--radius-sm); display: block;
 }
 
-/* Caption / content */
 .caption-field {
 	width: 100%;
-	background: var(--surface);
+	background: var(--bg);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	padding: 12px 14px;
@@ -283,9 +328,8 @@ html, body {
 	font-family: inherit;
 	color: var(--text);
 	resize: none;
-	min-height: 96px;
+	min-height: 100px;
 	outline: none;
-	transition: border-color 0.15s;
 }
 .caption-field:focus { border-color: var(--text); outline: 2px solid var(--highlight); outline-offset: -1px; }
 .caption-field::placeholder { color: var(--text-2); }
@@ -296,12 +340,11 @@ html, body {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
-	background: var(--surface);
+	background: var(--bg);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	padding: 8px 10px;
 	min-height: 44px;
-	transition: border-color 0.15s;
 	cursor: text;
 }
 .tags-field:focus-within { border-color: var(--text); outline: 2px solid var(--highlight); outline-offset: -1px; }
@@ -318,22 +361,15 @@ html, body {
 	white-space: nowrap;
 }
 .tag-chip__remove {
-	background: none;
-	border: none;
-	padding: 0;
-	cursor: pointer;
-	font-size: 15px;
-	line-height: 1;
-	color: var(--text);
-	opacity: 0.6;
-	font-family: inherit;
+	background: none; border: none; padding: 0;
+	cursor: pointer; font-size: 15px; line-height: 1;
+	color: var(--text); opacity: 0.55; font-family: inherit;
 }
 .tag-chip__remove:hover { opacity: 1; }
 .tag-input {
 	flex: 1;
 	min-width: 80px;
-	border: none;
-	outline: none;
+	border: none; outline: none;
 	font-size: 16px;
 	font-family: inherit;
 	color: var(--text);
@@ -344,7 +380,6 @@ html, body {
 
 /* Syndicators */
 .syndicate-details {
-	margin-bottom: 16px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 }
@@ -353,10 +388,10 @@ html, body {
 	align-items: center;
 	justify-content: space-between;
 	padding: 10px 14px;
-	font-size: 12px;
-	font-weight: 600;
+	font-size: 11px;
+	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.06em;
 	color: var(--text-2);
 	cursor: pointer;
 	list-style: none;
@@ -366,8 +401,7 @@ html, body {
 .syndicate-summary::-webkit-details-marker { display: none; }
 .syndicate-summary::after {
 	content: '›';
-	font-size: 18px;
-	line-height: 1;
+	font-size: 18px; line-height: 1;
 	display: inline-block;
 	transition: transform 0.15s;
 }
@@ -391,11 +425,12 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 }
 .syndicator-item input[type="checkbox"] { cursor: pointer; accent-color: var(--text); }
 
-/* Buttons */
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
 .btn {
 	display: block;
 	width: 100%;
-	padding: 16px;
+	padding: 15px;
 	border: none;
 	border-radius: var(--radius);
 	font-size: 17px;
@@ -404,55 +439,43 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	cursor: pointer;
 	transition: opacity 0.1s, transform 0.1s;
 	-webkit-tap-highlight-color: transparent;
-	margin-bottom: 10px;
 	text-align: center;
 	text-decoration: none;
 }
 .btn:active { opacity: 0.8; transform: scale(0.98); }
-.btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+.btn:disabled { opacity: 0.3; cursor: default; transform: none; }
 .btn-primary  { background: var(--text); color: #ffffff; }
-.btn-secondary {
-	background: var(--surface);
-	color: var(--text);
-	border: 1px solid var(--border);
-}
-.btn-accent {
-	background: var(--surface);
-	color: var(--accent);
-	border: 1px solid var(--border);
-	font-weight: 600;
-}
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.btn-accent { background: var(--bg); color: var(--accent); border: 1px solid var(--border); font-weight: 600; }
 .btn-instagram {
 	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
 	color: #fff;
+	margin-top: 8px;
 }
 
-/* Progress */
+/* ── Progress view ────────────────────────────────────────────────────────── */
+
 .progress-view {
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	flex: 1;
 	gap: 20px;
 	text-align: center;
+	padding: 24px;
 }
 .progress-spinner {
-	width: 48px;
-	height: 48px;
+	width: 44px; height: 44px;
 	border: 3px solid var(--border);
 	border-top-color: var(--text);
 	border-radius: 50%;
 	animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.progress-status {
-	font-size: 16px;
-	color: var(--text-2);
-}
+.progress-status { font-size: 15px; color: var(--text-2); }
 .progress-bar-track {
-	width: 200px;
-	height: 4px;
+	width: 180px; height: 3px;
 	background: var(--border);
 	border-radius: 2px;
 	overflow: hidden;
@@ -465,45 +488,40 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	transition: width 0.3s;
 }
 
-/* Success */
-.success-view {
-	display: flex;
-	flex-direction: column;
+/* ── Success view ─────────────────────────────────────────────────────────── */
+
+.success-scroll {
 	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 20px 16px 8px;
 }
 .success-header {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	margin-bottom: 20px;
+	margin-bottom: 16px;
 }
 .success-check {
-	width: 32px;
-	height: 32px;
+	width: 30px; height: 30px;
 	background: var(--highlight);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	color: var(--text);
-	font-size: 18px;
+	font-size: 16px;
 	flex-shrink: 0;
 }
-.success-header h2 {
-	font-size: 20px;
-	font-weight: 700;
-}
+.success-header h2 { font-size: 20px; font-weight: 700; }
 .success-photos {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-	gap: 6px;
+	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+	gap: 5px;
 	margin-bottom: 16px;
 }
 .success-photos img {
-	width: 100%;
-	aspect-ratio: 1;
-	object-fit: cover;
-	border-radius: var(--radius-sm);
+	width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm);
 }
 .success-permalink {
 	font-size: 13px;
@@ -515,135 +533,157 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+.success-actions { display: flex; flex-direction: column; gap: 8px; }
 </style>
 </head>
 <body>
-<div class="page" id="app">
+<div class="app" id="app">
 
-	<!-- Compose view -->
-	<div id="view-compose">
-		<div class="header">
-			<h1><?php esc_html_e( 'Quick Post', 'nop-indieweb' ); ?></h1>
-			<span class="header-site"><?php echo $site_name; ?></span>
+	<!-- Always-visible header -->
+	<header class="app-header">
+		<div class="app-header__left">
+			<p class="app-title"><?php esc_html_e( 'Quick Post', 'nop-indieweb' ); ?></p>
+			<p class="app-site"><?php echo $site_name; ?></p>
 		</div>
-
-		<!-- Type selector -->
-		<nav class="type-bar" id="typeBar" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
-			<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
-				<span class="type-btn__icon" aria-hidden="true">📝</span>
-				<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
-			</button>
-			<button class="type-btn" data-type="photo" aria-pressed="false" type="button">
-				<span class="type-btn__icon" aria-hidden="true">📷</span>
-				<span><?php esc_html_e( 'Photo', 'nop-indieweb' ); ?></span>
-			</button>
-			<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
-				<span class="type-btn__icon" aria-hidden="true">↩</span>
-				<span><?php esc_html_e( 'Reply', 'nop-indieweb' ); ?></span>
-			</button>
-			<button class="type-btn" data-type="like" aria-pressed="false" type="button">
-				<span class="type-btn__icon" aria-hidden="true">♡</span>
-				<span><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
-			</button>
-			<button class="type-btn" data-type="bookmark" aria-pressed="false" type="button">
-				<span class="type-btn__icon" aria-hidden="true">🔖</span>
-				<span><?php esc_html_e( 'Bookmark', 'nop-indieweb' ); ?></span>
-			</button>
-			<button class="type-btn" data-type="repost" aria-pressed="false" type="button">
-				<span class="type-btn__icon" aria-hidden="true">🔁</span>
-				<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
-			</button>
-		</nav>
-
-		<!-- URL field (reply, like, bookmark, repost) -->
-		<div class="field-group" id="fieldUrl" hidden>
-			<label class="field-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
-			<input type="url" id="typeUrl" class="url-field" placeholder="https://…" autocomplete="off">
+		<div class="app-clock">
+			<p class="app-clock__time" id="clockTime">00:00</p>
+			<p class="app-clock__date" id="clockDate">Mon 1 Jan</p>
 		</div>
+	</header>
 
-		<!-- Photo picker -->
-		<div class="field-group" id="fieldPhoto" hidden>
-			<div class="photo-picker" id="photoPicker">
-				<input type="file" id="photoInput" accept="image/*" multiple>
-				<span class="photo-picker-icon" aria-hidden="true">📷</span>
-				<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
-				<small><?php esc_html_e( 'Tap to select · up to 10', 'nop-indieweb' ); ?></small>
+	<!-- View container -->
+	<div class="view-container">
+
+		<!-- Compose view -->
+		<div id="view-compose">
+			<nav class="type-bar" id="typeBar" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
+				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
+					<span class="type-btn__icon" aria-hidden="true">📝</span>
+					<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
+				</button>
+				<button class="type-btn" data-type="photo" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true">📷</span>
+					<span><?php esc_html_e( 'Photo', 'nop-indieweb' ); ?></span>
+				</button>
+				<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true">↩</span>
+					<span><?php esc_html_e( 'Reply', 'nop-indieweb' ); ?></span>
+				</button>
+				<button class="type-btn" data-type="like" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true">♡</span>
+					<span><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
+				</button>
+				<button class="type-btn" data-type="bookmark" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true">🔖</span>
+					<span><?php esc_html_e( 'Bookmark', 'nop-indieweb' ); ?></span>
+				</button>
+				<button class="type-btn" data-type="repost" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true">🔁</span>
+					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
+				</button>
+			</nav>
+
+			<div class="compose-scroll">
+
+				<!-- URL field (reply, like, bookmark, repost) -->
+				<div class="field-group" id="fieldUrl" hidden>
+					<label class="field-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
+					<input type="url" id="typeUrl" class="url-field" placeholder="https://…" autocomplete="off">
+				</div>
+
+				<!-- Photo picker -->
+				<div class="field-group" id="fieldPhoto" hidden>
+					<div class="photo-picker" id="photoPicker">
+						<input type="file" id="photoInput" accept="image/*" multiple>
+						<span class="photo-picker-icon" aria-hidden="true">📷</span>
+						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
+						<small><?php esc_html_e( 'Tap to select · up to 10', 'nop-indieweb' ); ?></small>
+					</div>
+					<div class="thumbnails" id="thumbnails"></div>
+				</div>
+
+				<!-- Content -->
+				<div class="field-group" id="fieldContent">
+					<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
+					<textarea
+						class="caption-field"
+						id="content"
+						placeholder="<?php esc_attr_e( 'Write a note…', 'nop-indieweb' ); ?>"
+						rows="4"
+					></textarea>
+				</div>
+
+				<!-- Tags (note + photo only) -->
+				<div class="field-group" id="fieldTags">
+					<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
+					<div class="tags-field" id="tagsField">
+						<span id="tagChips"></span>
+						<input
+							type="text"
+							id="tagInput"
+							class="tag-input"
+							placeholder="<?php esc_attr_e( 'Add a tag…', 'nop-indieweb' ); ?>"
+							autocomplete="off"
+							autocorrect="off"
+							autocapitalize="off"
+						>
+					</div>
+				</div>
+
+				<!-- Syndicators -->
+				<details class="syndicate-details" id="syndicateDetails" hidden>
+					<summary class="syndicate-summary"><?php esc_html_e( 'Syndicate to', 'nop-indieweb' ); ?></summary>
+					<div class="syndicators" id="syndicators"></div>
+				</details>
+
+			</div><!-- .compose-scroll -->
+
+			<div class="bottom-bar">
+				<button class="btn btn-primary" id="postBtn" disabled type="button">
+					<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
+				</button>
 			</div>
-			<div class="thumbnails" id="thumbnails"></div>
-		</div>
+		</div><!-- #view-compose -->
 
-		<!-- Content -->
-		<div class="field-group" id="fieldContent">
-			<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
-			<textarea
-				class="caption-field"
-				id="content"
-				placeholder="<?php esc_attr_e( 'Write a note…', 'nop-indieweb' ); ?>"
-				rows="4"
-			></textarea>
-		</div>
-
-		<!-- Tags (note + photo only) -->
-		<div class="field-group" id="fieldTags" hidden>
-			<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
-			<div class="tags-field" id="tagsField">
-				<span id="tagChips"></span>
-				<input
-					type="text"
-					id="tagInput"
-					class="tag-input"
-					placeholder="<?php esc_attr_e( 'Add a tag…', 'nop-indieweb' ); ?>"
-					autocomplete="off"
-					autocorrect="off"
-					autocapitalize="off"
-				>
+		<!-- Progress view -->
+		<div id="view-progress" hidden>
+			<div class="progress-view">
+				<div class="progress-spinner" aria-hidden="true"></div>
+				<p class="progress-status" id="progressStatus"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
+				<div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+					<div class="progress-bar-fill" id="progressFill"></div>
+				</div>
 			</div>
 		</div>
 
-		<!-- Syndicators (populated by JS from q=config, hidden until active networks exist) -->
-		<details class="syndicate-details" id="syndicateDetails" hidden>
-			<summary class="syndicate-summary"><?php esc_html_e( 'Syndicate to', 'nop-indieweb' ); ?></summary>
-			<div class="syndicators" id="syndicators"></div>
-		</details>
-
-		<button class="btn btn-primary" id="postBtn" disabled type="button">
-			<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
-		</button>
-	</div>
-
-	<!-- Progress view -->
-	<div id="view-progress" style="display:none">
-		<div class="progress-view">
-			<div class="progress-spinner" aria-hidden="true"></div>
-			<p class="progress-status" id="progressStatus"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
-			<div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-				<div class="progress-bar-fill" id="progressFill"></div>
+		<!-- Success view -->
+		<div id="view-success" hidden>
+			<div class="success-scroll">
+				<div class="success-header">
+					<div class="success-check" aria-hidden="true">✓</div>
+					<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
+				</div>
+				<div class="success-photos" id="successPhotos"></div>
+				<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
+				<div class="success-actions">
+					<a class="btn btn-accent" id="editBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>
+						<?php esc_html_e( 'Open in editor →', 'nop-indieweb' ); ?>
+					</a>
+					<button class="btn btn-instagram" id="instagramBtn" type="button" hidden>
+						<?php esc_html_e( 'Share to Instagram', 'nop-indieweb' ); ?>
+					</button>
+				</div>
+			</div>
+			<div class="bottom-bar">
+				<button class="btn btn-secondary" id="anotherBtn" type="button">
+					<?php esc_html_e( 'Post another', 'nop-indieweb' ); ?>
+				</button>
 			</div>
 		</div>
-	</div>
 
-	<!-- Success view -->
-	<div id="view-success" style="display:none">
-		<div class="success-view">
-			<div class="success-header">
-				<div class="success-check" aria-hidden="true">✓</div>
-				<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
-			</div>
-			<div class="success-photos" id="successPhotos"></div>
-			<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
-			<a class="btn btn-accent" id="editBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>
-				<?php esc_html_e( 'Open in editor →', 'nop-indieweb' ); ?>
-			</a>
-			<button class="btn btn-instagram" id="instagramBtn" type="button" hidden>
-				<?php esc_html_e( 'Share to Instagram', 'nop-indieweb' ); ?>
-			</button>
-			<button class="btn btn-secondary" id="anotherBtn" type="button">
-				<?php esc_html_e( 'Post another', 'nop-indieweb' ); ?>
-			</button>
-		</div>
-	</div>
+	</div><!-- .view-container -->
 
-</div>
+</div><!-- .app -->
 <script>
 (function () {
 	'use strict';
@@ -653,6 +693,21 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
 	};
+
+	// ── Clock ─────────────────────────────────────────────────────────────────
+
+	var DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+	var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+	function updateClock() {
+		var now = new Date();
+		document.getElementById( 'clockTime' ).textContent =
+			String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
+		document.getElementById( 'clockDate' ).textContent =
+			DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
+	}
+	updateClock();
+	setInterval( updateClock, 1000 );
 
 	// ── Type configuration ────────────────────────────────────────────────────
 
@@ -683,9 +738,6 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 
-	// Show tags field for the default type (note).
-	fieldTags.hidden = false;
-
 	// ── Syndicators ───────────────────────────────────────────────────────────
 
 	(function loadConfig() {
@@ -697,7 +749,6 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			if ( ! data ) return;
 			var synTo = data['syndicate-to'] || [];
 			if ( ! synTo.length ) return;
-
 			document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
 				return '<label class="syndicator-item">'
 					+ '<input type="checkbox" value="' + escAttr( s.uid ) + '" checked>'
@@ -779,12 +830,8 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
 
-		if ( cfg.urlProp ) {
-			urlLabel.textContent = cfg.urlLabel || 'URL';
-		}
-		if ( cfg.hasContent ) {
-			contentInput.placeholder = cfg.contentPlaceholder || 'Write…';
-		}
+		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
+		if ( cfg.hasContent ) contentInput.placeholder = cfg.contentPlaceholder || 'Write…';
 
 		urlInput.value     = '';
 		contentInput.value = '';
@@ -802,7 +849,6 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	function updatePostBtn() {
 		var cfg     = TYPE_CONFIG[ currentType ];
 		var enabled = false;
-
 		if ( currentType === 'photo' ) {
 			enabled = selectedFiles.length > 0;
 		} else if ( cfg.urlProp ) {
@@ -810,7 +856,6 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		} else {
 			enabled = contentInput.value.trim().length > 0;
 		}
-
 		postBtn.disabled = ! enabled;
 	}
 
@@ -820,25 +865,14 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	// ── Photo picker ──────────────────────────────────────────────────────────
 
 	picker.addEventListener( 'click', function () { photoInput.click(); } );
-
-	picker.addEventListener( 'dragover', function (e) {
-		e.preventDefault();
-		picker.classList.add( 'drag-over' );
-	} );
-	picker.addEventListener( 'dragleave', function () {
-		picker.classList.remove( 'drag-over' );
-	} );
+	picker.addEventListener( 'dragover', function (e) { e.preventDefault(); picker.classList.add( 'drag-over' ); } );
+	picker.addEventListener( 'dragleave', function () { picker.classList.remove( 'drag-over' ); } );
 	picker.addEventListener( 'drop', function (e) {
 		e.preventDefault();
 		picker.classList.remove( 'drag-over' );
-		handleFiles( Array.from( e.dataTransfer.files ).filter( function (f) {
-			return f.type.startsWith( 'image/' );
-		} ) );
+		handleFiles( Array.from( e.dataTransfer.files ).filter( function (f) { return f.type.startsWith( 'image/' ); } ) );
 	} );
-
-	photoInput.addEventListener( 'change', function () {
-		handleFiles( Array.from( photoInput.files ) );
-	} );
+	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
 
 	function handleFiles( files ) {
 		selectedFiles    = files.slice( 0, 10 );
@@ -858,19 +892,13 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	// ── Post ──────────────────────────────────────────────────────────────────
 
 	postBtn.addEventListener( 'click', async function () {
-		var cfg = TYPE_CONFIG[ currentType ];
-
 		try {
 			showView( 'progress' );
 
-			// Upload photos (photo type only).
 			var photoUrls = [];
 			if ( currentType === 'photo' && selectedFiles.length ) {
 				for ( var i = 0; i < selectedFiles.length; i++ ) {
-					setProgress(
-						'Uploading ' + ( i + 1 ) + ' of ' + selectedFiles.length + '…',
-						( i / selectedFiles.length ) * 0.75
-					);
+					setProgress( 'Uploading ' + ( i + 1 ) + ' of ' + selectedFiles.length + '…', ( i / selectedFiles.length ) * 0.75 );
 					var uploaded = await uploadPhoto( selectedFiles[ i ] );
 					photoUrls.push( uploaded.source_url );
 				}
@@ -881,10 +909,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			var payload  = buildPayload( photoUrls );
 			var response = await fetch( NOP.micropubUrl, {
 				method:  'POST',
-				headers: {
-					'X-WP-Nonce':   NOP.nonce,
-					'Content-Type': 'application/json',
-				},
+				headers: { 'X-WP-Nonce': NOP.nonce, 'Content-Type': 'application/json' },
 				body: JSON.stringify( payload ),
 			} );
 
@@ -899,12 +924,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			setProgress( 'Syndicating…', 0.97 );
 			await delay( 600 );
 
-			// Copy caption to clipboard for Instagram workflow (photo only).
 			if ( currentType === 'photo' ) {
 				var caption = contentInput.value.trim();
-				if ( caption ) {
-					await navigator.clipboard.writeText( caption ).catch( function () {} );
-				}
+				if ( caption ) await navigator.clipboard.writeText( caption ).catch( function () {} );
 			}
 
 			showSuccess( permalink, editUrl, photoUrls );
@@ -920,29 +942,20 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		var props = {};
 
 		var content = contentInput.value.trim();
-		if ( content && cfg.hasContent ) {
-			props.content = [ content ];
-		}
+		if ( content && cfg.hasContent ) props.content = [ content ];
 
 		if ( cfg.urlProp ) {
 			var url = urlInput.value.trim();
 			if ( url ) props[ cfg.urlProp ] = [ url ];
 		}
 
-		if ( photoUrls && photoUrls.length ) {
-			props.photo = photoUrls;
-		}
-
-		if ( currentTags.length ) {
-			props.category = currentTags.slice();
-		}
+		if ( photoUrls && photoUrls.length ) props.photo = photoUrls;
+		if ( currentTags.length ) props.category = currentTags.slice();
 
 		var synTo = Array.from(
 			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' )
 		).map( function (cb) { return cb.value; } );
-		if ( synTo.length ) {
-			props[ 'syndicate-to' ] = synTo;
-		}
+		if ( synTo.length ) props[ 'syndicate-to' ] = synTo;
 
 		return { type: [ 'h-entry' ], properties: props };
 	}
@@ -969,34 +982,22 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	function showSuccess( permalink, editUrl, photoUrls ) {
 		showView( 'success' );
 
-		var photosEl = document.getElementById( 'successPhotos' );
-		photosEl.innerHTML = photoUrls.map( function (url) {
+		document.getElementById( 'successPhotos' ).innerHTML = photoUrls.map( function (url) {
 			return '<img src="' + escAttr( url ) + '" alt="">';
 		} ).join( '' );
 
 		var link = document.getElementById( 'successLink' );
-		link.href        = permalink;
-		link.textContent = permalink;
+		link.href = permalink; link.textContent = permalink;
 
 		var editBtn = document.getElementById( 'editBtn' );
-		if ( editUrl ) {
-			editBtn.href   = editUrl;
-			editBtn.hidden = false;
-		} else {
-			editBtn.hidden = true;
-		}
+		editBtn.href = editUrl; editBtn.hidden = ! editUrl;
 
 		var igBtn = document.getElementById( 'instagramBtn' );
 		igBtn.hidden = ! ( currentType === 'photo' && selectedFiles.length );
 		igBtn.onclick = async function () {
 			if ( navigator.canShare && navigator.canShare( { files: selectedFiles } ) ) {
-				try {
-					await navigator.share( { files: selectedFiles } );
-				} catch ( e ) {
-					if ( e.name !== 'AbortError' ) {
-						alert( 'Could not open share sheet. Share from your Photos app instead.' );
-					}
-				}
+				try { await navigator.share( { files: selectedFiles } ); }
+				catch ( e ) { if ( e.name !== 'AbortError' ) alert( 'Share from your Photos app instead.' ); }
 			} else {
 				alert( 'Web sharing is not supported on this browser.' );
 			}
@@ -1006,12 +1007,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	}
 
 	function resetForm() {
-		selectedFiles      = [];
-		currentTags        = [];
-		contentInput.value = '';
-		urlInput.value     = '';
-		thumbs.innerHTML   = '';
-		photoInput.value   = '';
+		selectedFiles = []; currentTags = [];
+		contentInput.value = ''; urlInput.value = '';
+		thumbs.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 		renderTags();
 		switchType( 'note' );
@@ -1021,9 +1019,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	function showView( name ) {
-		[ 'compose', 'progress', 'success' ].forEach( function (v) {
-			document.getElementById( 'view-' + v ).style.display = v === name ? '' : 'none';
-		} );
+		document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
+		document.getElementById( 'view-progress' ).hidden = name !== 'progress';
+		document.getElementById( 'view-success'  ).hidden = name !== 'success';
 	}
 
 	function setProgress( message, fraction ) {
@@ -1033,21 +1031,14 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		fill.parentElement.setAttribute( 'aria-valuenow', Math.round( fraction * 100 ) );
 	}
 
-	function delay( ms ) {
-		return new Promise( function (resolve) { setTimeout( resolve, ms ); } );
-	}
+	function delay( ms ) { return new Promise( function (resolve) { setTimeout( resolve, ms ); } ); }
 
 	function escHtml( str ) {
 		return String( str )
-			.replace( /&/g, '&amp;' )
-			.replace( /</g, '&lt;' )
-			.replace( />/g, '&gt;' )
-			.replace( /"/g, '&quot;' );
+			.replace( /&/g, '&amp;' ).replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' ).replace( /"/g, '&quot;' );
 	}
-
-	function escAttr( str ) {
-		return String( str ).replace( /"/g, '&quot;' );
-	}
+	function escAttr( str ) { return String( str ).replace( /"/g, '&quot;' ); }
 
 } )();
 </script>
