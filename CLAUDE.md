@@ -39,6 +39,20 @@ npm run build       # one-off production build
 npm start           # watch mode during development
 ```
 
+## Server-side files not in git
+
+The following files exist on the production server but are intentionally outside this repo. Recreate them manually after a fresh server provision.
+
+**`wp-content/mu-plugins/nop-session.php`**
+Extends the login session to one year for user ID 1 (neilhainsworth), network-wide including network admin. Safe in mu-plugins — never touched by WP core, plugin, or theme updates.
+
+```php
+<?php
+add_filter( 'auth_cookie_expiration', function ( int $expiration, int $user_id ): int {
+	return 1 === $user_id ? YEAR_IN_SECONDS : $expiration;
+}, 10, 2 );
+```
+
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.
