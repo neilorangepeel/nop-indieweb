@@ -66,6 +66,8 @@ class Posting_Page {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="<?php echo $site_name; ?>">
@@ -91,13 +93,33 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 	--surface:   #f7f7f7;
 	--text:      #111111;
 	--text-2:    #686868;
-	--accent:    #503AA8;
-	--accent-bg: #FFEE5826;
-	--highlight: #FFEE58;
-	--border:    #e8e8e8;
-	--radius:    2px;
+	--accent:       #503AA8;
+	--accent-bg:    #FFEE5826;
+	--highlight:    #FFEE58;
+	--on-highlight: #111111;
+	--text-inverse: #ffffff;
+	--border:       #e8e8e8;
+	--radius:       2px;
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/*
+ * Dark mode: flip the surface/text/border tokens and lighten the purple
+ * accent for legibility. The yellow --highlight and its always-dark
+ * --on-highlight stay constant — they are the brand signature in both themes.
+ */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg:           #161616;
+		--surface:      #202020;
+		--text:         #f2f2f2;
+		--text-2:       #9a9a9a;
+		--text-inverse: #161616;
+		--accent:       #b9a4e8;
+		--accent-bg:    #FFEE581f;
+		--border:       #2e2e2e;
+	}
 }
 
 html {
@@ -230,7 +252,7 @@ body {
 .type-btn.is-active {
 	background: var(--highlight);
 	border-color: var(--highlight);
-	color: var(--text);
+	color: var(--on-highlight);
 	animation: type-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes type-pop {
@@ -363,7 +385,7 @@ body {
 	align-items: center;
 	gap: 4px;
 	background: var(--highlight);
-	color: var(--text);
+	color: var(--on-highlight);
 	border-radius: var(--radius);
 	padding: 3px 8px;
 	font-size: 13px;
@@ -373,7 +395,7 @@ body {
 .tag-chip__remove {
 	background: none; border: none; padding: 0;
 	cursor: pointer; font-size: 15px; line-height: 1;
-	color: var(--text); opacity: 0.55; font-family: inherit;
+	color: var(--on-highlight); opacity: 0.55; font-family: inherit;
 }
 .tag-chip__remove:hover { opacity: 1; }
 .tag-input {
@@ -454,7 +476,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 }
 .btn:active { opacity: 0.8; transform: scale(0.98); }
 .btn:disabled { opacity: 0.3; cursor: default; transform: none; }
-.btn-primary  { background: var(--text); color: #ffffff; }
+.btn-primary  { background: var(--text); color: var(--text-inverse); }
 .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
 .btn-accent { background: var(--bg); color: var(--accent); border: 1px solid var(--border); font-weight: 700; }
 .btn-instagram {
@@ -519,7 +541,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: var(--text);
+	color: var(--on-highlight);
 	font-size: 16px;
 	flex-shrink: 0;
 }
