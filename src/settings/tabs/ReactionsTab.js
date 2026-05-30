@@ -1,4 +1,4 @@
-import { ToggleControl, SelectControl } from '@wordpress/components';
+import { ToggleControl, SelectControl, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 const APPROVAL_OPTIONS = [
@@ -46,6 +46,19 @@ export default function ReactionsTab( { settings, setSettings } ) {
 					__nextHasNoMarginBottom
 				/>
 			) }
+
+			<h3 className="nop-section-heading">
+				{ __( 'WebSub', 'nop-indieweb' ) }
+			</h3>
+			<TextControl
+				label={ __( 'Hub URL', 'nop-indieweb' ) }
+				value={ wm.hub_url ?? '' }
+				onChange={ ( val ) => set( 'hub_url', val ) }
+				placeholder="https://pubsubhubbub.superfeedr.com/"
+				type="url"
+				help={ __( 'Advertise this hub in your site head and ping it when new posts are published. Leave blank to disable.', 'nop-indieweb' ) }
+				__nextHasNoMarginBottom
+			/>
 		</div>
 	);
 }

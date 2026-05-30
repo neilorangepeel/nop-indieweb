@@ -95,15 +95,36 @@ class MF2_Parser {
 	}
 
 	private function extract_content( ?\DOMElement $root, \DOMXPath $xpath, string $type ): string {
-		if ( ! $root || $type !== 'reply' ) {
+		if ( $type !== 'reply' ) {
 			return '';
 		}
-		$text = $this->text(
-			$xpath,
-			'.//*[' . $this->cls( 'e-content' ) . ' or ' . $this->cls( 'p-summary' ) . ']',
-			$root
-		);
-		return sanitize_textarea_field( trim( $text ) );
+
+		if ( $root ) {
+			$text = $this->text(
+				$xpath,
+				'.//*[' . $this->cls( 'e-content' ) . ' or ' . $this->cls( 'p-summary' ) . ']',
+				$root
+			);
+			if ( $text !== '' ) {
+				return sanitize_textarea_field( trim( $text ) );
+			}
+		}
+
+		// Fall back to meta description for sources without mf2 markup.
+		foreach ( [
+			'//meta[@name="description"]/@content',
+			'//meta[@property="og:description"]/@content',
+		] as $query ) {
+			$nodes = $xpath->query( $query );
+			if ( $nodes && $nodes->length > 0 ) {
+				$text = trim( (string) $nodes->item( 0 )->nodeValue );
+				if ( $text !== '' ) {
+					return sanitize_textarea_field( wp_trim_words( $text, 55 ) );
+				}
+			}
+		}
+
+		return '';
 	}
 
 	private function extract_published( ?\DOMElement $root, \DOMXPath $xpath ): string {

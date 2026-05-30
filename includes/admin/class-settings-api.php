@@ -108,8 +108,9 @@ class Settings_API {
 			'syndicators'         => $this->read_syndicators( $raw ),
 			'services'            => $this->read_services( $raw ),
 			'webmentions'         => [
-				'receive_enabled' => (bool) ( $raw['webmentions']['receive_enabled'] ?? true ),
-				'approval'        => (string) ( $raw['webmentions']['approval'] ?? 'bridgy_only' ),
+				'receive_enabled' => (bool)   ( $raw['webmentions']['receive_enabled'] ?? true ),
+				'approval'        => (string) ( $raw['webmentions']['approval']        ?? 'bridgy_only' ),
+				'hub_url'         => (string) ( $raw['webmentions']['hub_url']         ?? '' ),
 			],
 			'maps'    => [ 'geoapify_api_key'      => $this->redact( $raw['maps']['geoapify_api_key'] ?? '' ) ],
 			'weather' => [ 'pirate_weather_api_key' => $this->redact( $raw['weather']['pirate_weather_api_key'] ?? '' ) ],
@@ -451,6 +452,9 @@ class Settings_API {
 			}
 			if ( isset( $in['approval'] ) && in_array( $in['approval'], self::VALID_APPROVAL, true ) ) {
 				$clean['webmentions']['approval'] = $in['approval'];
+			}
+			if ( isset( $in['hub_url'] ) ) {
+				$clean['webmentions']['hub_url'] = esc_url_raw( (string) $in['hub_url'] );
 			}
 		}
 

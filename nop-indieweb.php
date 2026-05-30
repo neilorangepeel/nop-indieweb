@@ -76,6 +76,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-social-backfeed.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-enricher.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-geoapify-geocoder.php';
+require_once NOP_INDIEWEB_DIR . 'includes/class-websub.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-posting-page.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 

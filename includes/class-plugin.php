@@ -37,6 +37,7 @@ use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
 use NOP\IndieWeb\Syndication\Syndication_Manager;
 use NOP\IndieWeb\Importer\Feed_Importer;
+use NOP\IndieWeb\WebSub;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
@@ -139,6 +140,7 @@ class Plugin {
 		( new Auth_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
+		( new WebSub() )->register();
 		( new Like_Endpoint() )->register();
 		( new Social_Backfeed() )->register();
 		( new Post_Filter() )->register();
@@ -979,6 +981,11 @@ HTML,
 		printf( "<link rel=\"token_endpoint\" href=\"%s\">\n",         esc_url( rest_url( 'nop-indieweb/v1/token' ) ) );
 		printf( "<link rel=\"indieauth-metadata\" href=\"%s\">\n",     esc_url( rest_url( 'nop-indieweb/v1/indieauth-metadata' ) ) );
 
+		$hub = ( new WebSub() )->hub_url();
+		if ( $hub ) {
+			printf( "<link rel=\"hub\" href=\"%s\">\n", esc_url( $hub ) );
+		}
+
 		foreach ( $this->get_me_urls() as $url ) {
 			printf( "<link rel=\"me\" href=\"%s\">\n", esc_url( $url ) );
 		}
@@ -996,6 +1003,11 @@ HTML,
 		header( sprintf( 'Link: <%s>; rel="authorization_endpoint"', Auth_Endpoint::url() ),                  false );
 		header( sprintf( 'Link: <%s>; rel="token_endpoint"',         rest_url( 'nop-indieweb/v1/token' ) ),  false );
 		header( sprintf( 'Link: <%s>; rel="indieauth-metadata"',     rest_url( 'nop-indieweb/v1/indieauth-metadata' ) ), false );
+
+		$hub = ( new WebSub() )->hub_url();
+		if ( $hub ) {
+			header( sprintf( 'Link: <%s>; rel="hub"', $hub ), false );
+		}
 
 		foreach ( $this->get_me_urls() as $url ) {
 			header( sprintf( 'Link: <%s>; rel="me"', $url ), false );
