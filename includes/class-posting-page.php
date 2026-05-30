@@ -124,6 +124,10 @@ body {
 	height: 100vh;
 	height: 100dvh;
 	overflow: hidden;
+	max-width: 480px;
+	margin: 0 auto;
+	border-left: 1px solid var(--border);
+	border-right: 1px solid var(--border);
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -357,7 +361,7 @@ body {
 	border-radius: var(--radius);
 	padding: 3px 8px;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: 700;
 	white-space: nowrap;
 }
 .tag-chip__remove {
@@ -446,7 +450,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 .btn:disabled { opacity: 0.3; cursor: default; transform: none; }
 .btn-primary  { background: var(--text); color: #ffffff; }
 .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-.btn-accent { background: var(--bg); color: var(--accent); border: 1px solid var(--border); font-weight: 600; }
+.btn-accent { background: var(--bg); color: var(--accent); border: 1px solid var(--border); font-weight: 700; }
 .btn-instagram {
 	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
 	color: #fff;
