@@ -224,13 +224,22 @@ body {
 	transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 .type-btn__icon {
-	font-size: 16px;
-	line-height: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
 }
 .type-btn.is-active {
 	background: var(--highlight);
 	border-color: var(--highlight);
 	color: var(--text);
+	animation: type-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes type-pop {
+	0%   { transform: scale(1); }
+	50%  { transform: scale(1.1); }
+	100% { transform: scale(1); }
 }
 .type-btn:active { opacity: 0.65; }
 
@@ -562,27 +571,27 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		<div id="view-compose">
 			<nav class="type-bar" id="typeBar" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
 				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
-					<span class="type-btn__icon" aria-hidden="true">📝</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span>
 					<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="photo" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true">📷</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
 					<span><?php esc_html_e( 'Photo', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true">↩</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 01-4 4H4"/></svg></span>
 					<span><?php esc_html_e( 'Reply', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="like" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true">♡</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
 					<span><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="bookmark" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true">🔖</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></span>
 					<span><?php esc_html_e( 'Bookmark', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="repost" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true">🔁</span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></span>
 					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
 				</button>
 			</nav>
@@ -599,7 +608,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 				<div class="field-group" id="fieldPhoto" hidden>
 					<div class="photo-picker" id="photoPicker">
 						<input type="file" id="photoInput" accept="image/*" multiple>
-						<span class="photo-picker-icon" aria-hidden="true">📷</span>
+						<span class="photo-picker-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
 						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
 						<small><?php esc_html_e( 'Tap to select · up to 10', 'nop-indieweb' ); ?></small>
 					</div>
@@ -664,7 +673,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		<div id="view-success" hidden>
 			<div class="success-scroll">
 				<div class="success-header">
-					<div class="success-check" aria-hidden="true">✓</div>
+					<div class="success-check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
 					<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
 				</div>
 				<div class="success-photos" id="successPhotos"></div>
