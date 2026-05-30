@@ -27,13 +27,18 @@ function initialTab() {
 export default function App() {
 	const { settings, setSettings, save, isSaving, notice, dismissNotice } = useSettings();
 	const [ activeTab, setActiveTab ] = useState( initialTab );
+	const [ tabKey, setTabKey ] = useState( 0 );
 
 	const handleTabSelect = ( tabName ) => {
 		setActiveTab( tabName );
 		history.replaceState( null, '', '#' + tabName );
 	};
 
-	const onTabSwitch = handleTabSelect;
+	const onTabSwitch = ( tabName ) => {
+		setActiveTab( tabName );
+		setTabKey( ( k ) => k + 1 );
+		history.replaceState( null, '', '#' + tabName );
+	};
 
 	if ( ! settings ) {
 		return (
@@ -48,9 +53,9 @@ export default function App() {
 	return (
 		<div className="nop-settings-app">
 			<TabPanel
+				key={ tabKey }
 				tabs={ TABS }
 				initialTabName={ activeTab }
-				selectedTabName={ activeTab }
 				onSelect={ handleTabSelect }
 			>
 				{ ( tab ) => {
