@@ -99,27 +99,26 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		$body_text = $this->build_full_text( $post_id );
 
-		if ( $video || $images ) {
-			// Media path: use the bare site host (e.g. neilorangepeel.com) as the
-			// facet label so readers see who/where the post came from while
-			// keeping the full URL out of the visible text budget. Falls back to
-			// the full permalink if the host can't be parsed. Video and image
-			// embeds are mutually exclusive on Bluesky — video wins when both
-			// are present in the post.
-			$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
-			$label  = '' !== $host ? $host : $permalink;
-			$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
-			$facet  = $this->build_label_facet( $text, $label, $permalink );
-			$embed  = $video
-				? $this->build_video_embed( $video, $session )
-				: $this->build_image_embed( $images, $session );
-			$facets = $facet ? [ $facet ] : [];
+		// Quiet link back: use the bare site host (e.g. neilorangepeel.com) as a
+		// tappable facet label so readers see where the post came from while the
+		// full URL stays out of the visible text budget. Falls back to the full
+		// permalink if the host can't be parsed. Applied to every post regardless
+		// of embed type so the link treatment is consistent.
+		$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
+		$label  = '' !== $host ? $host : $permalink;
+		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
+		$facet  = $this->build_label_facet( $text, $label, $permalink );
+		$facets = $facet ? [ $facet ] : [];
+
+		// Embeds are mutually exclusive on Bluesky. Video wins over images; with
+		// no media a link-card preview is built for titled posts (and for
+		// check-ins, which carry a map image as the card thumbnail).
+		if ( $video ) {
+			$embed = $this->build_video_embed( $video, $session );
+		} elseif ( $images ) {
+			$embed = $this->build_image_embed( $images, $session );
 		} else {
-			// No media: full text + inline URL, with optional link-card preview
-			// for titled posts (Articles/Bookmarks/Replies).
-			$text   = $this->compose_status( $body_text, 300, $permalink, mb_strlen( $permalink ) );
-			$facets = $this->build_link_facets( $text, $permalink );
-			$embed  = $this->build_link_card( $post_id, $permalink, $session );
+			$embed = $this->build_link_card( $post_id, $permalink, $session );
 		}
 
 		$record = [
@@ -408,20 +407,5 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 
 		return json_decode( wp_remote_retrieve_body( $response ), true );
-	}
-
-	private function build_link_facets( string $text, string $url ): array {
-		$pos = mb_strpos( $text, $url );
-		if ( false === $pos ) {
-			return [];
-		}
-
-		$byte_start = strlen( mb_substr( $text, 0, $pos ) );
-		$byte_end   = $byte_start + strlen( $url );
-
-		return [ [
-			'index'    => [ 'byteStart' => $byte_start, 'byteEnd' => $byte_end ],
-			'features' => [ [ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ] ],
-		] ];
 	}
 }

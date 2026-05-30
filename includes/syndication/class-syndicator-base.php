@@ -76,7 +76,7 @@ abstract class Syndicator_Base {
 		if ( $venue_name ) {
 			$body    = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
 			$checkin = sprintf( '📍 Checked in at %s', $venue_name );
-			return '' !== $body ? $body . "\n\n" . $checkin : $checkin;
+			return '' !== $body ? $checkin . "\n\n" . $body : $checkin;
 		}
 		if ( ! $post ) {
 			return '';
