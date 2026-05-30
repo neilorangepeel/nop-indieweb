@@ -28,14 +28,17 @@ export default function App() {
 	const { settings, setSettings, save, isSaving, notice, dismissNotice } = useSettings();
 	const [ activeTab, setActiveTab ] = useState( initialTab );
 	const [ tabKey, setTabKey ] = useState( 0 );
+	const [ targetNetwork, setTargetNetwork ] = useState( null );
 
 	const handleTabSelect = ( tabName ) => {
 		setActiveTab( tabName );
+		setTargetNetwork( null );
 		history.replaceState( null, '', '#' + tabName );
 	};
 
-	const onTabSwitch = ( tabName ) => {
+	const onTabSwitch = ( tabName, network = null ) => {
 		setActiveTab( tabName );
+		setTargetNetwork( network );
 		setTabKey( ( k ) => k + 1 );
 		history.replaceState( null, '', '#' + tabName );
 	};
@@ -61,7 +64,7 @@ export default function App() {
 				{ ( tab ) => {
 					switch ( tab.name ) {
 						case 'overview':  return <OverviewTab  { ...tabProps } onTabSwitch={ onTabSwitch } />;
-						case 'networks':  return <NetworksTab  { ...tabProps } />;
+						case 'networks':  return <NetworksTab  { ...tabProps } targetNetwork={ targetNetwork } />;
 						case 'content':   return <ContentTab   { ...tabProps } />;
 						case 'reactions': return <ReactionsTab { ...tabProps } />;
 						case 'advanced':  return <AdvancedTab  { ...tabProps } />;

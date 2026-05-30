@@ -50,7 +50,7 @@ export default function OverviewTab( { settings, setSettings, onTabSwitch } ) {
 						key={ n.slug }
 						label={ n.label }
 						status={ networkStatus[ n.slug ] }
-						onConfigure={ () => onTabSwitch( 'networks' ) }
+						onConfigure={ () => onTabSwitch( 'networks', n.slug ) }
 					/>
 				) ) }
 			</div>

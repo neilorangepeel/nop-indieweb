@@ -1,3 +1,4 @@
+import { useState } from '@wordpress/element';
 import { PanelBody, ToggleControl, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import SecretInput from '../components/SecretInput';
@@ -40,13 +41,13 @@ function panelTitle( label, active ) {
 
 // ——— Mastodon ——————————————————————————————————————————————————————————————
 
-function MastodonPanel( { value, onChange, networkStatus } ) {
+function MastodonPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	const set     = ( key, val ) => onChange( { ...value, [ key ]: val } );
 	const active  = networkStatus?.active ?? false;
 	const canTest = !! ( value.instance && value.access_token );
 
 	return (
-		<PanelBody title={ panelTitle( 'Mastodon', active ) } initialOpen={ active }>
+		<PanelBody title={ panelTitle( 'Mastodon', active ) } opened={ opened } onToggle={ onToggle }>
 			<div className="nop-network-panel">
 				<ToggleControl
 					label={ __( 'Syndicate posts to Mastodon on publish', 'nop-indieweb' ) }
@@ -82,13 +83,13 @@ function MastodonPanel( { value, onChange, networkStatus } ) {
 
 // ——— Bluesky ———————————————————————————————————————————————————————————————
 
-function BlueskyPanel( { value, onChange, networkStatus } ) {
+function BlueskyPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	const set     = ( key, val ) => onChange( { ...value, [ key ]: val } );
 	const active  = networkStatus?.active ?? false;
 	const canTest = !! ( value.handle && value.app_password );
 
 	return (
-		<PanelBody title={ panelTitle( 'Bluesky', active ) } initialOpen={ active }>
+		<PanelBody title={ panelTitle( 'Bluesky', active ) } opened={ opened } onToggle={ onToggle }>
 			<div className="nop-network-panel">
 				<ToggleControl
 					label={ __( 'Syndicate posts to Bluesky on publish', 'nop-indieweb' ) }
@@ -123,13 +124,13 @@ function BlueskyPanel( { value, onChange, networkStatus } ) {
 
 // ——— Pixelfed ——————————————————————————————————————————————————————————————
 
-function PixelfedPanel( { value, onChange, networkStatus } ) {
+function PixelfedPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	const set     = ( key, val ) => onChange( { ...value, [ key ]: val } );
 	const active  = networkStatus?.active ?? false;
 	const canTest = !! ( value.instance && value.access_token );
 
 	return (
-		<PanelBody title={ panelTitle( 'Pixelfed', active ) } initialOpen={ active }>
+		<PanelBody title={ panelTitle( 'Pixelfed', active ) } opened={ opened } onToggle={ onToggle }>
 			<div className="nop-network-panel">
 				<ToggleControl
 					label={ __( 'Syndicate posts to Pixelfed on publish', 'nop-indieweb' ) }
@@ -165,12 +166,12 @@ function PixelfedPanel( { value, onChange, networkStatus } ) {
 
 // ——— Letterboxd ————————————————————————————————————————————————————————————
 
-function LetterboxdPanel( { value, onChange, networkStatus } ) {
+function LetterboxdPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	const set    = ( key, val ) => onChange( { ...value, [ key ]: val } );
 	const active = networkStatus?.active ?? false;
 
 	return (
-		<PanelBody title={ panelTitle( 'Letterboxd', active ) } initialOpen={ active }>
+		<PanelBody title={ panelTitle( 'Letterboxd', active ) } opened={ opened } onToggle={ onToggle }>
 			<div className="nop-network-panel">
 				<ToggleControl
 					label={ __( 'Import Letterboxd diary hourly', 'nop-indieweb' ) }
@@ -198,11 +199,11 @@ function LetterboxdPanel( { value, onChange, networkStatus } ) {
 
 // ——— Swarm —————————————————————————————————————————————————————————————————
 
-function SwarmPanel( { value, onChange, networkStatus } ) {
+function SwarmPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	const set    = ( key, val ) => onChange( { ...value, [ key ]: val } );
 	const active = networkStatus?.active ?? false;
 	return (
-		<PanelBody title={ panelTitle( 'Swarm', active ) } initialOpen={ active }>
+		<PanelBody title={ panelTitle( 'Swarm', active ) } opened={ opened } onToggle={ onToggle }>
 			<div className="nop-network-panel">
 				<ToggleControl
 					label={ __( 'Accept check-ins from OwnYourSwarm', 'nop-indieweb' ) }
@@ -224,10 +225,21 @@ function SwarmPanel( { value, onChange, networkStatus } ) {
 
 // ——— NetworksTab ———————————————————————————————————————————————————————————
 
-export default function NetworksTab( { settings, setSettings } ) {
+export default function NetworksTab( { settings, setSettings, targetNetwork } ) {
 	const syndicators   = settings.syndicators   ?? {};
 	const services      = settings.services      ?? {};
 	const networkStatus = settings._meta?.network_status ?? {};
+
+	const [ openPanels, setOpenPanels ] = useState( {
+		mastodon:   targetNetwork === 'mastodon',
+		bluesky:    targetNetwork === 'bluesky',
+		pixelfed:   targetNetwork === 'pixelfed',
+		letterboxd: targetNetwork === 'letterboxd',
+		swarm:      targetNetwork === 'swarm',
+	} );
+
+	const toggle = ( slug ) => ( val ) =>
+		setOpenPanels( ( prev ) => ( { ...prev, [ slug ]: val } ) );
 
 	const setSyndicator = ( slug ) => ( val ) =>
 		setSettings( { ...settings, syndicators: { ...syndicators, [ slug ]: val } } );
@@ -241,26 +253,36 @@ export default function NetworksTab( { settings, setSettings } ) {
 				value={ syndicators.mastodon   ?? {} }
 				onChange={ setSyndicator( 'mastodon' ) }
 				networkStatus={ networkStatus.mastodon }
+				opened={ openPanels.mastodon }
+				onToggle={ toggle( 'mastodon' ) }
 			/>
 			<BlueskyPanel
 				value={ syndicators.bluesky    ?? {} }
 				onChange={ setSyndicator( 'bluesky' ) }
 				networkStatus={ networkStatus.bluesky }
+				opened={ openPanels.bluesky }
+				onToggle={ toggle( 'bluesky' ) }
 			/>
 			<PixelfedPanel
 				value={ syndicators.pixelfed   ?? {} }
 				onChange={ setSyndicator( 'pixelfed' ) }
 				networkStatus={ networkStatus.pixelfed }
+				opened={ openPanels.pixelfed }
+				onToggle={ toggle( 'pixelfed' ) }
 			/>
 			<LetterboxdPanel
 				value={ services.letterboxd    ?? {} }
 				onChange={ setService( 'letterboxd' ) }
 				networkStatus={ networkStatus.letterboxd }
+				opened={ openPanels.letterboxd }
+				onToggle={ toggle( 'letterboxd' ) }
 			/>
 			<SwarmPanel
 				value={ services.swarm         ?? {} }
 				onChange={ setService( 'swarm' ) }
 				networkStatus={ networkStatus.swarm }
+				opened={ openPanels.swarm }
+				onToggle={ toggle( 'swarm' ) }
 			/>
 		</div>
 	);
