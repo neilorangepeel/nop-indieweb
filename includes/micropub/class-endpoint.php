@@ -204,6 +204,7 @@ class Endpoint {
 		// Micropub spec: 201 Created with the new post URL in Location header.
 		$response = new WP_REST_Response( null, 201 );
 		$response->header( 'Location', get_permalink( $post_id ) );
+		$response->header( 'X-Edit-URL', admin_url( 'post.php?post=' . $post_id . '&action=edit' ) );
 		return $response;
 	}
 

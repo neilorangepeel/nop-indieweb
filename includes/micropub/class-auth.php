@@ -13,7 +13,8 @@ use WP_Error;
 use NOP\IndieWeb\IndieAuth\Token_Store;
 
 /**
- * Verifies incoming Micropub requests against IndieAuth-issued Bearer tokens.
+ * Verifies incoming Micropub requests against IndieAuth-issued Bearer tokens,
+ * with a cookie/nonce fallback for same-site requests (e.g. the /post page).
  *
  * Tokens are issued by the IndieAuth token endpoint after the user completes
  * the authorization flow. Each token is stored as a SHA-256 hash in the
@@ -26,36 +27,75 @@ use NOP\IndieWeb\IndieAuth\Token_Store;
 class Auth {
 
 	/**
-	 * Validates the incoming Bearer token and returns the matched token row.
+	 * Validates the incoming request and returns an auth array.
+	 *
+	 * Tries Bearer token first (external clients). Falls back to WordPress
+	 * cookie + nonce for same-site requests such as the /post page.
 	 *
 	 * @return array{id:int,token_hash:string,client_id:string,client_name:string,scope:string,user_id:int}|WP_Error
 	 */
 	public function verify( WP_REST_Request $request ): array|WP_Error {
 		$raw_token = $this->extract_token( $request );
 
-		if ( ! $raw_token ) {
+		if ( $raw_token ) {
+			$row = Token_Store::find_by_token( $raw_token );
+
+			if ( ! $row ) {
+				return new WP_Error(
+					'nop_indieweb_invalid_token',
+					'Invalid or revoked Bearer token.',
+					[ 'status' => 403 ]
+				);
+			}
+
+			if ( time() - (int) strtotime( $row['last_used_at'] ) > HOUR_IN_SECONDS ) {
+				Token_Store::touch( $row['token_hash'] );
+			}
+
+			return $row;
+		}
+
+		return $this->verify_cookie( $request );
+	}
+
+	/**
+	 * Verifies a same-site request via WordPress cookie session + REST nonce.
+	 * Returns a synthetic auth array with full owner-level scope on success.
+	 */
+	private function verify_cookie( WP_REST_Request $request ): array|WP_Error {
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error(
 				'nop_indieweb_missing_token',
-				'Missing Bearer token. Send Authorization: Bearer <token>.',
+				'Missing Bearer token or valid session.',
 				[ 'status' => 401 ]
 			);
 		}
 
-		$row = Token_Store::find_by_token( $raw_token );
-
-		if ( ! $row ) {
+		$nonce = (string) ( $request->get_header( 'x-wp-nonce' ) ?? '' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error(
-				'nop_indieweb_invalid_token',
-				'Invalid or revoked Bearer token.',
+				'nop_indieweb_missing_token',
+				'Missing Bearer token or valid session.',
+				[ 'status' => 401 ]
+			);
+		}
+
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			return new WP_Error(
+				'nop_indieweb_insufficient_scope',
+				'Insufficient capability.',
 				[ 'status' => 403 ]
 			);
 		}
 
-		if ( time() - (int) strtotime( $row['last_used_at'] ) > HOUR_IN_SECONDS ) {
-			Token_Store::touch( $row['token_hash'] );
-		}
-
-		return $row;
+		return [
+			'id'          => 0,
+			'token_hash'  => '',
+			'client_id'   => home_url( '/' ),
+			'client_name' => 'Posting Page',
+			'scope'       => 'create update delete media undelete',
+			'user_id'     => get_current_user_id(),
+		];
 	}
 
 	/**
