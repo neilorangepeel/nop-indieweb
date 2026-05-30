@@ -100,6 +100,7 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 	--text-inverse: #ffffff;
 	--border:       #e8e8e8;
 	--radius:       2px;
+	--danger:       #c0392b;
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -119,6 +120,7 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 		--accent:       #b9a4e8;
 		--accent-bg:    #FFEE581f;
 		--border:       #2e2e2e;
+		--danger:       #e06b5e;
 	}
 }
 
@@ -543,6 +545,12 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	color: var(--on-highlight);
 	font-size: 16px;
 	flex-shrink: 0;
+	animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes pop-in {
+	0%   { transform: scale(0); }
+	60%  { transform: scale(1.15); }
+	100% { transform: scale(1); }
 }
 .success-header h2 { font-size: 20px; font-weight: 700; }
 .success-photos {
@@ -565,10 +573,48 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	white-space: nowrap;
 }
 .success-actions { display: flex; flex-direction: column; gap: 8px; }
+.success-streak { font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
+
+/* Character counter */
+.char-count {
+	align-self: flex-end;
+	margin-top: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--text-2);
+	font-variant-numeric: tabular-nums;
+}
+.char-count.is-over { color: var(--danger); }
+
+/* Toast */
+.toast {
+	position: fixed;
+	left: 50%;
+	bottom: calc(var(--safe-bottom) + 20px);
+	transform: translate(-50%, 12px);
+	max-width: 88%;
+	padding: 12px 16px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	color: var(--text);
+	font-size: 14px;
+	font-weight: 500;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+	opacity: 0;
+	transition: opacity 0.2s, transform 0.2s;
+	z-index: 50;
+	pointer-events: none;
+	text-align: center;
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.toast--error { color: var(--danger); border-color: var(--danger); }
 
 @media (prefers-reduced-motion: reduce) {
 	.type-btn.is-active { animation: none; }
 	.btn:active { transform: none; }
+	.success-check { animation: none; }
+	.toast { transition: opacity 0.01ms; }
 }
 </style>
 </head>
@@ -647,6 +693,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 						placeholder="<?php esc_attr_e( 'Write a note…', 'nop-indieweb' ); ?>"
 						rows="4"
 					></textarea>
+					<div class="char-count" id="charCount" aria-live="polite" hidden></div>
 				</div>
 
 				<!-- Tags (note + photo only) -->
@@ -699,6 +746,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 					<div class="success-check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
 					<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
 				</div>
+				<p class="success-streak" id="successStreak" hidden></p>
 				<div class="success-photos" id="successPhotos"></div>
 				<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
 				<div class="success-actions">
@@ -719,6 +767,8 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 
 	</div><!-- .view-container -->
 
+	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 </div><!-- .app -->
 <script>
 (function () {
@@ -729,6 +779,12 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
 	};
+
+	var DRAFT_KEY    = 'nop_post_draft';
+	var CHAR_LIMITS  = { bluesky: 300, mastodon: 500, pixelfed: 500 };
+	var NOTE_PROMPTS = [ "What's happening?", "Seen anything good?", "A thought…", "What's on your mind?", "Share something…" ];
+	var notePrompt   = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
+	var restoring    = false;
 
 	// ── Clock ─────────────────────────────────────────────────────────────────
 
@@ -814,6 +870,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		} else if ( e.key === 'Backspace' && tagInput.value === '' && currentTags.length ) {
 			currentTags.pop();
 			renderTags();
+			saveDraft();
 		}
 	} );
 
@@ -826,6 +883,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		if ( tag && ! currentTags.includes( tag ) ) {
 			currentTags.push( tag );
 			renderTags();
+			saveDraft();
 		}
 		tagInput.value = '';
 	}
@@ -844,6 +902,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		if ( btn ) {
 			currentTags.splice( parseInt( btn.dataset.index, 10 ), 1 );
 			renderTags();
+			saveDraft();
 		}
 	} );
 
@@ -871,16 +930,12 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		fieldTags.hidden    = ! cfg.hasTags;
 
 		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
-		if ( cfg.hasContent ) contentInput.placeholder = cfg.contentPlaceholder || 'Write…';
+		if ( cfg.hasContent ) {
+			contentInput.placeholder = ( type === 'note' ) ? notePrompt : ( cfg.contentPlaceholder || 'Write…' );
+		}
 
-		urlInput.value     = '';
-		contentInput.value = '';
-		selectedFiles      = [];
-		currentTags        = [];
-		thumbs.innerHTML   = '';
-		renderTags();
-		picker.querySelector( 'p' ).textContent = 'Add photos';
-
+		updateCounter();
+		saveDraft();
 		updatePostBtn();
 	}
 
@@ -899,8 +954,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		postBtn.disabled = ! enabled;
 	}
 
-	urlInput.addEventListener( 'input', updatePostBtn );
-	contentInput.addEventListener( 'input', updatePostBtn );
+	urlInput.addEventListener( 'input', function () { updatePostBtn(); saveDraft(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); } );
+	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// ── Photo picker ──────────────────────────────────────────────────────────
 
@@ -973,7 +1029,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 
 		} catch ( err ) {
 			showView( 'compose' );
-			alert( 'Something went wrong: ' + err.message );
+			showToast( 'Something went wrong: ' + err.message, 'error' );
 		}
 	} );
 
@@ -990,7 +1046,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		}
 
 		if ( photoUrls && photoUrls.length ) props.photo = photoUrls;
-		if ( currentTags.length ) props.category = currentTags.slice();
+		if ( cfg.hasTags && currentTags.length ) props.category = currentTags.slice();
 
 		var synTo = Array.from(
 			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' )
@@ -1021,6 +1077,17 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 
 	function showSuccess( permalink, editUrl, photoUrls ) {
 		showView( 'success' );
+		clearDraft();
+		if ( navigator.vibrate ) navigator.vibrate( 10 );
+
+		var streakEl = document.getElementById( 'successStreak' );
+		var count    = bumpStreak();
+		if ( count > 0 ) {
+			streakEl.textContent = 'Your ' + ordinal( count ) + ' post today.';
+			streakEl.hidden = false;
+		} else {
+			streakEl.hidden = true;
+		}
 
 		document.getElementById( 'successPhotos' ).innerHTML = photoUrls.map( function (url) {
 			return '<img src="' + escAttr( url ) + '" alt="">';
@@ -1037,9 +1104,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		igBtn.onclick = async function () {
 			if ( navigator.canShare && navigator.canShare( { files: selectedFiles } ) ) {
 				try { await navigator.share( { files: selectedFiles } ); }
-				catch ( e ) { if ( e.name !== 'AbortError' ) alert( 'Share from your Photos app instead.' ); }
+				catch ( e ) { if ( e.name !== 'AbortError' ) showToast( 'Share from your Photos app instead.', 'error' ); }
 			} else {
-				alert( 'Web sharing is not supported on this browser.' );
+				showToast( "Web sharing isn't supported on this browser.", 'info' );
 			}
 		};
 
@@ -1052,7 +1119,10 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		thumbs.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 		renderTags();
+		clearDraft();
+		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
 		switchType( 'note' );
+		updateCounter();
 		showView( 'compose' );
 	}
 
