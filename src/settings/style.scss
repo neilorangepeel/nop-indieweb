@@ -16,6 +16,57 @@
 	padding: 28px 0 40px;
 }
 
+// ── Post a photo CTA (Overview) ───────────────────────────────────────────────
+
+.nop-post-cta {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 16px 18px;
+	margin-bottom: 28px;
+	background: var(--surface, #fff);
+	border: 1px solid var(--nop-border, #c3c4c7);
+	border-radius: 8px;
+	text-decoration: none;
+	color: inherit;
+	transition: border-color 0.15s, box-shadow 0.15s;
+
+	&:hover {
+		border-color: var(--wp-admin-theme-color, #3858e9);
+		box-shadow: 0 1px 4px rgba( 0, 0, 0, 0.06 );
+	}
+
+	&__icon {
+		font-size: 28px;
+		line-height: 1;
+		flex-shrink: 0;
+	}
+
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+	}
+
+	&__title {
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--nop-text, #1d2327);
+	}
+
+	&__sub {
+		font-size: 13px;
+		color: var(--nop-text-muted, #646970);
+	}
+
+	&__arrow {
+		font-size: 18px;
+		color: var(--wp-admin-theme-color, #3858e9);
+		flex-shrink: 0;
+	}
+}
+
 // Networks tab removes top padding — PanelBody has its own top border
 .nop-networks-tab {
 	padding-top: 0;

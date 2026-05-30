@@ -212,6 +212,7 @@ class Settings_API {
 					: rest_url( 'nop-indieweb/v1/mf2/{post_id}' ),
 			],
 			'swarm_micropub_url' => \NOP\IndieWeb\nop_indieweb_endpoint_url(),
+			'post_page_url'      => home_url( '/post' ),
 			'network_status'     => $this->build_network_status(),
 			'reaction_stats'     => $this->build_reaction_stats(),
 		];

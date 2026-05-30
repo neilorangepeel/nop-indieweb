@@ -25,9 +25,21 @@ export default function OverviewTab( { settings, setSettings, onTabSwitch } ) {
 	const endpoints    = meta.endpoints ?? {};
 	const stats        = meta.reaction_stats ?? {};
 	const pending      = stats.pending ?? 0;
+	const postPageUrl  = meta.post_page_url ?? '';
 
 	return (
 		<div className="nop-tab-content">
+
+			{ postPageUrl && (
+				<a className="nop-post-cta" href={ postPageUrl }>
+					<span className="nop-post-cta__icon">📷</span>
+					<span className="nop-post-cta__body">
+						<span className="nop-post-cta__title">{ __( 'Post a photo', 'nop-indieweb' ) }</span>
+						<span className="nop-post-cta__sub">{ __( 'Quick mobile posting — add to your home screen', 'nop-indieweb' ) }</span>
+					</span>
+					<span className="nop-post-cta__arrow">→</span>
+				</a>
+			) }
 
 			<h3 className="nop-section-heading nop-section-heading--first">
 				{ __( 'Networks', 'nop-indieweb' ) }
