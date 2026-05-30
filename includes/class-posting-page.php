@@ -95,9 +95,7 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 	--accent-bg: #FFEE5826;
 	--highlight: #FFEE58;
 	--border:    #e8e8e8;
-	--danger:    #c0392b;
 	--radius:    2px;
-	--radius-sm: 2px;
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -181,7 +179,6 @@ body {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	position: relative;
 }
 
 #view-compose,
@@ -547,6 +544,11 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	white-space: nowrap;
 }
 .success-actions { display: flex; flex-direction: column; gap: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.type-btn.is-active { animation: none; }
+	.btn:active { transform: none; }
+}
 </style>
 </head>
 <body>
@@ -558,7 +560,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			<p class="app-title"><?php esc_html_e( 'Quick Post', 'nop-indieweb' ); ?></p>
 			<p class="app-site"><?php echo $site_name; ?></p>
 		</div>
-		<div class="app-clock">
+		<div class="app-clock" aria-hidden="true">
 			<p class="app-clock__time" id="clockTime">00:00</p>
 			<p class="app-clock__date" id="clockDate">Mon 1 Jan</p>
 		</div>
@@ -569,7 +571,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 
 		<!-- Compose view -->
 		<div id="view-compose">
-			<nav class="type-bar" id="typeBar" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
+			<div class="type-bar" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
 				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
 					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span>
 					<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
@@ -594,7 +596,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 					<span class="type-btn__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></span>
 					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
 				</button>
-			</nav>
+			</div><!-- .type-bar -->
 
 			<div class="compose-scroll">
 
@@ -662,7 +664,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		<div id="view-progress" hidden>
 			<div class="progress-view">
 				<div class="progress-spinner" aria-hidden="true"></div>
-				<p class="progress-status" id="progressStatus"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
+				<p class="progress-status" id="progressStatus" aria-live="polite"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
 				<div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
 					<div class="progress-bar-fill" id="progressFill"></div>
 				</div>
@@ -712,12 +714,16 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	var DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 	var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+	var clockTimeEl = document.getElementById( 'clockTime' );
+	var clockDateEl = document.getElementById( 'clockDate' );
+	var lastTime = '', lastDate = '';
+
 	function updateClock() {
-		var now = new Date();
-		document.getElementById( 'clockTime' ).textContent =
-			String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
-		document.getElementById( 'clockDate' ).textContent =
-			DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
+		var now  = new Date();
+		var time = String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
+		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
+		if ( time !== lastTime ) { clockTimeEl.textContent = time; lastTime = time; }
+		if ( date !== lastDate ) { clockDateEl.textContent = date; lastDate = date; }
 	}
 	updateClock();
 	setInterval( updateClock, 1000 );
@@ -725,9 +731,9 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  hasTags: true,  contentRequired: true,  contentPlaceholder: 'Write a note…' },
-		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  contentRequired: false, contentPlaceholder: 'Write a caption…' },
-		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, contentRequired: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a note…' },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a caption…' },
+		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL' },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL' },
