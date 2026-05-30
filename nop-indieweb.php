@@ -62,6 +62,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-tmdb.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
+require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings-api.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-debug.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-kinds-panel.php';

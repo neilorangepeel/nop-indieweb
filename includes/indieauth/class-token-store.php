@@ -162,6 +162,17 @@ class Token_Store {
 
 	// ── Delete ────────────────────────────────────────────────────────────────
 
+	/** Finds a single token row by its database ID. */
+	public static function find_by_id( int $id ): ?array {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off lookup; no core API applies
+		$row = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM ' . self::table_name() . ' WHERE id = %d', $id ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			ARRAY_A
+		);
+		return $row ?: null;
+	}
+
 	/** Revokes by database row ID. Used from the admin sessions UI. */
 	public static function delete_by_id( int $id ): bool {
 		global $wpdb;
