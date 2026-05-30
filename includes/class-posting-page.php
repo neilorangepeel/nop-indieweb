@@ -146,8 +146,7 @@ body {
 	overflow: hidden;
 	max-width: 480px;
 	margin: 0 auto;
-	border-left: 1px solid var(--border);
-	border-right: 1px solid var(--border);
+	border: 1px solid var(--border);
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
