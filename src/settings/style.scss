@@ -48,6 +48,116 @@
 	gap: 12px;
 }
 
+// Section headings
+.nop-section-heading {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--nop-text-muted, #646970);
+	margin: 20px 0 0;
+	padding: 20px 0 0;
+	border-top: 1px solid var(--nop-border-subtle, #dcdcde);
+
+	&--first {
+		border-top: none;
+		padding-top: 0;
+		margin-top: 0;
+	}
+}
+
+// Network status cards
+.nop-network-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+	gap: 10px;
+	margin: 12px 0 20px;
+}
+
+.nop-network-card {
+	--nop-card-accent: var(--nop-border, #c3c4c7);
+
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 12px 14px;
+	background: #fff;
+	border: 1px solid var(--nop-border, #c3c4c7);
+	border-left: 3px solid var(--nop-card-accent);
+	border-radius: 3px;
+	font-size: 12px;
+	line-height: 1.4;
+
+	&--inactive { opacity: 0.7; }
+
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	&__dot {
+		flex-shrink: 0;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--nop-card-accent);
+	}
+
+	&__name {
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	&__status,
+	&__last {
+		margin: 0;
+		color: var(--nop-text-muted, #646970);
+	}
+
+	&__link {
+		margin-top: 4px;
+	}
+}
+
+// Reaction stats
+.nop-reaction-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 10px;
+	margin: 12px 0 0;
+	max-width: 520px;
+}
+
+.nop-reaction-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 14px 16px;
+	background: #fff;
+	border: 1px solid var(--nop-border, #c3c4c7);
+	border-radius: 3px;
+
+	&__num {
+		font-size: 24px;
+		font-weight: 600;
+		line-height: 1.1;
+	}
+
+	&__label {
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--nop-text-muted, #646970);
+
+		a {
+			color: inherit;
+			text-decoration: underline;
+		}
+	}
+}
+
 // Field groups — vertical stack with consistent spacing
 .nop-field-group {
 	display: flex;
