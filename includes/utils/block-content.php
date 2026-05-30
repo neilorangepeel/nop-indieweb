@@ -267,5 +267,8 @@ function nop_indieweb_html_to_text( string $html ): string {
 		return '';
 	}
 	$html = preg_replace( '/<br\s*\/?>/i', "\n", $html );
-	return trim( wp_strip_all_tags( (string) $html ) );
+	$text = wp_strip_all_tags( (string) $html );
+	// Decode HTML entities so syndicated text shows "&" not "&amp;", real
+	// quotes, em dashes, etc. instead of their entity form.
+	return trim( html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 }
