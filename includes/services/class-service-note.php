@@ -61,6 +61,11 @@ class Note extends Service_Base {
 		// Micropub spec: name present and distinct from content = article.
 		$is_article = $name !== '' && $name !== $content_trimmed;
 
+		$tags = array_values( array_filter( array_map(
+			'sanitize_text_field',
+			(array) ( $props['category'] ?? [] )
+		) ) );
+
 		return [
 			'content'     => $content_trimmed,
 			'name'        => $is_article ? $name : '',
@@ -70,6 +75,7 @@ class Note extends Service_Base {
 			'source_url'  => $source_url,
 			'platform'    => $this->detect_platform( $source_url ),
 			'syndication' => $syndication,
+			'tags'        => $tags,
 			// Photo/video entries may be a plain URL string (Micropub spec) or
 			// an array with { primary, fallback, size } shape from the Bluesky
 			// importer. sideload_photos/sideload_videos handle both shapes.
@@ -89,7 +95,10 @@ class Note extends Service_Base {
 			: '';
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
-		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
+		$tags         = array_unique( array_merge(
+			$this->tags_from_setting( $settings['post_tags'] ?? '' ),
+			$parsed['tags'] ?? [],
+		) );
 
 		$args = [
 			'post_title'   => $parsed['is_article'] ? $parsed['name'] : $this->generate_title( $content, $post_date ),
@@ -99,7 +108,7 @@ class Note extends Service_Base {
 		];
 
 		if ( $tags ) {
-			$args['tags_input'] = $tags;
+			$args['tags_input'] = array_values( $tags );
 		}
 		if ( $category_ids ) {
 			$args['post_category'] = $category_ids;
