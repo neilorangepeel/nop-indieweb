@@ -104,6 +104,11 @@ class Plugin {
 		// syndication credentials aren't kept in memory on every request.
 		nop_indieweb_maybe_disable_settings_autoload();
 
+		// Keep the admin logged in for one year. WordPress defaults to 14 days
+		// (2 days without "Remember Me"). This makes the experience feel native
+		// rather than constantly prompting for credentials.
+		add_filter( 'auth_cookie_expiration', fn() => YEAR_IN_SECONDS );
+
 		$note       = new Note();
 		$letterboxd = new Letterboxd();
 		// RSVP must appear before Reply — both match in-reply-to and RSVP is the more specific case.
