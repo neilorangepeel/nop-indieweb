@@ -26,6 +26,7 @@ use NOP\IndieWeb\Semantic\Semantic_Markup;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Settings_API;
+use NOP\IndieWeb\Posting_Page;
 use NOP\IndieWeb\Admin\Post_Filter;
 use NOP\IndieWeb\Admin\Debug;
 use NOP\IndieWeb\Admin\Post_Kinds_Panel;
@@ -155,6 +156,7 @@ class Plugin {
 		add_action( 'rest_api_init', [ $this, 'register_lookup_route' ] );
 		add_action( 'rest_api_init', [ $this, 'register_foursquare_oauth_routes' ] );
 		( new Settings_API() )->register();
+		( new Posting_Page() )->register();
 
 		if ( is_admin() ) {
 			( new Settings() )->register();
