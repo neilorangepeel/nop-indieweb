@@ -1464,6 +1464,12 @@ class Settings {
 				$asset['version'],
 				true
 			);
+			wp_enqueue_style(
+				'nop-indieweb-settings',
+				NOP_INDIEWEB_URL . 'build/settings/style-index.css',
+				[ 'wp-components' ],
+				$asset['version']
+			);
 			wp_localize_script( 'nop-indieweb-settings', 'nopIndieWebSettings', [
 				'restUrl'    => rest_url( 'nop-indieweb/v1/settings' ),
 				'nonce'      => wp_create_nonce( 'wp_rest' ),
