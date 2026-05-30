@@ -852,6 +852,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 					+ '</label>';
 			} ).join( '' );
 			document.getElementById( 'syndicateDetails' ).hidden = false;
+			updateCounter();
 		} )
 		.catch( function () {} );
 	} )();
@@ -1149,6 +1150,108 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 			.replace( />/g, '&gt;' ).replace( /"/g, '&quot;' );
 	}
 	function escAttr( str ) { return String( str ).replace( /"/g, '&quot;' ); }
+
+	// ── Draft persistence ──────────────────────────────────────────────────────
+
+	function saveDraft() {
+		if ( restoring ) return;
+		try {
+			localStorage.setItem( DRAFT_KEY, JSON.stringify( {
+				type:    currentType,
+				content: contentInput.value,
+				url:     urlInput.value,
+				tags:    currentTags,
+			} ) );
+		} catch ( e ) {}
+	}
+
+	function loadDraft() {
+		var raw;
+		try { raw = localStorage.getItem( DRAFT_KEY ); } catch ( e ) { return; }
+		if ( ! raw ) return;
+		var d;
+		try { d = JSON.parse( raw ); } catch ( e ) { return; }
+		if ( ! d ) return;
+		restoring = true;
+		if ( d.type && TYPE_CONFIG[ d.type ] ) switchType( d.type );
+		if ( typeof d.content === 'string' ) contentInput.value = d.content;
+		if ( typeof d.url === 'string' ) urlInput.value = d.url;
+		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
+		restoring = false;
+		updateCounter();
+		updatePostBtn();
+		saveDraft();
+	}
+
+	function clearDraft() { try { localStorage.removeItem( DRAFT_KEY ); } catch ( e ) {} }
+
+	// ── Character counter ──────────────────────────────────────────────────────
+
+	function currentLimit() {
+		var lim = 0;
+		Array.prototype.forEach.call(
+			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ),
+			function ( cb ) {
+				var l = CHAR_LIMITS[ cb.value ];
+				if ( l ) lim = lim ? Math.min( lim, l ) : l;
+			}
+		);
+		return lim;
+	}
+
+	function updateCounter() {
+		var el = document.getElementById( 'charCount' );
+		if ( ! TYPE_CONFIG[ currentType ].hasContent ) { el.hidden = true; return; }
+		var len = contentInput.value.length;
+		var lim = currentLimit();
+		el.hidden = false;
+		if ( lim ) {
+			el.textContent = len + ' / ' + lim;
+			el.classList.toggle( 'is-over', len > lim );
+		} else {
+			el.textContent = String( len );
+			el.classList.remove( 'is-over' );
+		}
+	}
+
+	// ── Streak ─────────────────────────────────────────────────────────────────
+
+	function bumpStreak() {
+		var key = 'nop_post_count_' + new Date().toISOString().slice( 0, 10 );
+		try {
+			var n = parseInt( localStorage.getItem( key ) || '0', 10 ) + 1;
+			localStorage.setItem( key, String( n ) );
+			return n;
+		} catch ( e ) { return 0; }
+	}
+
+	function ordinal( n ) {
+		var s = [ 'th', 'st', 'nd', 'rd' ], v = n % 100;
+		return n + ( s[ ( v - 20 ) % 10 ] || s[ v ] || s[ 0 ] );
+	}
+
+	// ── Toast ──────────────────────────────────────────────────────────────────
+
+	var toastTimer;
+	function showToast( message, kind ) {
+		var el = document.getElementById( 'toast' );
+		el.textContent = message;
+		el.className   = 'toast' + ( kind === 'error' ? ' toast--error' : '' );
+		el.hidden      = false;
+		void el.offsetWidth;
+		el.classList.add( 'is-visible' );
+		clearTimeout( toastTimer );
+		toastTimer = setTimeout( function () {
+			el.classList.remove( 'is-visible' );
+			setTimeout( function () { el.hidden = true; }, 250 );
+		}, 3500 );
+	}
+
+	// ── Init ───────────────────────────────────────────────────────────────────
+
+	contentInput.placeholder = notePrompt;
+	loadDraft();
+	updateCounter();
 
 } )();
 </script>
