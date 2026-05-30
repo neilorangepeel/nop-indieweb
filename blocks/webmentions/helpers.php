@@ -209,7 +209,7 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): 
 				printf(
 					wp_kses(
 						/* translators: 1: user display name, 2: logout URL */
-						__( 'Logged in as <strong>%1\$s</strong>. <a href="%2\$s">Log out?</a>', 'nop-indieweb' ),
+						__( 'Logged in as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
 						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
 					),
 					esc_html( $user->display_name ),
