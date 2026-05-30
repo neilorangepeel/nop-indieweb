@@ -165,6 +165,15 @@ class Posting_Page {
 <?php endif; ?>
 <title><?php esc_html_e( 'Post Photo', 'nop-indieweb' ); ?></title>
 <style>
+<?php
+$font_dir = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
+foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight => $style ) {
+	printf(
+		'@font-face{font-family:"Brandon Text";font-weight:%s;font-style:%s;font-display:swap;src:url("%s/brandon-text_normal_%s.woff2") format("woff2")}' . "\n",
+		$weight, $style, $font_dir, $weight
+	);
+}
+?>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -197,7 +206,7 @@ html, body {
 	height: 100%;
 	background: var(--bg);
 	color: var(--text);
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	overscroll-behavior: none;
 }
