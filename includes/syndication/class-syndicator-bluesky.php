@@ -108,7 +108,12 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$label  = '' !== $host ? $host : $permalink;
 		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
 		$facet  = $this->build_label_facet( $text, $label, $permalink );
-		$facets = $facet ? [ $facet ] : [];
+		// Bluesky doesn't auto-link hashtags the way Mastodon does — each #tag
+		// the author typed needs an explicit facet to become searchable.
+		$facets = array_merge(
+			$facet ? [ $facet ] : [],
+			$this->build_hashtag_facets( $text )
+		);
 
 		// Embeds are mutually exclusive on Bluesky. Video wins over images; with
 		// no media a link-card preview is built for titled posts (and for
@@ -124,7 +129,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$record = [
 			'$type'     => 'app.bsky.feed.post',
 			'text'      => $text,
-			'createdAt' => gmdate( 'c' ),
+			'createdAt' => $this->post_created_at( $post_id ),
+			'langs'     => [ $this->post_lang() ],
 		];
 
 		if ( $facets ) {
@@ -387,6 +393,71 @@ class Syndicator_Bluesky extends Syndicator_Base {
 				[ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ],
 			],
 		];
+	}
+
+	/**
+	 * Builds tag facets for every #hashtag the author typed, so they become
+	 * real searchable tags on Bluesky (which, unlike Mastodon, does not
+	 * auto-link hashtags). Byte offsets — required by the AT Protocol facet
+	 * spec — are read directly from PREG_OFFSET_CAPTURE, which reports byte
+	 * positions even under the /u modifier, so multibyte text (emoji, accents)
+	 * is handled correctly. Purely numeric tags are skipped (Bluesky rejects
+	 * them); the tag value sent omits the leading '#'.
+	 */
+	private function build_hashtag_facets( string $text ): array {
+		if ( ! preg_match_all(
+			'/(?:^|\s)([#＃][\p{L}\p{N}][\p{L}\p{N}_-]*)/u',
+			$text,
+			$matches,
+			PREG_OFFSET_CAPTURE
+		) ) {
+			return [];
+		}
+
+		$facets = [];
+		foreach ( $matches[1] as $match ) {
+			$hashtag    = $match[0];          // e.g. "#belfast"
+			$byte_start = $match[1];          // byte offset of the leading #
+			$tag        = (string) mb_substr( $hashtag, 1 ); // strip # or ＃
+
+			if ( '' === $tag || ctype_digit( $tag ) || mb_strlen( $tag ) > 64 ) {
+				continue;
+			}
+
+			$facets[] = [
+				'index'    => [
+					'byteStart' => $byte_start,
+					'byteEnd'   => $byte_start + strlen( $hashtag ),
+				],
+				'features' => [
+					[ '$type' => 'app.bsky.richtext.facet#tag', 'tag' => $tag ],
+				],
+			];
+		}
+		return $facets;
+	}
+
+	/**
+	 * The post's publish time as an ISO 8601 UTC string, so the Bluesky record's
+	 * createdAt matches the canonical post date (rather than the syndication
+	 * moment, which would drift for backdated or imported posts).
+	 */
+	private function post_created_at( int $post_id ): string {
+		$gmt = (string) get_post_field( 'post_date_gmt', $post_id );
+		if ( '' === $gmt || '0000-00-00 00:00:00' === $gmt ) {
+			return gmdate( 'c' );
+		}
+		$ts = strtotime( $gmt . ' GMT' );
+		return $ts ? gmdate( 'c', $ts ) : gmdate( 'c' );
+	}
+
+	/**
+	 * The site's language as a short BCP-47 subtag (e.g. "en" from "en_GB"),
+	 * for the record's langs field. Portable across sites rather than hardcoded.
+	 */
+	private function post_lang(): string {
+		$lang = substr( (string) get_locale(), 0, 2 );
+		return '' !== $lang ? $lang : 'en';
 	}
 
 	private function create_session(): ?array {
