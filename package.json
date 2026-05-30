@@ -1,0 +1,13 @@
+{
+  "name": "nop-indieweb",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "build": "wp-scripts build src/settings/index.js --output-path=build/settings",
+    "start": "wp-scripts start src/settings/index.js --output-path=build/settings",
+    "lint:js": "wp-scripts lint-js src/settings"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

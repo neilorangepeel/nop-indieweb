@@ -10,5 +10,6 @@
 .vscode/
 .idea/
 
-# Node (if a build step is added later)
+# Node
 node_modules/
+build/**/*.map

@@ -30,6 +30,15 @@ Recommend **Opus** when the task involves:
 
 Default to **Sonnet** for everything else: feature additions, bug fixes, edits, reviews, and any task with a clear known solution.
 
+## Build step
+
+The settings page React app lives in `src/settings/` and is compiled to `build/settings/` via `@wordpress/scripts`. Run `npm run build` from the plugin root before committing whenever you change any file under `src/`. The compiled output in `build/` is committed to git — the production server does `git pull` with no npm step.
+
+```bash
+npm run build       # one-off production build
+npm start           # watch mode during development
+```
+
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.

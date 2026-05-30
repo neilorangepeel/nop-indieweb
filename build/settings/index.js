@@ -1,0 +1,1 @@
+(()=>{"use strict";const n=window.wp.element,e=window.wp.i18n,t=window.ReactJSXRuntime;function i(){return(0,t.jsx)("div",{className:"nop-settings-app",children:(0,t.jsx)("p",{children:(0,e.__)("Settings loading…","nop-indieweb")})})}const s=document.getElementById("nop-settings-root");s&&(0,n.render)((0,t.jsx)(i,{}),s)})();

@@ -1453,5 +1453,30 @@ class Settings {
 		}
 		wp_enqueue_style( 'nop-indieweb-admin', NOP_INDIEWEB_URL . 'assets/css/admin.css', [], NOP_INDIEWEB_VERSION );
 		wp_enqueue_script( 'nop-indieweb-admin', NOP_INDIEWEB_URL . 'assets/js/admin.js', [], NOP_INDIEWEB_VERSION, true );
+
+		$asset_file = NOP_INDIEWEB_DIR . 'build/settings/index.asset.php';
+		if ( is_readable( $asset_file ) ) {
+			$asset = require $asset_file;
+			wp_enqueue_script(
+				'nop-indieweb-settings',
+				NOP_INDIEWEB_URL . 'build/settings/index.js',
+				$asset['dependencies'],
+				$asset['version'],
+				true
+			);
+			wp_localize_script( 'nop-indieweb-settings', 'nopIndieWebSettings', [
+				'restUrl'    => rest_url( 'nop-indieweb/v1/settings' ),
+				'nonce'      => wp_create_nonce( 'wp_rest' ),
+				'adminUrl'   => admin_url(),
+				'categories' => array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false ] ) ) ),
+				'tags'       => array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false ] ) ) ),
+				'syncNonces' => [
+					'mastodon'   => wp_create_nonce( 'nop_indieweb_sync_mastodon' ),
+					'bluesky'    => wp_create_nonce( 'nop_indieweb_sync_bluesky' ),
+					'pixelfed'   => wp_create_nonce( 'nop_indieweb_sync_pixelfed' ),
+					'letterboxd' => wp_create_nonce( 'nop_indieweb_sync_letterboxd' ),
+				],
+			] );
+		}
 	}
 }
