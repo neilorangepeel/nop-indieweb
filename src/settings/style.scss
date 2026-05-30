@@ -1,6 +1,7 @@
+// ── App shell ────────────────────────────────────────────────────────────────
+
 .nop-settings-app {
 	max-width: 860px;
-	padding-bottom: 80px; // clearance for SaveBar
 }
 
 .nop-settings-loading {
@@ -9,36 +10,26 @@
 	padding: 48px;
 }
 
-.nop-tab-content {
-	padding: 24px 0;
+// ── Tab content ───────────────────────────────────────────────────────────────
 
-	h2 {
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--nop-text-muted, #646970);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		margin: 0 0 24px;
-	}
+.nop-tab-content {
+	padding: 28px 0 40px;
 }
 
-// SaveBar — floats above the WP footer
-.nop-save-bar {
-	position: fixed;
-	bottom: 0;
-	left: 160px; // clear the WP admin menu
-	right: 0;
-	z-index: 100;
-	background: #fff;
-	border-top: 1px solid #dcdcde;
-	padding: 12px 24px;
+// Networks tab removes top padding — PanelBody has its own top border
+.nop-networks-tab {
+	padding-top: 0;
+}
 
-	@media screen and (max-width: 960px) {
-		left: 36px;
-	}
+// ── SaveBar — in-flow footer, standard WP settings pattern ──────────────────
+
+.nop-save-bar {
+	margin-top: 32px;
+	padding: 16px 0 8px;
+	border-top: 1px solid #dcdcde;
 
 	.components-notice {
-		margin: 0 0 8px;
+		margin: 0 0 12px;
 	}
 }
 
@@ -48,30 +39,36 @@
 	gap: 12px;
 }
 
-// Section headings
+// ── Section headings ──────────────────────────────────────────────────────────
+
 .nop-section-heading {
 	font-size: 11px;
 	font-weight: 600;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.06em;
 	color: var(--nop-text-muted, #646970);
-	margin: 20px 0 0;
-	padding: 20px 0 0;
-	border-top: 1px solid var(--nop-border-subtle, #dcdcde);
+	margin: 32px 0 12px;
+	padding: 0;
 
 	&--first {
-		border-top: none;
-		padding-top: 0;
 		margin-top: 0;
 	}
 }
 
-// Network status cards
+// Intro text that immediately follows a section heading
+.nop-section-intro {
+	margin: -6px 0 16px;
+	font-size: 13px;
+	color: var(--nop-text-muted, #646970);
+}
+
+// ── Network status cards ──────────────────────────────────────────────────────
+
 .nop-network-cards {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
 	gap: 10px;
-	margin: 12px 0 20px;
+	margin: 0 0 8px;
 }
 
 .nop-network-card {
@@ -117,15 +114,26 @@
 
 	&__link {
 		margin-top: 4px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		font-size: inherit;
+		color: var(--wp-admin-theme-color, #3858e9);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+
+		&:hover { opacity: 0.8; }
 	}
 }
 
-// Reaction stats
+// ── Reaction stats ────────────────────────────────────────────────────────────
+
 .nop-reaction-stats {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 	gap: 10px;
-	margin: 12px 0 0;
+	margin: 0 0 8px;
 	max-width: 520px;
 }
 
@@ -151,95 +159,16 @@
 		letter-spacing: 0.04em;
 		color: var(--nop-text-muted, #646970);
 
-		a {
-			color: inherit;
-			text-decoration: underline;
-		}
-	}
-}
-
-// Field groups — vertical stack with consistent spacing
-.nop-field-group {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	max-width: 560px;
-}
-
-// SecretInput
-.nop-secret-field {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-
-	&__label {
-		font-size: 12px;
-		font-weight: 600;
-		color: var(--nop-text, #1d2327);
+		a { color: inherit; text-decoration: underline; }
 	}
 
-	&__row {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	&__input {
-		flex: 1;
-	}
-
-	&__help {
-		margin: 0;
-		font-size: 12px;
+	&--pending .nop-reaction-stat__num {
 		color: var(--nop-text-muted, #646970);
 	}
 }
 
-// Sessions table
-.nop-sessions-table {
-	margin-top: 4px;
+// ── Endpoint rows ─────────────────────────────────────────────────────────────
 
-	th {
-		font-weight: 600;
-		font-size: 12px;
-		padding: 8px 10px;
-	}
-
-	td {
-		padding: 8px 10px;
-		vertical-align: middle;
-		font-size: 13px;
-	}
-
-	code {
-		font-size: 11px;
-		background: var(--nop-code-bg, #f0f0f1);
-		padding: 2px 5px;
-		border-radius: 2px;
-	}
-}
-
-.nop-sessions-table__actions {
-	white-space: nowrap;
-}
-
-.nop-revoke-confirm {
-	font-size: 12px;
-}
-
-// URL fields — wide text inputs
-.nop-url-field input[type="url"] {
-	width: 100%;
-	max-width: 480px;
-}
-
-// Section intro text
-.nop-section-intro {
-	margin: -12px 0 16px;
-	color: var(--nop-text-muted, #646970);
-}
-
-// Endpoint rows — label + URL code + Copy button
 .nop-endpoint-rows {
 	display: flex;
 	flex-direction: column;
@@ -252,7 +181,7 @@
 	gap: 8px;
 
 	&__label {
-		width: 120px;
+		width: 110px;
 		flex-shrink: 0;
 		font-size: 12px;
 		color: var(--nop-text-muted, #646970);
@@ -263,44 +192,105 @@
 	flex: 1;
 	font-size: 12px;
 	background: var(--nop-code-bg, #f0f0f1);
-	padding: 4px 8px;
+	padding: 5px 8px;
 	border-radius: 3px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-// me_urls textarea
+// Profile URLs textarea
 .nop-me-urls textarea {
 	font-family: monospace;
 	font-size: 12px;
+	max-width: 560px;
 }
 
-// Pending reactions — muted link
-.nop-reaction-stat--pending .nop-reaction-stat__num {
-	color: var(--nop-text-muted, #646970);
+// ── Field groups ──────────────────────────────────────────────────────────────
+
+.nop-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-width: 480px;
 }
 
-// Network card configure button — matches link style
-.nop-network-card__link {
-	background: none;
-	border: none;
-	cursor: pointer;
-	padding: 0;
-	font-size: inherit;
-	color: var(--wp-admin-theme-color, #3858e9);
-	text-decoration: underline;
-	text-underline-offset: 2px;
+// ── SecretInput ───────────────────────────────────────────────────────────────
 
-	&:hover {
-		opacity: 0.8;
+.nop-secret-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+
+	&__label {
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--nop-text-muted, #646970);
+	}
+
+	&__row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	&__input {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__help {
+		margin: 0;
+		font-size: 12px;
+		color: var(--nop-text-muted, #646970);
 	}
 }
 
-// Networks tab — PanelBody accordion stack
-.nop-networks-tab {
-	padding-top: 0; // PanelBody has its own top border
+// ── Sessions table ────────────────────────────────────────────────────────────
 
+.nop-sessions-table {
+	margin-top: 4px;
+	max-width: 700px;
+
+	th {
+		font-weight: 600;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 8px 10px;
+		color: var(--nop-text-muted, #646970);
+	}
+
+	td {
+		padding: 10px 10px;
+		vertical-align: middle;
+		font-size: 13px;
+	}
+
+	code {
+		font-size: 11px;
+		background: var(--nop-code-bg, #f0f0f1);
+		padding: 2px 5px;
+		border-radius: 2px;
+	}
+}
+
+.nop-sessions-table__actions { white-space: nowrap; }
+
+.nop-revoke-confirm { font-size: 12px; }
+
+// ── Advanced tab misc ─────────────────────────────────────────────────────────
+
+.nop-url-field input[type="url"] {
+	width: 100%;
+	max-width: 480px;
+}
+
+// ── Networks tab ──────────────────────────────────────────────────────────────
+
+.nop-networks-tab {
 	.components-panel__body {
 		border-left: none;
 		border-right: none;
@@ -315,9 +305,9 @@
 .nop-network-panel {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 20px;
 	max-width: 480px;
-	padding-top: 4px;
+	padding: 4px 0 8px;
 }
 
 // Status dot in panel titles
@@ -332,9 +322,7 @@
 	position: relative;
 	top: -1px;
 
-	&--active {
-		background: #00a32a;
-	}
+	&--active { background: #00a32a; }
 }
 
 .nop-panel-title {
@@ -342,7 +330,6 @@
 	align-items: center;
 }
 
-// Test connection
 .nop-test-connection {
 	display: flex;
 	align-items: center;
@@ -351,19 +338,16 @@
 
 .nop-test-result {
 	font-size: 12px;
-
 	&--ok    { color: var(--nop-success, #00a32a); }
 	&--error { color: var(--nop-text-error, #d63638); }
 }
 
-// Import section
 .nop-network-import {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
-// Sync now button + last-synced label
 .nop-sync-now {
 	display: flex;
 	align-items: center;
@@ -375,44 +359,56 @@
 	}
 }
 
-// Per-source defaults (ContentTab)
+// ── Content tab ───────────────────────────────────────────────────────────────
+
+// Per-source default blocks (Mastodon, Bluesky, etc.)
 .nop-per-source {
-	margin-bottom: 28px;
-	max-width: 560px;
+	padding: 20px 0 0;
+	border-top: 1px solid var(--nop-border-subtle, #dcdcde);
+	max-width: 480px;
+
+	&:first-of-type { border-top: none; padding-top: 0; }
 
 	&__label {
 		font-size: 13px;
 		font-weight: 600;
-		margin: 0 0 12px;
-		padding-bottom: 6px;
-		border-bottom: 1px solid var(--nop-border-subtle, #dcdcde);
+		margin: 0 0 16px;
 	}
 }
 
 .nop-source-defaults {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 16px;
 }
 
 // Interaction kinds table
 .nop-kinds-table {
+	max-width: 680px;
+	margin-bottom: 8px;
+
 	td, th {
 		vertical-align: middle;
 		padding: 8px 10px;
 	}
 
 	th {
-		font-size: 12px;
+		font-size: 11px;
 		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--nop-text-muted, #646970);
 	}
 
-	// Disable column toggle — compact
-	.components-toggle-control {
-		margin: 0;
+	// Suppress FormTokenField's "ADD ITEM" label in table cells
+	.components-form-token-field__label {
+		display: none;
 	}
 
-	// Status select — compact
+	// Toggle — remove default bottom margin
+	.components-toggle-control { margin: 0; }
+
+	// Select — compact height
 	.components-select-control__input {
 		padding-top: 4px;
 		padding-bottom: 4px;
@@ -425,19 +421,23 @@
 	padding: 1px 4px;
 	border-radius: 2px;
 	color: var(--nop-text-muted, #646970);
+	display: inline-block;
+	margin-top: 2px;
 }
 
-// TabPanel tweaks — tighten the default WP component styling
-.nop-settings-app .components-tab-panel__tabs {
-	border-bottom: 1px solid #dcdcde;
-	margin-bottom: 0;
-}
+// ── TabPanel tweaks ───────────────────────────────────────────────────────────
 
-.nop-settings-app .components-tab-panel__tabs-item {
-	font-size: 13px;
-	padding: 8px 16px;
+.nop-settings-app {
+	.components-tab-panel__tabs {
+		border-bottom: 1px solid #dcdcde;
+	}
 
-	&.is-active {
-		box-shadow: inset 0 -2px 0 var(--wp-admin-theme-color, #3858e9);
+	.components-tab-panel__tabs-item {
+		font-size: 13px;
+		padding: 8px 16px;
+
+		&.is-active {
+			box-shadow: inset 0 -2px 0 var(--wp-admin-theme-color, #3858e9);
+		}
 	}
 }
