@@ -237,8 +237,14 @@
 	}
 
 	&__input {
-		flex: 1;
+		flex: 1 1 0; // basis 0 prevents auto-sizing from character width changes on type toggle
 		min-width: 0;
+	}
+
+	// Fixed width so Show ↔ Hide toggle doesn't reflow the input
+	.components-button {
+		min-width: 54px;
+		justify-content: center;
 	}
 
 	&__help {
