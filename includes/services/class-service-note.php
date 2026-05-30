@@ -65,6 +65,7 @@ class Note extends Service_Base {
 			'content'     => $content_trimmed,
 			'name'        => $is_article ? $name : '',
 			'is_article'  => $is_article,
+			'kind'        => sanitize_key( $props['post-kind'][0] ?? '' ),
 			'published'   => sanitize_text_field( $props['published'][0] ?? '' ),
 			'source_url'  => $source_url,
 			'platform'    => $this->detect_platform( $source_url ),
@@ -112,6 +113,10 @@ class Note extends Service_Base {
 	}
 
 	public function get_kind( array $parsed = [] ): string {
+		$explicit = $parsed['kind'] ?? '';
+		if ( in_array( $explicit, [ 'photo', 'note', 'article' ], true ) ) {
+			return $explicit;
+		}
 		return ! empty( $parsed['is_article'] ) ? 'article' : 'note';
 	}
 

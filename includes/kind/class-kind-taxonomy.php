@@ -268,7 +268,7 @@ class Kind_Taxonomy {
 			'photo' => [
 				'label'          => __( 'Photo', 'nop-indieweb' ),
 				'fields'         => [],
-				'layout'         => '',
+				'layout'         => '<!-- wp:image {"align":"wide"} /--><!-- wp:paragraph /-->',
 				'title_from_url' => false,
 			],
 			// ── Service-created kinds ────────────────────────────────────────────

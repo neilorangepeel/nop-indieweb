@@ -19,6 +19,17 @@ Never run `git reset --hard`, `git pull --rebase`, force-push, or stash-and-pull
 
 Skip the sync if the user's first message clearly doesn't need repo state (e.g. a pure question about Claude Code itself).
 
+## Model selection
+
+At the start of each prompt, assess task complexity and recommend a model switch if warranted — say "this looks like an Opus task — consider `/model opus` first" before proceeding.
+
+Recommend **Opus** when the task involves:
+- Architectural decisions with genuinely open design space
+- Debugging where the root cause is unclear and requires multi-step reasoning
+- Writing a new system from scratch (not extending existing code)
+
+Default to **Sonnet** for everything else: feature additions, bug fixes, edits, reviews, and any task with a clear known solution.
+
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.
