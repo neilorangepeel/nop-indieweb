@@ -325,7 +325,7 @@ body {
 }
 .thumbnails img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
-	border-radius: var(--radius-sm); display: block;
+	border-radius: var(--radius); display: block;
 }
 
 .caption-field {
@@ -531,7 +531,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	margin-bottom: 16px;
 }
 .success-photos img {
-	width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm);
+	width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius);
 }
 .success-permalink {
 	font-size: 13px;
