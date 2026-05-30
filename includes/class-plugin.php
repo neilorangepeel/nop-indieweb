@@ -23,6 +23,7 @@ use NOP\IndieWeb\Services\Like;
 use NOP\IndieWeb\Services\Repost;
 use NOP\IndieWeb\Services\RSVP;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
+use NOP\IndieWeb\Semantic\Open_Graph;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
 use NOP\IndieWeb\Admin\Settings;
 use NOP\IndieWeb\Admin\Settings_API;
@@ -142,6 +143,7 @@ class Plugin {
 		( new Social_Backfeed() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
+		( new Open_Graph() )->register();
 		( new MF2_Endpoint() )->register();
 
 		$this->lookup_providers = apply_filters( 'nop_indieweb_register_lookup_providers', [

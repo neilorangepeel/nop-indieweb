@@ -230,6 +230,9 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 			if ( ! empty( $body['url'] ) ) {
 				\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$this->slug()}.profile_url", esc_url_raw( $body['url'] ) );
 			}
+			// Cache the bare handle so Open_Graph can build the fediverse:creator
+			// tag (@handle@instance) without a front-end API call.
+			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$this->slug()}.acct", sanitize_text_field( $body['acct'] ) );
 			return [ 'ok' => true, 'message' => 'Connected as @' . $body['acct'] ];
 		}
 
