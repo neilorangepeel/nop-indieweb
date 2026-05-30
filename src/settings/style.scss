@@ -265,6 +265,58 @@
 	}
 }
 
+// Per-source defaults (ContentTab)
+.nop-per-source {
+	margin-bottom: 28px;
+	max-width: 560px;
+
+	&__label {
+		font-size: 13px;
+		font-weight: 600;
+		margin: 0 0 12px;
+		padding-bottom: 6px;
+		border-bottom: 1px solid var(--nop-border-subtle, #dcdcde);
+	}
+}
+
+.nop-source-defaults {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+// Interaction kinds table
+.nop-kinds-table {
+	td, th {
+		vertical-align: middle;
+		padding: 8px 10px;
+	}
+
+	th {
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	// Disable column toggle — compact
+	.components-toggle-control {
+		margin: 0;
+	}
+
+	// Status select — compact
+	.components-select-control__input {
+		padding-top: 4px;
+		padding-bottom: 4px;
+	}
+}
+
+.nop-kind-badge {
+	font-size: 10px;
+	background: var(--nop-code-bg, #f0f0f1);
+	padding: 1px 4px;
+	border-radius: 2px;
+	color: var(--nop-text-muted, #646970);
+}
+
 // TabPanel tweaks — tighten the default WP component styling
 .nop-settings-app .components-tab-panel__tabs {
 	border-bottom: 1px solid #dcdcde;
