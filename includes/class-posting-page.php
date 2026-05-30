@@ -154,10 +154,11 @@ html, body {
 
 .type-btn {
 	display: flex;
+	flex: 1;
 	flex-direction: column;
 	align-items: center;
 	gap: 4px;
-	padding: 10px 12px;
+	padding: 10px 8px;
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	background: var(--surface);
@@ -171,7 +172,6 @@ html, body {
 	color: var(--text-2);
 	-webkit-tap-highlight-color: transparent;
 	transition: background 0.1s, border-color 0.1s, color 0.1s;
-	min-width: 56px;
 }
 .type-btn__icon {
 	font-size: 18px;
