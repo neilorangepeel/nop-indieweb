@@ -187,6 +187,84 @@
 	}
 }
 
+// Networks tab — PanelBody accordion stack
+.nop-networks-tab {
+	padding-top: 0; // PanelBody has its own top border
+
+	.components-panel__body {
+		border-left: none;
+		border-right: none;
+	}
+
+	.components-panel__body-title button {
+		font-size: 13px;
+		font-weight: 600;
+	}
+}
+
+.nop-network-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 480px;
+	padding-top: 4px;
+}
+
+// Status dot in panel titles
+.nop-panel-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #c3c4c7;
+	margin-right: 8px;
+	vertical-align: middle;
+	position: relative;
+	top: -1px;
+
+	&--active {
+		background: #00a32a;
+	}
+}
+
+.nop-panel-title {
+	display: flex;
+	align-items: center;
+}
+
+// Test connection
+.nop-test-connection {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.nop-test-result {
+	font-size: 12px;
+
+	&--ok    { color: var(--nop-success, #00a32a); }
+	&--error { color: var(--nop-text-error, #d63638); }
+}
+
+// Import section
+.nop-network-import {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+// Sync now button + last-synced label
+.nop-sync-now {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+
+	&__last {
+		font-size: 12px;
+		color: var(--nop-text-muted, #646970);
+	}
+}
+
 // TabPanel tweaks — tighten the default WP component styling
 .nop-settings-app .components-tab-panel__tabs {
 	border-bottom: 1px solid #dcdcde;

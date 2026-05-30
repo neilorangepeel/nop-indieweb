@@ -254,7 +254,7 @@ class Settings_API {
 			'bluesky'    => [ 'active' => $bluesky_ok,  'color' => '#0085FF', 'last_label' => $bluesky_ok  ? $this->human_time_diff( $bluesky['import_last_at']  ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'pixelfed'   => [ 'active' => $pixelfed_ok, 'color' => '#1A9C5B', 'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'letterboxd' => [ 'active' => $lboxd_ok,    'color' => '#00C030', 'last_label' => $lboxd_ok    ? $this->human_time_diff( $lboxd['import_last_at']    ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
-			'swarm'      => [ 'active' => $swarm_ok,    'color' => '#FC8D1D', 'last_label' => $swarm_ok    ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null ],
+			'swarm'      => [ 'active' => $swarm_ok, 'color' => '#FC8D1D', 'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null, 'micropubUrl' => \NOP\IndieWeb\nop_indieweb_endpoint_url() ],
 		];
 	}
 
