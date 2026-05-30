@@ -291,11 +291,41 @@ html, body {
 .caption-field::placeholder { color: var(--text-2); }
 
 /* Syndicators */
+.syndicate-details {
+	margin-bottom: 16px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+.syndicate-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-2);
+	cursor: pointer;
+	list-style: none;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+}
+.syndicate-summary::-webkit-details-marker { display: none; }
+.syndicate-summary::after {
+	content: '›';
+	font-size: 18px;
+	line-height: 1;
+	display: inline-block;
+	transition: transform 0.15s;
+}
+details[open] .syndicate-summary::after { transform: rotate(90deg); }
 .syndicators {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px;
-	margin-bottom: 16px;
+	padding: 10px 14px 14px;
+	border-top: 1px solid var(--border);
 }
 .syndicator-item {
 	display: flex;
@@ -501,8 +531,11 @@ html, body {
 			></textarea>
 		</div>
 
-		<!-- Syndicators (populated by JS from q=config) -->
-		<div class="syndicators" id="syndicators" hidden></div>
+		<!-- Syndicators (populated by JS from q=config, hidden until active networks exist) -->
+		<details class="syndicate-details" id="syndicateDetails" hidden>
+			<summary class="syndicate-summary"><?php esc_html_e( 'Syndicate to', 'nop-indieweb' ); ?></summary>
+			<div class="syndicators" id="syndicators"></div>
+		</details>
 
 		<button class="btn btn-primary" id="postBtn" disabled type="button">
 			<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
@@ -591,14 +624,13 @@ html, body {
 			var synTo = data['syndicate-to'] || [];
 			if ( ! synTo.length ) return;
 
-			var container = document.getElementById( 'syndicators' );
-			container.innerHTML = synTo.map( function (s) {
+			document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
 				return '<label class="syndicator-item">'
 					+ '<input type="checkbox" value="' + escAttr( s.uid ) + '" checked>'
 					+ ' ' + escHtml( s.name )
 					+ '</label>';
 			} ).join( '' );
-			container.hidden = false;
+			document.getElementById( 'syndicateDetails' ).hidden = false;
 		} )
 		.catch( function () {} );
 	} )();
