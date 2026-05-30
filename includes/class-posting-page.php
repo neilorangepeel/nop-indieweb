@@ -334,7 +334,7 @@ html, body {
 	min-width: 80px;
 	border: none;
 	outline: none;
-	font-size: 14px;
+	font-size: 16px;
 	font-family: inherit;
 	color: var(--text);
 	background: transparent;
