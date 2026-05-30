@@ -48,6 +48,25 @@ Extends the login session to one year for user ID 1 (neilhainsworth), network-wi
 
 ```php
 <?php
+/**
+ * NOP — Persistent admin session
+ *
+ * Extends the WordPress login cookie to one year for the site owner
+ * (user ID 1, neilhainsworth) so the admin stays logged in across all
+ * sites in the Multisite network, including the network admin dashboard.
+ *
+ * WordPress default: 14 days with "Remember Me", 2 days without.
+ * This filter overrides that for user ID 1 only — all other users keep
+ * the default expiry.
+ *
+ * Safe to keep here: mu-plugins/ is never modified by WordPress core,
+ * plugin, or theme updates. See CLAUDE.md in the nop-indieweb plugin
+ * for the canonical copy of this file's contents.
+ *
+ * To recreate after a server reprovision, see:
+ * wp-content/plugins/nop-indieweb/CLAUDE.md → "Server-side files not in git"
+ */
+
 add_filter( 'auth_cookie_expiration', function ( int $expiration, int $user_id ): int {
 	return 1 === $user_id ? YEAR_IN_SECONDS : $expiration;
 }, 10, 2 );
