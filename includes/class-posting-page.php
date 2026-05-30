@@ -587,6 +587,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		<div class="field-group" id="fieldTags" hidden>
 			<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
 			<div class="tags-field" id="tagsField">
+				<span id="tagChips"></span>
 				<input
 					type="text"
 					id="tagInput"
@@ -739,15 +740,12 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	}
 
 	function renderTags() {
-		var chips = currentTags.map( function (tag, i) {
+		document.getElementById( 'tagChips' ).innerHTML = currentTags.map( function (tag, i) {
 			return '<span class="tag-chip">'
 				+ escHtml( tag )
 				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '">×</button>'
 				+ '</span>';
 		} ).join( '' );
-		tagsField.innerHTML = chips;
-		tagsField.appendChild( tagInput );
-		tagInput.focus();
 	}
 
 	tagsField.addEventListener( 'click', function (e) {
