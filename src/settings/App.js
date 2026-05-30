@@ -50,6 +50,7 @@ export default function App() {
 			<TabPanel
 				tabs={ TABS }
 				initialTabName={ activeTab }
+				selectedTabName={ activeTab }
 				onSelect={ handleTabSelect }
 			>
 				{ ( tab ) => {
