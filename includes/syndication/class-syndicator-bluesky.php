@@ -74,8 +74,29 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 
 		$permalink = (string) get_permalink( $post_id );
-		$video     = $this->collect_inline_video( $post_id );
-		$images    = $video ? [] : $this->collect_inline_images( $post_id, 4 );
+		$video  = $this->collect_inline_video( $post_id );
+		$images = $video ? [] : $this->collect_inline_images( $post_id, 4 );
+
+		// Swarm check-in photos are stored in nop_indieweb_photos meta at creation
+		// time, but the photo blocks aren't injected into post_content until the
+		// background after_insert cron runs — which happens after syndication fires.
+		// Fall back to the raw CDN URLs so images aren't silently dropped.
+		if ( ! $video && ! $images ) {
+			$cdn_photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+			if ( is_array( $cdn_photos ) && $cdn_photos ) {
+				$images = array_values( array_slice(
+					array_map( fn( $url ) => [
+						'url'           => (string) $url,
+						'alt'           => '',
+						'attachment_id' => 0,
+						'width'         => 0,
+						'height'        => 0,
+					], array_filter( $cdn_photos ) ),
+					0, 4
+				) );
+			}
+		}
+
 		$body_text = $this->build_full_text( $post_id );
 
 		if ( $video || $images ) {
