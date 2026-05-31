@@ -119,7 +119,7 @@ class Semantic_Markup {
 			[ $meta_key, $rel ] = $url_kinds[ $kind ];
 			$url = get_post_meta( $post_id, $meta_key, true );
 			if ( $url ) {
-				printf( "<a class=\"%s\" href=\"%s\" hidden></a>\n", esc_attr( $rel ), esc_url( $url ) );
+				$this->output_kind_url( $rel, (string) $url, $post_id );
 			}
 		}
 
@@ -129,6 +129,55 @@ class Semantic_Markup {
 				printf( "<data class=\"p-rsvp\" value=\"%s\" hidden></data>\n", esc_attr( $rsvp ) );
 			}
 		}
+	}
+
+	/**
+	 * Emits the canonical-URL property for a response kind. When a captured cite
+	 * is present (title fetched from the target), emits a nested hidden h-cite
+	 * carrying the target's title, author, image, excerpt and site so consumers
+	 * see real context; otherwise falls back to today's bare hidden anchor.
+	 */
+	private function output_kind_url( string $rel, string $url, int $post_id ): void {
+		$title = (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true );
+		if ( '' === $title ) {
+			printf( "<a class=\"%s\" href=\"%s\" hidden></a>\n", esc_attr( $rel ), esc_url( $url ) );
+			return;
+		}
+
+		printf( '<div class="h-cite %s" hidden>', esc_attr( $rel ) );
+		printf( '<a class="p-name u-url" href="%s">%s</a>', esc_url( $url ), esc_html( $title ) );
+
+		$author_name  = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_name', true );
+		$author_url   = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_url', true );
+		$author_photo = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_photo', true );
+		if ( '' !== $author_name || '' !== $author_url || '' !== $author_photo ) {
+			echo '<span class="p-author h-card">';
+			if ( '' !== $author_url && '' !== $author_name ) {
+				printf( '<a class="u-url p-name" href="%s">%s</a>', esc_url( $author_url ), esc_html( $author_name ) );
+			} elseif ( '' !== $author_url ) {
+				printf( '<a class="u-url" href="%s"></a>', esc_url( $author_url ) );
+			} elseif ( '' !== $author_name ) {
+				printf( '<span class="p-name">%s</span>', esc_html( $author_name ) );
+			}
+			if ( '' !== $author_photo ) {
+				printf( '<img class="u-photo" src="%s" alt="">', esc_url( $author_photo ) );
+			}
+			echo '</span>';
+		}
+
+		$image = (string) get_post_meta( $post_id, 'nop_indieweb_cite_image', true );
+		if ( '' !== $image ) {
+			printf( '<img class="u-photo" src="%s" alt="">', esc_url( $image ) );
+		}
+		$excerpt = (string) get_post_meta( $post_id, 'nop_indieweb_cite_excerpt', true );
+		if ( '' !== $excerpt ) {
+			printf( '<p class="p-summary">%s</p>', esc_html( $excerpt ) );
+		}
+		$site = (string) get_post_meta( $post_id, 'nop_indieweb_cite_site_name', true );
+		if ( '' !== $site ) {
+			printf( '<span class="p-publication">%s</span>', esc_html( $site ) );
+		}
+		echo "</div>\n";
 	}
 
 	/**

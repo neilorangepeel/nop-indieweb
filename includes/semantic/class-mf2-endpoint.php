@@ -112,7 +112,7 @@ class MF2_Endpoint {
 		] as $prop => $meta_key ) {
 			$value = (string) get_post_meta( $post_id, $meta_key, true );
 			if ( $value ) {
-				$props[ $prop ] = [ $value ];
+				$props[ $prop ] = [ $this->build_cite( $post_id, $value ) ];
 			}
 		}
 
@@ -145,6 +145,59 @@ class MF2_Endpoint {
 			'type'       => [ 'h-entry' ],
 			'properties' => $props,
 		];
+	}
+
+	/**
+	 * Builds the value for a response property (like-of/bookmark-of/etc).
+	 *
+	 * When a captured cite is present, returns a nested h-cite object carrying
+	 * the target's title, author h-card, image, excerpt and site name; otherwise
+	 * returns the bare URL string — keeping parity with older posts and the HTML.
+	 *
+	 * @return array|string  An h-cite array, or the bare URL string.
+	 */
+	private function build_cite( int $post_id, string $url ) {
+		$title = (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true );
+		if ( '' === $title ) {
+			return $url;
+		}
+
+		$cite_props = [
+			'name' => [ $title ],
+			'url'  => [ $url ],
+		];
+
+		$excerpt = (string) get_post_meta( $post_id, 'nop_indieweb_cite_excerpt', true );
+		if ( '' !== $excerpt ) {
+			$cite_props['summary'] = [ $excerpt ];
+		}
+		$image = (string) get_post_meta( $post_id, 'nop_indieweb_cite_image', true );
+		if ( '' !== $image ) {
+			$cite_props['photo'] = [ $image ];
+		}
+		$site = (string) get_post_meta( $post_id, 'nop_indieweb_cite_site_name', true );
+		if ( '' !== $site ) {
+			$cite_props['publication'] = [ $site ];
+		}
+
+		$author_name  = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_name', true );
+		$author_url   = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_url', true );
+		$author_photo = (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_photo', true );
+		if ( '' !== $author_name || '' !== $author_url || '' !== $author_photo ) {
+			$author_props = [];
+			if ( '' !== $author_name ) {
+				$author_props['name'] = [ $author_name ];
+			}
+			if ( '' !== $author_url ) {
+				$author_props['url'] = [ $author_url ];
+			}
+			if ( '' !== $author_photo ) {
+				$author_props['photo'] = [ $author_photo ];
+			}
+			$cite_props['author'] = [ [ 'type' => [ 'h-card' ], 'properties' => $author_props ] ];
+		}
+
+		return [ 'type' => [ 'h-cite' ], 'properties' => $cite_props ];
 	}
 
 	/**

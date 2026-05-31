@@ -101,6 +101,49 @@ class Plugin {
 		\NOP\IndieWeb\nop_indieweb_log( "dispatch_after_insert: no service found for slug '{$service_slug}'" );
 	}
 
+	/**
+	 * Enriches a URL-response post with a captured cite of its target.
+	 *
+	 * Runs inline on the `nop_indieweb_before_post_insert` filter for any
+	 * Url_Response_Service (like/bookmark/repost/reply/rsvp): fetches the target
+	 * once, sets the post title to the real page title (falling back to today's
+	 * domain when absent), and stores the cite_* meta. Best-effort — a failed or
+	 * empty fetch leaves the post args untouched, so there's no regression.
+	 *
+	 * @param array $post_args Args bound for wp_insert_post (incl. meta_input).
+	 * @param array $parsed    The service's parsed payload (carries 'url').
+	 * @param mixed $service   The service handling the request.
+	 */
+	public function enrich_url_response_cite( array $post_args, array $parsed, $service ): array {
+		if ( ! $service instanceof Services\Url_Response_Service ) {
+			return $post_args;
+		}
+		$url = (string) ( $parsed['url'] ?? '' );
+		if ( '' === $url ) {
+			return $post_args;
+		}
+
+		$cite = ( new Webmention\Cite_Extractor() )->extract_from_url( $url );
+		if ( empty( $cite ) ) {
+			return $post_args;
+		}
+
+		// The Micropub post has only a domain title, so always override it.
+		if ( ! empty( $cite['title'] ) ) {
+			$post_args['post_title'] = $cite['title'];
+		}
+
+		// Shared mapper + source marker (see Cite_Enricher) so the editor hook
+		// recognises this post as already enriched and skips re-fetching it.
+		$post_args['meta_input'] = $post_args['meta_input'] ?? [];
+		foreach ( Webmention\Cite_Enricher::meta_from_cite( $cite ) as $key => $value ) {
+			$post_args['meta_input'][ $key ] = $value;
+		}
+		$post_args['meta_input']['_nop_indieweb_cite_source'] = $url;
+
+		return $post_args;
+	}
+
 	public function boot(): void {
 		// One-shot migration: drop autoload on the settings option so plaintext
 		// syndication credentials aren't kept in memory on every request.
@@ -125,6 +168,11 @@ class Plugin {
 		// is retrieved from a short-lived transient set at insert time.
 		add_action( 'nop_indieweb_run_after_insert', [ $this, 'dispatch_after_insert' ], 10, 2 );
 
+		// Enrich URL-response posts (like/bookmark/repost/reply/rsvp) with a
+		// captured cite of the target — title, author, excerpt, image — so they
+		// carry real context instead of a bare link.
+		add_filter( 'nop_indieweb_before_post_insert', [ $this, 'enrich_url_response_cite' ], 10, 3 );
+
 		$syndication_manager       = new Syndication_Manager();
 		$this->syndication_manager = $syndication_manager;
 		$syndication_manager->register();
@@ -143,6 +191,7 @@ class Plugin {
 		( new WebSub() )->register();
 		( new Like_Endpoint() )->register();
 		( new Social_Backfeed() )->register();
+		( new Webmention\Cite_Enricher() )->register();
 		( new Post_Filter() )->register();
 		( new Semantic_Markup() )->register();
 		( new Open_Graph() )->register();

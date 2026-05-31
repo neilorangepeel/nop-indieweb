@@ -207,6 +207,38 @@ class Registry {
 				'description' => 'RSVP value: yes, no, maybe, or interested (p-rsvp).',
 			] ),
 
+			// ── Cited target context (h-cite) ────────────────────────────────────────
+			// Captured once at save time from the like/bookmark/repost/reply target so
+			// the post carries real context instead of a bare link. See Cite_Extractor.
+			'nop_indieweb_cite_title'        => array_merge( $string, [
+				'label'       => __( 'Cite Title', 'nop-indieweb' ),
+				'description' => 'Title of the cited target page (h-cite p-name).',
+			] ),
+			'nop_indieweb_cite_author_name'  => array_merge( $string, [
+				'label'       => __( 'Cite Author', 'nop-indieweb' ),
+				'description' => 'Author name of the cited target (h-cite p-author h-card p-name).',
+			] ),
+			'nop_indieweb_cite_author_url'   => array_merge( $string, [
+				'label'       => __( 'Cite Author URL', 'nop-indieweb' ),
+				'description' => 'Author URL of the cited target (h-card u-url).',
+			] ),
+			'nop_indieweb_cite_author_photo' => array_merge( $string, [
+				'label'       => __( 'Cite Author Photo', 'nop-indieweb' ),
+				'description' => 'Author photo of the cited target (h-card u-photo).',
+			] ),
+			'nop_indieweb_cite_excerpt'      => array_merge( $string, [
+				'label'       => __( 'Cite Excerpt', 'nop-indieweb' ),
+				'description' => 'Short excerpt/summary of the cited target (h-cite p-summary).',
+			] ),
+			'nop_indieweb_cite_image'        => array_merge( $string, [
+				'label'       => __( 'Cite Image', 'nop-indieweb' ),
+				'description' => 'Representative image URL of the cited target (h-cite u-photo).',
+			] ),
+			'nop_indieweb_cite_site_name'    => array_merge( $string, [
+				'label'       => __( 'Cite Site Name', 'nop-indieweb' ),
+				'description' => 'Site name of the cited target (h-cite p-publication / source host).',
+			] ),
+
 			// ── Film / watch ─────────────────────────────────────────────────────
 			'nop_indieweb_film_title'   => array_merge( $string, [
 				'label'       => __( 'Film Title', 'nop-indieweb' ),
