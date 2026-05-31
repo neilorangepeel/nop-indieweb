@@ -151,6 +151,21 @@ body {
 	border: 1px solid var(--border);
 }
 
+/* On desktop the frame floats: centre it and trim the height so the
+   top and bottom borders aren't jammed against the viewport edges. */
+@media (min-width: 600px) {
+	body {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.app {
+		height: calc(100dvh - 48px);
+		max-height: 880px;
+		width: 100%;
+	}
+}
+
 /* ── Header ─────────────────────────────────────────────────────────────── */
 
 .app-header {
