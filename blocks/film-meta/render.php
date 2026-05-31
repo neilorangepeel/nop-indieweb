@@ -88,7 +88,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-film-meta' ] );
 	<?php if ( $poster_url ) : ?>
 	<img class="nop-film-meta__poster"
 	     src="<?php echo esc_url( $poster_url ); ?>"
-	     alt=""
+	     alt="<?php /* translators: %s: film title */ echo esc_attr( sprintf( __( '%s poster', 'nop-indieweb' ), get_the_title( $post_id ) ) ); ?>"
 	     loading="lazy">
 	<?php endif; ?>
 

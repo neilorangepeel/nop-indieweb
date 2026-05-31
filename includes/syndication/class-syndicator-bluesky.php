@@ -10,6 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Syndicator_Bluesky extends Syndicator_Base {
 
+	/** Bluesky rejects image blobs larger than 1 MB. */
+	private const BLOB_CAP_BYTES = 1_000_000;
+
 	public function slug(): string  { return 'bluesky'; }
 	public function label(): string { return 'Bluesky'; }
 
@@ -290,7 +293,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			if ( ! $fetched ) {
 				continue;
 			}
-			if ( strlen( $fetched['data'] ) > 1_000_000 ) {
+			if ( strlen( $fetched['data'] ) > self::BLOB_CAP_BYTES ) {
 				\NOP\IndieWeb\nop_indieweb_log( 'Bluesky: image over 1MB, trying smaller', [
 					'url'   => $url,
 					'bytes' => strlen( $fetched['data'] ),

@@ -15,11 +15,13 @@
 
 	// ── Config ──────────────────────────────────────────────────────────────────
 
+	// Colours mirror the AA-compliant values in render.php so the editor preview
+	// matches the front-end (the brighter originals failed WCAG AA on white).
 	var RSVP_OPTIONS = [
-		{ value: 'yes',        label: 'Going',       color: '#16a34a' },
-		{ value: 'maybe',      label: 'Maybe',       color: '#d97706' },
-		{ value: 'interested', label: 'Interested',  color: '#2563eb' },
-		{ value: 'no',         label: 'Not going',   color: '#dc2626' },
+		{ value: 'yes',        label: 'Going',       color: '#15803d' },
+		{ value: 'maybe',      label: 'Maybe',       color: '#92400e' },
+		{ value: 'interested', label: 'Interested',  color: '#1d4ed8' },
+		{ value: 'no',         label: 'Not going',   color: '#b91c1c' },
 	];
 
 	// ── RSVP Picker ─────────────────────────────────────────────────────────────

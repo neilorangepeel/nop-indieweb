@@ -25,13 +25,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
-           ( $block->context['postId'] ?? get_the_ID() );
-
-$slug = $post_id ? sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_weather_icon', true ) ) : '';
-
 $is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
 	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
+
+// Only honour ?post_id= in the editor block-renderer request, and only for a
+// post the current user may edit — otherwise it leaks meta of arbitrary posts.
+$post_id = $block->context['postId'] ?? get_the_ID();
+if ( $is_editor && isset( $_GET['post_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$candidate = absint( $_GET['post_id'] ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( $candidate && current_user_can( 'edit_post', $candidate ) ) {
+		$post_id = $candidate;
+	}
+}
+
+$slug = $post_id ? sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_weather_icon', true ) ) : '';
 
 if ( '' === $slug ) {
 	if ( ! $is_editor ) {

@@ -7,13 +7,15 @@
  *
  * No build step — window.wp globals only.
  */
-( function ( blocks, element, data, coreData ) {
+( function ( blocks, element, data, coreData, i18n ) {
 	'use strict';
 
 	var el               = element.createElement;
 	var useState         = element.useState;
 	var useSelect        = data.useSelect;
 	var useEntityProp    = coreData.useEntityProp;
+	var __               = i18n.__;
+	var sprintf          = i18n.sprintf;
 
 	// ── Star picker ─────────────────────────────────────────────────────────────
 
@@ -40,7 +42,8 @@
 		return el( 'div', {
 			className:    'nop-film-star-picker',
 			role:         'group',
-			'aria-label': 'Film rating: ' + ( hovered !== null ? hovered : rating ) + ' out of 5 stars',
+			/* translators: %s: rating value out of 5 */
+			'aria-label': sprintf( __( 'Film rating: %s out of 5 stars', 'nop-indieweb' ), ( hovered !== null ? hovered : rating ) ),
 			onMouseLeave: function () { setHovered( null ); },
 		}, groups );
 	}
@@ -60,7 +63,8 @@
 				onClick:      function () { onChange( halfVal ); },
 				role:         'button',
 				tabIndex:     0,
-				'aria-label': halfVal + ' stars',
+				/* translators: %s: rating value */
+				'aria-label': sprintf( __( '%s stars', 'nop-indieweb' ), halfVal ),
 				onKeyDown:    function ( e ) { if ( e.key === 'Enter' || e.key === ' ' ) { e.preventDefault(); onChange( halfVal ); } },
 			} ),
 			// Right half → full-star value
@@ -70,7 +74,8 @@
 				onClick:      function () { onChange( fullVal ); },
 				role:         'button',
 				tabIndex:     0,
-				'aria-label': fullVal + ' stars',
+				/* translators: %s: rating value */
+				'aria-label': sprintf( __( '%s stars', 'nop-indieweb' ), fullVal ),
 				onKeyDown:    function ( e ) { if ( e.key === 'Enter' || e.key === ' ' ) { e.preventDefault(); onChange( fullVal ); } },
 			} ),
 			// Visual glyph — pointer-events: none so clicks hit the zones
@@ -131,11 +136,12 @@
 			}
 			if ( watchDate ) {
 				metaItems.push( el( 'span', { key: 'date', className: 'nop-film-meta__date' },
-					'Watched ' + formatWatchDate( watchDate )
+					/* translators: %s: formatted watch date */
+					sprintf( __( 'Watched %s', 'nop-indieweb' ), formatWatchDate( watchDate ) )
 				) );
 			}
 			if ( rewatch ) {
-				metaItems.push( el( 'span', { key: 'rewatch', className: 'nop-film-meta__rewatch' }, 'Rewatch' ) );
+				metaItems.push( el( 'span', { key: 'rewatch', className: 'nop-film-meta__rewatch' }, __( 'Rewatch', 'nop-indieweb' ) ) );
 			}
 			if ( sourceUrl ) {
 				metaItems.push( el( 'a', {
@@ -145,7 +151,7 @@
 					onClick:   function ( e ) { e.preventDefault(); },
 					target:    '_blank',
 					rel:       'noopener',
-				}, 'View on Letterboxd' ) );
+				}, __( 'View on Letterboxd', 'nop-indieweb' ) ) );
 			}
 
 			return el( 'div', { className: 'nop-film-meta' },
@@ -169,5 +175,6 @@
 	window.wp.blocks,
 	window.wp.element,
 	window.wp.data,
-	window.wp.coreData
+	window.wp.coreData,
+	window.wp.i18n
 );

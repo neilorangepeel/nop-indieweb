@@ -342,6 +342,7 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 	}
 
 	$file = $maps_dir . "/checkin-map-{$post_id}.png";
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- direct write to a plugin-owned cache dir; WP_Filesystem adds no value for this binary image write
 	if ( false === file_put_contents( $file, wp_remote_retrieve_body( $response ) ) ) {
 		return '';
 	}

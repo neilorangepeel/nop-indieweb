@@ -7,10 +7,16 @@ export default function EndpointRow( { label, url } ) {
 
 	const handleCopy = () => {
 		if ( ! url ) return;
-		navigator.clipboard.writeText( url ).then( () => {
-			setCopied( true );
-			setTimeout( () => setCopied( false ), 2000 );
-		} );
+		// navigator.clipboard is undefined on insecure (http) origins and the
+		// promise can reject; guard and swallow so there's no unhandled rejection.
+		if ( ! navigator.clipboard?.writeText ) return;
+		navigator.clipboard
+			.writeText( url )
+			.then( () => {
+				setCopied( true );
+				setTimeout( () => setCopied( false ), 2000 );
+			} )
+			.catch( () => {} );
 	};
 
 	return (

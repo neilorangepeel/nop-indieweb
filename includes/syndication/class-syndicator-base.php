@@ -156,11 +156,11 @@ abstract class Syndicator_Base {
 
 	private function fetch_media( string $url, array $allowed_mimes, int $timeout ): ?array {
 		// Cap body size so a malicious/runaway upstream can't blow up PHP memory.
-		// The URL here is a WordPress attachment URL from the post being syndicated,
-		// so it's normally same-host — but defend in depth.
-		$response = wp_remote_get( $url, [
+		// The URL is normally a same-host attachment URL, but for imported posts
+		// it can be an attacker-influenced src parsed out of post_content — so
+		// use the SSRF-hardened path that re-validates every redirect hop.
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
 			'timeout'             => $timeout,
-			'redirection'         => 3,
 			'limit_response_size' => self::MEDIA_FETCH_CAP_BYTES,
 		] );
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {

@@ -74,7 +74,10 @@ class Media_Endpoint {
 		}
 
 		$max_bytes = (int) apply_filters( 'nop_indieweb_media_max_bytes', self::DEFAULT_MAX_BYTES );
-		$size      = (int) ( $files['file']['size'] ?? 0 );
+		// Prefer the actual size of the uploaded temp file over the client-reported
+		// 'size' field, which can be absent, zero, or spoofed.
+		$tmp_size  = is_readable( $files['file']['tmp_name'] ) ? (int) filesize( $files['file']['tmp_name'] ) : 0;
+		$size      = $tmp_size > 0 ? $tmp_size : (int) ( $files['file']['size'] ?? 0 );
 		if ( $size > 0 && $size > $max_bytes ) {
 			return new WP_Error(
 				'nop_indieweb_file_too_large',

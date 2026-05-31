@@ -865,6 +865,13 @@ HTML,
 	}
 
 	public function foursquare_auth_redirect(): void {
+		// Only an admin ever legitimately starts the OAuth flow; without this an
+		// anonymous visitor could repeatedly overwrite the stored OAuth state and
+		// race a real admin's in-flight connect.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
+		}
+
 		$opts          = get_option( 'nop_indieweb_settings', [] );
 		$client_id     = $opts['venue']['foursquare_client_id'] ?? '';
 		$callback_url  = rest_url( 'nop-indieweb/v1/foursquare-callback' );
@@ -1041,7 +1048,10 @@ HTML,
 
 	private function renumber_checkins_for_venue( string $venue_id, int $exclude_id = 0 ): void {
 		global $wpdb;
-		$exclude = $exclude_id ? $wpdb->prepare( 'AND p.ID != %d', $exclude_id ) : '';
+		// $exclude_id is an int; cast and inline directly. Do NOT $wpdb->prepare()
+		// it here — the whole query is prepared below, and pre-preparing a fragment
+		// then interpolating it leads to a double-prepare that mangles placeholders.
+		$exclude = $exclude_id ? 'AND p.ID != ' . (int) $exclude_id : '';
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
 		$post_ids = $wpdb->get_col( $wpdb->prepare(

@@ -167,6 +167,10 @@ abstract class Service_Base {
 			}
 
 			$tmp = $this->safe_download_to_tmp( $url, $cap_bytes );
+			// NOP: needs review — when an array-form photo's chosen (primary) blob
+			// exceeds the cap it is rejected here even if a smaller `fallback` CDN
+			// URL exists; the fallback is only consulted before download, never
+			// after a nop_too_large rejection. Consider retrying the fallback.
 			if ( is_wp_error( $tmp ) ) {
 				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $tmp->get_error_message() );
 				continue;
@@ -270,7 +274,8 @@ abstract class Service_Base {
 			if ( $code >= 200 && $code < 300 ) {
 				break;
 			}
-			if ( $code < 300 || $code >= 400 ) {
+			// Anything that isn't a 3xx redirect is an error (2xx already broke out).
+			if ( $code >= 400 || $code < 300 ) {
 				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_bad_status', "Upstream returned HTTP {$code}." );
 			}

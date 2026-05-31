@@ -129,7 +129,7 @@ class Swarm extends Service_Base {
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );
 
-		$note   = trim( $parsed['content'] );
+		$note   = wp_kses_post( trim( $parsed['content'] ) );
 		$blocks = $note
 			? "<!-- wp:paragraph -->\n<p>{$note}</p>\n<!-- /wp:paragraph -->"
 			: '';

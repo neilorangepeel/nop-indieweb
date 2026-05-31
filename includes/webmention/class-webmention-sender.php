@@ -108,7 +108,16 @@ class Webmention_Sender {
 	 * signal that no endpoint exists — it just means it isn't in the headers.
 	 */
 	private function discover_endpoint( string $target ): ?string {
-		$response = wp_remote_head( $target, [ 'timeout' => 10, 'redirection' => 3 ] );
+		// Targets can originate from inbound (untrusted) webmention sources, so
+		// route every fetch through the SSRF-hardened path: pre-reject private/
+		// reserved IPs and use the safe HTTP variants. HEAD does not follow
+		// redirects here (redirection => 0); a 3xx simply falls through to the
+		// GET below, which re-validates each hop.
+		if ( ! \NOP\IndieWeb\nop_indieweb_is_safe_url( $target ) ) {
+			return null;
+		}
+
+		$response = wp_safe_remote_head( $target, [ 'timeout' => 10, 'redirection' => 0 ] );
 
 		if ( ! is_wp_error( $response ) ) {
 			$endpoint = $this->endpoint_from_link_header(
@@ -123,9 +132,8 @@ class Webmention_Sender {
 		// Cap the HTML body we parse for <link rel="webmention">. 2 MB is
 		// generous for any real article and stops a hostile target from
 		// streaming gigabytes.
-		$response = wp_remote_get( $target, [
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $target, [
 			'timeout'             => 10,
-			'redirection'         => 3,
 			'limit_response_size' => 2 * 1024 * 1024,
 		] );
 		if ( is_wp_error( $response ) ) {
@@ -244,10 +252,18 @@ class Webmention_Sender {
 	}
 
 	private function send( string $source, string $target, string $endpoint ): int {
-		$response = wp_remote_post( $endpoint, [
-			'headers' => [ 'Content-Type' => 'application/x-www-form-urlencoded' ],
-			'body'    => http_build_query( [ 'source' => $source, 'target' => $target ] ),
-			'timeout' => 15,
+		// The endpoint was discovered from the (untrusted) target's markup, so
+		// it is attacker-influenceable too — validate it before POSTing and use
+		// the safe variant without redirect-following.
+		if ( ! \NOP\IndieWeb\nop_indieweb_is_safe_url( $endpoint ) ) {
+			return 0;
+		}
+		$response = wp_safe_remote_post( $endpoint, [
+			'headers'             => [ 'Content-Type' => 'application/x-www-form-urlencoded' ],
+			'body'                => http_build_query( [ 'source' => $source, 'target' => $target ] ),
+			'timeout'             => 15,
+			'redirection'         => 0,
+			'limit_response_size' => 1024 * 1024,
 		] );
 		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
 		\NOP\IndieWeb\nop_indieweb_log( "Webmention → {$endpoint}", compact( 'source', 'target', 'code' ) );

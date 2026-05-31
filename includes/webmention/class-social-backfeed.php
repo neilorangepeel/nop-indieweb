@@ -281,10 +281,15 @@ class Social_Backfeed {
 	 * @param array<string,mixed> $seen
 	 */
 	private function store_interaction( int $post_id, array $data, array &$seen ): void {
-		$date_gmt = $data['date'] ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $data['date'] ) ) : current_time( 'mysql', true );
+		// strtotime returns false on an unparseable date — fall back to "now"
+		// rather than coercing false to 0 (which lands on 1970-01-01).
+		$ts       = $data['date'] ? strtotime( $data['date'] ) : false;
+		$date_gmt = $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : current_time( 'mysql', true );
 		$date     = get_date_from_gmt( $date_gmt );
 
-		$comment_id = wp_insert_comment( [
+		// wp_insert_comment expects slashed data (it unslashes internally), and
+		// remote author names/content can contain characters that need it.
+		$comment_id = wp_insert_comment( wp_slash( [
 			'comment_post_ID'      => $post_id,
 			'comment_type'         => 'webmention',
 			'comment_approved'     => 1,
@@ -296,7 +301,7 @@ class Social_Backfeed {
 			'comment_content'      => $data['content'],
 			'comment_date'         => $date,
 			'comment_date_gmt'     => $date_gmt,
-		] );
+		] ) );
 
 		if ( $comment_id ) {
 			add_comment_meta( $comment_id, 'webmention_type',          $data['type'],                     true );

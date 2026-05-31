@@ -39,6 +39,9 @@ class Feed_Importer {
 	private Note       $note;
 	private Letterboxd $letterboxd;
 
+	/** Lazily-built set of all outbound syndication URLs (url => true). */
+	private ?array $syndicated_urls = null;
+
 	public function __construct( Note $note, Letterboxd $letterboxd ) {
 		$this->note       = $note;
 		$this->letterboxd = $letterboxd;
@@ -156,6 +159,11 @@ class Feed_Importer {
 				continue;
 			}
 
+			// NOP: needs review — handle() can return a WP_Error, but we ignore it and
+			// advance the cursor below regardless, so a permanently-failing item is
+			// skipped forever. Honouring the error instead risks an infinite retry
+			// loop on a poison item; the right policy (retry budget? dead-letter?) is
+			// a product decision. Same pattern at the Bluesky/Letterboxd handle calls.
 			$this->note->handle( $this->mastodon_to_payload( $status ) );
 			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
 		}
@@ -222,9 +230,9 @@ class Feed_Importer {
 		}
 
 		// Resolve handle to DID using the public AppView — no credentials needed.
-		$resolve = wp_remote_get(
+		$resolve = \NOP\IndieWeb\nop_indieweb_strict_remote_get(
 			'https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?' . http_build_query( [ 'handle' => $handle ] ),
-			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 1 * 1024 * 1024 ]
+			[ 'timeout' => 15, 'limit_response_size' => 1 * 1024 * 1024 ]
 		);
 
 		if ( is_wp_error( $resolve ) || 200 !== wp_remote_retrieve_response_code( $resolve ) ) {
@@ -237,9 +245,9 @@ class Feed_Importer {
 			return;
 		}
 
-		$response = wp_remote_get(
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get(
 			'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?' . http_build_query( [ 'actor' => $did, 'limit' => 25 ] ),
-			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 4 * 1024 * 1024 ]
+			[ 'timeout' => 15, 'limit_response_size' => 4 * 1024 * 1024 ]
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -417,9 +425,9 @@ class Feed_Importer {
 			return;
 		}
 
-		$response = wp_remote_get(
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get(
 			"https://letterboxd.com/{$username}/rss/",
-			[ 'timeout' => 15, 'redirection' => 3, 'limit_response_size' => 4 * 1024 * 1024, 'user-agent' => 'nop-indieweb/1.0 (WordPress)' ]
+			[ 'timeout' => 15, 'limit_response_size' => 4 * 1024 * 1024, 'user-agent' => 'nop-indieweb/1.0 (WordPress)' ]
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -439,6 +447,10 @@ class Feed_Importer {
 		// Discover the letterboxd: namespace URI from the document (it's https://letterboxd.com).
 		$ns      = $xml->getDocNamespaces( true );
 		$lbxd_ns = $ns['letterboxd'] ?? 'https://letterboxd.com';
+
+		if ( ! isset( $xml->channel->item ) ) {
+			return;
+		}
 
 		$items = iterator_to_array( $xml->channel->item, false );
 
@@ -509,16 +521,35 @@ class Feed_Importer {
 	 * that would cause false positives in the escaped LIKE pattern.
 	 */
 	private function was_syndicated_from_wordpress( string $url ): bool {
+		if ( null === $this->syndicated_urls ) {
+			$this->syndicated_urls = $this->load_syndicated_urls();
+		}
+		return isset( $this->syndicated_urls[ $url ] );
+	}
+
+	/**
+	 * Loads every outbound syndication URL into a hash set once per run. Replaces
+	 * a per-item leading-wildcard LIKE scan (a full postmeta table scan executed
+	 * for each imported item) with a single query plus O(1) membership checks.
+	 * No new syndication meta is written during an import run, so building this
+	 * once at first use is safe.
+	 */
+	private function load_syndicated_urls(): array {
 		global $wpdb;
-		$like  = '%' . $wpdb->esc_like( $url ) . '%';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- direct query against a custom plugin table / one-off maintenance query; no core API or persistent object cache applies
-		$count = (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta}
-			 WHERE meta_key = 'nop_indieweb_syndication'
-			   AND meta_value LIKE %s",
-			$like
-		) );
-		return $count > 0;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- one read of a single meta key per import run; object cache offers nothing here
+		$rows = $wpdb->get_col(
+			"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'nop_indieweb_syndication'"
+		);
+		$set = [];
+		foreach ( $rows as $raw ) {
+			$value = maybe_unserialize( $raw );
+			foreach ( (array) $value as $u ) {
+				if ( is_string( $u ) && '' !== $u ) {
+					$set[ $u ] = true;
+				}
+			}
+		}
+		return $set;
 	}
 
 	private function api_get( string $url, string $token ): ?array {

@@ -41,6 +41,9 @@
 		'venue_coordinates',
 		'venue_url_host_label',
 		'checkin_url_host_label',
+		// Server-computed (visit count); listed so it isn't mis-resolved to a
+		// bogus meta key. No editor preview value — deriveValue returns null.
+		'venue_visit_number',
 	];
 
 	function deriveValue( field, meta ) {

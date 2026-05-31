@@ -174,6 +174,10 @@ class Note extends Service_Base {
 		}
 
 		$video_ids = [];
+		// NOP: needs review — video sideloading is gated on the *photos* setting,
+		// so enabling photos silently also enables (potentially large) video
+		// downloads, with no way to enable one without the other. Decide whether
+		// to add a dedicated `sideload_videos` setting.
 		if ( $parsed['videos'] && ! empty( $settings['sideload_photos'] ) ) {
 			$video_ids = $this->sideload_videos( $parsed['videos'], $post_id );
 			if ( $video_ids ) {

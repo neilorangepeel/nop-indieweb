@@ -14,8 +14,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
-           ( $block->context['postId'] ?? get_the_ID() );
+$is_editor = (
+	defined( 'REST_REQUEST' ) && REST_REQUEST &&
+	isset( $_GET['context'] ) && 'edit' === $_GET['context'] // phpcs:ignore WordPress.Security.NonceVerification
+);
+
+// Only honour ?post_id= in the editor block-renderer request, and only for a
+// post the current user may edit — otherwise it leaks meta of arbitrary posts.
+$post_id = $block->context['postId'] ?? get_the_ID();
+if ( $is_editor && isset( $_GET['post_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$candidate = absint( $_GET['post_id'] ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( $candidate && current_user_can( 'edit_post', $candidate ) ) {
+		$post_id = $candidate;
+	}
+}
 
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map nop-checkin-map--preview' ] );
@@ -27,11 +39,6 @@ if ( ! $post_id ) {
 	<?php
 	return;
 }
-
-$is_editor = (
-	defined( 'REST_REQUEST' ) && REST_REQUEST &&
-	isset( $_GET['context'] ) && 'edit' === $_GET['context'] // phpcs:ignore WordPress.Security.NonceVerification
-);
 
 $lat         = get_post_meta( $post_id, 'nop_indieweb_venue_lat',  true );
 $lng         = get_post_meta( $post_id, 'nop_indieweb_venue_lng',  true );
@@ -98,7 +105,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 			src="<?php echo esc_url( $map_img_url ); ?>"
 			width="<?php echo esc_attr( (string) $map_w ); ?>"
 			height="<?php echo esc_attr( (string) $map_h ); ?>"
-			alt="<?php echo esc_attr( $map_title ); ?>"
+			alt=""
 			loading="lazy" decoding="async" aria-hidden="true">
 	</a>
 	<?php endif; ?>

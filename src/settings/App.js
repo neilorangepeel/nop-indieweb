@@ -27,20 +27,23 @@ function initialTab() {
 export default function App() {
 	const { settings, setSettings, save, isSaving, notice, dismissNotice } = useSettings();
 	const [ activeTab, setActiveTab ] = useState( initialTab );
+	// Bumping tabKey remounts TabPanel so a programmatic switch (e.g. from the
+	// Overview cards) actually moves to the target tab — TabPanel only reads
+	// initialTabName on mount.
 	const [ tabKey, setTabKey ] = useState( 0 );
 	const [ targetNetwork, setTargetNetwork ] = useState( null );
 
 	const handleTabSelect = ( tabName ) => {
 		setActiveTab( tabName );
 		setTargetNetwork( null );
-		history.replaceState( null, '', '#' + tabName );
+		window.history.replaceState( null, '', '#' + tabName );
 	};
 
 	const onTabSwitch = ( tabName, network = null ) => {
 		setActiveTab( tabName );
 		setTargetNetwork( network );
 		setTabKey( ( k ) => k + 1 );
-		history.replaceState( null, '', '#' + tabName );
+		window.history.replaceState( null, '', '#' + tabName );
 	};
 
 	if ( ! settings ) {

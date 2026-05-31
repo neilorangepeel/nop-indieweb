@@ -103,6 +103,9 @@
 		var postcode   = meta['nop_indieweb_venue_postcode'] || '';
 		var lat        = meta['nop_indieweb_venue_lat']      || '';
 		var lng        = meta['nop_indieweb_venue_lng']      || '';
+		// NOP: needs review — legacy fallback to the old meta-stored categories for
+		// posts predating the nop_venue_category taxonomy. Safe to drop once every
+		// post has been migrated; kept because that backfill status is your call.
 		var cats       = termNames.length > 0 ? termNames : ( meta['nop_indieweb_venue_categories'] || [] );
 		var checkinUrl = meta['nop_indieweb_checkin_url']   || '';
 		var service    = meta['nop_indieweb_service']       || '';
@@ -376,7 +379,8 @@
 						variant: 'secondary',
 						size:    'small',
 						onClick: function () { applyLayout( offeredKind ); },
-					}, __( 'Apply ', 'nop-indieweb' ) + KIND_CONFIG[ offeredKind ].label + __( ' layout', 'nop-indieweb' ) ),
+					/* translators: %s: post kind label, e.g. "Reply" */
+					}, i18n.sprintf( __( 'Apply %s layout', 'nop-indieweb' ), KIND_CONFIG[ offeredKind ].label ) ),
 					el( 'p', { className: 'nop-layout-offer__hint' },
 						__( 'Replaces current content.', 'nop-indieweb' )
 					)
@@ -437,12 +441,14 @@
 	// nop_kind is managed by the Post Kind selector above; nop_venue_category is
 	// shown read-only in the Venue sub-panel, which only appears for checkin posts.
 	var dispatchStore = data.dispatch( 'core/editor' );
+	if ( ! dispatchStore || typeof dispatchStore.removeEditorPanel !== 'function' ) {
+		// Older WP: the panel API lived on core/edit-post. Guard it the same way
+		// so a missing dispatch doesn't throw.
+		dispatchStore = data.dispatch( 'core/edit-post' );
+	}
 	if ( dispatchStore && typeof dispatchStore.removeEditorPanel === 'function' ) {
 		dispatchStore.removeEditorPanel( 'taxonomy-panel-nop_kind' );
 		dispatchStore.removeEditorPanel( 'taxonomy-panel-nop_venue_category' );
-	} else {
-		data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_kind' );
-		data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-nop_venue_category' );
 	}
 
 } )(

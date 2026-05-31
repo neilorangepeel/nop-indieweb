@@ -6,7 +6,7 @@ import { getSessions, revokeSession } from '../api';
 function formatDate( iso ) {
 	if ( ! iso ) return '—';
 	const d = new Date( iso );
-	return isNaN( d ) ? iso : d.toLocaleDateString( undefined, { day: 'numeric', month: 'short', year: 'numeric' } );
+	return Number.isNaN( d.getTime() ) ? iso : d.toLocaleDateString( undefined, { day: 'numeric', month: 'short', year: 'numeric' } );
 }
 
 export default function SessionsTable() {
@@ -59,7 +59,7 @@ export default function SessionsTable() {
 					<th>{ __( 'Permissions', 'nop-indieweb' ) }</th>
 					<th>{ __( 'Authorised', 'nop-indieweb' ) }</th>
 					<th>{ __( 'Last used', 'nop-indieweb' ) }</th>
-					<th></th>
+					<th><span className="screen-reader-text">{ __( 'Actions', 'nop-indieweb' ) }</span></th>
 				</tr>
 			</thead>
 			<tbody>

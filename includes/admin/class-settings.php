@@ -28,6 +28,9 @@ class Settings {
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		// Keep the AJAX handler for one release so any open browser tabs with
 		// the old Test Connection button still work.
+		// NOP: needs review — this was a one-release backward-compat shim (also
+		// ajax_test_connection() below). Safe to delete once that release has
+		// shipped; left in place because the cutover date is your call.
 		add_action( 'wp_ajax_nop_test_connection', [ $this, 'ajax_test_connection' ] );
 	}
 

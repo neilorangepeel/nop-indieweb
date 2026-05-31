@@ -334,7 +334,7 @@ class Endpoint {
 	private function apply_replace( int $post_id, string $prop, array $values, array &$args ): void {
 		match( $prop ) {
 			'content'     => $args['post_content'] = $this->plain_text_to_block( (string) ( $values[0] ?? '' ), $post_id ),
-			'name'        => $args['post_title']   = $values[0] ?? '',
+			'name'        => $args['post_title']   = sanitize_text_field( (string) ( $values[0] ?? '' ) ),
 			'post-status' => $args['post_status']  = sanitize_key( $values[0] ?? '' ),
 			'published'   => $this->apply_date( $values[0] ?? '', $args ),
 			'syndication' => update_post_meta( $post_id, 'nop_indieweb_syndication', array_map( 'esc_url_raw', $values ) ),
@@ -355,6 +355,9 @@ class Endpoint {
 		if ( $content === '' || str_starts_with( $content, '<!--' ) ) {
 			return $content;
 		}
+		// Plain-text content goes into post_content — escape it. (The block-markup
+		// path above returns early so wp_kses_post never strips block delimiters.)
+		$content       = wp_kses_post( $content );
 		$new_paragraph = "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->";
 
 		// When the post already has content (e.g. an image block appended during

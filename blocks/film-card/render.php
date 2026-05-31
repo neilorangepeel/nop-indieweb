@@ -15,8 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $post_id = $block->context['postId'] ?? get_the_ID();
 
-// ── Star builder (shared with film-meta) ──────────────────────────────────────
+// ── Star builder ──────────────────────────────────────────────────────────────
+// Guarded: render.php is require'd (not require_once) on every block render, so an
+// unguarded declaration fatals on the 2nd card in a query loop.
 
+if ( ! function_exists( 'nop_film_card_stars' ) ) :
 function nop_film_card_stars( float $rating ): string {
 	/* translators: %s: numeric rating e.g. 4.5 */
 	$label = $rating > 0 ? sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), $rating ) : __( 'Not rated', 'nop-indieweb' );
@@ -33,6 +36,7 @@ function nop_film_card_stars( float $rating ): string {
 	}
 	return $html . '</span>';
 }
+endif;
 
 // ── Template editor preview ───────────────────────────────────────────────────
 

@@ -23,9 +23,12 @@ class Posting_Page {
 	private const REWRITE   = '^post/?$';
 
 	public function register(): void {
-		add_action( 'init',              [ $this, 'add_rewrite_rule' ] );
-		add_filter( 'query_vars',        [ $this, 'add_query_var' ] );
-		add_action( 'template_redirect', [ $this, 'maybe_render' ] );
+		add_action( 'init',          [ $this, 'add_rewrite_rule' ] );
+		add_filter( 'query_vars',    [ $this, 'add_query_var' ] );
+		// Render on parse_request (before the main WP_Query runs and before the
+		// template loader is reached) so this standalone page never pays for the
+		// posts query or the theme template hierarchy it doesn't use.
+		add_action( 'parse_request', [ $this, 'maybe_render' ] );
 	}
 
 	public function add_rewrite_rule(): void {
@@ -37,12 +40,14 @@ class Posting_Page {
 		return $vars;
 	}
 
-	public function maybe_render(): void {
-		if ( ! get_query_var( self::QUERY_VAR ) ) {
+	public function maybe_render( \WP $wp ): void {
+		// At parse_request the main query hasn't run yet, so read the matched query
+		// var off the WP object directly rather than via get_query_var().
+		if ( empty( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			return;
 		}
 		if ( ! is_user_logged_in() ) {
-			wp_redirect( wp_login_url( home_url( '/post' ) ) );
+			wp_safe_redirect( wp_login_url( home_url( '/post' ) ) );
 			exit;
 		}
 		if ( ! current_user_can( 'publish_posts' ) ) {
@@ -55,11 +60,31 @@ class Posting_Page {
 	// ——— Page render ——————————————————————————————————————————————————————————
 
 	private function render_page(): void {
+		// We bypass the template loader (rendered on parse_request), so WordPress
+		// never runs send_headers for this request — set the headers ourselves.
+		nocache_headers();
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: text/html; charset=' . get_option( 'blog_charset' ) );
+		}
+
 		$nonce        = wp_create_nonce( 'wp_rest' );
 		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
 		$site_name    = esc_html( get_bloginfo( 'name' ) );
 		$icon_url     = esc_url( get_site_icon_url( 192 ) );
+		$font_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
+
+		// Compute syndication targets here so the page can inline them — saves a
+		// second round-trip (the old ?q=config fetch booted all of WordPress again
+		// just to list these). Shape mirrors the Micropub config endpoint.
+		$syndicate_to = [];
+		$manager      = Plugin::get_instance()->syndication_manager();
+		if ( $manager ) {
+			$syndicate_to = array_map(
+				fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'] ],
+				$manager->get_panel_data()
+			);
+		}
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -70,14 +95,14 @@ class Posting_Page {
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="<?php echo $site_name; ?>">
+<meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
 <?php if ( $icon_url ) : ?>
 <link rel="apple-touch-icon" href="<?php echo $icon_url; ?>">
 <?php endif; ?>
+<link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <title><?php echo $site_name; ?></title>
 <style>
 <?php
-$font_dir = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
 foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight => $style ) {
 	printf(
 		'@font-face{font-family:"Brandon Text";font-weight:%s;font-style:%s;font-display:swap;src:url("%s/brandon-text_normal_%s.woff2") format("woff2")}' . "\n",
@@ -802,6 +827,7 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 		nonce:       <?php echo wp_json_encode( $nonce ); ?>,
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
+		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 	};
 
 	var DRAFT_KEY    = 'nop_post_draft';
@@ -891,26 +917,19 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	var thumbs       = document.getElementById( 'thumbnails' );
 
 	// ── Syndicators ───────────────────────────────────────────────────────────
+	// Targets are inlined server-side (NOP.syndicateTo) — no fetch needed.
 
-	(function loadConfig() {
-		fetch( NOP.micropubUrl + '?q=config', {
-			headers: { 'X-WP-Nonce': NOP.nonce },
-		} )
-		.then( function (res) { return res.ok ? res.json() : null; } )
-		.then( function (data) {
-			if ( ! data ) return;
-			var synTo = data['syndicate-to'] || [];
-			if ( ! synTo.length ) return;
-			document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
-				return '<label class="syndicator-item">'
-					+ '<input type="checkbox" value="' + escAttr( s.uid ) + '" checked>'
-					+ ' ' + escHtml( s.name )
-					+ '</label>';
-			} ).join( '' );
-			document.getElementById( 'syndicateDetails' ).hidden = false;
-			updateCounter();
-		} )
-		.catch( function () {} );
+	(function renderSyndicators() {
+		var synTo = NOP.syndicateTo || [];
+		if ( ! synTo.length ) return;
+		document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
+			return '<label class="syndicator-item">'
+				+ '<input type="checkbox" value="' + escAttr( s.uid ) + '" checked>'
+				+ ' ' + escHtml( s.name )
+				+ '</label>';
+		} ).join( '' );
+		document.getElementById( 'syndicateDetails' ).hidden = false;
+		updateCounter();
 	} )();
 
 	// ── Tags ─────────────────────────────────────────────────────────────────

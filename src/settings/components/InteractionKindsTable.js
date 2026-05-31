@@ -1,5 +1,5 @@
 import { ToggleControl, SelectControl, FormTokenField } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 const STATUS_OPTIONS = [
 	{ value: 'publish', label: __( 'Published', 'nop-indieweb' ) },
@@ -50,6 +50,8 @@ export default function InteractionKindsTable( { services, onChange } ) {
 							</td>
 							<td>
 								<ToggleControl
+									label={ sprintf( __( 'Enable %s', 'nop-indieweb' ), label ) }
+									hideLabelFromVision
 									checked={ k.enabled ?? true }
 									onChange={ ( val ) => setKind( slug, 'enabled', val ) }
 									__nextHasNoMarginBottom
@@ -57,6 +59,8 @@ export default function InteractionKindsTable( { services, onChange } ) {
 							</td>
 							<td>
 								<SelectControl
+									label={ sprintf( __( '%s post status', 'nop-indieweb' ), label ) }
+									hideLabelFromVision
 									value={ k.post_status ?? 'publish' }
 									options={ STATUS_OPTIONS }
 									onChange={ ( val ) => setKind( slug, 'post_status', val ) }
@@ -65,11 +69,12 @@ export default function InteractionKindsTable( { services, onChange } ) {
 							</td>
 							<td>
 								<FormTokenField
+									label={ sprintf( __( '%s category', 'nop-indieweb' ), label ) }
+									__experimentalShowHowTo={ false }
 									value={ tokenList( k.post_category ?? '' ) }
 									suggestions={ categories }
 									maxLength={ 1 }
 									onChange={ ( tokens ) => setKind( slug, 'post_category', tokenString( tokens ) ) }
-									__experimentalShowHowTo={ false }
 									__nextHasNoMarginBottom
 								/>
 							</td>

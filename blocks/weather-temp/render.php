@@ -25,14 +25,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 $unit         = ( ( $attributes['unit'] ?? 'c' ) === 'f' ) ? 'f' : 'c';
 $show_symbol  = ! isset( $attributes['showSymbol'] ) || (bool) $attributes['showSymbol'];
 
-$post_id = isset( $_GET['post_id'] ) ? absint( $_GET['post_id'] ) : // phpcs:ignore WordPress.Security.NonceVerification
-           ( $block->context['postId'] ?? get_the_ID() );
+$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
+	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
+
+// Only honour ?post_id= in the editor block-renderer request, and only for a
+// post the current user may edit — otherwise it leaks meta of arbitrary posts.
+$post_id = $block->context['postId'] ?? get_the_ID();
+if ( $is_editor && isset( $_GET['post_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$candidate = absint( $_GET['post_id'] ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( $candidate && current_user_can( 'edit_post', $candidate ) ) {
+		$post_id = $candidate;
+	}
+}
 
 $meta_key = 'f' === $unit ? 'nop_indieweb_weather_temp_f' : 'nop_indieweb_weather_temp_c';
 $raw      = $post_id ? (string) get_post_meta( $post_id, $meta_key, true ) : '';
-
-$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
-	&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
 
 if ( '' === $raw ) {
 	if ( ! $is_editor ) {

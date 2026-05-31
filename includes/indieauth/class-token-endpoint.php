@@ -89,6 +89,9 @@ class Token_Endpoint {
 		}
 
 		// Validate PKCE if the authorization request included a code_challenge.
+		// NOP: needs review — PKCE is only enforced when a challenge was present at
+		// the authorize step, so a client that never sends one is exempt. Mandating
+		// PKCE for all clients would close a downgrade gap but may break legacy ones.
 		if ( $stored['challenge'] ) {
 			if ( ! $verifier ) {
 				return new WP_Error( 'invalid_request', 'code_verifier is required.', [ 'status' => 400 ] );

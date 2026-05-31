@@ -27,9 +27,9 @@ class Lookup_Provider_TMDB extends Lookup_Provider_Base {
 			return new \WP_Error( 'no_api_key', __( 'TMDB API key not configured.', 'nop-indieweb' ) );
 		}
 
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			add_query_arg( [ 'query' => $query, 'api_key' => $key ], self::API_BASE . '/search/movie' ),
-			[ 'timeout' => 8 ]
+			[ 'timeout' => 8, 'limit_response_size' => 1024 * 1024 ]
 		);
 
 		if ( is_wp_error( $response ) ) {
