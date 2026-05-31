@@ -89,16 +89,20 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
 [hidden] { display: none !important; }
 
 :root {
-	--bg:        #ffffff;
-	--surface:   #f7f7f7;
-	--text:      #111111;
-	--text-2:    #686868;
+	--sky-tint:  #ffffff;
+	--bg:        color-mix(in oklab, #ffffff 88%, var(--sky-tint));
+	--surface:   color-mix(in oklab, #f4f4f4 84%, var(--sky-tint));
+	--glass:     color-mix(in srgb, var(--bg) 66%, transparent);
+	--glass-2:   color-mix(in srgb, var(--bg) 84%, transparent);
+	--text:      color-mix(in oklab, #111111 85%, var(--sky-tint));
+	--text-2:    color-mix(in oklab, var(--text) 58%, var(--bg));
 	--accent:       #503AA8;
 	--accent-bg:    #FFEE5826;
 	--highlight:    #FFEE58;
 	--on-highlight: #111111;
-	--text-inverse: #ffffff;
-	--border:       #e8e8e8;
+	--text-inverse: color-mix(in oklab, #ffffff 90%, var(--sky-tint));
+	--border:       color-mix(in srgb, #16121f 13%, transparent);
+	--edge:         color-mix(in srgb, var(--text) 16%, transparent);
 	--radius:       2px;
 	--danger:       #c0392b;
 	--safe-top:    env(safe-area-inset-top, 0px);
@@ -112,14 +116,16 @@ foreach ( [ '400' => 'normal', '500' => 'normal', '700' => 'normal' ] as $weight
  */
 @media (prefers-color-scheme: dark) {
 	:root {
-		--bg:           #161616;
-		--surface:      #202020;
-		--text:         #f2f2f2;
-		--text-2:       #9a9a9a;
-		--text-inverse: #161616;
+		--sky-tint:     #161616;
+		--bg:           color-mix(in oklab, #161616 90%, var(--sky-tint));
+		--surface:      color-mix(in oklab, #202020 88%, var(--sky-tint));
+		--text:         color-mix(in oklab, #f2f2f2 85%, var(--sky-tint));
+		--text-2:       color-mix(in oklab, var(--text) 60%, var(--bg));
+		--text-inverse: color-mix(in oklab, #161616 90%, var(--sky-tint));
 		--accent:       #b9a4e8;
 		--accent-bg:    #FFEE581f;
-		--border:       #2e2e2e;
+		--border:       color-mix(in srgb, #ffffff 15%, transparent);
+		--edge:         color-mix(in srgb, var(--text) 24%, transparent);
 		--danger:       #e06b5e;
 	}
 }
@@ -149,6 +155,9 @@ body {
 	max-width: 480px;
 	margin: 0 auto;
 	border: 1px solid var(--border);
+	background: var(--glass);
+	-webkit-backdrop-filter: blur(22px) saturate(1.7);
+	backdrop-filter: blur(22px) saturate(1.7);
 }
 
 /* On desktop the frame floats: centre it and trim the height so the
@@ -176,7 +185,7 @@ body {
 	padding-top: calc(var(--safe-top) + 10px);
 	border-bottom: 1px solid var(--border);
 	flex-shrink: 0;
-	background: var(--bg);
+	background: transparent;
 }
 .app-header__left { display: flex; flex-direction: column; gap: 1px; }
 .app-title {
@@ -236,7 +245,7 @@ body {
 	gap: 6px;
 	padding: 10px 12px;
 	border-bottom: 1px solid var(--border);
-	background: var(--bg);
+	background: transparent;
 }
 .type-btn {
 	display: flex;
@@ -245,9 +254,9 @@ body {
 	align-items: center;
 	gap: 3px;
 	padding: 8px 4px;
-	border: 1px solid var(--border);
+	border: 1px solid var(--edge);
 	border-radius: var(--radius);
-	background: var(--bg);
+	background: var(--glass-2);
 	font-size: 10px;
 	font-weight: 700;
 	font-family: inherit;
@@ -298,7 +307,7 @@ body {
 	padding: 10px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 10px);
 	border-top: 1px solid var(--border);
-	background: var(--bg);
+	background: transparent;
 }
 
 /* ── Fields ──────────────────────────────────────────────────────────────── */
@@ -325,8 +334,8 @@ body {
 
 .url-field {
 	width: 100%;
-	background: var(--bg);
-	border: 1px solid var(--border);
+	background: var(--glass-2);
+	border: 1px solid var(--edge);
 	border-radius: var(--radius);
 	padding: 12px 14px;
 	font-size: 16px;
@@ -368,8 +377,8 @@ body {
 
 .caption-field {
 	width: 100%;
-	background: var(--bg);
-	border: 1px solid var(--border);
+	background: var(--glass-2);
+	border: 1px solid var(--edge);
 	border-radius: var(--radius);
 	padding: 12px 14px;
 	font-size: 16px;
@@ -388,8 +397,8 @@ body {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
-	background: var(--bg);
-	border: 1px solid var(--border);
+	background: var(--glass-2);
+	border: 1px solid var(--edge);
 	border-radius: var(--radius);
 	padding: 8px 10px;
 	min-height: 44px;
@@ -810,11 +819,43 @@ details[open] .syndicate-summary::after { transform: rotate(90deg); }
 	var clockDateEl = document.getElementById( 'clockDate' );
 	var lastTime = '', lastDate = '';
 
+	// ── Sky: time-of-day gradient on the body, seen around the floating frame ──
+
+	var SKY_STOPS = [
+		{ h: 0,  top: [ 26, 22, 51 ],   bot: [ 45, 33, 80 ]   },
+		{ h: 5,  top: [ 58, 58, 110 ],  bot: [ 201, 138, 158 ] },
+		{ h: 7,  top: [ 142, 168, 216 ], bot: [ 244, 194, 161 ] },
+		{ h: 9,  top: [ 170, 203, 240 ], bot: [ 232, 238, 247 ] },
+		{ h: 12, top: [ 158, 197, 240 ], bot: [ 253, 246, 208 ] },
+		{ h: 15, top: [ 184, 212, 240 ], bot: [ 240, 233, 216 ] },
+		{ h: 18, top: [ 106, 90, 158 ], bot: [ 232, 149, 107 ] },
+		{ h: 20, top: [ 58, 47, 99 ],   bot: [ 140, 90, 142 ]  },
+		{ h: 22, top: [ 31, 26, 61 ],   bot: [ 58, 45, 92 ]   },
+		{ h: 24, top: [ 26, 22, 51 ],   bot: [ 45, 33, 80 ]   }
+	];
+
+	function paintSky( now ) {
+		var h = now.getHours() + now.getMinutes() / 60;
+		var i = 0;
+		while ( i < SKY_STOPS.length - 1 && SKY_STOPS[ i + 1 ].h <= h ) { i++; }
+		var a = SKY_STOPS[ i ], b = SKY_STOPS[ i + 1 ] || a;
+		var t = ( h - a.h ) / ( ( b.h - a.h ) || 1 );
+		function rgb( c1, c2 ) {
+			return 'rgb(' +
+				Math.round( c1[0] + ( c2[0] - c1[0] ) * t ) + ',' +
+				Math.round( c1[1] + ( c2[1] - c1[1] ) * t ) + ',' +
+				Math.round( c1[2] + ( c2[2] - c1[2] ) * t ) + ')';
+		}
+		var skyTop = rgb( a.top, b.top ), skyBot = rgb( a.bot, b.bot );
+		document.body.style.background = 'linear-gradient(' + skyTop + ',' + skyBot + ')';
+		document.documentElement.style.setProperty( '--sky-tint', skyBot );
+	}
+
 	function updateClock() {
 		var now  = new Date();
 		var time = String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
 		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
-		if ( time !== lastTime ) { clockTimeEl.textContent = time; lastTime = time; }
+		if ( time !== lastTime ) { clockTimeEl.textContent = time; lastTime = time; paintSky( now ); }
 		if ( date !== lastDate ) { clockDateEl.textContent = date; lastDate = date; }
 	}
 	updateClock();
