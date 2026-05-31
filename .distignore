@@ -22,6 +22,7 @@ AGENTS.md
 # Project docs that aren't the wp.org readme
 ROADMAP.md
 SPEC.md
+POST-REDESIGN-PLAN.md
 
 # Developer-only CLI scripts and one-off migrations (not part of the plugin runtime)
 bin
