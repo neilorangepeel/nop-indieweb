@@ -32,10 +32,10 @@ export default function OverviewTab( { settings, setSettings, onTabSwitch } ) {
 
 			{ postPageUrl && (
 				<a className="nop-post-cta" href={ postPageUrl }>
-					<span className="nop-post-cta__icon">📷</span>
+					<span className="nop-post-cta__icon">✍️</span>
 					<span className="nop-post-cta__body">
-						<span className="nop-post-cta__title">{ __( 'Post a photo', 'nop-indieweb' ) }</span>
-						<span className="nop-post-cta__sub">{ __( 'Quick mobile posting — add to your home screen', 'nop-indieweb' ) }</span>
+						<span className="nop-post-cta__title">{ __( 'Quick post', 'nop-indieweb' ) }</span>
+						<span className="nop-post-cta__sub">{ __( 'Notes, photos, replies & more — add to your home screen', 'nop-indieweb' ) }</span>
 					</span>
 					<span className="nop-post-cta__arrow">→</span>
 				</a>
