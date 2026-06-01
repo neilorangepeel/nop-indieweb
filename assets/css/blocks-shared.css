@@ -334,3 +334,114 @@ a.nop-post-footer__pill--link:focus-visible {
 		--nop-muted:         var(--wp--preset--color--accent-4, #9ca3af);
 	}
 }
+
+/* ----------------------------------------------------------------------- */
+/* nop-blog :: organised blog/homepage layout                              */
+/* Scoped under .nop-blog / .nop-hscroll so nothing leaks to other pages.  */
+/* ----------------------------------------------------------------------- */
+.nop-blog__eyebrow {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--nop-muted);
+	margin: 0 0 0.25rem;
+}
+
+.nop-blog__title {
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.1;
+	margin: 0;
+}
+
+/* Horizontal-scroll check-ins row */
+.nop-hscroll .wp-block-post-template {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 1rem;
+	margin: 0;
+	padding-bottom: 0.5rem;
+	list-style: none;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.nop-hscroll .wp-block-post-template > li {
+	flex: 0 0 clamp(220px, 72vw, 280px);
+	scroll-snap-align: start;
+	margin: 0;
+}
+
+.nop-hscroll .wp-block-post-template::-webkit-scrollbar {
+	height: 8px;
+}
+
+.nop-hscroll .wp-block-post-template::-webkit-scrollbar-thumb {
+	background: var(--nop-line);
+	border-radius: 999px;
+}
+
+/* Card chrome */
+.nop-card {
+	border: 1px solid var(--nop-line);
+	border-radius: var(--nop-radius-lg);
+	background: #fff;
+	height: 100%;
+}
+
+.nop-card img {
+	border-radius: var(--nop-radius);
+}
+
+.nop-card__venue {
+	font-weight: 700;
+	margin: 0;
+}
+
+.nop-card__meta {
+	color: var(--nop-muted);
+	font-size: 0.8125rem;
+	margin: 0;
+}
+
+/* Dark sections (RSVPs, featured) */
+.nop-section--dark {
+	background: var(--nop-ink);
+	color: #fff;
+	border-radius: var(--nop-radius-lg);
+}
+
+.nop-section--dark .nop-blog__title,
+.nop-section--dark .wp-block-post-title a,
+.nop-section--dark a {
+	color: #fff;
+}
+
+.nop-section--dark .nop-blog__eyebrow {
+	color: rgba(255, 255, 255, 0.6);
+}
+
+/* Stats row (bio section) */
+.nop-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2rem;
+}
+
+.nop-stat__num {
+	font-size: 2rem;
+	font-weight: 800;
+	line-height: 1;
+	margin: 0;
+}
+
+.nop-stat__label {
+	font-size: 0.6875rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--nop-muted);
+	margin: 0.25rem 0 0;
+}

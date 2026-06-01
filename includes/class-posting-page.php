@@ -80,16 +80,6 @@ class Posting_Page {
 		$font_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
 		$cond_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text-condensed' ) );
 
-		// Identity mark: prefer the site's custom logo. Inline the SVG (zero extra
-		// request, scales crisply) when it is one; else fall back to an <img>, and
-		// finally to a built-in monochrome mark so the page is portable on any site.
-		$logo_id   = (int) get_theme_mod( 'custom_logo' );
-		$logo_file = $logo_id ? get_attached_file( $logo_id ) : '';
-		$logo_svg  = ( $logo_file && is_readable( $logo_file ) && '.svg' === strtolower( (string) substr( $logo_file, -4 ) ) )
-			? file_get_contents( $logo_file ) // phpcs:ignore WordPress.WP.AlternativeFunctions -- trusted local, admin-only page.
-			: '';
-		$logo_img  = ( '' === $logo_svg && $logo_id ) ? esc_url( (string) wp_get_attachment_image_url( $logo_id, 'full' ) ) : '';
-
 		$user      = wp_get_current_user();
 		$user_name = $user->first_name ?: $user->display_name;
 
@@ -884,15 +874,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	<header class="masthead">
 		<div class="masthead__top">
 			<div class="brand">
-				<span class="brand__mark" aria-hidden="true"><?php
-				if ( '' !== $logo_svg ) {
-					echo $logo_svg; // phpcs:ignore WordPress.Security.EscapingOutput -- trusted, self-uploaded site logo on an admin-only page.
-				} elseif ( '' !== $logo_img ) {
-					printf( '<img src="%s" alt="" width="34" height="34">', $logo_img );
-				} else {
-					echo '<svg viewBox="0 0 34 34"><rect width="34" height="34" rx="2" fill="var(--line)"/><path d="M17 8 L25 21 H9 Z" fill="var(--field)"/></svg>';
-				}
-				?></span>
+				<span class="brand__mark" aria-hidden="true">
+					<svg viewBox="0 0 60 60" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 5.45455C16.4439 5.45455 5.45455 16.4439 5.45455 30V35.4545C5.45455 45.9982 14.0018 54.5455 24.5455 54.5455H30C43.5561 54.5455 54.5455 43.5561 54.5455 30C54.5455 16.4439 43.5561 5.45455 30 5.45455ZM0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30C60 46.5685 46.5685 60 30 60H24.5455C10.9893 60 0 49.0107 0 35.4545V30ZM30 16.3636C22.4688 16.3636 16.3636 22.4688 16.3636 30C16.3636 37.5312 22.4688 43.6364 30 43.6364C37.5312 43.6364 43.6364 37.5312 43.6364 30C43.6364 22.4688 37.5312 16.3636 30 16.3636ZM10.9091 30C10.9091 19.4564 19.4564 10.9091 30 10.9091C40.5436 10.9091 49.0909 19.4564 49.0909 30C49.0909 40.5436 40.5436 49.0909 30 49.0909C19.4564 49.0909 10.9091 40.5436 10.9091 30ZM30.0775 27.3502C28.5713 27.3502 27.3502 28.5713 27.3502 30.0775C27.3502 31.5837 26.1292 32.8048 24.623 32.8048C23.1167 32.8048 21.8957 31.5837 21.8957 30.0775C21.8957 25.5589 25.5589 21.8957 30.0775 21.8957C34.5963 21.8957 38.2593 25.5589 38.2593 30.0775C38.2593 31.5837 37.0383 32.8048 35.5321 32.8048C34.0258 32.8048 32.8048 31.5837 32.8048 30.0775C32.8048 28.5713 31.5837 27.3502 30.0775 27.3502Z"/></svg>
+				</span>
 				<span class="brand__word"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
 			</div>
 			<div class="clock" aria-hidden="true">
