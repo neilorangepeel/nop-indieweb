@@ -80,6 +80,16 @@ class Posting_Page {
 		$font_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
 		$cond_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text-condensed' ) );
 
+		// Identity mark: prefer the site's custom logo. Inline the SVG (zero extra
+		// request, scales crisply) when it is one; else fall back to an <img>, and
+		// finally to a built-in monochrome mark so the page is portable on any site.
+		$logo_id   = (int) get_theme_mod( 'custom_logo' );
+		$logo_file = $logo_id ? get_attached_file( $logo_id ) : '';
+		$logo_svg  = ( $logo_file && is_readable( $logo_file ) && '.svg' === strtolower( (string) substr( $logo_file, -4 ) ) )
+			? file_get_contents( $logo_file ) // phpcs:ignore WordPress.WP.AlternativeFunctions -- trusted local, admin-only page.
+			: '';
+		$logo_img  = ( '' === $logo_svg && $logo_id ) ? esc_url( (string) wp_get_attachment_image_url( $logo_id, 'full' ) ) : '';
+
 		$user      = wp_get_current_user();
 		$user_name = $user->first_name ?: $user->display_name;
 
@@ -147,50 +157,47 @@ foreach ( [ '700', '800' ] as $weight ) {
  * rings, tag chips, progress and the Post button together.
  */
 :root {
-	--paper:  #F4EFE6;
-	--ink:    #141414;
-	--red:    #E63329;
-	--blue:   #1E4FD6;
-	--yellow: #FFC400;
+	--paper:    #F4EFE6;
+	--red:      #E63329;
+	--blue:     #1E4FD6;
+	--ochre:    #8A6200;
+	--charcoal: #1A1A1A;
 
-	--field: var(--paper);
-	--line:  var(--ink);
-	--text:  var(--ink);
-
-	--accent:    var(--yellow);
-	--on-accent: var(--ink);
+	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
+	   tokens live on .app (not here) so they re-resolve with the per-type --ink;
+	   defining them on :root would bake in the default ink and never re-tint. */
+	--field:     var(--paper);
+	--on-accent: var(--field);
 
 	--display: 'Brandon Text Condensed', 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 
 	--radius: 2px;
-	--shadow: 4px 4px 0 var(--line);
 
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Dark: paper becomes near-black and the inks lift to stay legible — the rest
+   cascades, since every role token derives from --paper / --ink. */
 @media (prefers-color-scheme: dark) {
 	:root {
-		--field: var(--ink);
-		--line:  var(--paper);
-		--text:  var(--paper);
+		--paper:    #15140F;
+		--red:      #FF5A4D;
+		--blue:     #6E90FF;
+		--ochre:    #E3AE33;
+		--charcoal: #F4EFE6;
 	}
 }
 
-/* Per-type accent — selecting a tile sets data-type on .app. */
+/* Per-type ink — selecting a tile re-inks the whole screen (two-tone). */
 .app[data-type="note"],
-.app[data-type="bookmark"]               { --accent: var(--yellow); --on-accent: var(--ink); }
+.app[data-type="bookmark"]               { --ink: var(--ochre); }
 .app[data-type="photo"],
 .app[data-type="repost"],
-.app[data-type="rsvp"]                   { --accent: var(--blue);   --on-accent: var(--paper); }
+.app[data-type="rsvp"]                   { --ink: var(--blue); }
 .app[data-type="reply"],
-.app[data-type="like"]                   { --accent: var(--red);    --on-accent: var(--paper); }
-.app[data-type="article"]                { --accent: var(--ink);    --on-accent: var(--paper); }
-
-/* Ink accent is invisible on an ink field — flip it to paper in the dark. */
-@media (prefers-color-scheme: dark) {
-	.app[data-type="article"]            { --accent: var(--paper);  --on-accent: var(--ink); }
-}
+.app[data-type="like"]                   { --ink: var(--red); }
+.app[data-type="article"]                { --ink: var(--charcoal); }
 
 html {
 	height: 100%;
@@ -200,8 +207,12 @@ body {
 	height: 100%;
 	min-height: -webkit-fill-available;
 	overflow: hidden;
-	background: var(--field);
-	color: var(--text);
+	background-color: var(--field);
+	/* Full-bleed neutral grain — on desktop the framed poster sits on a textured
+	   field instead of a void; on phone it's covered by the app. */
+	background-image: radial-gradient(color-mix(in srgb, var(--charcoal) 7%, transparent) 0.6px, transparent 0.9px);
+	background-size: 4px 4px;
+	color: var(--charcoal);
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
 }
@@ -209,6 +220,17 @@ body {
 /* ── App shell ──────────────────────────────────────────────────────────── */
 
 .app {
+	/* Ink-derived tokens declared HERE so the per-type --ink (set on .app[data-type])
+	   re-resolves them per screen. --ink defaults to red; each type overrides it. */
+	--ink:      var(--red);
+	--line:     var(--ink);
+	--text:     var(--ink);
+	--accent:   var(--ink);
+	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
+	--rule:     color-mix(in srgb, var(--ink) 16%, transparent);
+	--grain:    color-mix(in srgb, var(--ink) 7%, transparent);
+	--shadow:   4px 4px 0 var(--ink);
+
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
@@ -216,7 +238,11 @@ body {
 	overflow: hidden;
 	max-width: 480px;
 	margin: 0 auto;
-	background: var(--field);
+	color: var(--text);
+	background-color: var(--field);
+	/* Faint halftone grain — the organic "printed on paper" texture. */
+	background-image: radial-gradient(var(--grain) 0.6px, transparent 0.9px);
+	background-size: 4px 4px;
 	border-left: 2px solid var(--line);
 	border-right: 2px solid var(--line);
 }
@@ -242,18 +268,23 @@ body {
 
 .masthead {
 	flex-shrink: 0;
-	padding: 12px 16px 0;
-	padding-top: calc(var(--safe-top) + 12px);
+	padding: 0 16px 14px;
+	padding-top: calc(var(--safe-top) + 14px);
 	border-bottom: 2px solid var(--line);
 }
 .masthead__top {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
 }
-.brand { display: flex; align-items: center; gap: 9px; }
-.brand__mark { display: block; flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand__mark { display: flex; flex-shrink: 0; }
+.brand__mark svg,
+.brand__mark img { display: block; width: 34px; height: 34px; }
+/* Re-ink the logo with the type ink so it joins the two-tone (and stays
+   visible in dark mode); the source SVG ships with a hard-coded black fill. */
+.brand__mark svg path { fill: var(--ink); }
 .brand__word {
 	font-family: var(--display);
 	font-size: 32px;
@@ -262,6 +293,7 @@ body {
 	line-height: 0.9;
 	text-transform: uppercase;
 }
+.timeblock { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .clock {
 	display: flex;
 	flex-direction: column;
@@ -285,49 +317,33 @@ body {
 	opacity: 0.6;
 }
 
-/* Sun / moon arc — the time-of-day device. The dashed arc is drawn by an
-   SVG stretched to the band (preserveAspectRatio:none — distorting a dashed
-   line is invisible); the celestial body is a CSS disc positioned by JS along
-   the same quadratic. Yellow sun by day, cut-paper moon by night. */
+/* Time-of-day arc — a slim solid arc with a distinct rayed sun (day) / crescent
+   moon (night) glyph riding it, positioned by the hour. JS sets the position
+   and swaps the glyph only on the per-minute tick (no per-second repaint). */
 .sky {
 	position: relative;
-	height: 38px;
-	margin-top: 6px;
+	height: 22px;
+	margin-top: 10px;
 }
-.sky__line {
+.sky__arc {
 	position: absolute;
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	color: var(--line);
-	opacity: 0.32;
+	color: color-mix(in srgb, var(--ink) 38%, transparent);
 }
 .sky__body {
 	position: absolute;
-	width: 16px;
-	height: 16px;
-	border-radius: 50%;
+	width: 20px;
+	height: 20px;
+	color: var(--ink);
 	transform: translate(-50%, -50%);
 	transition: left 0.6s ease, top 0.6s ease;
 }
-.sky__body.is-sun {
-	background: var(--yellow);
-	border: 2px solid var(--line);
-}
-.sky__body.is-moon {
-	background: var(--line);
-	overflow: hidden;
-}
-.sky__body.is-moon::after {
-	content: '';
-	position: absolute;
-	top: -32%;
-	right: -28%;
-	width: 78%;
-	height: 78%;
-	border-radius: 50%;
-	background: var(--field);
-}
+.sky__body svg { display: block; width: 20px; height: 20px; }
+.sky__body .sky__moon { display: none; }
+.sky__body.is-moon .sky__sun { display: none; }
+.sky__body.is-moon .sky__moon { display: block; }
 
 .greeting {
 	flex-shrink: 0;
@@ -366,17 +382,16 @@ body {
 	border-bottom: 2px solid var(--line);
 }
 .type-btn {
-	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 4px;
-	padding: 9px 4px 7px;
+	gap: 3px;
+	padding: 8px 4px;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--text);
-	font-size: 10px;
+	font-size: 9px;
 	font-weight: 800;
 	font-family: var(--display);
 	text-transform: uppercase;
@@ -389,25 +404,9 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 22px;
-	height: 22px;
+	width: 20px;
+	height: 20px;
 }
-.type-btn__dot {
-	position: absolute;
-	top: 4px;
-	right: 4px;
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-}
-.type-btn[data-type="note"]     .type-btn__dot,
-.type-btn[data-type="bookmark"] .type-btn__dot { background: var(--yellow); }
-.type-btn[data-type="photo"]    .type-btn__dot,
-.type-btn[data-type="repost"]   .type-btn__dot,
-.type-btn[data-type="rsvp"]     .type-btn__dot { background: var(--blue); }
-.type-btn[data-type="reply"]    .type-btn__dot,
-.type-btn[data-type="like"]     .type-btn__dot { background: var(--red); }
-.type-btn[data-type="article"]  .type-btn__dot { background: var(--line); }
 
 .type-btn.is-active {
 	background: var(--accent);
@@ -415,7 +414,6 @@ body {
 	border-color: var(--line);
 	animation: type-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.type-btn.is-active .type-btn__dot { display: none; }
 @keyframes type-pop {
 	0%   { transform: scale(1); }
 	50%  { transform: scale(1.08); }
@@ -446,11 +444,12 @@ body {
 .field-label {
 	display: block;
 	font-family: var(--display);
-	font-size: 13px;
-	font-weight: 800;
+	font-size: 11px;
+	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.1em;
-	margin-bottom: 7px;
+	letter-spacing: 0.08em;
+	opacity: 0.7;
+	margin-bottom: 6px;
 }
 .sr-only {
 	position: absolute;
@@ -462,39 +461,68 @@ body {
 	border: 0;
 }
 
+/* Utility inputs are flat SOLID filled fields (figure-ground by value, no dots)
+   so the text on them stays easy to read. */
 .text-field {
 	width: 100%;
-	background: var(--field);
-	border: 2px solid var(--line);
+	background: var(--surface);
+	border: none;
 	border-radius: var(--radius);
-	padding: 12px 14px;
+	padding: 11px 12px;
 	font-size: 16px;
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	outline: none;
 }
-.text-field:focus { outline: 3px solid var(--accent); outline-offset: -1px; }
-.text-field::placeholder { color: var(--text); opacity: 0.45; }
+.text-field:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+.text-field::placeholder { color: var(--text); opacity: 0.4; }
 
-/* Compose textarea is the hero. */
+/* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
+   text to sit on, a bold red margin instead of a box, and a big rotating prompt
+   that recedes as you type. Grows to fill the space. */
+#fieldContent { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; }
+.compose-wrap { position: relative; flex: 1 1 auto; min-height: 150px; }
 .compose-field {
+	position: absolute;
+	inset: 0;
 	width: 100%;
-	min-height: 132px;
-	background: var(--field);
-	border: 2px solid var(--line);
-	border-radius: var(--radius);
-	padding: 14px;
+	height: 100%;
+	background-color: transparent;
+	/* Ruled notepad — horizontal rule lines only (no margin line, no box-shadow). */
+	background-image: repeating-linear-gradient( to bottom,
+		transparent 0, transparent 29px,
+		var(--rule) 29px, var(--rule) 30px );
+	background-attachment: local;
+	border: none;
+	padding: 5px 4px 4px 16px;
 	font-size: 18px;
-	line-height: 1.4;
+	line-height: 30px;
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	resize: none;
 	outline: none;
 }
-.compose-field:focus { outline: 3px solid var(--accent); outline-offset: -1px; }
-.compose-field::placeholder { color: var(--text); opacity: 0.45; }
+
+/* Big expressive prompt overlay — fades out once there's content. */
+.compose-prompt {
+	position: absolute;
+	top: 4px;
+	left: 16px;
+	right: 8px;
+	font-family: var(--display);
+	font-size: 30px;
+	font-weight: 800;
+	line-height: 1.05;
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+	color: var(--text);
+	opacity: 0.22;
+	pointer-events: none;
+	transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.compose-prompt.is-hidden { opacity: 0; transform: translateY(-6px); }
 
 /* RSVP segmented control — bold blocks. */
 .segmented {
@@ -554,14 +582,14 @@ body {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
-	background: var(--field);
-	border: 2px solid var(--line);
+	background: var(--surface);
+	border: none;
 	border-radius: var(--radius);
 	padding: 8px 10px;
 	min-height: 46px;
 	cursor: text;
 }
-.tags-field:focus-within { outline: 3px solid var(--accent); outline-offset: -1px; }
+.tags-field:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
 .tag-chip {
 	display: inline-flex;
 	align-items: center;
@@ -601,14 +629,14 @@ body {
 
 /* Syndicate-to */
 .syndicate-details {
-	border: 2px solid var(--line);
-	border-radius: var(--radius);
+	border: none;
+	border-top: 2px solid var(--line);
 }
 .syndicate-summary {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 11px 14px;
+	padding: 12px 0;
 	font-family: var(--display);
 	font-size: 13px;
 	font-weight: 800;
@@ -629,8 +657,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 12px 14px 14px;
-	border-top: 2px solid var(--line);
+	padding: 12px 0 4px;
 }
 .syndicator-item {
 	display: flex;
@@ -693,7 +720,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	box-shadow: 0 0 0 var(--line);
 }
 .btn-primary:disabled {
-	opacity: 0.32;
+	background: var(--field);
+	color: var(--text);
+	border-color: var(--line);
+	opacity: 0.4;
 	cursor: default;
 	box-shadow: none;
 	transform: none;
@@ -841,7 +871,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.type-btn.is-active,
 	.success-banner { animation: none; }
 	.field-group.is-conditional:not([hidden]) { animation: none; }
-	.sky__body { transition: none; }
+	.compose-prompt, .sky__body { transition: none; }
 	.btn-primary:active { transform: none; box-shadow: var(--shadow); }
 	.toast { transition: opacity 0.01ms; }
 }
@@ -854,11 +884,15 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	<header class="masthead">
 		<div class="masthead__top">
 			<div class="brand">
-				<svg class="brand__mark" width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-					<circle cx="8" cy="8" r="7" fill="var(--yellow)"/>
-					<path d="M14 1 L29 1 L21.5 14 Z" fill="var(--red)"/>
-					<rect x="15" y="15" width="14" height="14" fill="var(--blue)"/>
-				</svg>
+				<span class="brand__mark" aria-hidden="true"><?php
+				if ( '' !== $logo_svg ) {
+					echo $logo_svg; // phpcs:ignore WordPress.Security.EscapingOutput -- trusted, self-uploaded site logo on an admin-only page.
+				} elseif ( '' !== $logo_img ) {
+					printf( '<img src="%s" alt="" width="34" height="34">', $logo_img );
+				} else {
+					echo '<svg viewBox="0 0 34 34"><rect width="34" height="34" rx="2" fill="var(--line)"/><path d="M17 8 L25 21 H9 Z" fill="var(--field)"/></svg>';
+				}
+				?></span>
 				<span class="brand__word"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
 			</div>
 			<div class="clock" aria-hidden="true">
@@ -867,10 +901,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			</div>
 		</div>
 		<div class="sky" aria-hidden="true">
-			<svg class="sky__line" viewBox="0 0 100 22" preserveAspectRatio="none">
-				<path d="M2 18 Q50 2 98 18" fill="none" stroke="currentColor" stroke-width="0.7" stroke-dasharray="2 4" stroke-linecap="round"/>
-			</svg>
-			<span class="sky__body is-sun" id="skyBody"></span>
+			<svg class="sky__arc" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M3 16 Q50 4 97 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+			<span class="sky__body is-sun" id="skyBody">
+				<svg class="sky__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
+				<svg class="sky__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+			</span>
 		</div>
 	</header>
 
@@ -883,43 +918,35 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 			<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
 				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span>
 					<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="photo" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M4 6h3l1.8-2h6.4L17 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm8 3.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z"/></svg></span>
 					<span><?php esc_html_e( 'Photo', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 8V4l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg></span>
 					<span><?php esc_html_e( 'Reply', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="like" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z"/></svg></span>
 					<span><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="bookmark" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg></span>
 					<span><?php esc_html_e( 'Bookmark', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="repost" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></span>
 					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="article" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 13h8v1.6H8V13zm0 4h6v1.6H8V17z"/></svg></span>
 					<span><?php esc_html_e( 'Article', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="rsvp" aria-pressed="false" type="button">
-					<span class="type-btn__dot" aria-hidden="true"></span>
-					<span class="type-btn__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 15 11 16.5 15 13"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M3 3h18v18H3V3zm6.6 13.4 7.4-7.4L15.6 7.6 9.6 13.6 7.4 11.4 6 12.8l3.6 3.6z"/></svg></span>
 					<span><?php esc_html_e( 'RSVP', 'nop-indieweb' ); ?></span>
 				</button>
 			</div><!-- .type-grid -->
@@ -963,12 +990,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				<!-- Content -->
 				<div class="field-group" id="fieldContent">
 					<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
-					<textarea
-						class="compose-field"
-						id="content"
-						placeholder="<?php esc_attr_e( 'Write a note…', 'nop-indieweb' ); ?>"
-						rows="4"
-					></textarea>
+					<div class="compose-wrap">
+						<textarea class="compose-field" id="content" rows="4"></textarea>
+						<span class="compose-prompt" id="composePrompt" aria-hidden="true"></span>
+					</div>
 					<div class="char-count" id="charCount" aria-live="polite" hidden></div>
 				</div>
 
@@ -1078,20 +1103,21 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var skyBody     = document.getElementById( 'skyBody' );
 	var lastTime = '', lastDate = '', lastGreeting = '';
 
-	// Quadratic arc M2,18 Q50,2 98,18 in the 100×22 viewBox the dashed line uses.
-	// The body rides the same curve; left/top are expressed as % of the band so a
-	// CSS disc stays round while the SVG line stretches to full width.
+	// Rayed sun (06–18h) / crescent moon glyph riding the arc, positioned by the
+	// hour along the same quadratic the arc path draws. Per-minute tick only.
 	function positionSky( now ) {
-		var frac = ( now.getHours() + now.getMinutes() / 60 ) / 24;
-		var u  = frac;
+		var u  = ( now.getHours() + now.getMinutes() / 60 ) / 24;
 		var mu = 1 - u;
-		var x  = mu * mu * 2  + 2 * mu * u * 50 + u * u * 98;
-		var y  = mu * mu * 18 + 2 * mu * u * 2  + u * u * 18;
+		var x  = mu * mu * 3  + 2 * mu * u * 50 + u * u * 97;
+		var y  = mu * mu * 16 + 2 * mu * u * 4  + u * u * 16;
 		skyBody.style.left = x + '%';
-		skyBody.style.top  = ( y / 22 * 100 ) + '%';
+		skyBody.style.top  = ( y / 20 * 100 ) + '%';
+	}
+	function updateSky( now ) {
 		var daytime = now.getHours() >= 6 && now.getHours() < 18;
 		skyBody.classList.toggle( 'is-sun', daytime );
 		skyBody.classList.toggle( 'is-moon', ! daytime );
+		positionSky( now );
 	}
 
 	function greetingFor( hour ) {
@@ -1109,7 +1135,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( time !== lastTime ) {
 			clockTimeEl.textContent = time;
 			lastTime = time;
-			positionSky( now );
+			updateSky( now );
 			var greet = greetingFor( now.getHours() );
 			var line  = NOP.userName ? greet + ', ' + NOP.userName : greet;
 			if ( line !== lastGreeting ) { greetingEl.textContent = line; lastGreeting = line; }
@@ -1149,8 +1175,13 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var urlInput     = document.getElementById( 'typeUrl' );
 	var urlLabel     = document.getElementById( 'urlLabel' );
 	var titleInput   = document.getElementById( 'titleInput' );
-	var contentInput = document.getElementById( 'content' );
+	var contentInput  = document.getElementById( 'content' );
+	var composePrompt = document.getElementById( 'composePrompt' );
 	var picker       = document.getElementById( 'photoPicker' );
+
+	// Big rotating prompt overlay — set its text, and fade it once typing starts.
+	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
+	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var rsvpControl  = document.getElementById( 'rsvpControl' );
@@ -1252,7 +1283,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
 		if ( cfg.hasContent ) {
-			contentInput.placeholder = ( type === 'note' ) ? notePrompt : ( cfg.contentPlaceholder || 'Write…' );
+			setPrompt( ( type === 'note' ) ? notePrompt : ( cfg.contentPlaceholder || 'Write…' ) );
 		}
 
 		updateCounter();
@@ -1296,7 +1327,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	urlInput.addEventListener( 'input', function () { updatePostBtn(); saveDraft(); } );
 	titleInput.addEventListener( 'input', function () { updatePostBtn(); saveDraft(); } );
-	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); syncPrompt(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// ── Photo picker ──────────────────────────────────────────────────────────
@@ -1611,9 +1642,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	// ── Init ───────────────────────────────────────────────────────────────────
 
-	contentInput.placeholder = notePrompt;
+	setPrompt( notePrompt );
 	loadDraft();
 	updateCounter();
+	syncPrompt();
 
 } )();
 </script>
