@@ -19,7 +19,7 @@ class Like extends Url_Response_Service {
 
 	protected function url_property(): string { return 'like-of'; }
 	protected function url_meta_key(): string { return 'nop_indieweb_like_of'; }
-	protected function button_label(): string { return __( 'View Post', 'nop-indieweb' ); }
+	protected function use_cite_card(): bool { return true; }
 
 	public function get_kind( array $parsed = [] ): string {
 		return 'like';

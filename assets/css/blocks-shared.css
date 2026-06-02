@@ -11,6 +11,7 @@
  */
 
 :where(
+	.nop-cite-card,
 	.nop-film-card,
 	.nop-film-meta,
 	.nop-like-button,
@@ -321,6 +322,7 @@ a.nop-post-footer__pill--link:focus-visible {
  */
 @media (prefers-color-scheme: dark) {
 	:where(
+		.nop-cite-card,
 		.nop-film-card,
 		.nop-film-meta,
 		.nop-like-button,

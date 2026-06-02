@@ -188,19 +188,6 @@ class Kind_Taxonomy {
 	 * Order in the returned array determines order in the dropdown.
 	 */
 	public static function get_editor_panel_config(): array {
-		$button = static function ( string $meta_key, string $label ): string {
-			return '<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->'
-				. '<div class="wp-block-buttons">'
-				. '<!-- wp:button {"metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"' . $meta_key . '"}}}},"className":"is-style-outline"} -->'
-				. '<div class="wp-block-button is-style-outline">'
-				. '<a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noreferrer noopener">'
-				. esc_html( $label ) . ' →'
-				. '</a></div>'
-				. '<!-- /wp:button -->'
-				. '</div>'
-				. '<!-- /wp:buttons -->';
-		};
-
 		return [
 			'note' => [
 				'label'          => __( 'Note', 'nop-indieweb' ),
@@ -219,7 +206,7 @@ class Kind_Taxonomy {
 				'fields'         => [
 					[ 'key' => 'nop_indieweb_bookmark_of', 'label' => __( 'Bookmark of', 'nop-indieweb' ) ],
 				],
-				'layout'         => $button( 'nop_indieweb_bookmark_of', __( 'View Bookmark', 'nop-indieweb' ) ) . '<!-- wp:paragraph /-->',
+				'layout'         => '<!-- wp:nop-indieweb/cite-card /--><!-- wp:paragraph /-->',
 				'title_from_url' => true,
 			],
 			'reply' => [
@@ -227,7 +214,7 @@ class Kind_Taxonomy {
 				'fields'         => [
 					[ 'key' => 'nop_indieweb_in_reply_to', 'label' => __( 'In reply to', 'nop-indieweb' ) ],
 				],
-				'layout'         => $button( 'nop_indieweb_in_reply_to', __( 'View Original Post', 'nop-indieweb' ) ) . '<!-- wp:paragraph /-->',
+				'layout'         => '<!-- wp:nop-indieweb/cite-card /--><!-- wp:paragraph /-->',
 				'title_from_url' => true,
 			],
 			'like' => [
@@ -235,7 +222,7 @@ class Kind_Taxonomy {
 				'fields'         => [
 					[ 'key' => 'nop_indieweb_like_of', 'label' => __( 'Like of', 'nop-indieweb' ) ],
 				],
-				'layout'         => $button( 'nop_indieweb_like_of', __( 'View Post', 'nop-indieweb' ) ),
+				'layout'         => '<!-- wp:nop-indieweb/cite-card /-->',
 				'title_from_url' => true,
 			],
 			'repost' => [
@@ -243,7 +230,7 @@ class Kind_Taxonomy {
 				'fields'         => [
 					[ 'key' => 'nop_indieweb_repost_of', 'label' => __( 'Repost of', 'nop-indieweb' ) ],
 				],
-				'layout'         => $button( 'nop_indieweb_repost_of', __( 'View Original', 'nop-indieweb' ) ),
+				'layout'         => '<!-- wp:nop-indieweb/cite-card /-->',
 				'title_from_url' => true,
 			],
 			'rsvp' => [

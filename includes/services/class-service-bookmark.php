@@ -19,7 +19,7 @@ class Bookmark extends Url_Response_Service {
 
 	protected function url_property(): string { return 'bookmark-of'; }
 	protected function url_meta_key(): string { return 'nop_indieweb_bookmark_of'; }
-	protected function button_label(): string { return __( 'View Bookmark', 'nop-indieweb' ); }
+	protected function use_cite_card(): bool { return true; }
 
 	public function get_kind( array $parsed = [] ): string {
 		return 'bookmark';

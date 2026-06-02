@@ -1,0 +1,39 @@
+.nop-cite-card {
+	border-left: 3px solid var(--nop-divider-color, currentColor);
+	padding:     0.625em 0 0.625em 1em;
+	margin:      0;
+}
+
+.nop-cite-card__title {
+	display:         block;
+	font-weight:     600;
+	text-decoration: none;
+	color:           inherit;
+	word-break:      break-word;
+}
+
+a.nop-cite-card__title:hover {
+	text-decoration:       underline;
+	text-underline-offset: 2px;
+}
+
+a.nop-cite-card__title:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+	border-radius:  2px;
+}
+
+.nop-cite-card__byline {
+	font-size: 0.8125em;
+	color:     var(--nop-muted, #6b7280);
+	margin:    0.25em 0 0;
+}
+
+.nop-cite-card__excerpt {
+	font-size:  0.875em;
+	font-style: italic;
+	color:      var(--nop-muted, #6b7280);
+	margin:     0.5em 0 0;
+}
+
+.nop-cite-card--preview { opacity: 0.45; }
