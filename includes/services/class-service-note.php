@@ -235,7 +235,12 @@ class Note extends Service_Base {
 	 */
 	private function get_inbound_settings( string $platform ): array {
 		if ( in_array( $platform, [ 'mastodon', 'bluesky', 'pixelfed' ], true ) ) {
-			return \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
+			$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
+			// Imported posts default to sideloading their media — owning the copy
+			// is the point of PESOS, and the platform sections have no UI toggle
+			// for this. Absence of the key means "yes", not "no".
+			$settings['sideload_photos'] = $settings['sideload_photos'] ?? true;
+			return $settings;
 		}
 		return $this->get_settings();
 	}

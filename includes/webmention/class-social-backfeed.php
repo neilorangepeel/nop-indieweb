@@ -62,7 +62,7 @@ class Social_Backfeed {
 
 		$instance  = $m[1];
 		$status_id = $m[2];
-		$token     = $this->mastodon_access_token();
+		$token     = $this->platform_access_token( $platform );
 		$base      = "{$instance}/api/v1/statuses/{$status_id}";
 
 		// Likes (favourites).
@@ -149,8 +149,8 @@ class Social_Backfeed {
 		$this->backfeed_mastodon( $post_id, $normalised, $seen, 'pixelfed' );
 	}
 
-	private function mastodon_access_token(): string {
-		return (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.access_token', '' );
+	private function platform_access_token( string $platform ): string {
+		return (string) \NOP\IndieWeb\nop_indieweb_get_option( "syndicators.{$platform}.access_token", '' );
 	}
 
 	private function mastodon_handle( array $account, string $instance ): string {
