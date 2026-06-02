@@ -344,7 +344,7 @@ class Plugin {
 			],
 			'nop-indieweb//single-nop_kind-photo' => [
 				'title'       => __( 'Single – Photo', 'nop-indieweb' ),
-				'description' => __( 'Displays a photo post with featured image, caption, and syndication source.', 'nop-indieweb' ),
+				'description' => __( 'Displays a photo post as a bordered card with kind header, photo, caption, and interaction footer.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-photo.html',
 			],
 
@@ -393,6 +393,11 @@ class Plugin {
 				'title'       => __( 'Archive – Articles', 'nop-indieweb' ),
 				'description' => __( 'Chronological list of long-form articles with title, date, tags, and excerpt.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-article.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-photo' => [
+				'title'       => __( 'Archive – Photos', 'nop-indieweb' ),
+				'description' => __( 'Square photo grid for the photo kind. Featured images link to each photo post.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-photo.html',
 			],
 			'nop-indieweb//taxonomy-nop_venue_category' => [
 				'title'       => __( 'Archive – Venue Category', 'nop-indieweb' ),
