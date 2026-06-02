@@ -202,9 +202,15 @@ class Endpoint {
 		// the syndication hook fires. mp-syndicate-to is the spec property;
 		// syndicate-to is what the bundled /post client sends. Values are the
 		// syndicator slugs advertised as uids by the ?q=config response.
-		$targets = $payload['properties']['mp-syndicate-to'] ?? $payload['properties']['syndicate-to'] ?? [];
-		if ( is_array( $targets ) && $targets ) {
-			update_post_meta( $post_id, 'nop_indieweb_syndicate_to', array_map( 'sanitize_key', $targets ) );
+		//
+		// Property present but empty = "this site only" — stored as the sentinel
+		// 'none' (matches no syndicator slug). Property absent = no preference,
+		// which keeps the default of syndicating to every enabled platform.
+		$props = $payload['properties'] ?? [];
+		if ( array_key_exists( 'mp-syndicate-to', $props ) || array_key_exists( 'syndicate-to', $props ) ) {
+			$targets = $props['mp-syndicate-to'] ?? $props['syndicate-to'];
+			$targets = is_array( $targets ) ? array_map( 'sanitize_key', array_filter( $targets ) ) : [];
+			update_post_meta( $post_id, 'nop_indieweb_syndicate_to', $targets ?: [ 'none' ] );
 		}
 
 		// Phase 2 hook: POSSE syndication to Mastodon, Bluesky, etc. hangs off this.

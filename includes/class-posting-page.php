@@ -1413,10 +1413,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( photoUrls && photoUrls.length ) props.photo = photoUrls;
 		if ( cfg.hasTags && currentTags.length ) props.category = currentTags.slice();
 
-		var synTo = Array.from(
+		// Always sent, even when empty — an explicitly empty selection means
+		// "this site only"; omitting the property would fall back to the
+		// server's default of syndicating to every enabled platform.
+		props[ 'syndicate-to' ] = Array.from(
 			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' )
 		).map( function (cb) { return cb.value; } );
-		if ( synTo.length ) props[ 'syndicate-to' ] = synTo;
 
 		return { type: [ 'h-entry' ], properties: props };
 	}

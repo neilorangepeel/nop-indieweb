@@ -43,16 +43,22 @@
 		}
 
 		var selected = meta['nop_indieweb_syndicate_to'];
-		// Default to all syndicators if no explicit selection yet.
-		var activeTargets = ( Array.isArray( selected ) && selected.length )
-			? selected
-			: syndicators.map( function ( s ) { return s.slug; } );
+		// 'none' is the explicit "this site only" sentinel — show nothing checked.
+		// An empty/missing selection defaults to all syndicators.
+		var isNone = Array.isArray( selected ) && selected.indexOf( 'none' ) !== -1;
+		var activeTargets = isNone
+			? []
+			: ( Array.isArray( selected ) && selected.length )
+				? selected
+				: syndicators.map( function ( s ) { return s.slug; } );
 
 		function toggle( slug, checked ) {
 			var next = checked
 				? activeTargets.concat( [ slug ] ).filter( function ( v, i, a ) { return a.indexOf( v ) === i; } )
 				: activeTargets.filter( function ( s ) { return s !== slug; } );
-			editPostFn( { meta: { nop_indieweb_syndicate_to: next } } );
+			// Unchecking the last platform stores the sentinel, not an empty array —
+			// empty has always meant "use defaults" elsewhere in the plugin.
+			editPostFn( { meta: { nop_indieweb_syndicate_to: next.length ? next : [ 'none' ] } } );
 		}
 
 		return el( Panel, { name: 'nop-indieweb-syndication', title: __( 'Syndicate to', 'nop-indieweb' ) },
