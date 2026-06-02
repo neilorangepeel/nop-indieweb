@@ -23,17 +23,11 @@ a.nop-cite-card__title:focus-visible {
 	border-radius:  2px;
 }
 
-.nop-cite-card__byline {
-	font-size: 0.8125em;
-	color:     var(--nop-muted, #6b7280);
-	margin:    0.25em 0 0;
-}
-
-.nop-cite-card__excerpt {
-	font-size:  0.875em;
-	font-style: italic;
+.nop-cite-card__url {
+	font-size:  0.8125em;
 	color:      var(--nop-muted, #6b7280);
-	margin:     0.5em 0 0;
+	margin:     0.25em 0 0;
+	word-break: break-all;
 }
 
 .nop-cite-card--preview { opacity: 0.45; }

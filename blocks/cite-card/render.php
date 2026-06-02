@@ -27,10 +27,7 @@ if ( $post_id ) {
 	}
 }
 
-$title   = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_title',       true ) : '';
-$author  = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_author_name',  true ) : '';
-$excerpt = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_excerpt',      true ) : '';
-$site    = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_site_name',    true ) : '';
+$title = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true ) : '';
 
 // cite_title and post_title are kept in sync by enrich_url_response_cite / Cite_Enricher.
 // Fall back to post_title here so the card shows the article title even on posts where
@@ -48,14 +45,17 @@ if ( '' === $url && '' === $title ) {
 		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-cite-card nop-cite-card--preview' ] );
 		echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
 		echo '<span class="nop-cite-card__title">' . esc_html__( 'Cited article title', 'nop-indieweb' ) . '</span>';
-		echo '<p class="nop-cite-card__byline">example.com</p>';
+		echo '<p class="nop-cite-card__url">example.com/article</p>';
 		echo '</div>';
 	}
 	return;
 }
 
 // Fall back to the domain when the title hasn't been captured yet.
-$display = '' !== $title ? $title : ( '' !== $site ? $site : (string) ( wp_parse_url( $url, PHP_URL_HOST ) ?: $url ) );
+$display = '' !== $title ? $title : (string) ( wp_parse_url( $url, PHP_URL_HOST ) ?: $url );
+
+// Strip scheme for display so the URL reads cleanly without https://.
+$display_url = $url ? preg_replace( '#^https?://#', '', $url ) : '';
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-cite-card' ] );
 ?>
@@ -72,22 +72,8 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-cite-card' ] );
 	<span class="nop-cite-card__title"><?php echo esc_html( $display ); ?></span>
 	<?php endif; ?>
 
-	<?php if ( '' !== $author || '' !== $site ) : ?>
-	<p class="nop-cite-card__byline">
-		<?php if ( '' !== $author ) : ?>
-			<span class="nop-cite-card__author"><?php echo esc_html( $author ); ?></span>
-		<?php endif; ?>
-		<?php if ( '' !== $author && '' !== $site ) : ?>
-			<span class="nop-cite-card__sep" aria-hidden="true"> · </span>
-		<?php endif; ?>
-		<?php if ( '' !== $site ) : ?>
-			<span class="nop-cite-card__site"><?php echo esc_html( $site ); ?></span>
-		<?php endif; ?>
-	</p>
-	<?php endif; ?>
-
-	<?php if ( '' !== $excerpt ) : ?>
-	<p class="nop-cite-card__excerpt"><?php echo esc_html( $excerpt ); ?></p>
+	<?php if ( '' !== $display_url ) : ?>
+	<p class="nop-cite-card__url"><?php echo esc_html( $display_url ); ?></p>
 	<?php endif; ?>
 
 </div>
