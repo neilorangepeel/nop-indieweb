@@ -481,6 +481,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/cite-card' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-source' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/post-footer' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-meta' );

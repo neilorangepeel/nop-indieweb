@@ -32,6 +32,16 @@ $author  = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_autho
 $excerpt = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_excerpt',      true ) : '';
 $site    = $post_id ? (string) get_post_meta( $post_id, 'nop_indieweb_cite_site_name',    true ) : '';
 
+// cite_title and post_title are kept in sync by enrich_url_response_cite / Cite_Enricher.
+// Fall back to post_title here so the card shows the article title even on posts where
+// the cite meta wasn't written (e.g. older posts, failed enrichment fetch).
+if ( '' === $title && $post_id ) {
+	$post_title = get_the_title( $post_id );
+	if ( '' !== $post_title && 'auto draft' !== strtolower( $post_title ) ) {
+		$title = $post_title;
+	}
+}
+
 // Nothing to show — show a placeholder in the editor, nothing on the front end.
 if ( '' === $url && '' === $title ) {
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
