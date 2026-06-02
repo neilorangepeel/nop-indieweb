@@ -164,14 +164,14 @@ class Feed_Importer {
 			// skipped forever. Honouring the error instead risks an infinite retry
 			// loop on a poison item; the right policy (retry budget? dead-letter?) is
 			// a product decision. Same pattern at the Bluesky/Letterboxd handle calls.
-			$this->note->handle( $this->mastodon_to_payload( $status ) );
+			$this->note->handle( $this->mastodon_to_payload( $status, 'pixelfed' === $platform ? 'photo' : '' ) );
 			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
 		}
 
 		\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_at", gmdate( 'c' ) );
 	}
 
-	private function mastodon_to_payload( array $status ): array {
+	private function mastodon_to_payload( array $status, string $kind = '' ): array {
 		$html = $status['content'] ?? '';
 		$text = wp_strip_all_tags( $html );
 		$url  = $status['url'] ?? '';
@@ -203,16 +203,22 @@ class Feed_Importer {
 			}
 		}
 
+		$properties = [
+			'content'     => [ [ 'html' => $html, 'value' => $text ] ],
+			'published'   => [ $status['created_at'] ?? '' ],
+			'url'         => [ $url ],
+			'syndication' => [ $url ],
+			'photo'       => $photos,
+			'video'       => $videos,
+		];
+
+		if ( '' !== $kind ) {
+			$properties['post-kind'] = [ $kind ];
+		}
+
 		return [
 			'type'       => [ 'h-entry' ],
-			'properties' => [
-				'content'     => [ [ 'html' => $html, 'value' => $text ] ],
-				'published'   => [ $status['created_at'] ?? '' ],
-				'url'         => [ $url ],
-				'syndication' => [ $url ],
-				'photo'       => $photos,
-				'video'       => $videos,
-			],
+			'properties' => $properties,
 		];
 	}
 
