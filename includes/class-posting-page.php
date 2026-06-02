@@ -1393,6 +1393,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var cfg   = TYPE_CONFIG[ currentType ];
 		var props = {};
 
+		props[ 'post-kind' ] = [ currentType ];
+
 		var content = contentInput.value.trim();
 		if ( content && cfg.hasContent ) props.content = [ content ];
 

@@ -198,6 +198,15 @@ class Endpoint {
 			return $post_id;
 		}
 
+		// Honour an explicit syndication-target selection from the client before
+		// the syndication hook fires. mp-syndicate-to is the spec property;
+		// syndicate-to is what the bundled /post client sends. Values are the
+		// syndicator slugs advertised as uids by the ?q=config response.
+		$targets = $payload['properties']['mp-syndicate-to'] ?? $payload['properties']['syndicate-to'] ?? [];
+		if ( is_array( $targets ) && $targets ) {
+			update_post_meta( $post_id, 'nop_indieweb_syndicate_to', array_map( 'sanitize_key', $targets ) );
+		}
+
 		// Phase 2 hook: POSSE syndication to Mastodon, Bluesky, etc. hangs off this.
 		do_action( 'nop_indieweb_post_created', $post_id, $payload, $service );
 
