@@ -36,8 +36,16 @@ abstract class Syndicator_Base {
 		return (bool) \NOP\IndieWeb\nop_indieweb_get_option( "syndicators.{$this->slug()}.enabled", false );
 	}
 
+	/**
+	 * Whether this platform accepts this post at all. Default: every post.
+	 * Override for platforms restricted to certain kinds (e.g. Pixelfed → photo).
+	 */
+	protected function supports_post( int $post_id ): bool {
+		return true;
+	}
+
 	public function syndicate( int $post_id ): void {
-		if ( ! $this->enabled() || ! $this->is_configured() ) {
+		if ( ! $this->enabled() || ! $this->is_configured() || ! $this->supports_post( $post_id ) ) {
 			return;
 		}
 
