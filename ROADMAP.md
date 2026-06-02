@@ -149,6 +149,17 @@ Note: Bluesky is ATProto, not AP — its syndicator and backfeed stay regardless
 
 Threads federates over AP since 2024, opt-in per user. Reachable via any AP path above.
 
+### Loops syndication (federated short-form video)
+
+[Loops](https://joinloops.org/) — the federated TikTok alternative from the Pixelfed team (Daniel Supernault). ActivityPub federation is in beta: Mastodon/Pixelfed/PeerTube users can follow Loops accounts directly.
+
+Two blockers before this is buildable:
+
+1. **No public API yet.** A third-party API is on [their roadmap](https://joinloops.org/roadmap) but unreleased. A `Syndicator_Loops` can't exist until it ships — re-check status before any work.
+2. **No video post kind.** Loops is video-only. A `video` kind (upload UX, `u-video` mf2 output, probably alongside the Photo kind in Phase 5) has to exist first.
+
+Same caveat as Mastodon/Pixelfed: Loops is AP-native, so if we ever federate (Bridgy Fed or native AP), a Loops syndicator becomes a duplicate for AP followers and gets pruned. If federation lands before their API does, skip this entirely — Loops users just follow the site.
+
 ### Time-based unified archives
 
 Make `/YYYY/`, `/YYYY/MM/`, and `/YYYY/MM/DD/` real, browsable pages mixing every post kind (notes, films, checkins, replies, RSVPs, journal) into one chronological timeline. WordPress's default date archives only cover the default post type, so this needs a custom query layer.
