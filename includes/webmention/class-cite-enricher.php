@@ -46,8 +46,8 @@ class Cite_Enricher {
 		add_action( self::EVENT, [ $this, 'run' ], 10, 1 );
 	}
 
-	public function maybe_enrich_editor_post( int $post_id, \WP_Post $post, bool $update, ?\WP_Post $post_before ): void {
-		if ( 'post' !== $post->post_type ) {
+	public function maybe_enrich_editor_post( int $post_id, ?\WP_Post $post, bool $update, ?\WP_Post $post_before ): void {
+		if ( null === $post || 'post' !== $post->post_type ) {
 			return;
 		}
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {

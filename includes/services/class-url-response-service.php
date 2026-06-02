@@ -34,13 +34,39 @@ abstract class Url_Response_Service extends Service_Base {
 		];
 	}
 
+	protected function button_label(): string {
+		return '';
+	}
+
+	protected function button_block(): string {
+		$label = $this->button_label();
+		if ( '' === $label ) {
+			return '';
+		}
+		$key = $this->url_meta_key();
+		return '<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"left"}} -->'
+			. '<div class="wp-block-buttons">'
+			. '<!-- wp:button {"metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"' . esc_attr( $key ) . '"}}}},"className":"is-style-outline"} -->'
+			. '<div class="wp-block-button is-style-outline">'
+			. '<a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noreferrer noopener">'
+			. esc_html( $label ) . ' →'
+			. '</a></div>'
+			. '<!-- /wp:button -->'
+			. '</div>'
+			. '<!-- /wp:buttons -->';
+	}
+
 	public function map_to_post( array $parsed ): array {
 		$settings                      = $this->get_settings();
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'] );
 
-		$blocks = $parsed['content']
-			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
-			: '';
+		$parts = array_filter( [
+			$this->button_block(),
+			$parsed['content']
+				? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
+				: '',
+		] );
+		$blocks = implode( "\n\n", $parts );
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
 

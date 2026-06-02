@@ -22,6 +22,7 @@ class Reply extends Url_Response_Service {
 
 	protected function url_property(): string { return 'in-reply-to'; }
 	protected function url_meta_key(): string { return 'nop_indieweb_in_reply_to'; }
+	protected function button_label(): string { return __( 'View Original Post', 'nop-indieweb' ); }
 
 	public function can_handle( array $payload ): bool {
 		$props = $payload['properties'] ?? [];

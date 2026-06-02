@@ -19,6 +19,7 @@ class Repost extends Url_Response_Service {
 
 	protected function url_property(): string { return 'repost-of'; }
 	protected function url_meta_key(): string { return 'nop_indieweb_repost_of'; }
+	protected function button_label(): string { return __( 'View Original', 'nop-indieweb' ); }
 
 	public function get_kind( array $parsed = [] ): string {
 		return 'repost';
