@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import { render } from '@wordpress/element';
+import { createRoot } from '@wordpress/element';
 import App from './App';
 import './style.scss';
 
@@ -11,5 +11,5 @@ if ( nonce ) {
 
 const root = document.getElementById( 'nop-settings-root' );
 if ( root ) {
-	render( <App />, root );
+	createRoot( root ).render( <App /> );
 }
