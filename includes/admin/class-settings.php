@@ -8,8 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use NOP\IndieWeb\IndieAuth\Token_Store;
-
 /**
  * Settings page at Settings > IndieWeb.
  *
@@ -19,12 +17,10 @@ use NOP\IndieWeb\IndieAuth\Token_Store;
  */
 class Settings {
 
-	private const OPTION_KEY = 'nop_indieweb_settings';
-	private const PAGE_SLUG  = 'nop-indieweb-settings';
+	private const PAGE_SLUG = 'nop-indieweb-settings';
 
 	public function register(): void {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
-		add_action( 'admin_init',            [ $this, 'maybe_handle_revoke' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
@@ -48,26 +44,6 @@ class Settings {
 			<div id="nop-settings-root"></div>
 		</div>
 		<?php
-	}
-
-	// ——— Token revocation (GET link + nonce, kept for backward compat) ————————
-
-	public function maybe_handle_revoke(): void {
-		if ( ! isset( $_GET['nop_revoke_token'] ) ) {
-			return;
-		}
-
-		$token_id = absint( $_GET['nop_revoke_token'] );
-		check_admin_referer( 'nop_revoke_token_' . $token_id );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Unauthorized.', 'nop-indieweb' ), '', [ 'response' => 403 ] );
-		}
-
-		Token_Store::delete_by_id( $token_id );
-
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . self::PAGE_SLUG . '#advanced' ) );
-		exit;
 	}
 
 	// ——— Asset enqueue ————————————————————————————————————————————————————————
