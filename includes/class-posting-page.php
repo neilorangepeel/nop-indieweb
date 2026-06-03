@@ -75,10 +75,11 @@ class Posting_Page {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
-		$site_name    = esc_html( get_bloginfo( 'name' ) );
-		$icon_url     = esc_url( get_site_icon_url( 192 ) );
-		$font_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text' ) );
-		$cond_dir     = esc_url( get_theme_file_uri( 'assets/fonts/brandon-text-condensed' ) );
+		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
+		$site_name    = get_bloginfo( 'name' );
+		$icon_url     = get_site_icon_url( 192 );
+		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
+		$cond_dir     = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
 
 		$user      = wp_get_current_user();
 		$user_name = $user->first_name ?: $user->display_name;
@@ -114,23 +115,23 @@ class Posting_Page {
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
 <?php if ( $icon_url ) : ?>
-<link rel="apple-touch-icon" href="<?php echo $icon_url; ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( $icon_url ); ?>">
 <?php endif; ?>
 <link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
-<title><?php echo $site_name; ?></title>
+<title><?php echo esc_html( $site_name ); ?></title>
 <style>
 <?php
 foreach ( [ '400', '500', '700', '800' ] as $weight ) {
 	printf(
-		'@font-face{font-family:"Brandon Text";font-weight:%1$s;font-style:normal;font-display:swap;src:url("%2$s/brandon-text_normal_%1$s.woff2") format("woff2")}' . "\n",
-		$weight, $font_dir
+		'@font-face{font-family:"Brandon Text";font-weight:%1$d;font-style:normal;font-display:swap;src:url("%2$s/brandon-text_normal_%1$d.woff2") format("woff2")}' . "\n",
+		absint( $weight ), esc_url( $font_dir )
 	);
 }
 foreach ( [ '700', '800' ] as $weight ) {
 	printf(
-		'@font-face{font-family:"Brandon Text Condensed";font-weight:%1$s;font-style:normal;font-display:swap;src:url("%2$s/brandon-text-condensed_normal_%1$s.woff2") format("woff2")}' . "\n",
-		$weight, $cond_dir
+		'@font-face{font-family:"Brandon Text Condensed";font-weight:%1$d;font-style:normal;font-display:swap;src:url("%2$s/brandon-text-condensed_normal_%1$d.woff2") format("woff2")}' . "\n",
+		absint( $weight ), esc_url( $cond_dir )
 	);
 }
 ?>

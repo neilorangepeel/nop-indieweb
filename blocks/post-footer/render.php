@@ -27,15 +27,15 @@ if ( ! $post_id ) {
 	<div <?php echo wp_kses_data( $wrapper ); ?>>
 		<button class="nop-post-footer__pill nop-post-footer__pill--like" type="button" aria-pressed="false" disabled>
 			<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
-			<span class="nop-post-footer__pill-count" aria-label="<?php echo esc_attr( sprintf( _n( '%d like', '%d likes', 12, 'nop-indieweb' ), 12 ) ); ?>">12</span>
+			<span class="nop-post-footer__pill-count" aria-label="<?php /* translators: %d: number of likes */ echo esc_attr( sprintf( _n( '%d like', '%d likes', 12, 'nop-indieweb' ), 12 ) ); ?>">12</span>
 		</button>
 		<span class="nop-post-footer__pill">
 			<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
-			<span class="nop-post-footer__pill-count" aria-label="<?php echo esc_attr( sprintf( _n( '%d comment', '%d comments', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
+			<span class="nop-post-footer__pill-count" aria-label="<?php /* translators: %d: number of comments */ echo esc_attr( sprintf( _n( '%d comment', '%d comments', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
 		</span>
 		<span class="nop-post-footer__pill">
 			<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
-			<span class="nop-post-footer__pill-count" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
+			<span class="nop-post-footer__pill-count" aria-label="<?php /* translators: %d: number of reposts */ echo esc_attr( sprintf( _n( '%d repost', '%d reposts', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
 		</span>
 		<span class="nop-post-footer__sep" aria-hidden="true">·</span>
 		<span class="nop-post-footer__source">
