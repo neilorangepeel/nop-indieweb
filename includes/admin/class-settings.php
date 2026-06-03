@@ -26,12 +26,6 @@ class Settings {
 		add_action( 'admin_menu',            [ $this, 'add_page' ] );
 		add_action( 'admin_init',            [ $this, 'maybe_handle_revoke' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
-		// Keep the AJAX handler for one release so any open browser tabs with
-		// the old Test Connection button still work.
-		// NOP: needs review — this was a one-release backward-compat shim (also
-		// ajax_test_connection() below). Safe to delete once that release has
-		// shipped; left in place because the cutover date is your call.
-		add_action( 'wp_ajax_nop_test_connection', [ $this, 'ajax_test_connection' ] );
 	}
 
 	public function add_page(): void {
@@ -74,30 +68,6 @@ class Settings {
 
 		wp_safe_redirect( admin_url( 'options-general.php?page=' . self::PAGE_SLUG . '#advanced' ) );
 		exit;
-	}
-
-	// ——— AJAX test connection (kept for backward compat, one release) —————————
-
-	public function ajax_test_connection(): void {
-		check_ajax_referer( 'nop_test_connection' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Unauthorized', 'nop-indieweb' ), 403 );
-		}
-
-		$slug       = sanitize_key( $_POST['service'] ?? '' );
-		$manager    = \NOP\IndieWeb\Plugin::get_instance()->syndication_manager();
-		$syndicator = $manager ? $manager->get( $slug ) : null;
-
-		if ( ! $syndicator ) {
-			wp_send_json_error( __( 'Unknown service.', 'nop-indieweb' ) );
-		}
-
-		$result = $syndicator->test_connection();
-		if ( $result['ok'] ) {
-			wp_send_json_success( $result['message'] );
-		}
-		wp_send_json_error( $result['message'] );
 	}
 
 	// ——— Asset enqueue ————————————————————————————————————————————————————————
