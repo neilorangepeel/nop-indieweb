@@ -145,6 +145,94 @@ Only after the above: wordpress.org listing (`.distignore` and readme.txt are al
 
 Discussed but not committed. Listed in rough priority order — top items have the highest leverage relative to effort. **All assume Foundations are audited first.**
 
+### iOS Shortcuts capture layer
+
+The most direct attack on capture friction — the reason kinds like bookmarks and collections don't stick the way Swarm does. Shortcuts speak HTTP fluently, can POST multipart to the existing Micropub endpoint, trigger from Share Sheet / Lock Screen / Siri / Apple Watch / NFC tag / Focus mode, and sync across all Apple devices. No plugin work required to start — the receiver already exists.
+
+**First three to build, by leverage:**
+
+1. **Bookmark from Share Sheet.** Safari → Share → "Save to neilorangepeel.com" → posted as `bookmark` Kind. Half a Saturday of work, used daily.
+2. **Photo / story capture.** Lock Screen widget → camera → snap → optional caption → posted as photo (with story flag — see Pixelfed Stories entry). Pairs with the Pixelfed Stories integration.
+3. **Quick note via Siri.** *"Hey Siri, post a note: snowing in Belfast, cancelled the run."* Voice → site. No app to open.
+
+**Later Shortcuts worth building when each Kind is ready:**
+
+- Collection-music via Discogs barcode scan (mid-shop capture)
+- Workout end → Apple Health automation → workout post
+- Now-playing → listen post (via Last.fm or Apple Music)
+- NFC tag on record player → log the album currently playing
+
+**Worth noting:** Shortcuts can be shared as iCloud links. A polished "Bookmark to IndieWeb site" Shortcut becomes a reusable artifact other IndieWeb practitioners could install against their own Micropub endpoints by changing one field. Small but real contribution back to the community.
+
+**Reframing implication:** Once Shortcuts become the primary capture surface for stream content, the editor's job clarifies — it's where you sit down to *write* articles, not where you go to log a moment. Most of the editor-side architecture work (sidebar consolidation, kind-aware panels, Lookup Providers) can lighten its scope accordingly. Capture flows first, editor polish to support them after.
+
+### Pixelfed Stories (site-native)
+
+Inverts the obvious "pull stories from Pixelfed" approach because Pixelfed Stories auto-expire after 24 hours — your site as downstream would be fragile, miss content, and depend on Pixelfed's API stability.
+
+**Site-native instead:**
+
+- A `story` flag on photo posts (or a separate `story` Kind — start with the flag, promote if it earns it).
+- iOS Shortcut (Lock Screen) → camera → optional caption → Micropub POST with `story: true` → photo post stored permanently on site.
+- Pixelfed syndicator detects the flag and posts to Pixelfed Stories specifically (not the regular feed). Expires there after 24h; permanent on site.
+- `/stories/` archive page, date-grouped (paired well with the time-based archives work).
+- Optional homepage widget: horizontal scroll strip of the last 7–14 days, "Instagram top of feed" aesthetic but without disappearing content.
+
+**Settings additions on Pixelfed:**
+
+- Per-Kind toggle distinguishing Pixelfed Feed vs. Pixelfed Stories (a story-flagged photo can tick both).
+- Verify OAuth scopes — Stories likely need a newer scope than the current syndicator uses.
+
+**Honest principle this expresses:** your site is the constant; Pixelfed Stories is a speakerphone of the moment. Same pattern as Mastodon and Bluesky.
+
+### Kind-aware syndication policy
+
+Today's syndicators run on every published post if globally enabled. New policy: **three-layer decision tree.**
+
+1. **Provenance rule (highest, never override):** if `nop_indieweb_platform === <this syndicator's platform>`, skip. Never echo back to source.
+2. **Per-post explicit selection:** if `nop_indieweb_syndicate_to` meta is set (via the Syndication panel or Micropub `mp-syndicate-to`), respect it absolutely.
+3. **Per-kind default matrix:** fallback when no explicit selection. Settings UI is Kinds × Platforms with checkboxes.
+
+**Proposed default matrix** (ON = auto, OFF = never auto, CHOICE = default OFF but easily flipped per post):
+
+| Kind | Mastodon | Bluesky | Pixelfed Feed | Pixelfed Stories |
+|---|---|---|---|---|
+| article | ON | ON | N/A | N/A |
+| note | ON | ON | N/A | N/A |
+| bookmark | CHOICE | CHOICE | N/A | N/A |
+| reply | provenance + CHOICE | provenance + CHOICE | N/A | N/A |
+| like | OFF | OFF | OFF | OFF |
+| repost | ON (boost native) | ON | N/A | N/A |
+| rsvp | CHOICE | CHOICE | N/A | N/A |
+| checkin | OFF | OFF | N/A | N/A |
+| watch | CHOICE | CHOICE | N/A | N/A |
+| listen | OFF | OFF | N/A | N/A |
+| photo | ON | ON | ON | (per story flag) |
+| collection | CHOICE | CHOICE | CHOICE | N/A |
+| workout | OFF | OFF | N/A | N/A |
+
+**Open decision points before building:**
+
+1. Bookmarks → Mastodon/Bluesky: default ON or OFF?
+2. Watches → Mastodon/Bluesky: default ON or OFF? (Letterboxd has its own audience.)
+3. Reposts → native boost via Mastodon's reblog API, or regular toot with URL? Native is cleaner but a new code path.
+4. Cross-platform replies: should a reply written for a Mastodon thread also go to Bluesky? Default no.
+
+**Implementation:** ~10 lines in `Syndicator_Base::syndicate()` for the decision tree, plus a settings UI for the matrix. Small build, big behaviour change.
+
+**Status:** the per-post override slice now exists — a `nop_indieweb_skip_syndication` meta flag short-circuits `Syndication_Manager::syndicate()`, and Swarm sets it automatically for private check-ins (Micropub `visibility=private`). The provenance rule and the per-kind matrix are still to build.
+
+### PESOS for original Mastodon and Bluesky posts
+
+Today, only engagement (replies, likes) comes in via Bridgy webmentions. Your own original toots and skeets — when you post directly on Mastodon or Bluesky — don't auto-import. The "never echo back" provenance rule only works if those posts arrive on the site with `nop_indieweb_platform` set correctly.
+
+**To make this real:**
+
+- **Mastodon import service.** Periodic poll of your account, create posts for original (non-reply) toots, mark `platform=mastodon`. Joins Swarm and Letterboxd as inbound services.
+- **Bluesky import service.** Same shape against the AT Protocol API.
+
+Both follow the existing `Service_Base` lifecycle. ~1 day each. Pairs with the kind-aware syndication policy — without PESOS, the provenance rule has nothing to act on.
+
 ### Reply Router (smart, identity-honest, venue-agnostic reply UX)
 
 Replace the standard comment form with a single-textarea, single-identity-field interface whose submit button morphs based on what the visitor types. Routes to:
