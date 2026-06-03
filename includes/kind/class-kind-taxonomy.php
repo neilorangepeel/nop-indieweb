@@ -33,6 +33,8 @@ class Kind_Taxonomy {
 		'watch'    => 'Watch',
 		'listen'   => 'Listen',
 		'photo'    => 'Photo',
+		'quote'    => 'Quote',
+		'video'    => 'Video',
 	];
 
 	const KIND_DESCRIPTIONS = [
@@ -47,10 +49,50 @@ class Kind_Taxonomy {
 		'watch'      => 'A film or show watched, logged via Letterboxd.',
 		'listen'     => 'Music or audio actively listened to.',
 		'photo'      => 'A post where an image is the primary content.',
+		'quote'      => 'A quotation from elsewhere, with attribution.',
+		'video'      => 'A post where a video is the primary content.',
 		'collection' => 'Ownership of a physical or digital media item.',
 		'music'      => 'A music album or release in the collection.',
 		'film'       => 'A film owned on physical or digital media.',
 		'book'       => 'A book owned or read.',
+	];
+
+	/**
+	 * The curated topic categories (slug => display name).
+	 * Categories answer "what's it about?"; kinds answer "what is it?".
+	 */
+	const TOPIC_CATEGORIES = [
+		'photography'     => 'Photography',
+		'performance'     => 'Performance',
+		'web-development' => 'Web & Development',
+		'places-travel'   => 'Places & Travel',
+		'media-diet'      => 'Media Diet',
+		'journal'         => 'Journal',
+	];
+
+	/**
+	 * Kind → default topic category. Applied by apply_default_category() only
+	 * when the author hasn't picked a category — an explicit choice always wins.
+	 * Kinds absent from this map (article) get no default: the author picks the
+	 * topic per-post.
+	 */
+	const KIND_DEFAULT_CATEGORIES = [
+		'photo'      => 'photography',
+		'video'      => 'photography',
+		'checkin'    => 'places-travel',
+		'watch'      => 'media-diet',
+		'listen'     => 'media-diet',
+		'collection' => 'media-diet',
+		'music'      => 'media-diet',
+		'film'       => 'media-diet',
+		'book'       => 'media-diet',
+		'note'       => 'journal',
+		'reply'      => 'journal',
+		'like'       => 'journal',
+		'repost'     => 'journal',
+		'bookmark'   => 'journal',
+		'rsvp'       => 'journal',
+		'quote'      => 'journal',
 	];
 
 	// collection → {music, film, book}; format detail (vinyl, cd, dvd, etc.) goes on tags.
@@ -69,6 +111,8 @@ class Kind_Taxonomy {
 		add_action( 'init', [ $this, 'register_taxonomy' ] );
 		// Priority 10: fires after wp_set_object_terms() commits term associations.
 		add_action( 'set_object_terms', [ $this, 'mirror_kind_to_meta' ], 10, 6 );
+		// Priority 11: after the meta mirror, fill in the kind's default topic category.
+		add_action( 'set_object_terms', [ $this, 'apply_default_category' ], 11, 6 );
 	}
 
 	public function register_taxonomy(): void {
@@ -106,6 +150,71 @@ class Kind_Taxonomy {
 		} else {
 			delete_post_meta( $object_id, 'nop_indieweb_post_kind' );
 		}
+	}
+
+	/**
+	 * Fills in the kind's default topic category when the author hasn't picked one.
+	 *
+	 * "Hasn't picked" means the post has no categories, or only the WP default
+	 * category — which acts purely as a sentinel for "nothing chosen" (WordPress
+	 * auto-assigns it on insert). An explicit category choice is never overridden.
+	 *
+	 * Unmapped kinds (article) get the sentinel stripped instead, leaving the post
+	 * category-less until the author picks a topic.
+	 */
+	public function apply_default_category( int $object_id, array $terms, array $tt_ids, string $taxonomy, bool $append, array $old_tt_ids ): void {
+		if ( self::TAXONOMY !== $taxonomy || 'post' !== get_post_type( $object_id ) ) {
+			return;
+		}
+
+		$assigned = wp_get_object_terms( $object_id, self::TAXONOMY, [ 'fields' => 'slugs', 'orderby' => 'term_id' ] );
+		$kind     = ! is_wp_error( $assigned ) && $assigned ? (string) $assigned[0] : '';
+		if ( ! $kind ) {
+			return;
+		}
+
+		$current = wp_get_object_terms( $object_id, 'category', [ 'fields' => 'ids' ] );
+		if ( is_wp_error( $current ) ) {
+			return;
+		}
+		$current  = array_map( 'intval', $current );
+		$sentinel = (int) get_option( 'default_category' );
+
+		$only_sentinel = ! $current || ( 1 === count( $current ) && $current[0] === $sentinel );
+		if ( ! $only_sentinel ) {
+			return;
+		}
+
+		$mapped = (string) apply_filters(
+			'nop_indieweb_kind_default_category',
+			self::KIND_DEFAULT_CATEGORIES[ $kind ] ?? '',
+			$kind,
+			$object_id
+		);
+
+		if ( ! $mapped ) {
+			// Unmapped kind: strip the sentinel so the post stays category-less.
+			if ( $current ) {
+				wp_set_object_terms( $object_id, [], 'category' );
+			}
+			return;
+		}
+
+		$term_id = self::ensure_topic_category( $mapped );
+		if ( $term_id && $current !== [ $term_id ] ) {
+			wp_set_object_terms( $object_id, [ $term_id ], 'category' );
+		}
+	}
+
+	/** Returns the topic category's term ID, creating it on first use. 0 on failure. */
+	public static function ensure_topic_category( string $slug ): int {
+		$existing = get_term_by( 'slug', $slug, 'category' );
+		if ( $existing instanceof \WP_Term ) {
+			return (int) $existing->term_id;
+		}
+		$name   = self::TOPIC_CATEGORIES[ $slug ] ?? ucwords( str_replace( '-', ' ', $slug ) );
+		$result = wp_insert_term( $name, 'category', [ 'slug' => $slug ] );
+		return is_wp_error( $result ) ? 0 : (int) $result['term_id'];
 	}
 
 	/**
@@ -256,6 +365,20 @@ class Kind_Taxonomy {
 				'label'          => __( 'Photo', 'nop-indieweb' ),
 				'fields'         => [],
 				'layout'         => '<!-- wp:image {"align":"wide"} /--><!-- wp:paragraph /-->',
+				'title_from_url' => false,
+			],
+			'quote' => [
+				'label'          => __( 'Quote', 'nop-indieweb' ),
+				'fields'         => [
+					[ 'key' => 'nop_indieweb_quote_of', 'label' => __( 'Quote from', 'nop-indieweb' ) ],
+				],
+				'layout'         => '<!-- wp:quote --><blockquote class="wp-block-quote"><!-- wp:paragraph /--></blockquote><!-- /wp:quote --><!-- wp:nop-indieweb/cite-card /-->',
+				'title_from_url' => true,
+			],
+			'video' => [
+				'label'          => __( 'Video', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '<!-- wp:video /--><!-- wp:paragraph /-->',
 				'title_from_url' => false,
 			],
 			// ── Service-created kinds ────────────────────────────────────────────

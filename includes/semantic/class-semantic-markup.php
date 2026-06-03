@@ -113,6 +113,7 @@ class Semantic_Markup {
 			'rsvp'     => [ 'nop_indieweb_in_reply_to', 'u-in-reply-to' ],
 			'like'     => [ 'nop_indieweb_like_of',     'u-like-of'     ],
 			'repost'   => [ 'nop_indieweb_repost_of',   'u-repost-of'   ],
+			'quote'    => [ 'nop_indieweb_quote_of',    'u-quotation-of' ],
 		];
 
 		if ( isset( $url_kinds[ $kind ] ) ) {

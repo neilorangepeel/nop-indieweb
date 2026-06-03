@@ -165,7 +165,7 @@ class Settings_API {
 			'enabled'         => (bool)   ( $sw['enabled']         ?? false ),
 			'post_status'     => (string) ( $sw['post_status']     ?? 'publish' ),
 			'post_category'   => (string) ( $sw['post_category']   ?? '' ),
-			'post_tags'       => (string) ( $sw['post_tags']       ?? 'Swarm' ),
+			'post_tags'       => (string) ( $sw['post_tags']       ?? '' ),
 			'sideload_photos' => (bool)   ( $sw['sideload_photos'] ?? true ),
 		];
 
@@ -174,7 +174,7 @@ class Settings_API {
 			'import_enabled'  => (bool)   ( $lb['import_enabled']  ?? false ),
 			'username'        => (string) ( $lb['username']        ?? '' ),
 			'post_status'     => (string) ( $lb['post_status']     ?? 'publish' ),
-			'post_category'   => (string) ( $lb['post_category']   ?? 'Films' ),
+			'post_category'   => (string) ( $lb['post_category']   ?? '' ),
 			'post_tags'       => (string) ( $lb['post_tags']       ?? '' ),
 			'sideload_poster' => (bool)   ( $lb['sideload_poster'] ?? true ),
 		];

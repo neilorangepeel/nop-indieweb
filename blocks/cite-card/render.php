@@ -18,7 +18,7 @@ $post_id = $block->context['postId'] ?? ( isset( $args['post_id'] ) ? (int) $arg
 // Resolve the response URL from whichever kind meta is set.
 $url = '';
 if ( $post_id ) {
-	foreach ( [ 'nop_indieweb_like_of', 'nop_indieweb_bookmark_of', 'nop_indieweb_repost_of', 'nop_indieweb_in_reply_to' ] as $meta_key ) {
+	foreach ( [ 'nop_indieweb_like_of', 'nop_indieweb_bookmark_of', 'nop_indieweb_repost_of', 'nop_indieweb_in_reply_to', 'nop_indieweb_quote_of' ] as $meta_key ) {
 		$val = (string) get_post_meta( $post_id, $meta_key, true );
 		if ( '' !== $val ) {
 			$url = $val;

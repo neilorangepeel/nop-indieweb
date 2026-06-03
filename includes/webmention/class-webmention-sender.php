@@ -55,7 +55,7 @@ class Webmention_Sender {
 
 		// Also notify URLs referenced in post-kind meta — these may not appear in
 		// post_content (e.g. a like-of target is stored only in meta, not in the body).
-		foreach ( [ 'nop_indieweb_in_reply_to', 'nop_indieweb_bookmark_of', 'nop_indieweb_like_of', 'nop_indieweb_repost_of' ] as $meta_key ) {
+		foreach ( [ 'nop_indieweb_in_reply_to', 'nop_indieweb_bookmark_of', 'nop_indieweb_like_of', 'nop_indieweb_repost_of', 'nop_indieweb_quote_of' ] as $meta_key ) {
 			$meta_url = (string) get_post_meta( $post_id, $meta_key, true );
 			if ( $meta_url ) {
 				$urls[] = $meta_url;

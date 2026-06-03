@@ -228,6 +228,10 @@ class Registry {
 				'label'       => __( 'RSVP', 'nop-indieweb' ),
 				'description' => 'RSVP value: yes, no, maybe, or interested (p-rsvp).',
 			] ),
+			'nop_indieweb_quote_of'    => array_merge( $string, [
+				'label'       => __( 'Quote Of', 'nop-indieweb' ),
+				'description' => 'URL this post is quoting (u-quotation-of).',
+			] ),
 
 			// ── Cited target context (h-cite) ────────────────────────────────────────
 			// Captured once at save time from the like/bookmark/repost/reply target so

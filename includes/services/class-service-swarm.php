@@ -127,7 +127,7 @@ class Swarm extends Service_Base {
 			: 'Checked in';
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
-		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? 'Swarm' );
+		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
 
 		$note   = wp_kses_post( trim( $parsed['content'] ) );
 		$blocks = $note

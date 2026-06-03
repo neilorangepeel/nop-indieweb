@@ -347,6 +347,16 @@ class Plugin {
 				'description' => __( 'Displays a photo post as a bordered card with kind header, photo, caption, and interaction footer.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-photo.html',
 			],
+			'nop-indieweb//single-nop_kind-quote' => [
+				'title'       => __( 'Single – Quote', 'nop-indieweb' ),
+				'description' => __( 'Displays a quotation post with the quoted text and source attribution.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-quote.html',
+			],
+			'nop-indieweb//single-nop_kind-video' => [
+				'title'       => __( 'Single – Video', 'nop-indieweb' ),
+				'description' => __( 'Displays a video post with the video as the primary content.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-video.html',
+			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
 			'nop-indieweb//taxonomy-nop_kind-watch' => [
@@ -398,6 +408,16 @@ class Plugin {
 				'title'       => __( 'Archive – Photos', 'nop-indieweb' ),
 				'description' => __( 'Square photo grid for the photo kind. Featured images link to each photo post.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-photo.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-quote' => [
+				'title'       => __( 'Archive – Quotes', 'nop-indieweb' ),
+				'description' => __( 'Chronological list of quotation posts with source attribution.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-quote.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-video' => [
+				'title'       => __( 'Archive – Videos', 'nop-indieweb' ),
+				'description' => __( 'Chronological stream of video posts.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-video.html',
 			],
 			'nop-indieweb//taxonomy-nop_venue_category' => [
 				'title'       => __( 'Archive – Venue Category', 'nop-indieweb' ),

@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,7 @@ NOP IndieWeb turns a WordPress site into a full IndieWeb citizen. It owns your c
 * **Micropub endpoint** — publish from any Micropub client (Quill, iA Writer, OwnYourSwarm, etc.).
 * **IndieAuth server** — sign in to Micropub clients with your own domain; manage authorized apps and revoke tokens from the settings screen.
 * **Webmentions** — send and receive Webmentions; a unified "Responses" block shows likes, reposts and replies as a facepile plus threaded conversation, alongside native WordPress comments.
-* **Post kinds** — notes, replies, likes, reposts, bookmarks, RSVPs, checkins, and film-diary "watch" entries, each with its own template and microformats2 markup.
+* **Post kinds** — notes, replies, likes, reposts, bookmarks, quotes, videos, RSVPs, checkins, and film-diary "watch" entries, each with its own template and microformats2 markup.
 * **POSSE syndication** — automatically cross-post to Mastodon, Bluesky and Pixelfed on publish, recording the syndication link back on the post.
 * **Inbound import** — pull your own posts back from Mastodon, Bluesky, Pixelfed and Letterboxd on a schedule.
 * **Check-in enrichment** — Swarm/Foursquare check-ins gain venue categories, a static map image, and a weather snapshot.
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.5.0 =
+* Categories are now curated topics with kind-aware defaults. Each post kind maps to a default topic category (photo → Photography, checkin → Places & Travel, watch/listen → Media Diet, notes and social kinds → Journal) applied only when you haven't picked a category yourself — an explicit choice always wins, and articles never get a default. New quote and video post kinds with templates and microformats (u-quotation-of). A migration script (`bin/migrate-topics.php`) converts pre-kind categories to kinds, promotes topic tags to categories, and removes provenance tags.
 
 = 0.4.0 =
 * Syndication is now asynchronous and resilient. Publishing no longer waits on remote platform APIs — each platform gets its own background job that retries automatically on failure (after 5 minutes, 30 minutes, then 2 hours). Failures surface in the editor sidebar with the actual error message and a Retry button; successful sends show a link to the syndicated copy.

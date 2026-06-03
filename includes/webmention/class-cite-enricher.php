@@ -37,6 +37,7 @@ class Cite_Enricher {
 		'nop_indieweb_bookmark_of',
 		'nop_indieweb_repost_of',
 		'nop_indieweb_in_reply_to',
+		'nop_indieweb_quote_of',
 	];
 
 	public function register(): void {

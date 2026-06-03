@@ -80,10 +80,15 @@ class MF2_Endpoint {
 
 		$categories = wp_get_post_categories( $post_id, [ 'fields' => 'names' ] );
 		$tags       = wp_get_post_tags( $post_id, [ 'fields' => 'names' ] );
-		$all_terms  = array_values( array_merge(
-			is_array( $categories ) ? $categories : [],
-			is_array( $tags )       ? $tags       : []
-		) );
+		// Term names are stored HTML-encoded ("Places &amp; Travel") — decode for
+		// JSON consumers, which expect plain text, not HTML.
+		$all_terms  = array_map(
+			fn( $name ) => html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' ),
+			array_values( array_merge(
+				is_array( $categories ) ? $categories : [],
+				is_array( $tags )       ? $tags       : []
+			) )
+		);
 
 		$props = [
 			'name'      => [ $post->post_title ],
@@ -105,10 +110,11 @@ class MF2_Endpoint {
 		// Per-kind canonical URL properties — match the hidden anchors in
 		// Semantic_Markup::output_kind_links so the JSON has parity with the HTML.
 		foreach ( [
-			'in-reply-to' => 'nop_indieweb_in_reply_to',
-			'bookmark-of' => 'nop_indieweb_bookmark_of',
-			'like-of'     => 'nop_indieweb_like_of',
-			'repost-of'   => 'nop_indieweb_repost_of',
+			'in-reply-to'  => 'nop_indieweb_in_reply_to',
+			'bookmark-of'  => 'nop_indieweb_bookmark_of',
+			'like-of'      => 'nop_indieweb_like_of',
+			'repost-of'    => 'nop_indieweb_repost_of',
+			'quotation-of' => 'nop_indieweb_quote_of',
 		] as $prop => $meta_key ) {
 			$value = (string) get_post_meta( $post_id, $meta_key, true );
 			if ( $value ) {
