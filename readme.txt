@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.5.0
+Stable tag: 0.5.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.5.1 =
+* Bluesky link cards now fall back to the site icon (your portrait/avatar) as the card thumbnail when a post has no photo, video, featured image, or map — matching the Open Graph image fallback that Mastodon and other unfurlers already use.
 
 = 0.5.0 =
 * Categories are now curated topics with kind-aware defaults. Each post kind maps to a default topic category (photo → Photography, checkin → Places & Travel, watch/listen → Media Diet, notes and social kinds → Journal) applied only when you haven't picked a category yourself — an explicit choice always wins, and articles never get a default. New quote and video post kinds with templates and microformats (u-quotation-of). A migration script (`bin/migrate-topics.php`) converts pre-kind categories to kinds, promotes topic tags to categories, and removes provenance tags.

@@ -230,17 +230,33 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 
 		$thumbnail_id = get_post_thumbnail_id( $post_id );
-		if ( ! $thumbnail_id ) {
+		if ( $thumbnail_id ) {
+			$src = wp_get_attachment_image_src( $thumbnail_id, 'medium' );
+			if ( $src ) {
+				return $this->upload_image_blob( [
+					'url'           => (string) $src[0],
+					'alt'           => '',
+					'attachment_id' => $thumbnail_id,
+					'width'         => (int) ( $src[1] ?? 0 ),
+					'height'        => (int) ( $src[2] ?? 0 ),
+				], $session );
+			}
+		}
+
+		// Fall back to the site icon (the author's portrait) so link cards always
+		// carry an identity image — mirrors the Open Graph image fallback chain.
+		$icon_id = (int) get_option( 'site_icon' );
+		if ( ! $icon_id ) {
 			return null;
 		}
-		$src = wp_get_attachment_image_src( $thumbnail_id, 'medium' );
+		$src = wp_get_attachment_image_src( $icon_id, 'large' );
 		if ( ! $src ) {
 			return null;
 		}
 		return $this->upload_image_blob( [
 			'url'           => (string) $src[0],
 			'alt'           => '',
-			'attachment_id' => $thumbnail_id,
+			'attachment_id' => $icon_id,
 			'width'         => (int) ( $src[1] ?? 0 ),
 			'height'        => (int) ( $src[2] ?? 0 ),
 		], $session );
