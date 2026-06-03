@@ -16,7 +16,12 @@ abstract class Syndicator_Base {
 
 	abstract protected function is_configured(): bool;
 
-	abstract protected function do_syndicate( int $post_id ): ?string;
+	/**
+	 * Performs the actual platform API calls. Returns the syndicated URL on
+	 * success or a WP_Error describing why it failed (so retries can surface
+	 * the reason in the editor).
+	 */
+	abstract protected function do_syndicate( int $post_id ): string|\WP_Error;
 
 	abstract protected function owns_url( string $url ): bool;
 
@@ -44,27 +49,42 @@ abstract class Syndicator_Base {
 		return true;
 	}
 
-	public function syndicate( int $post_id ): void {
+	/**
+	 * Attempts syndication. Returns the syndicated URL on success, an empty
+	 * string when this platform doesn't apply (disabled, unconfigured, or
+	 * unsupported kind), or a WP_Error describing the failure.
+	 */
+	public function syndicate( int $post_id ): string|\WP_Error {
 		if ( ! $this->enabled() || ! $this->is_configured() || ! $this->supports_post( $post_id ) ) {
-			return;
+			return '';
 		}
 
-		// Dedup — skip if this platform already has a syndication URL on this post.
-		$existing = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
-		$existing = is_array( $existing ) ? $existing : [];
-
-		foreach ( $existing as $url ) {
+		// Dedup — if this platform already has a syndication URL on this post,
+		// return it so retries of an already-sent platform report success.
+		foreach ( $this->stored_urls( $post_id ) as $url ) {
 			if ( $this->owns_url( $url ) ) {
-				return;
+				return $url;
 			}
 		}
 
 		$url = $this->do_syndicate( $post_id );
 
-		if ( $url ) {
-			$existing[] = $url;
-			update_post_meta( $post_id, 'nop_indieweb_syndication', $existing );
+		if ( is_wp_error( $url ) ) {
+			return $url;
 		}
+
+		// Re-read just before writing — another platform's cron event may have
+		// appended its own URL while this platform's HTTP calls were in flight.
+		$existing   = $this->stored_urls( $post_id );
+		$existing[] = $url;
+		update_post_meta( $post_id, 'nop_indieweb_syndication', $existing );
+
+		return $url;
+	}
+
+	private function stored_urls( int $post_id ): array {
+		$existing = get_post_meta( $post_id, 'nop_indieweb_syndication', true );
+		return is_array( $existing ) ? $existing : [];
 	}
 
 	/**

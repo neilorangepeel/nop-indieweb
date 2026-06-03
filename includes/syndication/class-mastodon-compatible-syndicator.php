@@ -38,7 +38,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		return $instance && str_starts_with( $url, $instance );
 	}
 
-	protected function do_syndicate( int $post_id ): ?string {
+	protected function do_syndicate( int $post_id ): string|\WP_Error {
 		$instance  = $this->instance();
 		$token     = $this->access_token();
 		$permalink = (string) get_permalink( $post_id );
@@ -67,17 +67,29 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 			]
 		);
 
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			$code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
+		if ( is_wp_error( $response ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( "{$this->label()} syndication failed for post {$post_id}", [ 'code' => $response->get_error_message() ] );
+			return new \WP_Error( 'nop_syndication_failed', $response->get_error_message() );
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
 			\NOP\IndieWeb\nop_indieweb_log( "{$this->label()} syndication failed for post {$post_id}", [ 'code' => $code ] );
-			return null;
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+			return new \WP_Error( 'nop_syndication_failed', sprintf(
+				/* translators: 1: HTTP status code, 2: error detail from the platform API */
+				__( 'HTTP %1$d: %2$s', 'nop-indieweb' ),
+				$code,
+				$body['error'] ?? __( 'unknown error', 'nop-indieweb' )
+			) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( empty( $data['url'] ) ) {
 			\NOP\IndieWeb\nop_indieweb_log( "{$this->label()} syndication: no URL in response for post {$post_id}", $data );
+			return new \WP_Error( 'nop_syndication_failed', __( 'The platform accepted the post but returned no URL.', 'nop-indieweb' ) );
 		}
-		return $data['url'] ?? null;
+		return (string) $data['url'];
 	}
 
 	/**

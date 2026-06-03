@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.4.0 =
+* Syndication is now asynchronous and resilient. Publishing no longer waits on remote platform APIs — each platform gets its own background job that retries automatically on failure (after 5 minutes, 30 minutes, then 2 hours). Failures surface in the editor sidebar with the actual error message and a Retry button; successful sends show a link to the syndicated copy.
 
 = 0.3.0 =
 * Redesigned the Settings → IndieWeb Overview tab: Networks, then a Reactions dashboard (likes/comments/reposts with a per-network breakdown and pending-moderation link), then a merged "Identity & Endpoints" section gathering profile URLs and all discovery endpoints (Micropub, Webmention, IndieAuth, mf2). Removed the Quick-setup checklist; onboarding now lives in each service tab.

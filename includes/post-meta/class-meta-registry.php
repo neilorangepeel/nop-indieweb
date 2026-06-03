@@ -184,6 +184,28 @@ class Registry {
 				'label'       => __( 'Syndicate To', 'nop-indieweb' ),
 				'description' => 'Platform slugs to syndicate to on publish (editor selection).',
 			] ),
+			'nop_indieweb_syndication_status' => [
+				'type'          => 'object',
+				'single'        => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'show_in_rest'  => [
+					'schema' => [
+						'type'                 => 'object',
+						'additionalProperties' => [
+							'type'       => 'object',
+							'properties' => [
+								'state'    => [ 'type' => 'string' ],
+								'url'      => [ 'type' => 'string' ],
+								'error'    => [ 'type' => 'string' ],
+								'attempts' => [ 'type' => 'integer' ],
+								'updated'  => [ 'type' => 'integer' ],
+							],
+						],
+					],
+				],
+				'label'         => __( 'Syndication Status', 'nop-indieweb' ),
+				'description'   => 'Per-platform delivery journal (pending/sent/failed), keyed by syndicator slug. Written by Syndication_Manager.',
+			],
 
 			// ── Post kinds ──────────────────────────────────────────────────────────
 			'nop_indieweb_bookmark_of' => array_merge( $string, [

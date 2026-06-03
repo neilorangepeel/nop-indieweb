@@ -39,7 +39,7 @@ class Syndication_Panel {
 		wp_enqueue_script(
 			'nop-indieweb-syndication-panel',
 			$base . 'syndication-panel.js',
-			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n' ],
+			[ 'wp-plugins', 'wp-editor', 'wp-edit-post', 'wp-element', 'wp-data', 'wp-components', 'wp-i18n', 'wp-api-fetch' ],
 			$ver,
 			true
 		);

@@ -70,10 +70,10 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		];
 	}
 
-	protected function do_syndicate( int $post_id ): ?string {
+	protected function do_syndicate( int $post_id ): string|\WP_Error {
 		$session = $this->create_session();
-		if ( ! $session ) {
-			return null;
+		if ( is_wp_error( $session ) ) {
+			return $session;
 		}
 
 		$permalink = (string) get_permalink( $post_id );
@@ -160,10 +160,21 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			]
 		);
 
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			$code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
+		if ( is_wp_error( $response ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( "Bluesky syndication failed for post {$post_id}", [ 'code' => $response->get_error_message() ] );
+			return new \WP_Error( 'nop_syndication_failed', $response->get_error_message() );
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
 			\NOP\IndieWeb\nop_indieweb_log( "Bluesky syndication failed for post {$post_id}", [ 'code' => $code ] );
-			return null;
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+			return new \WP_Error( 'nop_syndication_failed', sprintf(
+				/* translators: 1: HTTP status code, 2: error detail from the Bluesky API */
+				__( 'HTTP %1$d: %2$s', 'nop-indieweb' ),
+				$code,
+				$body['message'] ?? __( 'unknown error', 'nop-indieweb' )
+			) );
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -171,7 +182,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		if ( ! $uri ) {
 			\NOP\IndieWeb\nop_indieweb_log( "Bluesky syndication: no URI in response for post {$post_id}", $body );
-			return null;
+			return new \WP_Error( 'nop_syndication_failed', __( 'Bluesky accepted the post but returned no URI.', 'nop-indieweb' ) );
 		}
 
 		$parts = explode( '/', $uri );
@@ -463,7 +474,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		return '' !== $lang ? $lang : 'en';
 	}
 
-	private function create_session(): ?array {
+	private function create_session(): array|\WP_Error {
 		$response = wp_remote_post(
 			$this->pds() . '/xrpc/com.atproto.server.createSession',
 			[
@@ -476,8 +487,19 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			]
 		);
 
-		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			return null;
+		if ( is_wp_error( $response ) ) {
+			return new \WP_Error( 'nop_syndication_failed', $response->get_error_message() );
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+			return new \WP_Error( 'nop_syndication_failed', sprintf(
+				/* translators: 1: HTTP status code, 2: error detail from the Bluesky API */
+				__( 'Bluesky sign-in failed — HTTP %1$d: %2$s', 'nop-indieweb' ),
+				$code,
+				$body['message'] ?? __( 'unknown error', 'nop-indieweb' )
+			) );
 		}
 
 		return json_decode( wp_remote_retrieve_body( $response ), true );

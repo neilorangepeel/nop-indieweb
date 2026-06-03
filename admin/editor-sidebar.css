@@ -49,6 +49,51 @@
 	margin-bottom: 0;
 }
 
+/* Per-platform delivery status rows (published posts) */
+.nop-syndication-status {
+	display:        flex;
+	flex-direction: column;
+	gap:            4px;
+	font-size:      13px;
+	line-height:    1.4;
+}
+
+.nop-syndication-status__icon {
+	margin-right: 6px;
+	font-weight:  600;
+}
+
+.nop-syndication-status__icon.is-sent {
+	color: #007017;
+}
+
+.nop-syndication-status__icon.is-failed-icon {
+	color: #cc1818;
+}
+
+.nop-syndication-status__spinner.components-spinner {
+	margin: 0 6px 0 0;
+}
+
+.nop-syndication-status__text {
+	color: #1d2327;
+}
+
+.nop-syndication-status__error {
+	font-size: 12px;
+	color:     #cc1818;
+}
+
+.nop-syndication-status__retry {
+	align-self: flex-start;
+}
+
+/* Spinner + text sit on one line for pending rows */
+.nop-syndication-status:not(.is-failed) {
+	flex-direction: row;
+	align-items:    center;
+}
+
 /* Photo thumbnails */
 .nop-panel-photos {
 	display:    flex;
