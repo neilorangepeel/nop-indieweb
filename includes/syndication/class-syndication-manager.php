@@ -73,6 +73,11 @@ class Syndication_Manager {
 	 * and the publish request never waits on remote APIs.
 	 */
 	public function syndicate( int $post_id ): void {
+		// Hard skip for posts flagged as local-only (e.g. private Swarm checkins).
+		if ( get_post_meta( $post_id, 'nop_indieweb_skip_syndication', true ) ) {
+			return;
+		}
+
 		$targets = $this->resolve_targets( $post_id );
 
 		foreach ( $this->syndicators as $syndicator ) {

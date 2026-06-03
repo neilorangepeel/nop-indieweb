@@ -184,6 +184,10 @@ class Registry {
 				'label'       => __( 'Syndicate To', 'nop-indieweb' ),
 				'description' => 'Platform slugs to syndicate to on publish (editor selection).',
 			] ),
+			'nop_indieweb_skip_syndication' => array_merge( $string, [
+				'label'       => __( 'Skip Syndication', 'nop-indieweb' ),
+				'description' => 'When "1", the syndication scheduler bails for this post. Set by services like Swarm for private checkins; can also be toggled manually.',
+			] ),
 			'nop_indieweb_syndication_status' => [
 				'type'          => 'object',
 				'single'        => true,

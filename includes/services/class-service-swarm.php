@@ -64,6 +64,10 @@ class Swarm extends Service_Base {
 
 		$syndication = array_map( 'esc_url_raw', array_values( array_filter( (array) ( $props['syndication'] ?? [] ) ) ) );
 
+		// Swarm's "Private check-in" toggle is forwarded by OwnYourSwarm as
+		// Micropub visibility=private (vocabulary: public | unlisted | private).
+		$visibility = sanitize_key( $props['visibility'][0] ?? '' );
+
 		// Venue categories come as an array of strings, e.g. ["Bar", "Pub"].
 		$venue_categories = array_map(
 			'sanitize_text_field',
@@ -73,6 +77,7 @@ class Swarm extends Service_Base {
 		return [
 			'content'           => sanitize_textarea_field( $content ),
 			'published'         => sanitize_text_field( $props['published'][0] ?? '' ),
+			'visibility'        => $visibility,
 
 			// Venue identity
 			'venue_name'        => sanitize_text_field( $checkin_props['name'][0] ?? '' ),
@@ -160,7 +165,7 @@ class Swarm extends Service_Base {
 	}
 
 	public function get_meta( array $parsed ): array {
-		return [
+		$meta = [
 			'nop_indieweb_service'          => 'swarm',
 			'nop_indieweb_platform'         => 'swarm',
 			'nop_indieweb_source_url'       => $parsed['checkin_url'],
@@ -193,6 +198,14 @@ class Swarm extends Service_Base {
 			// Full payload archived as JSON — useful for re-processing or debugging.
 			'nop_indieweb_raw_payload'      => wp_json_encode( $parsed['raw_payload'] ),
 		];
+
+		// Private checkins stay publicly visible on the site but skip
+		// outbound syndication to Mastodon / Bluesky / Pixelfed.
+		if ( 'private' === ( $parsed['visibility'] ?? '' ) ) {
+			$meta['nop_indieweb_skip_syndication'] = '1';
+		}
+
+		return $meta;
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
