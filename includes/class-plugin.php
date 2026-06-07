@@ -225,7 +225,7 @@ class Plugin {
 		add_action( 'trashed_post',       [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'untrashed_post',     [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
-		add_action( 'wp_footer',    [ $this, 'output_me_anchors' ] );
+		add_filter( 'render_block_core/social-link', [ $this, 'add_social_link_rel_me' ], 10, 2 );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
 		// Inject kind-based templates into the block-theme single-post hierarchy.
@@ -1077,21 +1077,41 @@ HTML,
 	}
 
 	/**
-	 * Emits hidden <a rel="me"> anchors in the page body for each identity URL.
-	 *
-	 * The <link rel="me"> tags in output_link_tags() are spec-correct, but many
-	 * consumers — Mastodon's profile-link verifier among them — only reliably
-	 * pick up the anchor form in the body, not the <link> in <head>. (GitHub and
-	 * CodePen verify because their pages expose <a rel="me">; a site with only
-	 * the head <link> stays unverified.) These mirror the head tags so every
-	 * rel="me" consumer is covered. Hidden, since the theme renders its own
-	 * visible social links — CSS visibility doesn't affect DOM parsing, so
-	 * verifiers still find them.
+	 * Adds rel="me" to a core/social-link anchor when its URL is one of the
+	 * site's identity URLs. This turns the visible footer social icons into the
+	 * rel="me" verification links consumers expect (Mastodon, IndieAuth, XRay,
+	 * Bridgy) — the anchor form, in the body, that the <link> tags in
+	 * output_link_tags() don't reliably satisfy on their own.
 	 */
-	public function output_me_anchors(): void {
-		foreach ( $this->get_me_urls() as $url ) {
-			printf( "<a rel=\"me\" href=\"%s\" hidden></a>\n", esc_url( $url ) );
+	public function add_social_link_rel_me( string $content, array $block ): string {
+		$url = (string) ( $block['attrs']['url'] ?? '' );
+		if ( '' === $url || ! $this->is_me_url( $url ) ) {
+			return $content;
 		}
+		return preg_replace(
+			'/<a (?=[^>]*\bwp-block-social-link-anchor\b)(?![^>]*\srel=)/',
+			'<a rel="me" ',
+			$content,
+			1
+		);
+	}
+
+	/**
+	 * True when $url points at the same identity as one of get_me_urls(),
+	 * compared scheme- and trailing-slash-agnostically so a social-link stored
+	 * as http://… or with a trailing slash still matches an https://… me URL.
+	 */
+	private function is_me_url( string $url ): bool {
+		$normalise = static fn ( string $u ): string =>
+			rtrim( (string) preg_replace( '#^https?://#i', '', trim( $u ) ), '/' );
+
+		$target = $normalise( $url );
+		foreach ( $this->get_me_urls() as $me ) {
+			if ( $normalise( $me ) === $target ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public function output_link_headers(): void {
