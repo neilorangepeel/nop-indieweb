@@ -160,17 +160,6 @@ abstract class Syndicator_Base {
 		return \NOP\IndieWeb\nop_indieweb_block_images( (string) $post->post_content, $limit );
 	}
 
-	/**
-	 * Back-compat helper: full text + plain permalink suffix. URLs cost their
-	 * literal length here — Mastodon's 23-char flat rule is handled by callers
-	 * that know about it.
-	 */
-	protected function build_status_text( int $post_id, int $limit ): string {
-		$text      = $this->build_full_text( $post_id );
-		$permalink = (string) get_permalink( $post_id );
-		return $this->compose_status( $text, $limit, $permalink, mb_strlen( $permalink ) );
-	}
-
 	protected function fetch_image( string $url ): ?array {
 		return $this->fetch_media( $url, [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ], 15 );
 	}
