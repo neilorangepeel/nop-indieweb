@@ -219,6 +219,22 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 	private function upload_thumb( int $post_id, array $session ): ?array {
 		$map_url = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
+
+		// Syndication runs on an async cron event (see Syndication_Manager) that
+		// can fire before Service_Swarm::after_insert() has finished caching the
+		// map. Rather than trust that ordering, generate-or-fetch the map here
+		// when it's missing but the post carries venue coordinates and a Geoapify
+		// key is configured. The helper is idempotent and self-caching, so this
+		// also back-fills any historical checkin whose map landed late.
+		if ( '' === $map_url ) {
+			$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
+			$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+			$key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
+			if ( ( $lat || $lng ) && '' !== $key ) {
+				$map_url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $key );
+			}
+		}
+
 		if ( '' !== $map_url ) {
 			return $this->upload_image_blob( [
 				'url'           => $map_url,
