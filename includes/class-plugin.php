@@ -62,6 +62,9 @@ class Plugin {
 	/** @var \NOP\IndieWeb\Lookup\Lookup_Provider_Base[] */
 	private array $lookup_providers = [];
 
+	/** Normalised identity URLs already emitted as a visible rel="me" social link this request. */
+	private array $tagged_me_urls = [];
+
 	public static function get_instance(): Plugin {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -226,6 +229,7 @@ class Plugin {
 		add_action( 'untrashed_post',     [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
 		add_filter( 'render_block_core/social-link', [ $this, 'add_social_link_rel_me' ], 10, 2 );
+		add_action( 'wp_footer',    [ $this, 'output_me_anchor_fallback' ], 99 );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
 		// Inject kind-based templates into the block-theme single-post hierarchy.
@@ -1088,6 +1092,7 @@ HTML,
 		if ( '' === $url || ! $this->is_me_url( $url ) ) {
 			return $content;
 		}
+		$this->tagged_me_urls[] = $this->normalise_me_url( $url );
 		return preg_replace(
 			'/<a (?=[^>]*\bwp-block-social-link-anchor\b)(?![^>]*\srel=)/',
 			'<a rel="me" ',
@@ -1097,21 +1102,42 @@ HTML,
 	}
 
 	/**
-	 * True when $url points at the same identity as one of get_me_urls(),
-	 * compared scheme- and trailing-slash-agnostically so a social-link stored
-	 * as http://… or with a trailing slash still matches an https://… me URL.
+	 * Emits a hidden <a rel="me"> anchor for each identity URL that did NOT
+	 * already render as a visible social-link anchor this request. Identities
+	 * surfaced as footer icons (e.g. Mastodon) carry rel="me" on the visible
+	 * link; the rest (e.g. Pixelfed, GitHub) need the anchor form somewhere in
+	 * the body for verifiers that don't read the <head> <link> tags. Runs late
+	 * on wp_footer so add_social_link_rel_me() has populated $tagged_me_urls.
+	 */
+	public function output_me_anchor_fallback(): void {
+		foreach ( $this->get_me_urls() as $url ) {
+			if ( in_array( $this->normalise_me_url( $url ), $this->tagged_me_urls, true ) ) {
+				continue;
+			}
+			printf( "<a rel=\"me\" href=\"%s\" hidden></a>\n", esc_url( $url ) );
+		}
+	}
+
+	/**
+	 * True when $url points at the same identity as one of get_me_urls().
 	 */
 	private function is_me_url( string $url ): bool {
-		$normalise = static fn ( string $u ): string =>
-			rtrim( (string) preg_replace( '#^https?://#i', '', trim( $u ) ), '/' );
-
-		$target = $normalise( $url );
+		$target = $this->normalise_me_url( $url );
 		foreach ( $this->get_me_urls() as $me ) {
-			if ( $normalise( $me ) === $target ) {
+			if ( $this->normalise_me_url( $me ) === $target ) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Scheme- and trailing-slash-agnostic key for comparing identity URLs, so a
+	 * social-link stored as http://… or with a trailing slash still matches an
+	 * https://… me URL.
+	 */
+	private function normalise_me_url( string $url ): string {
+		return rtrim( (string) preg_replace( '#^https?://#i', '', trim( $url ) ), '/' );
 	}
 
 	public function output_link_headers(): void {
