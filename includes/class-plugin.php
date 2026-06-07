@@ -225,6 +225,7 @@ class Plugin {
 		add_action( 'trashed_post',       [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'untrashed_post',     [ $this, 'renumber_venue_visits_on_status_change' ] );
 		add_action( 'wp_head',      [ $this, 'output_link_tags' ] );
+		add_action( 'wp_footer',    [ $this, 'output_me_anchors' ] );
 		add_action( 'send_headers', [ $this, 'output_link_headers' ] );
 
 		// Inject kind-based templates into the block-theme single-post hierarchy.
@@ -1072,6 +1073,24 @@ HTML,
 
 		foreach ( $this->get_me_urls() as $url ) {
 			printf( "<link rel=\"me\" href=\"%s\">\n", esc_url( $url ) );
+		}
+	}
+
+	/**
+	 * Emits hidden <a rel="me"> anchors in the page body for each identity URL.
+	 *
+	 * The <link rel="me"> tags in output_link_tags() are spec-correct, but many
+	 * consumers — Mastodon's profile-link verifier among them — only reliably
+	 * pick up the anchor form in the body, not the <link> in <head>. (GitHub and
+	 * CodePen verify because their pages expose <a rel="me">; a site with only
+	 * the head <link> stays unverified.) These mirror the head tags so every
+	 * rel="me" consumer is covered. Hidden, since the theme renders its own
+	 * visible social links — CSS visibility doesn't affect DOM parsing, so
+	 * verifiers still find them.
+	 */
+	public function output_me_anchors(): void {
+		foreach ( $this->get_me_urls() as $url ) {
+			printf( "<a rel=\"me\" href=\"%s\" hidden></a>\n", esc_url( $url ) );
 		}
 	}
 
