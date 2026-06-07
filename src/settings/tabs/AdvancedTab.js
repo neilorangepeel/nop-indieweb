@@ -71,6 +71,13 @@ export default function AdvancedTab( { settings, setSettings } ) {
 					onChange={ ( val ) => set( 'mf2_enabled', val ) }
 					__nextHasNoMarginBottom
 				/>
+				<ToggleControl
+					label={ __( 'Block AI training crawlers', 'nop-indieweb' ) }
+					help={ __( 'Opt your content and images out of AI model training via robots.txt rules and noai meta tags. Honoured by OpenAI, Anthropic, Google, Apple, and Common Crawl; ignored by bad actors. Does not affect search engines or normal visitors.', 'nop-indieweb' ) }
+					checked={ settings.block_ai_training ?? false }
+					onChange={ ( val ) => set( 'block_ai_training', val ) }
+					__nextHasNoMarginBottom
+				/>
 				<TextControl
 					label={ __( 'Twitter archive URL', 'nop-indieweb' ) }
 					value={ settings.twitter_archive_url ?? '' }

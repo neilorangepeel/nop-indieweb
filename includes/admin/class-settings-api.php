@@ -103,6 +103,7 @@ class Settings_API {
 		$data = [
 			'me_urls'             => (string) ( $raw['me_urls'] ?? '' ),
 			'mf2_enabled'         => (bool)   ( $raw['mf2_enabled'] ?? true ),
+			'block_ai_training'   => (bool)   ( $raw['block_ai_training'] ?? false ),
 			'debug_mode'          => (bool)   ( $raw['debug_mode'] ?? false ),
 			'twitter_archive_url' => (string) ( $raw['twitter_archive_url'] ?? '' ),
 			'syndicators'         => $this->read_syndicators( $raw ),
@@ -352,6 +353,9 @@ class Settings_API {
 		}
 		if ( isset( $input['mf2_enabled'] ) ) {
 			$clean['mf2_enabled'] = (bool) $input['mf2_enabled'];
+		}
+		if ( isset( $input['block_ai_training'] ) ) {
+			$clean['block_ai_training'] = (bool) $input['block_ai_training'];
 		}
 		if ( isset( $input['twitter_archive_url'] ) ) {
 			$clean['twitter_archive_url'] = esc_url_raw( (string) $input['twitter_archive_url'] );
