@@ -299,6 +299,100 @@ class Registry {
 				'description' => 'TMDB movie ID, set by the in-editor lookup picker.',
 			] ),
 
+			// ── Exercise / Activity ─────────────────────────────────────────────
+			'nop_indieweb_exercise_type'            => array_merge( $string, [
+				'label'       => __( 'Exercise Type', 'nop-indieweb' ),
+				'description' => 'Activity type slug: run, ride, swim, walk, hike, strength, yoga, workout, …',
+			] ),
+			'nop_indieweb_exercise_distance_m'      => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Distance (m)', 'nop-indieweb' ),
+				'description'   => 'Distance in metres.',
+			],
+			'nop_indieweb_exercise_duration_s'      => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Duration (s)', 'nop-indieweb' ),
+				'description'   => 'Elapsed time in seconds.',
+			],
+			'nop_indieweb_exercise_moving_time_s'   => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Moving Time (s)', 'nop-indieweb' ),
+				'description'   => 'Moving time in seconds (excludes stopped intervals).',
+			],
+			'nop_indieweb_exercise_elevation_gain_m' => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Elevation Gain (m)', 'nop-indieweb' ),
+				'description'   => 'Total elevation gain in metres.',
+			],
+			'nop_indieweb_exercise_elevation_loss_m' => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Elevation Loss (m)', 'nop-indieweb' ),
+				'description'   => 'Total elevation loss in metres.',
+			],
+			'nop_indieweb_exercise_avg_heart_rate'  => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Avg Heart Rate (bpm)', 'nop-indieweb' ),
+				'description'   => 'Average heart rate in beats per minute.',
+			],
+			'nop_indieweb_exercise_max_heart_rate'  => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Max Heart Rate (bpm)', 'nop-indieweb' ),
+				'description'   => 'Maximum heart rate in beats per minute.',
+			],
+			'nop_indieweb_exercise_calories'        => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Calories (kcal)', 'nop-indieweb' ),
+				'description'   => 'Active calories burned in kcal.',
+			],
+			'nop_indieweb_exercise_start_lat'       => array_merge( $string, [
+				'label'       => __( 'Start Latitude', 'nop-indieweb' ),
+				'description' => 'Latitude of workout start point.',
+			] ),
+			'nop_indieweb_exercise_start_lng'       => array_merge( $string, [
+				'label'       => __( 'Start Longitude', 'nop-indieweb' ),
+				'description' => 'Longitude of workout start point.',
+			] ),
+			'nop_indieweb_exercise_route'           => array_merge( $string, [
+				'label'       => __( 'Route (polyline)', 'nop-indieweb' ),
+				'description' => 'Google-encoded polyline for the GPS route. Populated in Phase 2 when a dedicated app source is available.',
+			] ),
+			'nop_indieweb_exercise_source_url'      => array_merge( $string, [
+				'label'       => __( 'Exercise Source URL', 'nop-indieweb' ),
+				'description' => 'Permalink on the originating platform (Strava, Garmin, etc.).',
+			] ),
+			'nop_indieweb_exercise_source_id'       => array_merge( $string, [
+				'label'       => __( 'Exercise Source ID', 'nop-indieweb' ),
+				'description' => 'Platform-native activity ID used for duplicate detection.',
+			] ),
+			'nop_indieweb_exercise_map_url'         => array_merge( $string, [
+				'label'       => __( 'Exercise Map URL', 'nop-indieweb' ),
+				'description' => 'Cached static map image URL for the workout start location.',
+			] ),
+
 			// ── Photos ───────────────────────────────────────────────────────────
 			// Source URLs are always stored as a permanent record even when photos are sideloaded.
 			'nop_indieweb_photos'           => array_merge( $array, [

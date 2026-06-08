@@ -22,6 +22,7 @@ use NOP\IndieWeb\Services\Reply;
 use NOP\IndieWeb\Services\Like;
 use NOP\IndieWeb\Services\Repost;
 use NOP\IndieWeb\Services\RSVP;
+use NOP\IndieWeb\Services\Exercise;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
 use NOP\IndieWeb\Semantic\Open_Graph;
 use NOP\IndieWeb\Semantic\MF2_Endpoint;
@@ -156,6 +157,7 @@ class Plugin {
 		$note       = new Note();
 		$letterboxd = new Letterboxd();
 		// RSVP must appear before Reply — both match in-reply-to and RSVP is the more specific case.
+		// Exercise must appear before Note — both match generic h-entry.
 		$services   = apply_filters( 'nop_indieweb_register_services', [
 			new Swarm(),
 			new Bookmark(),
@@ -163,6 +165,7 @@ class Plugin {
 			new Reply(),
 			new Like(),
 			new Repost(),
+			new Exercise(),
 			$note,
 		] );
 		$this->services = $services;
@@ -364,6 +367,11 @@ class Plugin {
 				'description' => __( 'Displays a video post with the video as the primary content.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-video.html',
 			],
+			'nop-indieweb//single-nop_kind-exercise' => [
+				'title'       => __( 'Single – Exercise', 'nop-indieweb' ),
+				'description' => __( 'Displays a workout post with activity stats (distance, duration, pace) and a start-location map.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-exercise.html',
+			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
 			'nop-indieweb//taxonomy-nop_kind-watch' => [
@@ -425,6 +433,11 @@ class Plugin {
 				'title'       => __( 'Archive – Videos', 'nop-indieweb' ),
 				'description' => __( 'Chronological stream of video posts.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-video.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-exercise' => [
+				'title'       => __( 'Archive – Exercise', 'nop-indieweb' ),
+				'description' => __( 'Activity log of workout posts with distance, duration, and date.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-exercise.html',
 			],
 			'nop-indieweb//taxonomy-nop_venue_category' => [
 				'title'       => __( 'Archive – Venue Category', 'nop-indieweb' ),
@@ -509,6 +522,7 @@ class Plugin {
 		wp_set_script_translations( 'nop-like-action', 'nop-indieweb' );
 
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );
@@ -1215,12 +1229,20 @@ HTML,
 	}
 
 	public function delete_map_image( int $post_id ): void {
-		if ( ! get_post_meta( $post_id, 'nop_indieweb_map_url', true ) ) {
-			return;
+		$basedir = wp_upload_dir()['basedir'];
+
+		if ( get_post_meta( $post_id, 'nop_indieweb_map_url', true ) ) {
+			$file = $basedir . "/checkin-maps/checkin-map-{$post_id}.png";
+			if ( file_exists( $file ) ) {
+				wp_delete_file( $file );
+			}
 		}
-		$file = wp_upload_dir()['basedir'] . "/checkin-maps/checkin-map-{$post_id}.png";
-		if ( file_exists( $file ) ) {
-			wp_delete_file( $file );
+
+		if ( get_post_meta( $post_id, 'nop_indieweb_exercise_map_url', true ) ) {
+			$file = $basedir . "/exercise-maps/exercise-map-{$post_id}.png";
+			if ( file_exists( $file ) ) {
+				wp_delete_file( $file );
+			}
 		}
 	}
 

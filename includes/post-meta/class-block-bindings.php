@@ -65,12 +65,19 @@ class Block_Bindings {
 	 * bindings on fields that don't have a backing meta key.
 	 */
 	private const DERIVED_MF2_CLASSES = [
-		'full_address'        => 'p-adr',
-		'locality_country'    => '',
-		'venue_coordinates'   => '',
-		'venue_url_host_label'   => '',
+		'full_address'          => 'p-adr',
+		'locality_country'      => '',
+		'venue_coordinates'     => '',
+		'venue_url_host_label'  => '',
 		'checkin_url_host_label' => '',
-		'venue_visit_number'  => '',
+		'venue_visit_number'    => '',
+		// Exercise derived fields
+		'exercise_distance'     => '',
+		'exercise_duration'     => '',
+		'exercise_pace'         => '',
+		'exercise_speed'        => '',
+		'exercise_elevation'    => '',
+		'exercise_type_label'   => '',
 	];
 
 	public function register(): void {
@@ -138,6 +145,13 @@ class Block_Bindings {
 		'nop_indieweb_venue_locality'     => 'Belfast',
 		'nop_indieweb_venue_country'      => 'United Kingdom',
 		'nop_indieweb_weather_summary'    => 'Light Rain',
+		// Exercise derived previews
+		'exercise_distance'               => '5.2 km',
+		'exercise_duration'               => '32:15',
+		'exercise_pace'                   => '6:12 /km',
+		'exercise_speed'                  => '22.4 km/h',
+		'exercise_elevation'              => '+145 m',
+		'exercise_type_label'             => 'Run',
 	];
 
 	public function get_value( array $source_args, WP_Block $block ): ?string {
@@ -252,6 +266,85 @@ class Block_Bindings {
 				}
 				/* translators: %s = ordinal number, e.g. "1st" */
 				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
+
+			// ── Exercise derived fields ──────────────────────────────────────────
+
+			case 'exercise_distance':
+				$m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
+				if ( ! $m ) {
+					return null;
+				}
+				/* translators: %s = distance in kilometres, e.g. "5.2" */
+				return sprintf( __( '%s km', 'nop-indieweb' ), number_format( $m / 1000, 1 ) );
+
+			case 'exercise_duration': {
+				$s = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
+				if ( ! $s ) {
+					return null;
+				}
+				$h   = (int) floor( $s / 3600 );
+				$min = (int) floor( ( $s % 3600 ) / 60 );
+				$sec = $s % 60;
+				return $h > 0
+					? sprintf( '%d:%02d:%02d', $h, $min, $sec )
+					: sprintf( '%d:%02d', $min, $sec );
+			}
+
+			case 'exercise_pace': {
+				$dist_m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
+				$dur_s  = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
+				$type   = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
+				if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'run', 'walk', 'hike', 'swim' ], true ) ) {
+					return null;
+				}
+				$pace_s    = $dur_s / ( $dist_m / 1000 );
+				$pace_min  = (int) floor( $pace_s / 60 );
+				$pace_sec  = (int) round( $pace_s - $pace_min * 60 );
+				/* translators: %1$d = minutes, %2$02d = seconds, e.g. "6:12 /km" */
+				return sprintf( __( '%1$d:%2$02d /km', 'nop-indieweb' ), $pace_min, $pace_sec );
+			}
+
+			case 'exercise_speed': {
+				$dist_m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
+				$dur_s  = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
+				$type   = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
+				if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'ride', 'rowing' ], true ) ) {
+					return null;
+				}
+				$kmph = ( $dist_m / $dur_s ) * 3.6;
+				/* translators: %s = speed in km/h, e.g. "22.4" */
+				return sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( $kmph, 1 ) );
+			}
+
+			case 'exercise_elevation':
+				$gain = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_elevation_gain_m', true );
+				if ( ! $gain ) {
+					return null;
+				}
+				/* translators: %d = elevation gain in metres, e.g. "+145 m" */
+				return sprintf( __( '+%d m', 'nop-indieweb' ), (int) round( $gain ) );
+
+			case 'exercise_type_label': {
+				$type = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
+				if ( ! $type ) {
+					return null;
+				}
+				$labels = [
+					'run'      => __( 'Run',             'nop-indieweb' ),
+					'ride'     => __( 'Ride',            'nop-indieweb' ),
+					'swim'     => __( 'Swim',            'nop-indieweb' ),
+					'walk'     => __( 'Walk',            'nop-indieweb' ),
+					'hike'     => __( 'Hike',            'nop-indieweb' ),
+					'strength' => __( 'Strength',        'nop-indieweb' ),
+					'yoga'     => __( 'Yoga',            'nop-indieweb' ),
+					'workout'  => __( 'Workout',         'nop-indieweb' ),
+					'rowing'   => __( 'Rowing',          'nop-indieweb' ),
+					'cycling'  => __( 'Cycling',         'nop-indieweb' ),
+					'climbing' => __( 'Climbing',        'nop-indieweb' ),
+					'pilates'  => __( 'Pilates',         'nop-indieweb' ),
+				];
+				return $labels[ $type ] ?? ucfirst( $type );
+			}
 		}
 
 		return null;

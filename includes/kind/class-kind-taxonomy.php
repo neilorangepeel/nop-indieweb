@@ -30,6 +30,7 @@ class Kind_Taxonomy {
 		'repost'   => 'Repost',
 		'rsvp'     => 'RSVP',
 		'checkin'  => 'Checkin',
+		'exercise' => 'Exercise',
 		'watch'    => 'Watch',
 		'listen'   => 'Listen',
 		'photo'    => 'Photo',
@@ -46,6 +47,7 @@ class Kind_Taxonomy {
 		'repost'     => 'Sharing someone else\'s post without added commentary.',
 		'rsvp'       => 'A response to an event invitation.',
 		'checkin'    => 'A location check-in, usually from Swarm.',
+		'exercise'   => 'A workout or physical activity — run, ride, swim, yoga, gym session, and more.',
 		'watch'      => 'A film or show watched, logged via Letterboxd.',
 		'listen'     => 'Music or audio actively listened to.',
 		'photo'      => 'A post where an image is the primary content.',
@@ -67,6 +69,7 @@ class Kind_Taxonomy {
 		'web-development' => 'Web & Development',
 		'places-travel'   => 'Places & Travel',
 		'media-diet'      => 'Media Diet',
+		'health-fitness'  => 'Health & Fitness',
 		'journal'         => 'Journal',
 	];
 
@@ -80,6 +83,7 @@ class Kind_Taxonomy {
 		'photo'      => 'photography',
 		'video'      => 'photography',
 		'checkin'    => 'places-travel',
+		'exercise'   => 'health-fitness',
 		'watch'      => 'media-diet',
 		'listen'     => 'media-diet',
 		'collection' => 'media-diet',
@@ -392,6 +396,13 @@ class Kind_Taxonomy {
 				'layout'         => '',
 				'title_from_url' => false,
 				'sub_panel'      => 'venue',
+			],
+			'exercise' => [
+				'label'          => __( 'Exercise', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '',
+				'title_from_url' => false,
+				'sub_panel'      => 'exercise',
 			],
 			'watch' => [
 				'label'          => __( 'Watch', 'nop-indieweb' ),

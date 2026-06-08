@@ -220,6 +220,59 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	text-decoration: none;
 }
 
+/* ── Exercise map ─────────────────────────────────────────────────────────── */
+
+.nop-exercise-map {
+	position: relative;
+}
+
+.nop-exercise-map__link {
+	display: block;
+}
+
+.nop-exercise-map__img {
+	display: block;
+	width:   100%;
+	height:  auto;
+}
+
+.wp-block-nop-indieweb-exercise-map[style*="aspect-ratio"] .nop-exercise-map__img {
+	width:      100%;
+	height:     100%;
+	object-fit: cover;
+}
+
+.nop-exercise-map__placeholder {
+	aspect-ratio:     2 / 1;
+	background-color: color-mix(in srgb, currentColor 8%, transparent);
+	border-radius:    4px;
+}
+
+.nop-exercise-map__caption {
+	position:           absolute;
+	right:              1rem;
+	bottom:             1rem;
+	margin:             0;
+	padding:            2px 6px;
+	background-color:   rgba(255, 255, 255, 0.85);
+	border-radius:      3px;
+	font-size:          0.6875rem;
+	line-height:        1.4;
+	backdrop-filter:    blur(2px);
+	-webkit-backdrop-filter: blur(2px);
+	transition:         background-color 150ms ease, color 150ms ease;
+}
+
+.nop-exercise-map:hover .nop-exercise-map__caption {
+	background-color: rgba(0, 0, 0, 0.75);
+	color:            #fff;
+}
+
+.nop-exercise-map a {
+	color:           inherit;
+	text-decoration: none;
+}
+
 /* ── Underline link pattern (used by source/map/event links) ──────────────── */
 
 .nop-checkin-syndication a,

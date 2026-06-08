@@ -353,6 +353,62 @@ function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $l
 	return $local_url;
 }
 
+/**
+ * Fetches and disk-caches a Geoapify static map image for an exercise workout
+ * start location. Stores the result URL in nop_indieweb_exercise_map_url meta.
+ *
+ * Mirrors nop_indieweb_get_or_cache_map_image() but uses a separate cache
+ * directory (exercise-maps/) and a different meta key so exercise and checkin
+ * maps never collide.
+ */
+function nop_indieweb_get_or_cache_exercise_map_image( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key ): string {
+	$cached = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_map_url', true );
+	if ( $cached ) {
+		return $cached;
+	}
+
+	$marker_color = apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
+
+	$api_url = sprintf(
+		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=15&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
+		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
+		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
+		rawurlencode( $marker_color ),
+		$width * 2, $height * 2,
+		rawurlencode( $api_key )
+	);
+
+	$response = wp_safe_remote_get( $api_url, [
+		'timeout'             => 8,
+		'limit_response_size' => 4 * 1024 * 1024,
+	] );
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return '';
+	}
+
+	$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+	if ( ! str_starts_with( (string) $content_type, 'image/' ) ) {
+		return '';
+	}
+
+	$upload_dir = wp_upload_dir();
+	$maps_dir   = $upload_dir['basedir'] . '/exercise-maps';
+	if ( ! wp_mkdir_p( $maps_dir ) ) {
+		return '';
+	}
+
+	$file = $maps_dir . "/exercise-map-{$post_id}.png";
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- direct write to a plugin-owned cache dir; WP_Filesystem adds no value for this binary image write
+	if ( false === file_put_contents( $file, wp_remote_retrieve_body( $response ) ) ) {
+		return '';
+	}
+
+	$local_url = $upload_dir['baseurl'] . "/exercise-maps/exercise-map-{$post_id}.png";
+	update_post_meta( $post_id, 'nop_indieweb_exercise_map_url', $local_url );
+
+	return $local_url;
+}
+
 function nop_indieweb_ordinal( int $n ): string {
 	$abs = abs( $n );
 	$mod = $abs % 100;
