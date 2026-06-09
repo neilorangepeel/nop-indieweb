@@ -121,24 +121,6 @@ function nop_indieweb_perp_distance( array $p, array $a, array $b ): float {
 }
 
 /**
- * Picks a zoom level so the bounding box fits inside width×height with padding.
- */
-function nop_indieweb_fit_zoom( float $min_lat, float $max_lat, float $min_lon, float $max_lon, int $width, int $height ): int {
-	$mid_lat = ( $min_lat + $max_lat ) / 2;
-	$cos     = max( 0.01, cos( deg2rad( $mid_lat ) ) );
-
-	$width_m  = max( 1.0, ( $max_lon - $min_lon ) * 111320 * $cos );
-	$height_m = max( 1.0, ( $max_lat - $min_lat ) * 111320 );
-
-	$mpp = max( $width_m / ( $width * 0.82 ), $height_m / ( $height * 0.82 ) );
-	if ( $mpp <= 0 ) {
-		return 16;
-	}
-	$zoom = (int) floor( log( 156543.03 * $cos / $mpp, 2 ) );
-	return max( 1, min( 17, $zoom ) );
-}
-
-/**
  * Renders a route line on a Geoapify static map and caches the PNG.
  *
  * Builds a GET request and adaptively simplifies the track until the geometry
@@ -177,6 +159,15 @@ function nop_indieweb_render_route_map( int $post_id, array $points, string $api
 	$start   = $track[0];
 	$end     = $track[ count( $track ) - 1 ];
 
+	// Frame the map to the route's bounding box with padding, so the whole
+	// trail is always in view. Latitude (vertical) gets extra room because the
+	// pin markers balloon upward from their anchor point. The minimum padding
+	// keeps very short routes from filling the frame edge to edge.
+	$pad_lon = ( $max_lon - $min_lon ) * 0.12 + 0.0006;
+	$pad_lat = ( $max_lat - $min_lat ) * 0.18 + 0.0006;
+	$area    = round( $min_lon - $pad_lon, 5 ) . ',' . round( $min_lat - $pad_lat, 5 )
+		. ',' . round( $max_lon + $pad_lon, 5 ) . ',' . round( $max_lat + $pad_lat, 5 );
+
 	$geometry = 'polyline:' . $coords . ';linecolor:%23' . $color . ';linewidth:5;lineopacity:0.9';
 	$marker   = 'lonlat:' . round( $start[1], 5 ) . ',' . round( $start[0], 5 ) . ';type:awesome;color:%231f8f3b;icon:play;size:medium'
 		. '|lonlat:' . round( $end[1], 5 ) . ',' . round( $end[0], 5 ) . ';type:awesome;color:%23' . $color . ';icon:flag;size:medium';
@@ -184,8 +175,7 @@ function nop_indieweb_render_route_map( int $post_id, array $points, string $api
 	$url = 'https://maps.geoapify.com/v1/staticmap'
 		. '?style=' . rawurlencode( $style )
 		. '&width=' . $width . '&height=' . $height . '&scaleFactor=2'
-		. '&center=lonlat:' . round( ( $min_lon + $max_lon ) / 2, 5 ) . ',' . round( ( $min_lat + $max_lat ) / 2, 5 )
-		. '&zoom=' . nop_indieweb_fit_zoom( $min_lat, $max_lat, $min_lon, $max_lon, $width, $height )
+		. '&area=rect:' . $area
 		. '&geometry=' . $geometry
 		. '&marker=' . $marker
 		. '&apiKey=' . rawurlencode( $api_key );
