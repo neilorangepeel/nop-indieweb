@@ -962,7 +962,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">GPX download (button bindings: url=nop_indieweb_exercise_gpx_url) — own-your-data artifact</p><!-- /wp:paragraph -->
 <!-- wp:buttons --><div class="wp-block-buttons">
 <!-- wp:button {"className":"is-style-outline","metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_exercise_gpx_url"}}}}} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#" download>Download GPX</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#">Download GPX</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 
