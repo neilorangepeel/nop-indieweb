@@ -56,7 +56,90 @@
 
 			<!-- wp:group {"style":{"spacing":{"blockGap":"0.7rem"}},"layout":{"type":"constrained"}} -->
 			<div class="wp-block-group">
-				<!-- wp:nop-indieweb/exercise-stats /-->
+				<!-- wp:group {"metadata":{"name":"Primary stats"},"className":"nop-stats-primary","style":{"spacing":{"blockGap":"1.5rem"}},"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+				<div class="wp-block-group nop-stats-primary">
+					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group nop-stat">
+						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_distance"}}}},"style":{"typography":{"fontWeight":"800","lineHeight":"1"}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size" style="font-weight:800;line-height:1">7.1 km</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4","fontFamily":"brandon-text-cond"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size has-brandon-text-cond-font-family" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Distance</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group nop-stat">
+						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_duration"}}}},"style":{"typography":{"fontWeight":"800","lineHeight":"1"}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size" style="font-weight:800;line-height:1">34:57</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4","fontFamily":"brandon-text-cond"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size has-brandon-text-cond-font-family" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Time</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group nop-stat">
+						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_pace"}}}},"style":{"typography":{"fontWeight":"800","lineHeight":"1"}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size" style="font-weight:800;line-height:1">4:56 /km</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4","fontFamily":"brandon-text-cond"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size has-brandon-text-cond-font-family" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Pace</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group nop-stat">
+						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_speed"}}}},"style":{"typography":{"fontWeight":"800","lineHeight":"1"}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size" style="font-weight:800;line-height:1">22.4 km/h</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4","fontFamily":"brandon-text-cond"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size has-brandon-text-cond-font-family" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Speed</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group nop-stat">
+						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_elevation"}}}},"style":{"typography":{"fontWeight":"800","lineHeight":"1"}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size" style="font-weight:800;line-height:1">+145 m</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4","fontFamily":"brandon-text-cond"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size has-brandon-text-cond-font-family" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Elevation</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+				</div>
+				<!-- /wp:group -->
+
+				<!-- wp:group {"metadata":{"name":"Secondary stats"},"className":"nop-stats-secondary","style":{"spacing":{"blockGap":"0.3em 1.25rem","padding":{"top":"0.7rem"}},"border":{"top":{"color":"#e5e7eb","width":"1px"}}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap"}} -->
+				<div class="wp-block-group nop-stats-secondary has-border-color has-accent-4-color has-text-color has-small-font-size" style="border-top-color:#e5e7eb;border-top-width:1px;padding-top:0.7rem">
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Avg HR</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_avg_hr"}}}}} --><p class="nop-stat-mini__value">152 bpm</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Calories</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_calories"}}}}} --><p class="nop-stat-mini__value">415 kcal</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Max speed</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_max_speed"}}}}} --><p class="nop-stat-mini__value">31.0 km/h</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Elev range</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_elevation_range"}}}}} --><p class="nop-stat-mini__value">1–33 m</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Max grade</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_max_grade"}}}}} --><p class="nop-stat-mini__value">7.1%</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+					<div class="wp-block-group nop-stat-mini">
+						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Gear</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat-mini__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_gear"}}}}} --><p class="nop-stat-mini__value">Vitus Zenium</p><!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+				</div>
+				<!-- /wp:group -->
 
 				<!-- wp:group {"style":{"spacing":{"blockGap":"0.4em"},"typography":{"fontStyle":"normal","fontWeight":"500"}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
 				<div class="wp-block-group has-accent-4-color has-text-color has-small-font-size" style="font-style:normal;font-weight:500">

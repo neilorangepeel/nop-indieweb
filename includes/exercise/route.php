@@ -365,7 +365,7 @@ function nop_indieweb_build_gpx( array $points, string $name = '' ): string {
 /**
  * Formats a single exercise stat for display, or returns null when the
  * underlying data is absent. The one source of truth for stat formatting,
- * shared by the Block_Bindings derived fields and the exercise-stats block.
+ * shared by the Block_Bindings derived fields (and the exercise stat bindings in the template).
  */
 function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
 	$meta = fn( string $key ) => get_post_meta( $post_id, 'nop_indieweb_exercise_' . $key, true );

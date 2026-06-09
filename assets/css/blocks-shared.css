@@ -501,58 +501,20 @@ a.nop-post-footer__pill--link:focus-visible {
 	margin: 0.25rem 0 0;
 }
 
-/* Exercise Stats — clear hierarchy: prominent primary cells, muted inline secondary. */
-.nop-exercise-stats {
-	display: flex;
-	flex-direction: column;
-	gap: 0.7rem;
-}
-/* Primary stats justify across the full post width as equal columns. */
-.nop-exercise-stats__primary {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1.25rem 1.5rem;
-}
-.nop-exercise-stat {
-	display: flex;
-	flex-direction: column;
-	gap: 0.3em;
-	flex: 1 1 90px;
-}
-.nop-exercise-stat__value {
-	font-size: 1.6rem;
-	font-weight: 800;
-	line-height: 1;
+/* Exercise stats — layout and styling come from the core blocks + theme.json.
+   CSS only handles two things the block editor can't: aligning the numbers, and
+   hiding any stat whose bound value rendered empty (no data for that workout). */
+.nop-stat__value,
+.nop-stat-mini__value {
 	font-variant-numeric: tabular-nums;
 }
-.nop-exercise-stat__label {
-	font-size: 0.68rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	opacity: 0.6;
+.nop-stat:has( .nop-stat__value:empty ) {
+	display: none;
 }
-/* Secondary stats: one quiet line, distributed evenly beneath the primaries. */
-.nop-exercise-stats__secondary {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0.1em 1.25rem;
-	font-size: 0.85rem;
-	font-weight: 500;
-	font-variant-numeric: tabular-nums;
-	opacity: 0.92;
-	border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-	padding-top: 0.7rem;
+.nop-stat-mini:has( .nop-stat-mini__value:empty ) {
+	display: none;
 }
-.nop-exercise-stat-inline__label {
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	font-size: 0.63rem;
-	opacity: 0.55;
-	margin-right: 0.3em;
-}
-.nop-exercise-stats__sep {
+/* If every secondary stat is empty, drop the whole row (and its divider). */
+.nop-stats-secondary:not( :has( .nop-stat-mini__value:not(:empty) ) ) {
 	display: none;
 }

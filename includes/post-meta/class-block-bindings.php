@@ -227,9 +227,11 @@ class Block_Bindings {
 	 * meta lookup).
 	 */
 	private function get_derived_value( string $field, int $post_id ): ?string {
-		// Exercise stat formatting lives in one shared helper.
+		// Exercise stat formatting lives in one shared helper. Return '' (not null)
+		// for absent stats so the bound paragraph renders truly empty — letting the
+		// template hide it with CSS :has(:empty) rather than keeping a placeholder.
 		if ( str_starts_with( $field, 'exercise_' ) ) {
-			return \NOP\IndieWeb\nop_indieweb_exercise_stat( $field, $post_id );
+			return \NOP\IndieWeb\nop_indieweb_exercise_stat( $field, $post_id ) ?? '';
 		}
 
 		switch ( $field ) {
