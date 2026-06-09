@@ -30,7 +30,10 @@ class Post_Filter {
 			return;
 		}
 
-		$terms   = get_terms( [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'hide_empty' => true ] );
+		// hide_empty => false so every top-level kind is filterable even when its
+		// only posts are drafts (term counts ignore non-published posts). parent => 0
+		// keeps the seeded collection sub-kinds (book/film/music) out of the flat list.
+		$terms   = get_terms( [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'hide_empty' => false, 'parent' => 0 ] );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display value, not a state-changing action
 		$current = sanitize_key( $_GET['nop_kind'] ?? '' );
 
