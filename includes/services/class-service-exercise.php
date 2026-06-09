@@ -96,23 +96,12 @@ class Exercise extends Service_Base {
 	public function map_to_post( array $parsed ): array {
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
-		$title = $parsed['name'];
-		if ( ! $title ) {
-			$type_label = $this->format_type_label( $parsed['exercise_type'] );
-			$lat        = (float) $parsed['start_lat'];
-			$lng        = (float) $parsed['start_lng'];
-			if ( $lat || $lng ) {
-				$geo      = \NOP\IndieWeb\Venue\Geoapify_Geocoder::reverse_geocode( $lat, $lng );
-				$locality = (string) ( $geo['locality'] ?? '' );
-				if ( $locality ) {
-					/* translators: %1$s: activity type label (e.g. "Run"), %2$s: place name (e.g. "Cregagh Glen") */
-					$title = sprintf( __( '%1$s in %2$s', 'nop-indieweb' ), $type_label, $locality );
-				}
-			}
-			if ( ! $title ) {
-				$title = $type_label;
-			}
-		}
+		$title = \NOP\IndieWeb\nop_indieweb_exercise_title(
+			$parsed['name'],
+			$parsed['exercise_type'],
+			(float) $parsed['start_lat'],
+			(float) $parsed['start_lng']
+		);
 
 		$note   = wp_kses_post( trim( $parsed['content'] ) );
 		$blocks = $note
@@ -200,21 +189,4 @@ class Exercise extends Service_Base {
 		}
 	}
 
-	private function format_type_label( string $type ): string {
-		$labels = [
-			'run'      => __( 'Run',      'nop-indieweb' ),
-			'ride'     => __( 'Ride',     'nop-indieweb' ),
-			'swim'     => __( 'Swim',     'nop-indieweb' ),
-			'walk'     => __( 'Walk',     'nop-indieweb' ),
-			'hike'     => __( 'Hike',     'nop-indieweb' ),
-			'strength' => __( 'Strength', 'nop-indieweb' ),
-			'yoga'     => __( 'Yoga',     'nop-indieweb' ),
-			'workout'  => __( 'Workout',  'nop-indieweb' ),
-			'rowing'   => __( 'Rowing',   'nop-indieweb' ),
-			'cycling'  => __( 'Cycling',  'nop-indieweb' ),
-			'climbing' => __( 'Climbing', 'nop-indieweb' ),
-			'pilates'  => __( 'Pilates',  'nop-indieweb' ),
-		];
-		return $labels[ $type ] ?? ( $type ? ucfirst( $type ) : __( 'Exercise', 'nop-indieweb' ) );
-	}
 }

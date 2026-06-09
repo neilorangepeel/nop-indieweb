@@ -117,7 +117,8 @@ class Import_Strava {
 			}
 
 			$type  = self::STRAVA_TYPE_MAP[ $get( 'Activity Type' ) ] ?? 'workout';
-			$name  = $get( 'Activity Name' ) ?: ucfirst( $type );
+			$start = $parsed['start'] ?? [ 0, 0 ];
+			$name  = \NOP\IndieWeb\nop_indieweb_exercise_title( $get( 'Activity Name' ), $type, (float) $start[0], (float) $start[1] );
 			$gmt   = $parsed['start_time'] ? gmdate( 'Y-m-d H:i:s', strtotime( $parsed['start_time'] ) ) : gmdate( 'Y-m-d H:i:s', strtotime( $get( 'Activity Date' ) ) );
 
 			if ( $dry_run ) {
@@ -145,7 +146,6 @@ class Import_Strava {
 
 			wp_set_object_terms( $post_id, 'exercise', Kind_Taxonomy::TAXONOMY );
 
-			$start = $parsed['start'] ?? [ 0, 0 ];
 			$meta  = [
 				'nop_indieweb_service'             => 'strava',
 				'nop_indieweb_exercise_type'       => $type,

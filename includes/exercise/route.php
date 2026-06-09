@@ -206,3 +206,66 @@ function nop_indieweb_render_route_map( int $post_id, array $points, string $api
 function nop_indieweb_encode_geom_coords( array $points ): string {
 	return implode( ',', array_map( fn( $p ) => round( $p[1], 5 ) . ',' . round( $p[0], 5 ), $points ) );
 }
+
+/**
+ * Human label for an exercise-type slug, e.g. "run" → "Run". The single source
+ * of truth shared by the Strava importer, the Exercise service, and the title
+ * resolver.
+ */
+function nop_indieweb_exercise_type_label( string $type ): string {
+	$labels = [
+		'run'      => __( 'Run', 'nop-indieweb' ),
+		'ride'     => __( 'Ride', 'nop-indieweb' ),
+		'swim'     => __( 'Swim', 'nop-indieweb' ),
+		'walk'     => __( 'Walk', 'nop-indieweb' ),
+		'hike'     => __( 'Hike', 'nop-indieweb' ),
+		'strength' => __( 'Strength', 'nop-indieweb' ),
+		'yoga'     => __( 'Yoga', 'nop-indieweb' ),
+		'pilates'  => __( 'Pilates', 'nop-indieweb' ),
+		'rowing'   => __( 'Rowing', 'nop-indieweb' ),
+		'workout'  => __( 'Workout', 'nop-indieweb' ),
+	];
+	return $labels[ $type ] ?? ( '' !== $type ? ucfirst( $type ) : __( 'Exercise', 'nop-indieweb' ) );
+}
+
+/**
+ * Resolves a workout post title: keeps a genuine human-written title, otherwise
+ * builds "{Type} in {place}" from the start coordinates (mirroring how check-ins
+ * are named by venue), falling back to the bare type label. Apple Health / Health
+ * Auto Export only ever supply the activity type as the name, and Strava
+ * auto-names ("Afternoon Ride") read the same way — both are treated as "no real
+ * title" so every workout gets a consistent, place-aware heading.
+ */
+function nop_indieweb_exercise_title( string $name, string $type, float $lat, float $lng ): string {
+	$label = nop_indieweb_exercise_type_label( $type );
+
+	$name = trim( $name );
+	if ( '' !== $name && ! nop_indieweb_is_generic_workout_name( $name ) ) {
+		return $name;
+	}
+
+	if ( $lat || $lng ) {
+		$geo      = \NOP\IndieWeb\Venue\Geoapify_Geocoder::reverse_geocode( $lat, $lng );
+		$locality = (string) ( $geo['locality'] ?? '' );
+		if ( '' !== $locality ) {
+			/* translators: 1: activity type label e.g. "Run", 2: place name e.g. "Belfast" */
+			return sprintf( __( '%1$s in %2$s', 'nop-indieweb' ), $label, $locality );
+		}
+	}
+	return $label;
+}
+
+/**
+ * True when a workout name is just an auto-generated activity descriptor — a
+ * bare type, a time-of-day + type (Strava), or a place-qualified type (Apple) —
+ * rather than something the athlete actually wrote.
+ */
+function nop_indieweb_is_generic_workout_name( string $name ): bool {
+	$name = strtolower( trim( $name ) );
+	if ( '' === $name ) {
+		return true;
+	}
+	$types  = 'run|ride|cycle|bike ride|walk|hike|swim|row|rowing|workout|yoga|pilates|cycling|running|walking|hiking|swimming|strength training|core training';
+	$prefix = 'morning|afternoon|evening|lunch|lunchtime|night|late night|midday|early morning|outdoor|indoor|pool|open water|virtual|treadmill';
+	return (bool) preg_match( '/^((' . $prefix . ')\s+)?(' . $types . ')$/', $name );
+}
