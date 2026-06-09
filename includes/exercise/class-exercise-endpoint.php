@@ -70,6 +70,17 @@ class Exercise_Endpoint {
 			return new WP_REST_Response( [ 'created' => [], 'skipped' => 0, 'message' => 'No workouts in payload.' ], 200 );
 		}
 
+		// With debug mode on, log the field names each workout carries (not the
+		// route data) so a first real payload can be checked against the mapping.
+		if ( \NOP\IndieWeb\nop_indieweb_get_option( 'debug_mode', false ) ) {
+			foreach ( $workouts as $w ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'exercise webhook workout', [
+					'fields'       => array_keys( (array) $w ),
+					'route_points' => is_array( $w['route'] ?? null ) ? count( $w['route'] ) : 0,
+				] );
+			}
+		}
+
 		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' );
 		$created = [];
 		$skipped = 0;
