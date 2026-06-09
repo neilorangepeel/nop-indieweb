@@ -857,6 +857,147 @@ HTML,
 HTML,
 		] );
 
+		register_block_pattern( 'nop-indieweb/exercise-data-palette', [
+			'title'         => __( 'Exercise Data Palette', 'nop-indieweb' ),
+			'description'   => __( 'Every meaningful piece of data an exercise post carries — bindings + custom blocks, each labelled. Insert this into an exercise post, then copy whichever pieces you want into your real layout. Not for production use.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'exercise', 'workout', 'data', 'palette', 'reference', 'design' ],
+			'viewportWidth' => 900,
+			'content'       => <<<'HTML'
+<!-- wp:group {"metadata":{"name":"Exercise Data Palette"},"style":{"spacing":{"blockGap":"2.5rem","padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}},"border":{"width":"1px","color":"#e5e7eb"}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group has-border-color" style="border-color:#e5e7eb;border-width:1px;padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem">
+
+<!-- wp:heading {"level":2,"fontSize":"x-large"} -->
+<h2 class="wp-block-heading has-x-large-font-size">Exercise Data Palette</h2>
+<!-- /wp:heading -->
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}}} -->
+<p class="has-text-color" style="color:#6b7280">Every piece of data this workout carries, grouped by section. Copy any block into your real layout.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Identity</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-title (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-title /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-date (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-date {"format":"j F Y, G:i"} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · nop_kind (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"nop_kind"} /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · category (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"category"} /-->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Activity stats</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">type (binding: field=exercise_type_label)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_type_label"}}}}} --><p>Run</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">distance (binding: field=exercise_distance)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_distance"}}}}} --><p>7.1 km</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">duration (binding: field=exercise_duration)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_duration"}}}}} --><p>34:57</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">pace — run/walk/hike/swim only (binding: field=exercise_pace)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_pace"}}}}} --><p>4:56 /km</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">speed — ride/rowing only (binding: field=exercise_speed)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_speed"}}}}} --><p>22.4 km/h</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">elevation gain (binding: field=exercise_elevation)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_elevation"}}}}} --><p>+145 m</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">elevation range (binding: field=exercise_elevation_range)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_elevation_range"}}}}} --><p>1–33 m</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">max grade (binding: field=exercise_max_grade)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_max_grade"}}}}} --><p>26.0%</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">max speed (binding: field=exercise_max_speed)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_max_speed"}}}}} --><p>31.0 km/h</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">calories (binding: field=exercise_calories)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_calories"}}}}} --><p>415 kcal</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">average heart rate — Apple Watch only (binding: field=exercise_avg_hr)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_avg_hr"}}}}} --><p>152 bpm</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">max heart rate — Apple Watch only (binding: field=exercise_max_hr)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_max_hr"}}}}} --><p>178 bpm</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">gear — when present (binding: field=exercise_gear)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_gear"}}}}} --><p>Vitus Zenium</p><!-- /wp:paragraph -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Route &amp; source</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">route map (custom block: nop-indieweb/exercise-map)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/exercise-map /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">start latitude (binding: key=nop_indieweb_exercise_start_lat)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_exercise_start_lat"}}}}} --><p>54.5888</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">start longitude (binding: key=nop_indieweb_exercise_start_lng)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_exercise_start_lng"}}}}} --><p>-5.9105</p><!-- /wp:paragraph -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">Strava link (button bindings: url=nop_indieweb_exercise_source_url)</p><!-- /wp:paragraph -->
+<!-- wp:buttons --><div class="wp-block-buttons">
+<!-- wp:button {"metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_exercise_source_url"}}}}} -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="#" target="_blank" rel="noopener noreferrer">View on Strava</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">GPX download (button bindings: url=nop_indieweb_exercise_gpx_url) — own-your-data artifact</p><!-- /wp:paragraph -->
+<!-- wp:buttons --><div class="wp-block-buttons">
+<!-- wp:button {"className":"is-style-outline","metadata":{"bindings":{"url":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_exercise_gpx_url"}}}}} -->
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#" download>Download GPX</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Weather (when enriched)</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather icon (custom block: nop-indieweb/weather-icon)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/weather-icon /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">temperature (custom block: nop-indieweb/weather-temp)</p><!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/weather-temp /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">summary (binding: key=nop_indieweb_weather_summary)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} --><p>Overcast</p><!-- /wp:paragraph -->
+
+<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+
+<!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
+<h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Media &amp; words</h4>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">featured image — first activity photo (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-featured-image /-->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-content — description + any photos (core)</p><!-- /wp:paragraph -->
+<!-- wp:post-content /-->
+
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
 		register_block_pattern( 'nop-indieweb/note-post', [
 			'title'         => __( 'Note Post', 'nop-indieweb' ),
 			'description'   => __( 'Short-form note layout: inline kind/date header, featured image, content, and a compact interaction row (like · comments · reposts · source).', 'nop-indieweb' ),

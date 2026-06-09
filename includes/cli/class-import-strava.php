@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
+use NOP\IndieWeb\Weather\Weather_Fetcher;
 use WP_CLI;
 
 /**
@@ -130,7 +131,7 @@ class Import_Strava {
 
 			$post_id = wp_insert_post( [
 				'post_title'    => $name,
-				'post_content'  => '',
+				'post_content'  => $this->description_blocks( $get( 'Activity Description' ) ),
 				'post_status'   => $status,
 				'post_type'     => 'post',
 				'post_date_gmt' => $gmt,
@@ -153,11 +154,19 @@ class Import_Strava {
 				'nop_indieweb_exercise_start_lat'  => (string) $start[0],
 				'nop_indieweb_exercise_start_lng'  => (string) $start[1],
 			];
+			$gear = $get( 'Activity Gear' );
+			if ( '' !== $gear ) {
+				$meta['nop_indieweb_exercise_gear'] = sanitize_text_field( $gear );
+			}
 			$metrics = [
 				'nop_indieweb_exercise_distance_m'       => (float) $get( 'Distance' ),
 				'nop_indieweb_exercise_duration_s'       => (int) ( $get( 'Moving Time' ) ?: $get( 'Elapsed Time' ) ),
 				'nop_indieweb_exercise_elevation_gain_m' => (float) $get( 'Elevation Gain' ),
 				'nop_indieweb_exercise_elevation_loss_m' => (float) $get( 'Elevation Loss' ),
+				'nop_indieweb_exercise_elevation_high_m' => (float) $get( 'Elevation High' ),
+				'nop_indieweb_exercise_elevation_low_m'  => (float) $get( 'Elevation Low' ),
+				'nop_indieweb_exercise_max_speed_ms'     => (float) $get( 'Max Speed' ),
+				'nop_indieweb_exercise_max_grade'        => (float) $get( 'Max Grade' ),
 				'nop_indieweb_exercise_avg_heart_rate'   => (int) (float) $get( 'Average Heart Rate' ),
 				'nop_indieweb_exercise_max_heart_rate'   => (int) (float) $get( 'Max Heart Rate' ),
 				'nop_indieweb_exercise_calories'         => (int) (float) $get( 'Calories' ),
@@ -175,6 +184,12 @@ class Import_Strava {
 
 			if ( $api_key ) {
 				\NOP\IndieWeb\nop_indieweb_render_route_map( $post_id, $parsed['points'], $api_key, [ 'color' => 'e03232' ] );
+			}
+
+			$this->attach_photos( $post_id, $get( 'Media' ), $dir );
+
+			if ( $start[0] || $start[1] ) {
+				Weather_Fetcher::enrich_post( $post_id, (float) $start[0], (float) $start[1], (int) get_post_timestamp( $post_id, 'date_gmt' ) );
 			}
 
 			WP_CLI::log( sprintf( '#%d  %s — %s (%s)', $post_id, $gmt, $name, $type ) );
@@ -208,6 +223,70 @@ class Import_Strava {
 			'meta_query'     => [ [ 'key' => 'nop_indieweb_exercise_source_id', 'value' => $strava_id ] ],
 		] );
 		return ! empty( $found );
+	}
+
+	private function description_blocks( string $desc ): string {
+		$desc = trim( $desc );
+		if ( '' === $desc ) {
+			return '';
+		}
+		$out = '';
+		foreach ( preg_split( '/\R+/', $desc ) as $para ) {
+			$para = trim( $para );
+			if ( '' !== $para ) {
+				$out .= "<!-- wp:paragraph -->\n<p>" . esc_html( $para ) . "</p>\n<!-- /wp:paragraph -->\n\n";
+			}
+		}
+		return $out;
+	}
+
+	private function attach_photos( int $post_id, string $media, string $dir ): void {
+		$media = trim( $media );
+		if ( '' === $media ) {
+			return;
+		}
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$ids = [];
+		foreach ( preg_split( '/[,;|]/', $media ) as $rel ) {
+			$rel = trim( $rel );
+			$src = $dir . '/' . $rel;
+			if ( '' === $rel || ! file_exists( $src ) ) {
+				continue;
+			}
+			$upload = wp_upload_bits( basename( $src ), null, file_get_contents( $src ) );
+			if ( ! empty( $upload['error'] ) ) {
+				continue;
+			}
+			$attach_id = wp_insert_attachment( [
+				'post_mime_type' => wp_check_filetype( $upload['file'] )['type'] ?: 'image/jpeg',
+				'post_title'     => get_the_title( $post_id ),
+				'post_status'    => 'inherit',
+				'post_parent'    => $post_id,
+			], $upload['file'], $post_id );
+			if ( ! $attach_id || is_wp_error( $attach_id ) ) {
+				continue;
+			}
+			wp_update_attachment_metadata( $attach_id, wp_generate_attachment_metadata( $attach_id, $upload['file'] ) );
+			$ids[] = $attach_id;
+		}
+		if ( ! $ids ) {
+			return;
+		}
+
+		set_post_thumbnail( $post_id, $ids[0] );
+
+		$blocks = '';
+		foreach ( $ids as $aid ) {
+			$blocks .= sprintf(
+				"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->\n",
+				$aid,
+				esc_url( (string) wp_get_attachment_image_url( $aid, 'large' ) ),
+				$aid
+			);
+		}
+		$post = get_post( $post_id );
+		wp_update_post( [ 'ID' => $post_id, 'post_content' => $post->post_content . $blocks ] );
 	}
 
 	private function store_gpx( int $post_id, string $gpx ): void {
