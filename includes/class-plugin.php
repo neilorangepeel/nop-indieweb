@@ -523,6 +523,7 @@ class Plugin {
 
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/checkin-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-map' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-stats' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/webmentions' );

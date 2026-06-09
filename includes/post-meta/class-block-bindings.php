@@ -227,6 +227,11 @@ class Block_Bindings {
 	 * meta lookup).
 	 */
 	private function get_derived_value( string $field, int $post_id ): ?string {
+		// Exercise stat formatting lives in one shared helper.
+		if ( str_starts_with( $field, 'exercise_' ) ) {
+			return \NOP\IndieWeb\nop_indieweb_exercise_stat( $field, $post_id );
+		}
+
 		switch ( $field ) {
 			case 'full_address':
 				$parts = array_filter( [
@@ -281,123 +286,6 @@ class Block_Bindings {
 				/* translators: %s = ordinal number, e.g. "1st" */
 				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
 
-			// ── Exercise derived fields ──────────────────────────────────────────
-
-			case 'exercise_distance':
-				$m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
-				if ( ! $m ) {
-					return null;
-				}
-				/* translators: %s = distance in kilometres, e.g. "5.2" */
-				return sprintf( __( '%s km', 'nop-indieweb' ), number_format( $m / 1000, 1 ) );
-
-			case 'exercise_duration': {
-				$s = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
-				if ( ! $s ) {
-					return null;
-				}
-				$h   = (int) floor( $s / 3600 );
-				$min = (int) floor( ( $s % 3600 ) / 60 );
-				$sec = $s % 60;
-				return $h > 0
-					? sprintf( '%d:%02d:%02d', $h, $min, $sec )
-					: sprintf( '%d:%02d', $min, $sec );
-			}
-
-			case 'exercise_pace': {
-				$dist_m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
-				$dur_s  = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
-				$type   = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
-				if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'run', 'walk', 'hike', 'swim' ], true ) ) {
-					return null;
-				}
-				$pace_s    = $dur_s / ( $dist_m / 1000 );
-				$pace_min  = (int) floor( $pace_s / 60 );
-				$pace_sec  = (int) round( $pace_s - $pace_min * 60 );
-				/* translators: %1$d = minutes, %2$02d = seconds, e.g. "6:12 /km" */
-				return sprintf( __( '%1$d:%2$02d /km', 'nop-indieweb' ), $pace_min, $pace_sec );
-			}
-
-			case 'exercise_speed': {
-				$dist_m = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_distance_m', true );
-				$dur_s  = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_duration_s', true );
-				$type   = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
-				if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'ride', 'rowing' ], true ) ) {
-					return null;
-				}
-				$kmph = ( $dist_m / $dur_s ) * 3.6;
-				/* translators: %s = speed in km/h, e.g. "22.4" */
-				return sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( $kmph, 1 ) );
-			}
-
-			case 'exercise_elevation':
-				$gain = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_elevation_gain_m', true );
-				if ( ! $gain ) {
-					return null;
-				}
-				/* translators: %d = elevation gain in metres, e.g. "+145 m" */
-				return sprintf( __( '+%d m', 'nop-indieweb' ), (int) round( $gain ) );
-
-			case 'exercise_calories':
-				$cal = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_calories', true );
-				/* translators: %s = active energy in kilocalories */
-				return $cal ? sprintf( __( '%s kcal', 'nop-indieweb' ), number_format( $cal ) ) : null;
-
-			case 'exercise_avg_hr':
-				$avg_hr = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_avg_heart_rate', true );
-				/* translators: %d = average heart rate in beats per minute */
-				return $avg_hr ? sprintf( __( '%d bpm', 'nop-indieweb' ), $avg_hr ) : null;
-
-			case 'exercise_max_hr':
-				$max_hr = (int) get_post_meta( $post_id, 'nop_indieweb_exercise_max_heart_rate', true );
-				/* translators: %d = maximum heart rate in beats per minute */
-				return $max_hr ? sprintf( __( '%d bpm', 'nop-indieweb' ), $max_hr ) : null;
-
-			case 'exercise_max_speed':
-				$ms = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_max_speed_ms', true );
-				/* translators: %s = maximum speed in km/h */
-				return $ms ? sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( $ms * 3.6, 1 ) ) : null;
-
-			case 'exercise_elevation_range': {
-				$low  = get_post_meta( $post_id, 'nop_indieweb_exercise_elevation_low_m', true );
-				$high = get_post_meta( $post_id, 'nop_indieweb_exercise_elevation_high_m', true );
-				if ( '' === $low && '' === $high ) {
-					return null;
-				}
-				/* translators: %1$d = lowest elevation, %2$d = highest elevation, in metres */
-				return sprintf( __( '%1$d–%2$d m', 'nop-indieweb' ), (int) round( (float) $low ), (int) round( (float) $high ) );
-			}
-
-			case 'exercise_max_grade':
-				$grade = (float) get_post_meta( $post_id, 'nop_indieweb_exercise_max_grade', true );
-				/* translators: %s = maximum gradient as a percentage */
-				return $grade ? sprintf( __( '%s%%', 'nop-indieweb' ), number_format( $grade, 1 ) ) : null;
-
-			case 'exercise_gear':
-				$gear = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_gear', true );
-				return '' !== $gear ? $gear : null;
-
-			case 'exercise_type_label': {
-				$type = (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true );
-				if ( ! $type ) {
-					return null;
-				}
-				$labels = [
-					'run'      => __( 'Run',             'nop-indieweb' ),
-					'ride'     => __( 'Ride',            'nop-indieweb' ),
-					'swim'     => __( 'Swim',            'nop-indieweb' ),
-					'walk'     => __( 'Walk',            'nop-indieweb' ),
-					'hike'     => __( 'Hike',            'nop-indieweb' ),
-					'strength' => __( 'Strength',        'nop-indieweb' ),
-					'yoga'     => __( 'Yoga',            'nop-indieweb' ),
-					'workout'  => __( 'Workout',         'nop-indieweb' ),
-					'rowing'   => __( 'Rowing',          'nop-indieweb' ),
-					'cycling'  => __( 'Cycling',         'nop-indieweb' ),
-					'climbing' => __( 'Climbing',        'nop-indieweb' ),
-					'pilates'  => __( 'Pilates',         'nop-indieweb' ),
-				];
-				return $labels[ $type ] ?? ucfirst( $type );
-			}
 		}
 
 		return null;

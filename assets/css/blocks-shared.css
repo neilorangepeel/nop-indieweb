@@ -500,3 +500,38 @@ a.nop-post-footer__pill--link:focus-visible {
 	color: var(--nop-muted);
 	margin: 0.25rem 0 0;
 }
+
+/* Exercise Stats — graceful grid of workout metrics. */
+.nop-exercise-stats {
+	display: flex;
+	flex-direction: column;
+	gap: 0.9rem;
+}
+.nop-exercise-stats__row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.25rem 2.5rem;
+}
+.nop-exercise-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15em;
+}
+.nop-exercise-stat__value {
+	font-weight: 800;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+.nop-exercise-stat__label {
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	opacity: 0.55;
+}
+.nop-exercise-stats__row--primary .nop-exercise-stat__value {
+	font-size: 1.6rem;
+}
+.nop-exercise-stats__row--secondary .nop-exercise-stat__value {
+	font-size: 1.05rem;
+	font-weight: 700;
+}

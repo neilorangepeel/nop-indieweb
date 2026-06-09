@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/exercise-stats",
+	"title": "Exercise Stats",
+	"description": "A grid of workout stats (distance, time, pace/speed, elevation, heart rate, calories…). Renders only the stats that have data, so it degrades gracefully across activities and devices.",
+	"category": "nop-indieweb-meta",
+	"icon": "chart-bar",
+	"keywords": ["exercise", "workout", "stats", "metrics", "distance", "pace"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	}
+}

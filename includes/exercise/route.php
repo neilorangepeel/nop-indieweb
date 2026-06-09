@@ -256,6 +256,107 @@ function nop_indieweb_exercise_title( string $name, string $type, float $lat, fl
 }
 
 /**
+ * Formats a single exercise stat for display, or returns null when the
+ * underlying data is absent. The one source of truth for stat formatting,
+ * shared by the Block_Bindings derived fields and the exercise-stats block.
+ */
+function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
+	$meta = fn( string $key ) => get_post_meta( $post_id, 'nop_indieweb_exercise_' . $key, true );
+
+	switch ( $field ) {
+		case 'exercise_type_label':
+			$type = (string) $meta( 'type' );
+			return '' !== $type ? nop_indieweb_exercise_type_label( $type ) : null;
+
+		case 'exercise_distance':
+			$m = (float) $meta( 'distance_m' );
+			/* translators: %s = distance in kilometres */
+			return $m ? sprintf( __( '%s km', 'nop-indieweb' ), number_format( $m / 1000, 1 ) ) : null;
+
+		case 'exercise_duration': {
+			$s = (int) $meta( 'duration_s' );
+			if ( ! $s ) {
+				return null;
+			}
+			$h   = (int) floor( $s / 3600 );
+			$min = (int) floor( ( $s % 3600 ) / 60 );
+			$sec = $s % 60;
+			return $h > 0 ? sprintf( '%d:%02d:%02d', $h, $min, $sec ) : sprintf( '%d:%02d', $min, $sec );
+		}
+
+		case 'exercise_pace': {
+			$dist_m = (float) $meta( 'distance_m' );
+			$dur_s  = (int) $meta( 'duration_s' );
+			$type   = (string) $meta( 'type' );
+			if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'run', 'walk', 'hike', 'swim' ], true ) ) {
+				return null;
+			}
+			$pace_s   = $dur_s / ( $dist_m / 1000 );
+			$pace_min = (int) floor( $pace_s / 60 );
+			$pace_sec = (int) round( $pace_s - $pace_min * 60 );
+			/* translators: %1$d = minutes, %2$02d = seconds, e.g. "6:12 /km" */
+			return sprintf( __( '%1$d:%2$02d /km', 'nop-indieweb' ), $pace_min, $pace_sec );
+		}
+
+		case 'exercise_speed': {
+			$dist_m = (float) $meta( 'distance_m' );
+			$dur_s  = (int) $meta( 'duration_s' );
+			$type   = (string) $meta( 'type' );
+			if ( ! $dist_m || ! $dur_s || ! in_array( $type, [ 'ride', 'rowing' ], true ) ) {
+				return null;
+			}
+			/* translators: %s = speed in km/h */
+			return sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( ( $dist_m / $dur_s ) * 3.6, 1 ) );
+		}
+
+		case 'exercise_elevation':
+			$gain = (float) $meta( 'elevation_gain_m' );
+			/* translators: %d = elevation gain in metres */
+			return $gain ? sprintf( __( '+%d m', 'nop-indieweb' ), (int) round( $gain ) ) : null;
+
+		case 'exercise_calories':
+			$cal = (int) $meta( 'calories' );
+			/* translators: %s = active energy in kilocalories */
+			return $cal ? sprintf( __( '%s kcal', 'nop-indieweb' ), number_format( $cal ) ) : null;
+
+		case 'exercise_avg_hr':
+			$hr = (int) $meta( 'avg_heart_rate' );
+			/* translators: %d = average heart rate in beats per minute */
+			return $hr ? sprintf( __( '%d bpm', 'nop-indieweb' ), $hr ) : null;
+
+		case 'exercise_max_hr':
+			$hr = (int) $meta( 'max_heart_rate' );
+			/* translators: %d = maximum heart rate in beats per minute */
+			return $hr ? sprintf( __( '%d bpm', 'nop-indieweb' ), $hr ) : null;
+
+		case 'exercise_max_speed':
+			$ms = (float) $meta( 'max_speed_ms' );
+			/* translators: %s = maximum speed in km/h */
+			return $ms ? sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( $ms * 3.6, 1 ) ) : null;
+
+		case 'exercise_elevation_range': {
+			$low  = $meta( 'elevation_low_m' );
+			$high = $meta( 'elevation_high_m' );
+			if ( '' === $low && '' === $high ) {
+				return null;
+			}
+			/* translators: %1$d = lowest elevation, %2$d = highest elevation, in metres */
+			return sprintf( __( '%1$d–%2$d m', 'nop-indieweb' ), (int) round( (float) $low ), (int) round( (float) $high ) );
+		}
+
+		case 'exercise_max_grade':
+			$grade = (float) $meta( 'max_grade' );
+			/* translators: %s = maximum gradient as a percentage */
+			return $grade ? sprintf( __( '%s%%', 'nop-indieweb' ), number_format( $grade, 1 ) ) : null;
+
+		case 'exercise_gear':
+			$gear = (string) $meta( 'gear' );
+			return '' !== $gear ? $gear : null;
+	}
+	return null;
+}
+
+/**
  * True when a workout name is just an auto-generated activity descriptor — a
  * bare type, a time-of-day + type (Strava), or a place-qualified type (Apple) —
  * rather than something the athlete actually wrote.
