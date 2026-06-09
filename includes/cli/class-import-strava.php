@@ -256,10 +256,17 @@ class Import_Strava {
 			return;
 		}
 
+		// First photo becomes the featured image (the lead visual the template
+		// places up top). Only any *additional* photos go inline in the content,
+		// so the featured shot is never duplicated.
 		set_post_thumbnail( $post_id, $ids[0] );
 
+		$extra = array_slice( $ids, 1 );
+		if ( ! $extra ) {
+			return;
+		}
 		$blocks = '';
-		foreach ( $ids as $aid ) {
+		foreach ( $extra as $aid ) {
 			$blocks .= sprintf(
 				"\n<!-- wp:image {\"id\":%d,\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"%s\" alt=\"\" class=\"wp-image-%d\"/></figure>\n<!-- /wp:image -->\n",
 				$aid,

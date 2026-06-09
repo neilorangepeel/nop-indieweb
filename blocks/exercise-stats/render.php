@@ -60,23 +60,37 @@ $resolve = static function ( string $field ) use ( $post_id, $is_editor, $previe
 	return $value;
 };
 
-$render_group = static function ( array $fields, string $modifier ) use ( $resolve ): string {
-	$cells = '';
-	foreach ( $fields as $field => $label ) {
-		$value = $resolve( $field );
-		if ( null === $value || '' === $value ) {
-			continue;
-		}
-		$cells .= sprintf(
-			'<div class="nop-exercise-stat"><span class="nop-exercise-stat__value">%s</span><span class="nop-exercise-stat__label">%s</span></div>',
-			esc_html( $value ),
-			esc_html( $label )
-		);
+// Primary stats: prominent cells (big number + label).
+$cells = '';
+foreach ( $primary as $field => $label ) {
+	$value = $resolve( $field );
+	if ( null === $value || '' === $value ) {
+		continue;
 	}
-	return '' === $cells ? '' : sprintf( '<div class="nop-exercise-stats__row nop-exercise-stats__row--%s">%s</div>', esc_attr( $modifier ), $cells );
-};
+	$cells .= sprintf(
+		'<div class="nop-exercise-stat"><span class="nop-exercise-stat__value">%s</span><span class="nop-exercise-stat__label">%s</span></div>',
+		esc_html( $value ),
+		esc_html( $label )
+	);
+}
+$primary_row = '' === $cells ? '' : '<div class="nop-exercise-stats__primary">' . $cells . '</div>';
 
-$rows = $render_group( $primary, 'primary' ) . $render_group( $secondary, 'secondary' );
+// Secondary stats: a single muted inline line — supporting detail, not headline.
+$items = [];
+foreach ( $secondary as $field => $label ) {
+	$value = $resolve( $field );
+	if ( null === $value || '' === $value ) {
+		continue;
+	}
+	$items[] = sprintf(
+		'<span class="nop-exercise-stat-inline"><span class="nop-exercise-stat-inline__label">%s</span> %s</span>',
+		esc_html( $label ),
+		esc_html( $value )
+	);
+}
+$secondary_row = $items ? '<div class="nop-exercise-stats__secondary">' . implode( '<span class="nop-exercise-stats__sep"> · </span>', $items ) . '</div>' : '';
+
+$rows = $primary_row . $secondary_row;
 if ( '' === $rows ) {
 	return;
 }

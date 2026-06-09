@@ -501,37 +501,50 @@ a.nop-post-footer__pill--link:focus-visible {
 	margin: 0.25rem 0 0;
 }
 
-/* Exercise Stats — graceful grid of workout metrics. */
+/* Exercise Stats — clear hierarchy: prominent primary cells, muted inline secondary. */
 .nop-exercise-stats {
 	display: flex;
 	flex-direction: column;
-	gap: 0.9rem;
+	gap: 0.7rem;
 }
-.nop-exercise-stats__row {
+.nop-exercise-stats__primary {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 1.25rem 2.5rem;
+	gap: 1rem 2.25rem;
 }
 .nop-exercise-stat {
 	display: flex;
 	flex-direction: column;
-	gap: 0.15em;
+	gap: 0.2em;
 }
 .nop-exercise-stat__value {
+	font-size: 1.5rem;
 	font-weight: 800;
 	line-height: 1;
 	font-variant-numeric: tabular-nums;
 }
 .nop-exercise-stat__label {
-	font-size: 0.7rem;
+	font-size: 0.66rem;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	opacity: 0.55;
+	letter-spacing: 0.09em;
+	opacity: 0.5;
 }
-.nop-exercise-stats__row--primary .nop-exercise-stat__value {
-	font-size: 1.6rem;
+.nop-exercise-stats__secondary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	font-size: 0.82rem;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.8;
 }
-.nop-exercise-stats__row--secondary .nop-exercise-stat__value {
-	font-size: 1.05rem;
-	font-weight: 700;
+.nop-exercise-stat-inline__label {
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-size: 0.62rem;
+	opacity: 0.6;
+	margin-right: 0.2em;
+}
+.nop-exercise-stats__sep {
+	opacity: 0.3;
+	padding: 0 0.45em;
 }

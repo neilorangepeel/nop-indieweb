@@ -47,14 +47,23 @@
 
 			<!-- wp:post-title {"style":{"typography":{"lineHeight":"1","fontStyle":"normal","fontWeight":"800","letterSpacing":"-0.02em"}},"fontSize":"x-large","fontFamily":"brandon-text"} /-->
 
-			<!-- wp:nop-indieweb/exercise-map {"style":{"border":{"radius":"4px"}}} /-->
+			<!-- wp:group {"metadata":{"name":"Media"},"style":{"spacing":{"blockGap":"0.75rem"}},"layout":{"type":"constrained"}} -->
+			<div class="wp-block-group">
+				<!-- wp:post-featured-image {"aspectRatio":"3/2","style":{"border":{"radius":"4px"}}} /-->
+				<!-- wp:nop-indieweb/exercise-map {"style":{"border":{"radius":"4px"}}} /-->
+			</div>
+			<!-- /wp:group -->
 
-			<!-- wp:nop-indieweb/exercise-stats /-->
+			<!-- wp:group {"style":{"spacing":{"blockGap":"0.4rem"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+			<div class="wp-block-group">
+				<!-- wp:nop-indieweb/exercise-stats /-->
 
-			<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"},"typography":{"fontStyle":"normal","fontWeight":"500"}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
-			<div class="wp-block-group has-accent-4-color has-text-color has-small-font-size" style="font-style:normal;font-weight:500">
-				<!-- wp:nop-indieweb/weather-icon /-->
-				<!-- wp:nop-indieweb/weather-temp /-->
+				<!-- wp:group {"style":{"spacing":{"blockGap":"0.4em"},"typography":{"fontStyle":"normal","fontWeight":"500"}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
+				<div class="wp-block-group has-accent-4-color has-text-color has-small-font-size" style="font-style:normal;font-weight:500">
+					<!-- wp:nop-indieweb/weather-icon /-->
+					<!-- wp:nop-indieweb/weather-temp /-->
+				</div>
+				<!-- /wp:group -->
 			</div>
 			<!-- /wp:group -->
 
