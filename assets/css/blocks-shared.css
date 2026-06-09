@@ -507,44 +507,52 @@ a.nop-post-footer__pill--link:focus-visible {
 	flex-direction: column;
 	gap: 0.7rem;
 }
+/* Primary stats justify across the full post width as equal columns. */
 .nop-exercise-stats__primary {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 1rem 2.25rem;
+	gap: 1.25rem 1.5rem;
 }
 .nop-exercise-stat {
 	display: flex;
 	flex-direction: column;
-	gap: 0.2em;
+	gap: 0.3em;
+	flex: 1 1 90px;
 }
 .nop-exercise-stat__value {
-	font-size: 1.5rem;
+	font-size: 1.6rem;
 	font-weight: 800;
 	line-height: 1;
 	font-variant-numeric: tabular-nums;
 }
 .nop-exercise-stat__label {
-	font-size: 0.66rem;
+	font-size: 0.68rem;
+	font-weight: 600;
 	text-transform: uppercase;
-	letter-spacing: 0.09em;
-	opacity: 0.5;
+	letter-spacing: 0.08em;
+	opacity: 0.6;
 }
+/* Secondary stats: one quiet line, distributed evenly beneath the primaries. */
 .nop-exercise-stats__secondary {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	font-size: 0.82rem;
+	gap: 0.1em 1.25rem;
+	font-size: 0.85rem;
+	font-weight: 500;
 	font-variant-numeric: tabular-nums;
-	opacity: 0.8;
+	opacity: 0.92;
+	border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+	padding-top: 0.7rem;
 }
 .nop-exercise-stat-inline__label {
+	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	font-size: 0.62rem;
-	opacity: 0.6;
-	margin-right: 0.2em;
+	font-size: 0.63rem;
+	opacity: 0.55;
+	margin-right: 0.3em;
 }
 .nop-exercise-stats__sep {
-	opacity: 0.3;
-	padding: 0 0.45em;
+	display: none;
 }

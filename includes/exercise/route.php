@@ -442,13 +442,13 @@ function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
 			return $ms ? sprintf( __( '%s km/h', 'nop-indieweb' ), number_format( $ms * 3.6, 1 ) ) : null;
 
 		case 'exercise_elevation_range': {
-			$low  = $meta( 'elevation_low_m' );
-			$high = $meta( 'elevation_high_m' );
-			if ( '' === $low && '' === $high ) {
-				return null;
+			$low  = (float) $meta( 'elevation_low_m' );
+			$high = (float) $meta( 'elevation_high_m' );
+			if ( $high <= $low ) {
+				return null; // no meaningful range (missing data or flat/zero).
 			}
 			/* translators: %1$d = lowest elevation, %2$d = highest elevation, in metres */
-			return sprintf( __( '%1$d–%2$d m', 'nop-indieweb' ), (int) round( (float) $low ), (int) round( (float) $high ) );
+			return sprintf( __( '%1$d–%2$d m', 'nop-indieweb' ), (int) round( $low ), (int) round( $high ) );
 		}
 
 		case 'exercise_max_grade':
