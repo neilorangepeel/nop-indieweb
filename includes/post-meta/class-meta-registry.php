@@ -390,8 +390,48 @@ class Registry {
 			] ),
 			'nop_indieweb_exercise_map_url'         => array_merge( $string, [
 				'label'       => __( 'Exercise Map URL', 'nop-indieweb' ),
-				'description' => 'Cached static map image URL for the workout start location.',
+				'description' => 'Cached static map image URL for the workout route.',
 			] ),
+			'nop_indieweb_exercise_gpx_url'         => array_merge( $string, [
+				'label'       => __( 'Exercise GPX URL', 'nop-indieweb' ),
+				'description' => 'URL of the stored GPX track — the canonical own-your-data route artifact.',
+			] ),
+			'nop_indieweb_exercise_gear'            => array_merge( $string, [
+				'label'       => __( 'Exercise Gear', 'nop-indieweb' ),
+				'description' => 'Gear used (bike or shoes), when reported by the source.',
+			] ),
+			'nop_indieweb_exercise_max_speed_ms'    => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Max Speed (m/s)', 'nop-indieweb' ),
+				'description'   => 'Maximum speed in metres per second.',
+			],
+			'nop_indieweb_exercise_max_grade'       => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Max Grade (%)', 'nop-indieweb' ),
+				'description'   => 'Maximum gradient as a percentage.',
+			],
+			'nop_indieweb_exercise_elevation_high_m' => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Elevation High (m)', 'nop-indieweb' ),
+				'description'   => 'Highest elevation in metres.',
+			],
+			'nop_indieweb_exercise_elevation_low_m' => [
+				'type'          => 'number',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Elevation Low (m)', 'nop-indieweb' ),
+				'description'   => 'Lowest elevation in metres.',
+			],
 
 			// ── Photos ───────────────────────────────────────────────────────────
 			// Source URLs are always stored as a permanent record even when photos are sideloaded.

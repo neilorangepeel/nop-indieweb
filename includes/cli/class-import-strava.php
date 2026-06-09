@@ -8,8 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use NOP\IndieWeb\Kind\Kind_Taxonomy;
-use NOP\IndieWeb\Weather\Weather_Fetcher;
 use WP_CLI;
 
 /**
@@ -130,31 +128,8 @@ class Import_Strava {
 				continue;
 			}
 
-			$post_id = wp_insert_post( [
-				'post_title'    => $name,
-				'post_content'  => $this->description_blocks( $get( 'Activity Description' ) ),
-				'post_status'   => $status,
-				'post_type'     => 'post',
-				'post_date_gmt' => $gmt,
-				'post_date'     => get_date_from_gmt( $gmt ),
-			], true );
-
-			if ( is_wp_error( $post_id ) ) {
-				WP_CLI::warning( "insert failed for {$strava_id}: " . $post_id->get_error_message() );
-				continue;
-			}
-
-			wp_set_object_terms( $post_id, 'exercise', Kind_Taxonomy::TAXONOMY );
-
-			$meta  = [
-				'nop_indieweb_service'             => 'strava',
-				'nop_indieweb_exercise_type'       => $type,
-				'nop_indieweb_exercise_source_id'  => $strava_id,
-				'nop_indieweb_exercise_source_url' => $strava_id ? "https://www.strava.com/activities/{$strava_id}" : '',
-				'nop_indieweb_exercise_start_lat'  => (string) $start[0],
-				'nop_indieweb_exercise_start_lng'  => (string) $start[1],
-			];
-			$gear = $get( 'Activity Gear' );
+			$meta    = [];
+			$gear    = $get( 'Activity Gear' );
 			if ( '' !== $gear ) {
 				$meta['nop_indieweb_exercise_gear'] = sanitize_text_field( $gear );
 			}
@@ -176,21 +151,28 @@ class Import_Strava {
 					$meta[ $k ] = $v;
 				}
 			}
-			foreach ( $meta as $k => $v ) {
-				update_post_meta( $post_id, $k, $v );
-			}
 
-			$this->store_gpx( $post_id, (string) $raw );
+			$post_id = \NOP\IndieWeb\nop_indieweb_save_exercise_post( [
+				'name'       => $name,
+				'type'       => $type,
+				'gmt'        => $gmt,
+				'content'    => $this->description_blocks( $get( 'Activity Description' ) ),
+				'status'     => $status,
+				'start'      => $start,
+				'points'     => $parsed['points'],
+				'gpx'        => (string) $raw,
+				'meta'       => $meta,
+				'source_id'  => $strava_id,
+				'source_url' => $strava_id ? "https://www.strava.com/activities/{$strava_id}" : '',
+				'service'    => 'strava',
+			], $api_key );
 
-			if ( $api_key ) {
-				\NOP\IndieWeb\nop_indieweb_render_route_map( $post_id, $parsed['points'], $api_key, [ 'color' => 'e03232' ] );
+			if ( is_wp_error( $post_id ) ) {
+				WP_CLI::warning( "insert failed for {$strava_id}: " . $post_id->get_error_message() );
+				continue;
 			}
 
 			$this->attach_photos( $post_id, $get( 'Media' ), $dir );
-
-			if ( $start[0] || $start[1] ) {
-				Weather_Fetcher::enrich_post( $post_id, (float) $start[0], (float) $start[1], (int) get_post_timestamp( $post_id, 'date_gmt' ) );
-			}
 
 			WP_CLI::log( sprintf( '#%d  %s — %s (%s)', $post_id, $gmt, $name, $type ) );
 			++$imported;
@@ -289,16 +271,4 @@ class Import_Strava {
 		wp_update_post( [ 'ID' => $post_id, 'post_content' => $post->post_content . $blocks ] );
 	}
 
-	private function store_gpx( int $post_id, string $gpx ): void {
-		$dir = wp_upload_dir()['basedir'] . '/exercise-routes';
-		if ( ! wp_mkdir_p( $dir ) ) {
-			return;
-		}
-		file_put_contents( $dir . "/exercise-route-{$post_id}.gpx", $gpx );
-		update_post_meta(
-			$post_id,
-			'nop_indieweb_exercise_gpx_url',
-			wp_upload_dir()['baseurl'] . "/exercise-routes/exercise-route-{$post_id}.gpx"
-		);
-	}
 }

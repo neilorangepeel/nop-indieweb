@@ -40,6 +40,7 @@ use NOP\IndieWeb\Syndication\Syndication_Manager;
 use NOP\IndieWeb\Importer\Feed_Importer;
 use NOP\IndieWeb\WebSub;
 use NOP\IndieWeb\AiPolicy\AI_Policy;
+use NOP\IndieWeb\Exercise\Exercise_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
@@ -204,6 +205,7 @@ class Plugin {
 		( new Open_Graph() )->register();
 		( new MF2_Endpoint() )->register();
 		( new AI_Policy() )->register();
+		( new Exercise_Endpoint() )->register();
 
 		$this->lookup_providers = apply_filters( 'nop_indieweb_register_lookup_providers', [
 			new Lookup_Provider_TMDB(),

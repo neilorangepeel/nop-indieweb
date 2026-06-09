@@ -256,6 +256,113 @@ function nop_indieweb_exercise_title( string $name, string $type, float $lat, fl
 }
 
 /**
+ * Creates an exercise-kind post from normalised workout data. The single insert
+ * path shared by the Strava importer and the Health Auto Export endpoint:
+ * writes the post (title resolved, draft by default), sets the kind term, stores
+ * meta, saves the GPX, renders the route map, and enriches weather. Photos are
+ * source-specific and handled by the caller after this returns the post ID.
+ *
+ * @param array  $a       name, type, gmt, content, status, start [lat,lng],
+ *                        points [[lat,lon],…], gpx (string), meta (extra meta),
+ *                        source_id, source_url, service.
+ * @param string $api_key Geoapify key for the route map (optional).
+ * @return int|\WP_Error  New post ID, or WP_Error on insert failure.
+ */
+function nop_indieweb_save_exercise_post( array $a, string $api_key = '' ) {
+	$start = $a['start'] ?? [ 0, 0 ];
+	$gmt   = (string) ( $a['gmt'] ?? '' );
+
+	$post_id = wp_insert_post( [
+		'post_title'    => nop_indieweb_exercise_title( (string) ( $a['name'] ?? '' ), (string) ( $a['type'] ?? 'workout' ), (float) $start[0], (float) $start[1] ),
+		'post_content'  => (string) ( $a['content'] ?? '' ),
+		'post_status'   => (string) ( $a['status'] ?? 'draft' ),
+		'post_type'     => 'post',
+		'post_date_gmt' => $gmt,
+		'post_date'     => $gmt ? get_date_from_gmt( $gmt ) : '',
+	], true );
+	if ( is_wp_error( $post_id ) ) {
+		return $post_id;
+	}
+
+	wp_set_object_terms( $post_id, 'exercise', \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
+
+	$meta = array_merge( [
+		'nop_indieweb_service'            => (string) ( $a['service'] ?? 'exercise' ),
+		'nop_indieweb_exercise_type'      => (string) ( $a['type'] ?? 'workout' ),
+		'nop_indieweb_exercise_start_lat' => (string) $start[0],
+		'nop_indieweb_exercise_start_lng' => (string) $start[1],
+	], $a['meta'] ?? [] );
+	if ( ! empty( $a['source_id'] ) ) {
+		$meta['nop_indieweb_exercise_source_id'] = (string) $a['source_id'];
+	}
+	if ( ! empty( $a['source_url'] ) ) {
+		$meta['nop_indieweb_exercise_source_url'] = (string) $a['source_url'];
+	}
+	foreach ( $meta as $k => $v ) {
+		if ( '' !== $v && null !== $v ) {
+			update_post_meta( $post_id, $k, $v );
+		}
+	}
+
+	if ( ! empty( $a['gpx'] ) ) {
+		nop_indieweb_store_exercise_gpx( $post_id, (string) $a['gpx'] );
+	}
+	if ( ! empty( $a['points'] ) && '' !== $api_key ) {
+		nop_indieweb_render_route_map( $post_id, $a['points'], $api_key, [ 'color' => 'e03232' ] );
+	}
+	if ( (float) $start[0] || (float) $start[1] ) {
+		\NOP\IndieWeb\Weather\Weather_Fetcher::enrich_post( $post_id, (float) $start[0], (float) $start[1], (int) get_post_timestamp( $post_id, 'date_gmt' ) );
+	}
+
+	return $post_id;
+}
+
+/**
+ * Saves a GPX string to uploads/exercise-routes/ and records its URL — the
+ * canonical own-your-data route artifact.
+ */
+function nop_indieweb_store_exercise_gpx( int $post_id, string $gpx ): void {
+	$dir = wp_upload_dir()['basedir'] . '/exercise-routes';
+	if ( '' === $gpx || ! wp_mkdir_p( $dir ) ) {
+		return;
+	}
+	file_put_contents( $dir . "/exercise-route-{$post_id}.gpx", $gpx );
+	update_post_meta(
+		$post_id,
+		'nop_indieweb_exercise_gpx_url',
+		wp_upload_dir()['baseurl'] . "/exercise-routes/exercise-route-{$post_id}.gpx"
+	);
+}
+
+/**
+ * Builds a GPX 1.1 track document from an array of points, each having lat, lon
+ * and optionally ele (metres) and time (ISO 8601). Used to mint a canonical GPX
+ * from app sources (e.g. Health Auto Export) that send raw coordinate arrays.
+ */
+function nop_indieweb_build_gpx( array $points, string $name = '' ): string {
+	$trkpts = '';
+	foreach ( $points as $p ) {
+		$lat = isset( $p['lat'] ) ? (float) $p['lat'] : null;
+		$lon = isset( $p['lon'] ) ? (float) $p['lon'] : null;
+		if ( null === $lat || null === $lon ) {
+			continue;
+		}
+		$trkpts .= sprintf( '<trkpt lat="%s" lon="%s">', esc_attr( (string) $lat ), esc_attr( (string) $lon ) );
+		if ( isset( $p['ele'] ) && '' !== $p['ele'] ) {
+			$trkpts .= '<ele>' . esc_html( (string) (float) $p['ele'] ) . '</ele>';
+		}
+		if ( ! empty( $p['time'] ) ) {
+			$trkpts .= '<time>' . esc_html( (string) $p['time'] ) . '</time>';
+		}
+		$trkpts .= '</trkpt>';
+	}
+
+	return '<?xml version="1.0" encoding="UTF-8"?>'
+		. '<gpx version="1.1" creator="nop-indieweb" xmlns="http://www.topografix.com/GPX/1/1">'
+		. '<trk><name>' . esc_html( $name ) . '</name><trkseg>' . $trkpts . '</trkseg></trk></gpx>';
+}
+
+/**
  * Formats a single exercise stat for display, or returns null when the
  * underlying data is absent. The one source of truth for stat formatting,
  * shared by the Block_Bindings derived fields and the exercise-stats block.
