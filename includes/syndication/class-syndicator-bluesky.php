@@ -101,6 +101,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 
 		$body_text = $this->build_full_text( $post_id );
+		$hashtags  = $this->build_hashtag_string( $post_id );
 
 		// Quiet link back: use the bare site host (e.g. neilorangepeel.com) as a
 		// tappable facet label so readers see where the post came from while the
@@ -109,7 +110,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// of embed type so the link treatment is consistent.
 		$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 		$label  = '' !== $host ? $host : $permalink;
-		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
+		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ), $hashtags );
 		$facet  = $this->build_label_facet( $text, $label, $permalink );
 		// Bluesky doesn't auto-link hashtags the way Mastodon does — each #tag
 		// the author typed needs an explicit facet to become searchable.
