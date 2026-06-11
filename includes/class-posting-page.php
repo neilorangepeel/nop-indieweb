@@ -110,7 +110,7 @@ class Posting_Page {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F4EFE6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#15140F" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
@@ -147,12 +147,28 @@ foreach ( [ '700', '800' ] as $weight ) {
  * --accent / --on-accent on .app[data-type], retinting the type tile, focus
  * rings, tag chips, progress and the Post button together.
  */
+/* Registering --ink as a real <color> lets the .app transition interpolate it;
+   every derived token (surfaces, rules, grain, shadow) re-mixes per frame, so
+   one transition sweeps the whole poster through the colour change. */
+@property --ink {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: #D7331F;
+}
+
 :root {
-	--paper:    #F4EFE6;
-	--red:      #E63329;
-	--blue:     #1E4FD6;
-	--ochre:    #8A6200;
-	--charcoal: #1A1A1A;
+	/* Dark: paper becomes near-black and the inks lift to stay legible — the
+	   rest cascades, since every role token derives from --paper / --ink.
+	   Six risograph inks, one per post kind. */
+	color-scheme: light dark;
+	--paper:    light-dark(#F4EFE6, #15140F);
+	--red:      light-dark(#D7331F, #FF5A4D);
+	--blue:     light-dark(#1E4FD6, #6E90FF);
+	--teal:     light-dark(#00787F, #3CC1C9);
+	--green:    light-dark(#20713A, #5BCB84);
+	--violet:   light-dark(#6A4ACF, #A78FE8);
+	--orange:   light-dark(#B4500A, #FF9A3C);
+	--charcoal: light-dark(#1A1A1A, #F4EFE6);
 
 	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
 	   tokens live on .app (not here) so they re-resolve with the per-type --ink;
@@ -168,27 +184,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Dark: paper becomes near-black and the inks lift to stay legible — the rest
-   cascades, since every role token derives from --paper / --ink. */
-@media (prefers-color-scheme: dark) {
-	:root {
-		--paper:    #15140F;
-		--red:      #FF5A4D;
-		--blue:     #6E90FF;
-		--ochre:    #E3AE33;
-		--charcoal: #F4EFE6;
-	}
-}
-
-/* Per-type ink — selecting a tile re-inks the whole screen (two-tone). */
-.app[data-type="note"],
-.app[data-type="bookmark"]               { --ink: var(--ochre); }
-.app[data-type="photo"],
-.app[data-type="repost"],
-.app[data-type="rsvp"]                   { --ink: var(--blue); }
-.app[data-type="reply"],
-.app[data-type="like"]                   { --ink: var(--red); }
-.app[data-type="article"]                { --ink: var(--charcoal); }
+/* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
+   One ink per kind: heart = red, photo = blue, the default note screen =
+   teal, bookmark files away in green, reply talks in warm orange, repost
+   echoes in violet. */
+.app[data-type="note"]     { --ink: var(--teal); }
+.app[data-type="photo"]    { --ink: var(--blue); }
+.app[data-type="reply"]    { --ink: var(--orange); }
+.app[data-type="like"]     { --ink: var(--red); }
+.app[data-type="bookmark"] { --ink: var(--green); }
+.app[data-type="repost"]   { --ink: var(--violet); }
 
 html {
 	height: 100%;
@@ -222,25 +227,29 @@ body {
 	--grain:    color-mix(in srgb, var(--ink) 7%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
 
+	/* The kind-switch moment: --ink is a registered <color>, so the whole
+	   poster crossfades to the new ink instead of snapping. */
+	transition: --ink 0.4s ease;
+
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
 	height: 100dvh;
 	overflow: hidden;
-	max-width: 480px;
 	margin: 0 auto;
 	color: var(--text);
 	background-color: var(--field);
 	/* Faint halftone grain — the organic "printed on paper" texture. */
 	background-image: radial-gradient(var(--grain) 0.6px, transparent 0.9px);
 	background-size: 4px 4px;
-	border-left: 2px solid var(--line);
-	border-right: 2px solid var(--line);
 }
 
-/* On desktop the poster floats: centre it, cap the height, and ring it
-   with the full 2px ink frame. */
-@media (min-width: 600px) {
+/* On phones the paper runs full-bleed — no side frame. Edge borders sit in
+   the zone the rounded display corners and sub-pixel rounding clip, so they
+   render ragged; the horizontal rules carry the structure instead. The full
+   2px ink frame only appears when there's genuinely room to float the poster:
+   wide AND tall, so landscape phones stay full-bleed too. */
+@media (min-width: 600px) and (min-height: 600px) {
 	body {
 		display: flex;
 		align-items: center;
@@ -250,6 +259,7 @@ body {
 		height: calc(100dvh - 48px);
 		max-height: 880px;
 		width: 100%;
+		max-width: 480px;
 		border: 2px solid var(--line);
 		box-shadow: var(--shadow);
 	}
@@ -366,7 +376,7 @@ body {
 
 .type-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	gap: 6px;
 	flex-shrink: 0;
 	padding: 12px;
@@ -377,12 +387,12 @@ body {
 	flex-direction: column;
 	align-items: center;
 	gap: 3px;
-	padding: 8px 4px;
+	padding: 9px 4px;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--text);
-	font-size: 9px;
+	font-size: 10px;
 	font-weight: 800;
 	font-family: var(--display);
 	text-transform: uppercase;
@@ -515,29 +525,6 @@ body {
 }
 .compose-prompt.is-hidden { opacity: 0; transform: translateY(-6px); }
 
-/* RSVP segmented control — bold blocks. */
-.segmented {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 6px;
-}
-.seg {
-	padding: 12px 4px;
-	border: 2px solid var(--line);
-	border-radius: var(--radius);
-	background: var(--field);
-	color: var(--text);
-	font-size: 12px;
-	font-weight: 800;
-	font-family: var(--display);
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
-.seg.is-active { background: var(--accent); color: var(--on-accent); }
-.seg:active { transform: translate(1px, 1px); }
-
 /* Photo picker */
 .photo-picker {
 	background: var(--field);
@@ -618,6 +605,52 @@ body {
 }
 .tag-input::placeholder { color: var(--text); opacity: 0.45; }
 
+/* URL specimen — fills the void on URL-only kinds (like, repost). Empty: the
+   kind glyph as a printed watermark. Filled: the target's hostname set big in
+   condensed caps, confirming what you're acting on before you post. */
+.url-specimen {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 140px;
+	padding: 8px 12px 20px;
+	text-align: center;
+}
+.url-specimen__glyph { display: flex; color: var(--ink); opacity: 0.12; }
+.url-specimen__glyph svg { display: block; width: 96px; height: 96px; }
+.url-specimen__hint {
+	font-family: var(--display);
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	opacity: 0.4;
+}
+.url-specimen__host {
+	font-family: var(--display);
+	font-size: clamp(30px, 10vw, 44px);
+	font-weight: 800;
+	line-height: 0.95;
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+	word-break: break-word;
+	animation: reveal 0.18s ease;
+}
+.url-specimen__path {
+	font-size: 13px;
+	font-weight: 500;
+	opacity: 0.6;
+	word-break: break-all;
+	max-width: 100%;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
 /* Syndicate-to */
 .syndicate-details {
 	border: none;
@@ -644,6 +677,15 @@ body {
 	font-size: 18px; font-weight: 800; line-height: 1;
 }
 details[open] .syndicate-summary::after { content: '\2212'; }
+/* Animated open — interpolate-size lets block-size transition to auto
+   (Chrome 131+ / Safari 18.2+; elsewhere it just opens instantly). */
+.syndicate-details::details-content {
+	block-size: 0;
+	overflow: hidden;
+	interpolate-size: allow-keywords;
+	transition: block-size 0.25s ease, content-visibility 0.25s allow-discrete;
+}
+.syndicate-details[open]::details-content { block-size: auto; }
 .syndicators {
 	display: flex;
 	flex-direction: column;
@@ -659,10 +701,30 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	cursor: pointer;
 	user-select: none;
 }
-.syndicator-item input[type="checkbox"] {
-	width: 18px; height: 18px;
-	cursor: pointer;
-	accent-color: var(--accent);
+/* Square ink toggle — same language as the type tiles; the real checkbox
+   stays in the tree (sr-only) for keyboard and screen readers. */
+.syndicator-box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px; height: 20px;
+	flex-shrink: 0;
+	border: 2px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--field);
+	color: var(--on-accent);
+	transition: background-color 0.12s;
+}
+.syndicator-box svg {
+	display: block;
+	opacity: 0;
+	transform: scale(0.5);
+	transition: opacity 0.12s, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.syndicator-item input:checked + .syndicator-box { background: var(--accent); }
+.syndicator-item input:checked + .syndicator-box svg { opacity: 1; transform: scale(1); }
+.syndicator-item input:focus-visible + .syndicator-box {
+	box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent);
 }
 .syndicator-item__limit {
 	margin-left: auto;
@@ -704,19 +766,21 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	background: var(--accent);
 	color: var(--on-accent);
 	box-shadow: var(--shadow);
-	transition: transform 0.08s, box-shadow 0.08s;
+	transition: transform 0.08s, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
 .btn-primary:active {
 	transform: translate(4px, 4px);
 	box-shadow: 0 0 0 var(--line);
 }
+/* Disabled is structured, not washed out; when the form becomes valid the fill
+   sweeps in and the offset shadow grows — the button visibly "charges". */
 .btn-primary:disabled {
 	background: var(--field);
 	color: var(--text);
 	border-color: var(--line);
-	opacity: 0.4;
+	opacity: 0.45;
 	cursor: default;
-	box-shadow: none;
+	box-shadow: 0 0 0 var(--ink);
 	transform: none;
 }
 .btn-secondary { background: var(--field); color: var(--text); }
@@ -770,34 +834,98 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	-webkit-overflow-scrolling: touch;
 	padding: 16px;
 }
-.success-banner {
+.success-hero {
+	position: relative;
 	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 36px 0 12px;
+	margin-bottom: 16px;
+}
+/* The rubber stamp — slams down (springy bezier overshoots the landing) with
+   a fixed -3° rotation; `rotate` is its own property so the keyframes only
+   need to scale. */
+.success-banner {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
 	align-items: center;
 	gap: 12px;
 	background: var(--accent);
 	color: var(--on-accent);
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
-	padding: 18px 16px;
-	margin-bottom: 16px;
+	padding: 14px 26px;
 	box-shadow: var(--shadow);
-	animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+	rotate: -3deg;
+	animation: stamp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
-@keyframes pop-in {
-	0%   { transform: scale(0.92); opacity: 0; }
-	60%  { transform: scale(1.02); }
+@keyframes stamp {
+	0%   { transform: scale(1.5); opacity: 0; }
 	100% { transform: scale(1); opacity: 1; }
 }
 .success-check { flex-shrink: 0; display: flex; }
 .success-banner h2 {
 	font-family: var(--display);
-	font-size: 34px;
+	font-size: 40px;
 	font-weight: 800;
 	letter-spacing: 0.01em;
 	text-transform: uppercase;
 	line-height: 1;
 }
-.success-streak { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+/* Bauhaus burst — the one deliberate break from two-tone: a single flash of
+   the full six-ink set radiating from the stamp's impact, then gone. */
+.burst {
+	position: absolute;
+	inset: 0;
+	display: block;
+	pointer-events: none;
+}
+.burst i {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	margin: -5px;
+	background: currentColor;
+	animation: burst-fly 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) 0.18s both;
+}
+.burst i:nth-child(6n)   { color: var(--red); }
+.burst i:nth-child(6n+1) { color: var(--blue); }
+.burst i:nth-child(6n+2) { color: var(--teal); }
+.burst i:nth-child(6n+3) { color: var(--green); }
+.burst i:nth-child(6n+4) { color: var(--violet); }
+.burst i:nth-child(6n+5) { color: var(--orange); }
+.burst i:nth-child(4n)   { border-radius: 50%; }
+.burst i:nth-child(4n+2) { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+@keyframes burst-fly {
+	0%   { transform: rotate(var(--a)) translateY(-20px) scale(0.3); opacity: 0; }
+	25%  { opacity: 1; }
+	100% { transform: rotate(var(--a)) translateY(-92px) scale(1); opacity: 0; }
+}
+/* Streak set as a type specimen — oversized ordinal, small caps label. */
+.success-streak {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	margin-top: 22px;
+}
+.success-streak__num {
+	font-family: var(--display);
+	font-size: 42px;
+	font-weight: 800;
+	line-height: 1;
+}
+.success-streak__label {
+	font-family: var(--display);
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	opacity: 0.6;
+}
 .success-photos {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
@@ -859,10 +987,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .toast--error { border-color: var(--red); color: var(--red); }
 
 @media (prefers-reduced-motion: reduce) {
+	.app { transition: none; }
 	.type-btn.is-active,
-	.success-banner { animation: none; }
+	.success-banner,
+	.url-specimen__host { animation: none; }
+	.burst { display: none; }
 	.field-group.is-conditional:not([hidden]) { animation: none; }
-	.compose-prompt, .sky__body { transition: none; }
+	.compose-prompt, .sky__body, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
+	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; box-shadow: var(--shadow); }
 	.toast { transition: opacity 0.01ms; }
 }
@@ -926,39 +1058,23 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></span>
 					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
 				</button>
-				<button class="type-btn" data-type="article" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 13h8v1.6H8V13zm0 4h6v1.6H8V17z"/></svg></span>
-					<span><?php esc_html_e( 'Article', 'nop-indieweb' ); ?></span>
-				</button>
-				<button class="type-btn" data-type="rsvp" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M3 3h18v18H3V3zm6.6 13.4 7.4-7.4L15.6 7.6 9.6 13.6 7.4 11.4 6 12.8l3.6 3.6z"/></svg></span>
-					<span><?php esc_html_e( 'RSVP', 'nop-indieweb' ); ?></span>
-				</button>
 			</div><!-- .type-grid -->
 
 			<div class="compose-scroll">
 
-				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
+				<!-- URL field (reply, like, bookmark, repost) -->
 				<div class="field-group is-conditional" id="fieldUrl" hidden>
 					<label class="field-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
 					<input type="url" id="typeUrl" class="text-field" placeholder="https://…" autocomplete="off">
 				</div>
 
-				<!-- Title field (article) -->
-				<div class="field-group is-conditional" id="fieldTitle" hidden>
-					<label class="field-label" for="titleInput"><?php esc_html_e( 'Title', 'nop-indieweb' ); ?></label>
-					<input type="text" id="titleInput" class="text-field" placeholder="<?php esc_attr_e( 'Article title…', 'nop-indieweb' ); ?>" autocomplete="off">
-				</div>
-
-				<!-- RSVP segmented control (rsvp) -->
-				<div class="field-group is-conditional" id="fieldRsvp" hidden>
-					<span class="field-label"><?php esc_html_e( 'RSVP', 'nop-indieweb' ); ?></span>
-					<div class="segmented" id="rsvpControl" role="group" aria-label="<?php esc_attr_e( 'RSVP response', 'nop-indieweb' ); ?>">
-						<button class="seg" data-rsvp="yes" aria-pressed="false" type="button"><?php esc_html_e( 'Yes', 'nop-indieweb' ); ?></button>
-						<button class="seg" data-rsvp="no" aria-pressed="false" type="button"><?php esc_html_e( 'No', 'nop-indieweb' ); ?></button>
-						<button class="seg" data-rsvp="maybe" aria-pressed="false" type="button"><?php esc_html_e( 'Maybe', 'nop-indieweb' ); ?></button>
-						<button class="seg" data-rsvp="interested" aria-pressed="false" type="button"><?php esc_html_e( 'Keen', 'nop-indieweb' ); ?></button>
-					</div>
+				<!-- URL specimen (like, repost) — watermark glyph when empty, big
+				     hostname specimen once a URL parses -->
+				<div class="url-specimen is-conditional" id="urlSpecimen" hidden>
+					<span class="url-specimen__glyph" id="specimenGlyph" aria-hidden="true"></span>
+					<p class="url-specimen__hint" id="specimenHint"></p>
+					<p class="url-specimen__host" id="specimenHost" hidden></p>
+					<p class="url-specimen__path" id="specimenPath" hidden></p>
 				</div>
 
 				<!-- Photo picker -->
@@ -982,7 +1098,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<div class="char-count" id="charCount" aria-live="polite" hidden></div>
 				</div>
 
-				<!-- Tags (note, photo, article) -->
+				<!-- Tags (note, photo) -->
 				<div class="field-group" id="fieldTags">
 					<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
 					<div class="tags-field" id="tagsField">
@@ -1028,11 +1144,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		<!-- Success view -->
 		<div id="view-success" hidden>
 			<div class="success-scroll">
-				<div class="success-banner">
-					<span class="success-check" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-					<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
+				<div class="success-hero">
+					<span class="burst" aria-hidden="true"><i style="--a:0deg"></i><i style="--a:36deg"></i><i style="--a:72deg"></i><i style="--a:108deg"></i><i style="--a:144deg"></i><i style="--a:180deg"></i><i style="--a:216deg"></i><i style="--a:252deg"></i><i style="--a:288deg"></i><i style="--a:324deg"></i></span>
+					<div class="success-banner">
+						<span class="success-check" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+						<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
+					</div>
+					<p class="success-streak" id="successStreak" hidden></p>
 				</div>
-				<p class="success-streak" id="successStreak" hidden></p>
 				<div class="success-photos" id="successPhotos"></div>
 				<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
 				<div class="success-actions">
@@ -1136,30 +1255,24 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		note:     { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a note…' },
 		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a caption…' },
 		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
-		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL' },
+		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL', urlHint: "Paste the URL you're liking" },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
-		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL' },
-		article:  { urlProp: null,           hasContent: true,  hasTags: true,  hasTitle: true, contentPlaceholder: 'Write your article…' },
-		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasRsvp: true, urlLabel: 'Event URL', contentPlaceholder: 'Add a note (optional)…' },
+		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL', urlHint: "Paste the URL you're reposting" },
 	};
 
 	var currentType   = 'note';
 	var selectedFiles = [];
 	var currentTags   = [];
-	var selectedRsvp  = '';
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 
 	var postBtn      = document.getElementById( 'postBtn' );
 	var fieldUrl     = document.getElementById( 'fieldUrl' );
-	var fieldTitle   = document.getElementById( 'fieldTitle' );
-	var fieldRsvp    = document.getElementById( 'fieldRsvp' );
 	var fieldPhoto   = document.getElementById( 'fieldPhoto' );
 	var fieldContent = document.getElementById( 'fieldContent' );
 	var fieldTags    = document.getElementById( 'fieldTags' );
 	var urlInput     = document.getElementById( 'typeUrl' );
 	var urlLabel     = document.getElementById( 'urlLabel' );
-	var titleInput   = document.getElementById( 'titleInput' );
 	var contentInput  = document.getElementById( 'content' );
 	var composePrompt = document.getElementById( 'composePrompt' );
 	var picker       = document.getElementById( 'photoPicker' );
@@ -1169,7 +1282,49 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
-	var rsvpControl  = document.getElementById( 'rsvpControl' );
+	var specimen      = document.getElementById( 'urlSpecimen' );
+	var specimenGlyph = document.getElementById( 'specimenGlyph' );
+	var specimenHint  = document.getElementById( 'specimenHint' );
+	var specimenHost  = document.getElementById( 'specimenHost' );
+	var specimenPath  = document.getElementById( 'specimenPath' );
+
+	// URL specimen — on URL-only kinds the empty space below the field shows the
+	// kind glyph as a watermark; once the URL parses it becomes a type specimen
+	// of the target's hostname, confirming what you're about to act on.
+	function updateSpecimen() {
+		var cfg  = TYPE_CONFIG[ currentType ];
+		var show = !! cfg.urlProp && ! cfg.hasContent;
+		specimen.hidden = ! show;
+		if ( ! show ) return;
+
+		var parsed = null;
+		var raw    = urlInput.value.trim();
+		if ( raw ) {
+			try { parsed = new URL( raw ); } catch ( e ) {}
+		}
+		var filled = !! ( parsed && parsed.hostname );
+
+		specimenGlyph.hidden = filled;
+		specimenHint.hidden  = filled;
+		specimenHost.hidden  = ! filled;
+		if ( filled ) {
+			specimenHost.textContent = parsed.hostname.replace( /^www\./, '' );
+			var path = parsed.pathname + parsed.search;
+			specimenPath.textContent = path;
+			specimenPath.hidden = path === '/';
+		} else {
+			specimenPath.hidden = true;
+			specimenHint.textContent = cfg.urlHint || 'Paste a URL';
+			specimenGlyph.innerHTML = '';
+			var icon = document.querySelector( '.type-btn[data-type="' + currentType + '"] .type-btn__icon svg' );
+			if ( icon ) {
+				var big = icon.cloneNode( true );
+				big.setAttribute( 'width', '96' );
+				big.setAttribute( 'height', '96' );
+				specimenGlyph.appendChild( big );
+			}
+		}
+	}
 
 	// ── Syndicators ───────────────────────────────────────────────────────────
 	// Targets are inlined server-side (NOP.syndicateTo) — no fetch needed.
@@ -1180,7 +1335,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
 			var limit = CHAR_LIMITS[ s.uid ];
 			return '<label class="syndicator-item">'
-				+ '<input type="checkbox" value="' + escAttr( s.uid ) + '" checked>'
+				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '" checked>'
+				+ '<span class="syndicator-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
 				+ ' ' + escHtml( s.name )
 				+ ( limit ? '<span class="syndicator-item__limit">' + limit + '</span>' : '' )
 				+ '</label>';
@@ -1260,8 +1416,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		} );
 
 		fieldUrl.hidden     = ! cfg.urlProp;
-		fieldTitle.hidden   = ! cfg.hasTitle;
-		fieldRsvp.hidden    = ! cfg.hasRsvp;
 		fieldPhoto.hidden   = type !== 'photo';
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
@@ -1271,25 +1425,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			setPrompt( ( type === 'note' ) ? notePrompt : ( cfg.contentPlaceholder || 'Write…' ) );
 		}
 
+		updateSpecimen();
 		updateCounter();
 		saveDraft();
 		updatePostBtn();
 	}
-
-	// ── RSVP segmented control ──────────────────────────────────────────────────
-
-	rsvpControl.addEventListener( 'click', function (e) {
-		var btn = e.target.closest( '.seg' );
-		if ( ! btn ) return;
-		selectedRsvp = btn.dataset.rsvp;
-		document.querySelectorAll( '.seg' ).forEach( function (b) {
-			var active = b === btn;
-			b.classList.toggle( 'is-active', active );
-			b.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
-		} );
-		updatePostBtn();
-		saveDraft();
-	} );
 
 	// ── Post button state ─────────────────────────────────────────────────────
 
@@ -1298,10 +1438,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var enabled = false;
 		if ( currentType === 'photo' ) {
 			enabled = selectedFiles.length > 0;
-		} else if ( currentType === 'rsvp' ) {
-			enabled = !! selectedRsvp;
-		} else if ( currentType === 'article' ) {
-			enabled = contentInput.value.trim().length > 0 || titleInput.value.trim().length > 0;
 		} else if ( cfg.urlProp ) {
 			enabled = urlInput.value.trim().length > 0;
 		} else {
@@ -1310,8 +1446,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		postBtn.disabled = ! enabled;
 	}
 
-	urlInput.addEventListener( 'input', function () { updatePostBtn(); saveDraft(); } );
-	titleInput.addEventListener( 'input', function () { updatePostBtn(); saveDraft(); } );
+	urlInput.addEventListener( 'input', function () { updateSpecimen(); updatePostBtn(); saveDraft(); } );
 	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); syncPrompt(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
@@ -1399,17 +1534,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var content = contentInput.value.trim();
 		if ( content && cfg.hasContent ) props.content = [ content ];
 
-		if ( cfg.hasTitle ) {
-			var title = titleInput.value.trim();
-			if ( title ) props.name = [ title ];
-		}
-
 		if ( cfg.urlProp ) {
 			var url = urlInput.value.trim();
 			if ( url ) props[ cfg.urlProp ] = [ url ];
 		}
-
-		if ( cfg.hasRsvp && selectedRsvp ) props.rsvp = [ selectedRsvp ];
 
 		if ( photoUrls && photoUrls.length ) props.photo = photoUrls;
 		if ( cfg.hasTags && currentTags.length ) props.category = currentTags.slice();
@@ -1451,7 +1579,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var streakEl = document.getElementById( 'successStreak' );
 		var count    = bumpStreak();
 		if ( count > 0 ) {
-			streakEl.textContent = 'Your ' + ordinal( count ) + ' post today.';
+			streakEl.innerHTML = '<span class="success-streak__num">' + ordinal( count ) + '</span>'
+				+ '<span class="success-streak__label">post today</span>';
 			streakEl.hidden = false;
 		} else {
 			streakEl.hidden = true;
@@ -1482,14 +1611,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 
 	function resetForm() {
-		selectedFiles = []; currentTags = []; selectedRsvp = '';
-		contentInput.value = ''; urlInput.value = ''; titleInput.value = '';
+		selectedFiles = []; currentTags = [];
+		contentInput.value = ''; urlInput.value = '';
 		thumbs.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
-		document.querySelectorAll( '.seg' ).forEach( function (b) {
-			b.classList.remove( 'is-active' );
-			b.setAttribute( 'aria-pressed', 'false' );
-		} );
 		renderTags();
 		clearDraft();
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
@@ -1531,8 +1656,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				type:    currentType,
 				content: contentInput.value,
 				url:     urlInput.value,
-				title:   titleInput.value,
-				rsvp:    selectedRsvp,
 				tags:    currentTags,
 			} ) );
 		} catch ( e ) {}
@@ -1549,17 +1672,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( d.type && TYPE_CONFIG[ d.type ] ) switchType( d.type );
 		if ( typeof d.content === 'string' ) contentInput.value = d.content;
 		if ( typeof d.url === 'string' ) urlInput.value = d.url;
-		if ( typeof d.title === 'string' ) titleInput.value = d.title;
-		if ( typeof d.rsvp === 'string' && d.rsvp ) {
-			var seg = rsvpControl.querySelector( '.seg[data-rsvp="' + d.rsvp + '"]' );
-			if ( seg ) {
-				selectedRsvp = d.rsvp;
-				seg.classList.add( 'is-active' );
-				seg.setAttribute( 'aria-pressed', 'true' );
-			}
-		}
 		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
 		restoring = false;
+		updateSpecimen();
 		updateCounter();
 		updatePostBtn();
 		saveDraft();
@@ -1588,7 +1703,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var lim = currentLimit();
 		el.hidden = false;
 		if ( lim ) {
-			el.textContent = len + ' / ' + lim;
+			// Within 50 of the limit the counter flips to a countdown.
+			var left = lim - len;
+			el.textContent = left <= 50 ? String( left ) : len + ' / ' + lim;
 			el.classList.toggle( 'is-over', len > lim );
 		} else {
 			el.textContent = String( len );
