@@ -86,7 +86,11 @@ if ( $summary && str_starts_with( $svg, '<svg ' ) ) {
 }
 
 $wrapper_attrs = get_block_wrapper_attributes( [
-	'class' => 'wp-block-icon nop-weather-icon nop-weather-icon--' . $slug,
+	'class' => 'nop-weather-icon nop-weather-icon--' . $slug,
+	'style' => 'display:inline-flex;width:1em;height:1em',
 ] );
+
+// Force the SVG to fill the wrapper.
+$svg = str_replace( '<svg ', '<svg width="1em" height="1em" ', $svg );
 ?>
 <span <?php echo wp_kses_data( $wrapper_attrs ); ?>><?php echo $svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?></span>
