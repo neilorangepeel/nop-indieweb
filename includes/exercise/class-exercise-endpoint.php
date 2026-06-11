@@ -130,7 +130,7 @@ class Exercise_Endpoint {
 		$meta = array_filter( [
 			'nop_indieweb_exercise_distance_m'       => $this->to_metres( $w['distance'] ?? null ),
 			'nop_indieweb_exercise_duration_s'       => (int) ( $w['duration'] ?? 0 ),
-			'nop_indieweb_exercise_calories'         => (int) round( $this->qty( $w['activeEnergyBurned'] ?? ( $w['activeEnergy'] ?? null ) ) ),
+			'nop_indieweb_exercise_calories'         => (int) round( $this->to_kcal( $w['activeEnergyBurned'] ?? ( $w['activeEnergy'] ?? null ) ) ),
 			'nop_indieweb_exercise_elevation_gain_m' => $this->to_metres( $w['elevationUp'] ?? null ),
 			'nop_indieweb_exercise_elevation_loss_m' => $this->to_metres( $w['elevationDown'] ?? null ),
 			'nop_indieweb_exercise_max_speed_ms'     => $this->to_ms( $w['maxSpeed'] ?? null ),
@@ -178,6 +178,19 @@ class Exercise_Endpoint {
 
 	private function qty( $field ): float {
 		return is_array( $field ) ? (float) ( $field['qty'] ?? 0 ) : (float) $field;
+	}
+
+	private function to_kcal( $field ): float {
+		if ( ! is_array( $field ) ) {
+			return (float) $field;
+		}
+		$qty   = (float) ( $field['qty'] ?? 0 );
+		$units = strtolower( (string) ( $field['units'] ?? 'kcal' ) );
+		return match ( $units ) {
+			'kj'    => $qty / 4.184,
+			'j'     => $qty / 4184.0,
+			default => $qty,
+		};
 	}
 
 	private function to_metres( $field ): float {
