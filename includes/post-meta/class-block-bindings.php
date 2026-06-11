@@ -211,7 +211,9 @@ class Block_Bindings {
 				?? $this->humanize_placeholder( $field, $key );
 		}
 
-		return null;
+		// Return empty string (not null) so WordPress overrides the block's static
+		// fallback HTML — null leaves the placeholder text intact on the front end.
+		return '';
 	}
 
 	/**
