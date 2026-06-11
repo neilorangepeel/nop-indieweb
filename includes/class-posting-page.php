@@ -544,8 +544,8 @@ body {
 
 .thumbnails {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-	gap: 6px;
+	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+	gap: 8px;
 	margin-top: 10px;
 }
 .thumbnails img {
@@ -553,6 +553,21 @@ body {
 	border: 2px solid var(--line);
 	border-radius: var(--radius); display: block;
 }
+.thumb { display: flex; flex-direction: column; gap: 4px; }
+.thumb__alt {
+	width: 100%;
+	background: var(--surface);
+	border: none;
+	border-radius: var(--radius);
+	padding: 6px 8px;
+	font-size: 12px;
+	font-family: inherit;
+	font-weight: 500;
+	color: var(--text);
+	outline: none;
+}
+.thumb__alt:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+.thumb__alt::placeholder { color: var(--text); opacity: 0.4; }
 
 /* Tags — solid accent chips, knockout text, square remove. */
 .tags-field {
@@ -1262,6 +1277,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	var currentType   = 'note';
 	var selectedFiles = [];
+	var photoAlts     = [];
 	var currentTags   = [];
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
@@ -1464,18 +1480,36 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	function handleFiles( files ) {
 		selectedFiles    = files.slice( 0, 10 );
+		photoAlts        = [];
 		thumbs.innerHTML = '';
-		selectedFiles.forEach( function (file) {
+		selectedFiles.forEach( function (file, i) {
+			var cell       = document.createElement( 'figure' );
+			cell.className = 'thumb';
 			var img = document.createElement( 'img' );
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
-			thumbs.appendChild( img );
+			var alt           = document.createElement( 'input' );
+			alt.type          = 'text';
+			alt.className     = 'thumb__alt';
+			alt.placeholder   = 'Describe…';
+			alt.autocomplete  = 'off';
+			alt.dataset.index = i;
+			alt.setAttribute( 'aria-label', 'Alt text for photo ' + ( i + 1 ) );
+			cell.appendChild( img );
+			cell.appendChild( alt );
+			thumbs.appendChild( cell );
 		} );
 		picker.querySelector( 'p' ).textContent = selectedFiles.length
 			? selectedFiles.length + ' photo' + ( selectedFiles.length > 1 ? 's' : '' ) + ' selected'
 			: 'Add photos';
 		updatePostBtn();
 	}
+
+	thumbs.addEventListener( 'input', function (e) {
+		if ( e.target.classList.contains( 'thumb__alt' ) ) {
+			photoAlts[ parseInt( e.target.dataset.index, 10 ) ] = e.target.value;
+		}
+	} );
 
 	// ── Post ──────────────────────────────────────────────────────────────────
 
@@ -1539,7 +1573,15 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			if ( url ) props[ cfg.urlProp ] = [ url ];
 		}
 
-		if ( photoUrls && photoUrls.length ) props.photo = photoUrls;
+		// Alt text rides along as the server's array photo shape ({primary, alt});
+		// sideload_photos copies it onto the attachment, where both the rendered
+		// post and the Mastodon/Bluesky syndicators read it.
+		if ( photoUrls && photoUrls.length ) {
+			props.photo = photoUrls.map( function (url, i) {
+				var alt = ( photoAlts[ i ] || '' ).trim();
+				return alt ? { primary: url, alt: alt } : url;
+			} );
+		}
 		if ( cfg.hasTags && currentTags.length ) props.category = currentTags.slice();
 
 		// Always sent, even when empty — an explicitly empty selection means
@@ -1611,7 +1653,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 
 	function resetForm() {
-		selectedFiles = []; currentTags = [];
+		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
 		thumbs.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
