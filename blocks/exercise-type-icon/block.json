@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/exercise-type-icon",
+	"title": "Exercise Type Icon",
+	"description": "Renders an activity-specific icon for an exercise post based on its nop_exercise_type taxonomy term.",
+	"category": "nop-indieweb-meta",
+	"icon": "running",
+	"keywords": ["exercise", "workout", "icon", "activity", "type"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": false,
+			"gradients": false,
+			"link": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": false
+		}
+	}
+}

@@ -82,9 +82,11 @@ class Block_Bindings {
 		'exercise_avg_hr'       => '',
 		'exercise_max_hr'       => '',
 		'exercise_max_speed'    => '',
-		'exercise_elevation_range' => '',
-		'exercise_max_grade'    => '',
-		'exercise_gear'         => '',
+		'exercise_elevation_range'   => '',
+		'exercise_max_grade'         => '',
+		'exercise_gear'              => '',
+		'exercise_type_archive_link' => '',
+		'exercise_personal_best'     => '',
 	];
 
 	public function register(): void {
@@ -166,6 +168,8 @@ class Block_Bindings {
 		'exercise_elevation_range'        => '1–33 m',
 		'exercise_max_grade'              => '26.0%',
 		'exercise_gear'                   => 'Vitus Zenium',
+		'exercise_type_archive_link'      => '<a href="#">Run</a>',
+		'exercise_personal_best'          => 'Longest run',
 	];
 
 	public function get_value( array $source_args, WP_Block $block ): ?string {

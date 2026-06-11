@@ -14,18 +14,18 @@
 
 				<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"}},"layout":{"type":"flex","flexWrap":"wrap"}} -->
 				<div class="wp-block-group">
-					<!-- wp:icon {"icon":"core/chart-bar","style":{"dimensions":{"width":"1em"}}} /-->
+					<!-- wp:nop-indieweb/exercise-type-icon /-->
 
 					<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} -->
-					<p style="font-style:normal;font-weight:500">Exercise</p>
+					<p style="font-style:normal;font-weight:500"><a href="/kind/exercise/">Exercise</a></p>
 					<!-- /wp:paragraph -->
 
 					<!-- wp:paragraph -->
 					<p>·</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_type_label"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} -->
-					<p style="font-style:normal;font-weight:500">Run</p>
+					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_type_archive_link"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} -->
+					<p style="font-style:normal;font-weight:500"><a href="#">Run</a></p>
 					<!-- /wp:paragraph -->
 				</div>
 				<!-- /wp:group -->
@@ -46,6 +46,10 @@
 		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
 
 			<!-- wp:post-title {"style":{"typography":{"lineHeight":"1","fontStyle":"normal","fontWeight":"800","letterSpacing":"-0.02em"}},"fontSize":"x-large","fontFamily":"brandon-text"} /-->
+
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_personal_best"}}}},"className":"nop-exercise-pb","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontWeight":"700"},"spacing":{"margin":{"top":"0"}}},"fontSize":"x-small","textColor":"accent-4","fontFamily":"brandon-text-cond"} -->
+			<p class="nop-exercise-pb has-accent-4-color has-text-color has-x-small-font-size has-brandon-text-cond-font-family" style="margin-top:0;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Longest run</p>
+			<!-- /wp:paragraph -->
 
 			<!-- wp:group {"metadata":{"name":"Media"},"style":{"spacing":{"blockGap":"0.75rem"}},"layout":{"type":"constrained"}} -->
 			<div class="wp-block-group">
@@ -176,8 +180,8 @@
 	<div class="wp-block-group alignwide" style="border-top-color:#e5e7eb;border-top-width:1px">
 		<!-- wp:group {"tagName":"nav","align":"wide","style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"},"ariaLabel":"Post navigation"} -->
 		<nav class="wp-block-group alignwide" aria-label="Post navigation" style="padding-top:2rem;padding-bottom:2rem">
-			<!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow"} /-->
-			<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow"} /-->
+			<!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
+			<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
 		</nav>
 		<!-- /wp:group -->
 	</div>

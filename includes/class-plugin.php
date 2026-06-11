@@ -230,6 +230,22 @@ class Plugin {
 			( new Syndication_Panel( $syndication_manager ) )->register();
 		}
 
+		// Clear the personal-best distance transient whenever an exercise post's
+		// type meta is written, so the next render re-queries and re-caches.
+		add_action( 'added_post_meta', function( $meta_id, int $post_id, string $meta_key, $meta_value ) {
+			if ( 'nop_indieweb_exercise_type' === $meta_key ) {
+				delete_transient( 'nop_pb_dist_' . sanitize_key( (string) $meta_value ) );
+			}
+		}, 10, 4 );
+		add_action( 'updated_post_meta', function( $meta_id, int $post_id, string $meta_key, $meta_value ) {
+			if ( 'nop_indieweb_exercise_type' === $meta_key ) {
+				$new = sanitize_key( (string) $meta_value );
+				$old = sanitize_key( (string) get_post_meta( $post_id, $meta_key, true ) );
+				if ( $new ) delete_transient( 'nop_pb_dist_' . $new );
+				if ( $old && $old !== $new ) delete_transient( 'nop_pb_dist_' . $old );
+			}
+		}, 10, 4 );
+
 		add_action( 'before_delete_post', [ $this, 'delete_map_image' ] );
 		add_action( 'before_delete_post', [ $this, 'renumber_venue_visits_on_delete' ] );
 		add_action( 'trashed_post',       [ $this, 'renumber_venue_visits_on_status_change' ] );
@@ -538,6 +554,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/rsvp-meta' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-type-icon' );
 	}
 
 	public function register_block_categories( array $categories ): array {

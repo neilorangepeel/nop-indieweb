@@ -463,8 +463,79 @@ function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
 		case 'exercise_gear':
 			$gear = (string) $meta( 'gear' );
 			return '' !== $gear ? $gear : null;
+
+		case 'exercise_type_archive_link': {
+			$terms = wp_get_object_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY, [ 'fields' => 'all' ] );
+			if ( ! is_wp_error( $terms ) && $terms ) {
+				$term = $terms[0];
+				$url  = get_term_link( $term );
+				if ( ! is_wp_error( $url ) ) {
+					return '<a href="' . esc_url( $url ) . '">' . esc_html( $term->name ) . '</a>';
+				}
+				return esc_html( $term->name );
+			}
+			$type = (string) $meta( 'type' );
+			return '' !== $type ? esc_html( nop_indieweb_exercise_type_label( $type ) ) : null;
+		}
+
+		case 'exercise_personal_best':
+			return nop_indieweb_exercise_personal_best( $post_id );
 	}
 	return null;
+}
+
+/**
+ * Returns a "personal best" label if this post holds the distance record for
+ * its exercise type among all published posts, or null otherwise.
+ */
+function nop_indieweb_exercise_personal_best( int $post_id ): ?string {
+	$type = sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true ) );
+	if ( ! $type ) {
+		return null;
+	}
+	$holder = nop_indieweb_exercise_pb_holder( $type );
+	if ( ! $holder || $holder !== $post_id ) {
+		return null;
+	}
+	$label = strtolower( nop_indieweb_exercise_type_label( $type ) );
+	/* translators: %s = exercise type in lowercase e.g. "ride" */
+	return sprintf( __( 'Longest %s', 'nop-indieweb' ), $label );
+}
+
+/**
+ * Returns the post ID with the highest distance for a given exercise type.
+ * Cached as a transient for 24 hours; cleared when exercise type meta is written.
+ */
+function nop_indieweb_exercise_pb_holder( string $type ): int {
+	$cache_key = 'nop_pb_dist_' . $type;
+	$cached    = get_transient( $cache_key );
+	if ( false !== $cached ) {
+		return (int) $cached;
+	}
+
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- custom query with no WP_Query equivalent; result is cached in a transient immediately below
+	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
+		"SELECT p.ID
+		 FROM {$wpdb->posts} p
+		 INNER JOIN {$wpdb->postmeta} pm
+		         ON p.ID = pm.post_id
+		        AND pm.meta_key = 'nop_indieweb_exercise_distance_m'
+		 INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+		 INNER JOIN {$wpdb->term_taxonomy} tt
+		         ON tr.term_taxonomy_id = tt.term_taxonomy_id
+		        AND tt.taxonomy = %s
+		 INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id AND t.slug = %s
+		 WHERE p.post_type = 'post'
+		   AND p.post_status = 'publish'
+		 ORDER BY CAST(pm.meta_value AS DECIMAL(20,3)) DESC, p.post_date ASC
+		 LIMIT 1",
+		\NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY,
+		$type
+	) );
+
+	set_transient( $cache_key, $post_id, DAY_IN_SECONDS );
+	return $post_id;
 }
 
 /**
