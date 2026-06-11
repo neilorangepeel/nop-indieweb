@@ -571,7 +571,7 @@ body {
 	border-bottom: 1.5px solid var(--line);
 	border-radius: 0;
 	padding: 6px 0;
-	font-size: 14px;
+	font-size: 16px;
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
