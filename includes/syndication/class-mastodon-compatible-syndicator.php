@@ -47,8 +47,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		// the actual permalink length, so budget the suffix at 23 even though the
 		// visible text is the full URL.
 		$text     = $this->build_full_text( $post_id );
-		$hashtags = $this->build_hashtag_string( $post_id );
-		$status   = $this->compose_status( $text, $this->char_limit(), $permalink, 23, $hashtags );
+		$status   = $this->compose_status( $text, $this->char_limit(), $permalink, 23 );
 
 		$body      = [ 'status' => $status ];
 		$media_ids = $this->upload_post_images( $post_id, $instance, $token );

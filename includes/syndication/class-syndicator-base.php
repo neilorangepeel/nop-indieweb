@@ -122,61 +122,26 @@ abstract class Syndicator_Base {
 	}
 
 	/**
-	 * Returns WordPress tags for $post_id formatted as a space-separated hashtag
-	 * string (e.g. "#Belfast #Photography"). Tag names are normalised by stripping
-	 * characters outside [\p{L}\p{N}_-] and removing any leading punctuation;
-	 * purely numeric results are skipped because Bluesky rejects them.
-	 */
-	protected function build_hashtag_string( int $post_id ): string {
-		$tags = wp_get_post_tags( $post_id );
-		if ( ! $tags || is_wp_error( $tags ) ) {
-			return '';
-		}
-
-		$hashtags = [];
-		foreach ( $tags as $tag ) {
-			$normalized = (string) preg_replace( '/[^\p{L}\p{N}_-]/u', '', $tag->name );
-			$normalized = ltrim( $normalized, '_-' );
-			if ( '' !== $normalized && ! ctype_digit( $normalized ) ) {
-				$hashtags[] = '#' . $normalized;
-			}
-		}
-
-		return implode( ' ', $hashtags );
-	}
-
-	/**
-	 * Composes `<text>\n\n<hashtags>\n\n<suffix>`, truncating $text so the whole
-	 * thing fits in $limit. $suffix_cost is how many characters the suffix
-	 * occupies against the platform's budget — for Mastodon, URLs cost a flat 23
-	 * regardless of length; for Bluesky a facet label costs its visible character
-	 * count. $hashtags are appended verbatim after the body (before the suffix)
-	 * and count against the limit at their full mb_strlen.
+	 * Composes `<text>\n\n<suffix>`, truncating $text so the whole thing fits in
+	 * $limit. $suffix_cost is how many characters the suffix occupies against the
+	 * platform's budget — for Mastodon, URLs cost a flat 23 regardless of length;
+	 * for Bluesky a facet label costs its visible character count.
 	 *
-	 * If $suffix is empty, no separator or suffix is appended. If $hashtags is
-	 * empty, no hashtag block is appended.
+	 * If $suffix is empty, no separator or suffix is appended.
 	 */
-	protected function compose_status( string $text, int $limit, string $suffix, int $suffix_cost, string $hashtags = '' ): string {
-		$has_hashtags = '' !== $hashtags;
-		$has_suffix   = '' !== $suffix;
-
-		$overhead = 0;
-		if ( $has_suffix )   { $overhead += 2 + $suffix_cost; }
-		if ( $has_hashtags ) { $overhead += 2 + mb_strlen( $hashtags ); }
+	protected function compose_status( string $text, int $limit, string $suffix, int $suffix_cost ): string {
+		$has_suffix = '' !== $suffix;
+		$overhead   = $has_suffix ? 2 + $suffix_cost : 0;
 
 		$max_text = max( 0, $limit - $overhead );
 		if ( mb_strlen( $text ) > $max_text ) {
 			$text = mb_substr( $text, 0, max( 0, $max_text - 1 ) ) . '…';
 		}
 
-		$result = $text;
-		if ( $has_hashtags ) {
-			$result = ( '' === $result ) ? $hashtags : ( $result . "\n\n" . $hashtags );
+		if ( ! $has_suffix ) {
+			return $text;
 		}
-		if ( $has_suffix ) {
-			$result = ( '' === $result ) ? $suffix : ( $result . "\n\n" . $suffix );
-		}
-		return $result;
+		return ( '' === $text ) ? $suffix : ( $text . "\n\n" . $suffix );
 	}
 
 	/**
