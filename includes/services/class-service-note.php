@@ -163,10 +163,11 @@ class Note extends Service_Base {
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {
-		$settings = $this->get_inbound_settings( $parsed['platform'] );
+		$settings         = $this->get_inbound_settings( $parsed['platform'] );
+		$sideload_enabled = ! empty( $settings['sideload_photos'] );
 
 		$photo_ids = [];
-		if ( $parsed['photos'] && ! empty( $settings['sideload_photos'] ) ) {
+		if ( $parsed['photos'] && $sideload_enabled ) {
 			$photo_ids = $this->sideload_photos( $parsed['photos'], $post_id );
 			if ( $photo_ids ) {
 				update_post_meta( $post_id, 'nop_indieweb_photo_ids', $photo_ids );
@@ -178,15 +179,22 @@ class Note extends Service_Base {
 		// so enabling photos silently also enables (potentially large) video
 		// downloads, with no way to enable one without the other. Decide whether
 		// to add a dedicated `sideload_videos` setting.
-		if ( $parsed['videos'] && ! empty( $settings['sideload_photos'] ) ) {
+		if ( $parsed['videos'] && $sideload_enabled ) {
 			$video_ids = $this->sideload_videos( $parsed['videos'], $post_id );
 			if ( $video_ids ) {
 				update_post_meta( $post_id, 'nop_indieweb_video_ids', $video_ids );
 			}
 		}
 
+		// When sideloading is enabled but all downloads fail, write nothing —
+		// the post stays photo-free and `wp nop-indieweb repair-photo-sideloads`
+		// can retry. Only fall back to remote URLs when sideloading is
+		// intentionally off (the hotlink is then a deliberate choice, not a
+		// transient failure left permanently in the content).
+		$fallback_urls = $sideload_enabled ? [] : $this->media_urls_for_meta( $parsed['photos'] );
+
 		$photo_blocks = $parsed['photos']
-			? $this->build_photo_blocks( $photo_ids, $photo_ids ? [] : $this->media_urls_for_meta( $parsed['photos'] ) )
+			? $this->build_photo_blocks( $photo_ids, $fallback_urls )
 			: '';
 		$video_blocks = $video_ids ? $this->build_video_blocks( $video_ids ) : '';
 
@@ -200,6 +208,63 @@ class Note extends Service_Base {
 			'ID'           => $post_id,
 			'post_content' => rtrim( $post->post_content ) . "\n\n" . $append,
 		] );
+	}
+
+	/**
+	 * Re-sideloads photos for a post where sideloading previously failed.
+	 *
+	 * Reads nop_indieweb_photos (stored remote URLs), downloads and attaches
+	 * them, writes nop_indieweb_photo_ids, strips any remote-URL image blocks
+	 * previously written as fallback, and appends proper local wp:image blocks.
+	 *
+	 * Called by `wp nop-indieweb repair-photo-sideloads`.
+	 */
+	public function repair_photo_sideloads( int $post_id ): bool {
+		$photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+		if ( ! is_array( $photos ) || ! $photos ) {
+			return false;
+		}
+
+		$ids = $this->sideload_photos( $photos, $post_id );
+		if ( ! $ids ) {
+			return false;
+		}
+
+		update_post_meta( $post_id, 'nop_indieweb_photo_ids', $ids );
+
+		$blocks = $this->build_photo_blocks( $ids, [] );
+		if ( ! $blocks ) {
+			return true;
+		}
+
+		$post    = get_post( $post_id );
+		$content = $this->strip_remote_image_blocks( (string) $post->post_content );
+
+		wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => rtrim( $content ) . "\n\n" . $blocks,
+		] );
+
+		return true;
+	}
+
+	/**
+	 * Strips <!-- wp:image --> blocks in the no-id/remote-URL form (no JSON
+	 * between "wp:image" and "-->") and any empty gallery wrappers left behind.
+	 * Local image blocks ("wp:image {"id":N,...}") are not touched.
+	 */
+	private function strip_remote_image_blocks( string $content ): string {
+		$content = (string) preg_replace(
+			'/\n*<!--\s*wp:image\s*-->\n<figure[^>]*>.*?<\/figure>\n<!--\s*\/wp:image\s*-->/s',
+			'',
+			$content
+		);
+		$content = (string) preg_replace(
+			'/\n*<!--\s*wp:gallery[^>]*-->\n<figure[^>]*>\s*<\/figure>\n<!--\s*\/wp:gallery\s*-->/s',
+			'',
+			$content
+		);
+		return $content;
 	}
 
 	/**
