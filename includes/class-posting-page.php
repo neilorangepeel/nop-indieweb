@@ -496,7 +496,7 @@ body {
 		var(--rule) 29px, var(--rule) 30px );
 	background-attachment: local;
 	border: none;
-	padding: 5px 4px 4px 16px;
+	padding: 5px 4px 4px 0;
 	font-size: 18px;
 	line-height: 30px;
 	font-family: inherit;
@@ -510,7 +510,7 @@ body {
 .compose-prompt {
 	position: absolute;
 	top: 4px;
-	left: 16px;
+	left: 0;
 	right: 8px;
 	font-family: var(--display);
 	font-size: 30px;
@@ -553,21 +553,33 @@ body {
 	border: 2px solid var(--line);
 	border-radius: var(--radius); display: block;
 }
-.thumb { display: flex; flex-direction: column; gap: 4px; }
+.thumb { display: flex; flex-direction: column; }
+.alt-texts { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.alt-text-row { display: flex; flex-direction: column; gap: 4px; }
+.alt-text-label {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--text);
+	opacity: 0.5;
+}
 .thumb__alt {
 	width: 100%;
-	background: var(--surface);
+	background: transparent;
 	border: none;
-	border-radius: var(--radius);
-	padding: 6px 8px;
-	font-size: 12px;
+	border-bottom: 1.5px solid var(--line);
+	border-radius: 0;
+	padding: 6px 0;
+	font-size: 14px;
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	outline: none;
+	min-height: 36px;
 }
-.thumb__alt:focus { box-shadow: inset 0 0 0 2px var(--accent); }
-.thumb__alt::placeholder { color: var(--text); opacity: 0.4; }
+.thumb__alt:focus { border-bottom-color: var(--accent); }
+.thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
 
 /* Tags — solid accent chips, knockout text, square remove. */
 .tags-field {
@@ -1101,6 +1113,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 						<small><?php esc_html_e( 'Tap to select · up to 10', 'nop-indieweb' ); ?></small>
 					</div>
 					<div class="thumbnails" id="thumbnails"></div>
+					<div class="alt-texts" id="altTexts"></div>
 				</div>
 
 				<!-- Content -->
@@ -1298,6 +1311,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
+	var altTexts     = document.getElementById( 'altTexts' );
 	var specimen      = document.getElementById( 'urlSpecimen' );
 	var specimenGlyph = document.getElementById( 'specimenGlyph' );
 	var specimenHint  = document.getElementById( 'specimenHint' );
@@ -1479,25 +1493,36 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
 
 	function handleFiles( files ) {
-		selectedFiles    = files.slice( 0, 10 );
-		photoAlts        = [];
-		thumbs.innerHTML = '';
+		selectedFiles     = files.slice( 0, 10 );
+		photoAlts         = [];
+		thumbs.innerHTML  = '';
+		altTexts.innerHTML = '';
 		selectedFiles.forEach( function (file, i) {
 			var cell       = document.createElement( 'figure' );
 			cell.className = 'thumb';
 			var img = document.createElement( 'img' );
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
+			cell.appendChild( img );
+			thumbs.appendChild( cell );
+
+			var row   = document.createElement( 'div' );
+			row.className = 'alt-text-row';
+			var lbl   = document.createElement( 'span' );
+			lbl.className = 'alt-text-label';
+			lbl.textContent = selectedFiles.length > 1
+				? 'Photo ' + ( i + 1 ) + ' — alt text'
+				: 'Alt text';
 			var alt           = document.createElement( 'input' );
 			alt.type          = 'text';
 			alt.className     = 'thumb__alt';
-			alt.placeholder   = 'Describe…';
+			alt.placeholder   = 'Describe the photo…';
 			alt.autocomplete  = 'off';
 			alt.dataset.index = i;
 			alt.setAttribute( 'aria-label', 'Alt text for photo ' + ( i + 1 ) );
-			cell.appendChild( img );
-			cell.appendChild( alt );
-			thumbs.appendChild( cell );
+			row.appendChild( lbl );
+			row.appendChild( alt );
+			altTexts.appendChild( row );
 		} );
 		picker.querySelector( 'p' ).textContent = selectedFiles.length
 			? selectedFiles.length + ' photo' + ( selectedFiles.length > 1 ? 's' : '' ) + ' selected'
@@ -1505,7 +1530,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		updatePostBtn();
 	}
 
-	thumbs.addEventListener( 'input', function (e) {
+	altTexts.addEventListener( 'input', function (e) {
 		if ( e.target.classList.contains( 'thumb__alt' ) ) {
 			photoAlts[ parseInt( e.target.dataset.index, 10 ) ] = e.target.value;
 		}
@@ -1655,7 +1680,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	function resetForm() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
-		thumbs.innerHTML = ''; photoInput.value = '';
+		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 		renderTags();
 		clearDraft();
