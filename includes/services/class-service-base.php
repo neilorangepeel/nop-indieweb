@@ -166,26 +166,37 @@ abstract class Service_Base {
 				continue;
 			}
 
-			$tmp = $this->safe_download_to_tmp( $url, $cap_bytes );
-			// NOP: needs review — when an array-form photo's chosen (primary) blob
-			// exceeds the cap it is rejected here even if a smaller `fallback` CDN
-			// URL exists; the fallback is only consulted before download, never
-			// after a nop_too_large rejection. Consider retrying the fallback.
-			if ( is_wp_error( $tmp ) ) {
-				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $tmp->get_error_message() );
-				continue;
-			}
+			// A URL already in this site's media library (the /post client
+			// uploads via REST before the Micropub call) is reused as-is —
+			// re-downloading our own URL would duplicate the file.
+			$existing = attachment_url_to_postid( $url );
+			if ( $existing ) {
+				if ( 0 === (int) get_post( $existing )->post_parent ) {
+					wp_update_post( [ 'ID' => $existing, 'post_parent' => $post_id ] );
+				}
+				$id = $existing;
+			} else {
+				$tmp = $this->safe_download_to_tmp( $url, $cap_bytes );
+				// NOP: needs review — when an array-form photo's chosen (primary) blob
+				// exceeds the cap it is rejected here even if a smaller `fallback` CDN
+				// URL exists; the fallback is only consulted before download, never
+				// after a nop_too_large rejection. Consider retrying the fallback.
+				if ( is_wp_error( $tmp ) ) {
+					\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $tmp->get_error_message() );
+					continue;
+				}
 
-			$file = [
-				'name'     => $this->safe_basename_from_url( $url, 'jpg' ),
-				'tmp_name' => $tmp,
-			];
+				$file = [
+					'name'     => $this->safe_basename_from_url( $url, 'jpg' ),
+					'tmp_name' => $tmp,
+				];
 
-			$id = media_handle_sideload( $file, $post_id );
-			if ( is_wp_error( $id ) ) {
-				\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $id->get_error_message() );
-				wp_delete_file( $tmp );
-				continue;
+				$id = media_handle_sideload( $file, $post_id );
+				if ( is_wp_error( $id ) ) {
+					\NOP\IndieWeb\nop_indieweb_log( "Photo sideload failed: {$url}", $id->get_error_message() );
+					wp_delete_file( $tmp );
+					continue;
+				}
 			}
 			$attachment_ids[] = (int) $id;
 
