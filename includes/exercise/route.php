@@ -372,6 +372,10 @@ function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
 
 	switch ( $field ) {
 		case 'exercise_type_label':
+			$terms = wp_get_object_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY, [ 'fields' => 'names' ] );
+			if ( ! is_wp_error( $terms ) && $terms ) {
+				return (string) $terms[0];
+			}
 			$type = (string) $meta( 'type' );
 			return '' !== $type ? nop_indieweb_exercise_type_label( $type ) : null;
 

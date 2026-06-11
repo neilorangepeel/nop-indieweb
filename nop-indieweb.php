@@ -50,6 +50,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-rsvp.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-exercise.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-venue-category-taxonomy.php';
+require_once NOP_INDIEWEB_DIR . 'includes/kind/class-exercise-type-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';
@@ -97,6 +98,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-visits.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-strava.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-repair-photo-sideloads.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
@@ -109,6 +111,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-visits',       \NOP\IndieWeb\Cli\Backfill_Venue_Visits::class );
 	\WP_CLI::add_command( 'nop-indieweb import-strava',               \NOP\IndieWeb\Cli\Import_Strava::class );
 	\WP_CLI::add_command( 'nop-indieweb repair-photo-sideloads',      \NOP\IndieWeb\Cli\Repair_Photo_Sideloads::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-exercise-types',     \NOP\IndieWeb\Cli\Backfill_Exercise_Types::class );
 }
 
 // Create the tokens table on activation and on every load if the schema is stale.

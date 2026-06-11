@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Venue_Category_Taxonomy;
+use NOP\IndieWeb\Kind\Exercise_Type_Taxonomy;
 use NOP\IndieWeb\Micropub\Endpoint;
 use NOP\IndieWeb\Micropub\Media_Endpoint;
 use NOP\IndieWeb\Post_Meta\Registry;
@@ -188,6 +189,7 @@ class Plugin {
 
 		( new Kind_Taxonomy() )->register();
 		( new Venue_Category_Taxonomy() )->register();
+		( new Exercise_Type_Taxonomy() )->register();
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();
