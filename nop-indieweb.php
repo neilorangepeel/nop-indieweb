@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.7.16
+ * Version:     0.7.17
  * Requires at least: 6.7
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NOP_INDIEWEB_VERSION', '0.7.16' );
+define( 'NOP_INDIEWEB_VERSION', '0.7.17' );
 define( 'NOP_INDIEWEB_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 
@@ -99,6 +99,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-strava.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-repair-photo-sideloads.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-weather.php';
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
@@ -112,6 +113,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb import-strava',               \NOP\IndieWeb\Cli\Import_Strava::class );
 	\WP_CLI::add_command( 'nop-indieweb repair-photo-sideloads',      \NOP\IndieWeb\Cli\Repair_Photo_Sideloads::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-exercise-types',     \NOP\IndieWeb\Cli\Backfill_Exercise_Types::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-exercise-weather',   \NOP\IndieWeb\Cli\Backfill_Exercise_Weather::class );
 }
 
 // Create the tokens table on activation and on every load if the schema is stale.
