@@ -261,9 +261,29 @@ Note: Bluesky is ATProto, not AP — its syndicator and backfeed stay regardless
 
 Threads federates over AP since 2024, opt-in per user. Reachable via any AP path above.
 
-### Threads syndication
+### Threads syndication + reply backfeed
 
 Direct POSSE to Threads via the **Threads API** (Meta, launched mid-2024) — same pattern as the existing Bluesky syndicator. ActivityPub federation on Threads is for *following*, not for receiving posts from external servers, so the API is the right path regardless.
+
+**Reply backfeed (appears to be a novel implementation — no prior art found):**
+
+The Threads API exposes replies via `GET /{thread-id}/replies`, returning reply text, author username, permalink URL (`threads.net/@username/post/{id}`), and timestamp. That's enough to construct a Webmention back to the original post. Bridgy doesn't support Threads (issue #1587 closed "not planned" in 2023, filed before the API existed). No other known implementation exists.
+
+Shape:
+- After syndication, store the Threads post ID alongside the syndication URL.
+- A WP cron job polls `GET /{thread-id}/replies` periodically for each Threads-syndicated post.
+- New replies are deduplicated by reply ID (stored in post meta), then a Webmention is sent to the original post using the `threads.net` reply permalink as the source URL.
+- The Webmention receiver fetches that source URL and parses it for author info — whether `threads.net` reply pages expose mf2 microformats is unverified and may require a custom parser fallback.
+
+**What backfeed can and cannot retrieve:**
+
+| Interaction | Available |
+|---|---|
+| Reply text + author username | ✅ Threads API |
+| Reply permalink | ✅ `threads.net/@user/post/{id}` |
+| Who liked (individual likers) | ❌ API only exposes a like count, not individual users |
+
+Likes from Threads users are not retrievable regardless of approach — the Threads API does not expose individual likers and Threads does not federate `Like` activities outbound over ActivityPub.
 
 **What's possible:**
 
