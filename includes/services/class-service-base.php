@@ -331,12 +331,18 @@ abstract class Service_Base {
 	/**
 	 * Returns a safe filename for sideloading. Strips any path/query so a
 	 * remote-controlled URL cannot influence where the file lands; falls back
-	 * to a hashed name when the URL has no usable basename.
+	 * to a hashed name when the URL has no usable basename or when the
+	 * extension isn't a recognised media type (e.g. API paths like
+	 * "com.atproto.sync.getBlob" which look like filenames but aren't).
 	 */
 	private function safe_basename_from_url( string $url, string $default_ext ): string {
+		static $known_ext = [ 'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'mp4', 'mov', 'webm', 'mp3', 'pdf' ];
+
 		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
 		$name = sanitize_file_name( basename( $path ) );
-		if ( '' === $name || '.' === $name || str_starts_with( $name, '.' ) ) {
+		$ext  = strtolower( (string) pathinfo( $name, PATHINFO_EXTENSION ) );
+
+		if ( '' === $name || '.' === $name || str_starts_with( $name, '.' ) || ! in_array( $ext, $known_ext, true ) ) {
 			$name = 'media-' . substr( md5( $url ), 0, 12 ) . '.' . $default_ext;
 		}
 		return $name;
