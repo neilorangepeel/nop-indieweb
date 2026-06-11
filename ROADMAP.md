@@ -261,6 +261,30 @@ Note: Bluesky is ATProto, not AP — its syndicator and backfeed stay regardless
 
 Threads federates over AP since 2024, opt-in per user. Reachable via any AP path above.
 
+### Threads syndication
+
+Direct POSSE to Threads via the **Threads API** (Meta, launched mid-2024) — same pattern as the existing Bluesky syndicator. ActivityPub federation on Threads is for *following*, not for receiving posts from external servers, so the API is the right path regardless.
+
+**What's possible:**
+
+- **Outgoing syndication:** Threads API is a straightforward REST POST (text + optional image). Returns a `threads_post_id` that resolves to a canonical `threads.net` URL to store as the syndication link. Same shape as `Syndicator_Bluesky`.
+- **Likes back:** The Threads API exposes like *counts* on your posts via `/threads/{id}/insights` but not individual likers (no "who liked it"). Per-person likes would require an ActivityPub inbox — a separate, larger piece of work. Out of scope for the initial syndicator; same limitation as Bluesky today.
+
+**Known platform constraints:**
+
+- No clickable URLs in post body for personal accounts (link-in-bio only). POSSE posts land as text-only — no canonical URL visible to readers unless you're a verified business. This limits the IndieWeb value somewhat.
+- Dev-mode rate limits are tight for the first 30 days after app creation. Fine for personal use; monitor on first launch.
+
+**Prerequisites (user-side setup, not scriptable):**
+
+1. Create a Meta developer app at developers.facebook.com.
+2. Add the Threads product to the app.
+3. Generate a long-lived user access token (60-day TTL; auto-refresh needed or manual re-auth).
+
+Once a token exists, a `Syndicator_Threads` follows `Syndicator_Bluesky` almost identically. The Kind-aware syndication policy table above should gain a Threads column when this ships — proposed defaults mirror Bluesky (article/note/photo ON, others CHOICE or OFF).
+
+**Note:** the "Federation strategy" entry below covers the broader question of whether federation (Bridgy Fed or native AP) would make a Threads syndicator redundant for AP followers. If federation lands first, revisit.
+
 ### Loops syndication (federated short-form video)
 
 [Loops](https://joinloops.org/) — the federated TikTok alternative from the Pixelfed team (Daniel Supernault). ActivityPub federation is in beta: Mastodon/Pixelfed/PeerTube users can follow Loops accounts directly.
