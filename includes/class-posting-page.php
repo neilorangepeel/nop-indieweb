@@ -1070,7 +1070,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<span><?php esc_html_e( 'Photo', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,85.66,45.66L51.31,80H168A64.07,64.07,0,0,1,232,144Z"/></svg></span>
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/></svg></span>
 					<span><?php esc_html_e( 'Reply', 'nop-indieweb' ); ?></span>
 				</button>
 				<button class="type-btn" data-type="like" aria-pressed="false" type="button">

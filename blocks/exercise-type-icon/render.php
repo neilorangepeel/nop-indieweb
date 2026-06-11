@@ -3,7 +3,7 @@
  * Exercise Type Icon block — server-side render.
  *
  * Renders a Phosphor icon matching the post's nop_exercise_type term.
- * All icons are Phosphor Regular (fill weight, 256×256 viewBox) to match
+ * All icons are Phosphor Regular (256×256 viewBox) to match
  * the icon family used across the plugin. Outputs nothing on the front end
  * when the post has no exercise type — editor falls back to the run icon so
  * the block stays visible in the Site Editor canvas.
