@@ -543,9 +543,9 @@ body {
 	   uninterrupted, below — no paper veil, so no hard seam where the texture
 	   would otherwise stop. */
 	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent 24px,
-		var(--rule) 24px, var(--rule) 25px,
-		transparent 25px, transparent 30px );
+		transparent 0, transparent 28px,
+		var(--rule) 28px, var(--rule) 29px,
+		transparent 29px, transparent 30px );
 	border: none;
 	padding: 6px 4px 4px 0;
 	font-size: 18px;
@@ -559,11 +559,12 @@ body {
 }
 
 /* Big expressive prompt overlay — fades out once there's content. Sits on the
-   first rule like the typed text: its baseline is nudged to ~24px (the first
-   rule) so the placeholder and the content you type share the same line. */
+   first rule like the typed text: top is nudged so its baseline lands at 28px
+   (the content baseline / first rule), so placeholder and content share the
+   same line. Measured for Brandon Condensed 800 at 30px. */
 .compose-prompt {
 	position: absolute;
-	top: 0;
+	top: 1.3px;
 	left: 0;
 	right: 8px;
 	font-family: var(--display);
