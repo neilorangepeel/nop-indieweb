@@ -137,6 +137,13 @@ foreach ( [ '700', '800' ] as $weight ) {
 }
 ?>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Browser chrome in the palette: text selection inverts (ink fill, paper text);
+   the page scrollbar takes the neutral desk charcoal. The compose scroller gets
+   an ink-toned thin bar (below). */
+::selection      { background: var(--ink); color: var(--paper); }
+::-moz-selection { background: var(--ink); color: var(--paper); }
+html { scrollbar-color: color-mix(in srgb, var(--charcoal) 38%, transparent) transparent; }
 [hidden] { display: none !important; }
 
 /*
@@ -231,8 +238,8 @@ body {
 	--text:     var(--ink);
 	--accent:   var(--ink);
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
-	--rule:     color-mix(in srgb, var(--ink) 16%, transparent);
-	--grain:    color-mix(in srgb, var(--ink) 7%, transparent);
+	--rule:     color-mix(in srgb, var(--ink) 26%, transparent);
+	--grain:    color-mix(in srgb, var(--ink) 12%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
 	   frame border) and the browser theme-color (status-bar / notch tint). */
@@ -305,10 +312,12 @@ body {
 	align-items: center;
 	justify-content: space-between;
 	/* The notch/status-bar area can't carry the grain, so it becomes a solid
-	   deep-ink band with light (paper) content — the same dark UI tone as the
-	   footer and frame border. */
+	   deep-ink band with light content — matching the real iOS status bar, which
+	   always renders white-ish text on our dark theme-color tint. Fixed light
+	   (NOT var(--field), which flips dark in dark mode) so the mock matches iOS
+	   in both schemes. */
 	background: var(--device-ink);
-	color: var(--field);
+	color: #f4f0e7;
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
@@ -541,6 +550,8 @@ body {
 	overscroll-behavior: contain;
 	display: flex;
 	flex-direction: column;
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transparent;
 }
 /* Conditional depth as scroll shadows — but drawn as translucent ink washes
    OVER the continuous grain, with NO opaque paper covers (those revealed a
@@ -1167,7 +1178,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	color: var(--text);
 	font-variant-numeric: tabular-nums;
 }
-.char-count.is-over { background: var(--red); color: var(--field); }
+/* Over-limit: a muted, palette-matched red on the same chip — a quiet warning,
+   not a loud red block. */
+.char-count.is-over {
+	background: color-mix( in srgb, var(--red) 16%, var(--surface) );
+	color: color-mix( in srgb, var(--red) 68%, var(--charcoal) );
+}
 
 /* Toast */
 .toast {
