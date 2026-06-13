@@ -99,7 +99,9 @@ class Posting_Page {
 		$manager      = Plugin::get_instance()->syndication_manager();
 		if ( $manager ) {
 			$syndicate_to = array_map(
-				fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'] ],
+				// Pixelfed is a photo-only network — flag it so the client only
+				// offers it on photo posts (nothing else can syndicate there).
+				fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'], 'photoOnly' => ( 'pixelfed' === $s['slug'] ) ],
 				$manager->get_panel_data()
 			);
 		}
@@ -1359,13 +1361,26 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	// ── Syndicators ───────────────────────────────────────────────────────────
 	// Targets are inlined server-side (NOP.syndicateTo) — no fetch needed.
 
-	(function renderSyndicators() {
-		var synTo = NOP.syndicateTo || [];
-		if ( ! synTo.length ) return;
-		document.getElementById( 'syndicators' ).innerHTML = synTo.map( function (s) {
-			var limit = CHAR_LIMITS[ s.uid ];
+	// Re-rendered whenever the kind changes: photo-only targets (Pixelfed) only
+	// appear on photo posts. Preserves the visitor's tick state across switches.
+	function renderSyndicators() {
+		var box  = document.getElementById( 'syndicators' );
+		var prev = {};
+		box.querySelectorAll( 'input[type=checkbox]' ).forEach( function (cb) { prev[ cb.value ] = cb.checked; } );
+
+		var synTo = ( NOP.syndicateTo || [] ).filter( function (s) {
+			return ! s.photoOnly || currentType === 'photo';
+		} );
+		if ( ! synTo.length ) {
+			box.innerHTML = '';
+			document.getElementById( 'syndicateDetails' ).hidden = true;
+			return;
+		}
+		box.innerHTML = synTo.map( function (s) {
+			var limit   = CHAR_LIMITS[ s.uid ];
+			var checked = ( s.uid in prev ) ? prev[ s.uid ] : true;
 			return '<label class="syndicator-item">'
-				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '" checked>'
+				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '"' + ( checked ? ' checked' : '' ) + '>'
 				+ '<span class="syndicator-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></span>'
 				+ ' ' + escHtml( s.name )
 				+ ( limit ? '<span class="syndicator-item__limit">' + limit + '</span>' : '' )
@@ -1373,7 +1388,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		} ).join( '' );
 		document.getElementById( 'syndicateDetails' ).hidden = false;
 		updateCounter();
-	} )();
+	}
+	renderSyndicators();
 
 	// ── Tags ─────────────────────────────────────────────────────────────────
 
@@ -1456,6 +1472,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		}
 
 		updateSpecimen();
+		renderSyndicators();
 		updateCounter();
 		saveDraft();
 		updatePostBtn();
