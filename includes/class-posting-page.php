@@ -463,7 +463,7 @@ body {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient( color-mix( in srgb, var(--ink) 58%, transparent ) 1.45px, transparent 2.15px );
+	background-image: radial-gradient( color-mix( in srgb, var(--ink) 100%, transparent ) 1px, transparent 1.7px );
 	background-size: 5px 5px;
 }
 .scroll-fade-top {
