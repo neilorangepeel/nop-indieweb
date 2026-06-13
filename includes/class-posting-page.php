@@ -635,7 +635,7 @@ body {
 	border-radius: var(--radius);
 	padding: 4px 4px 4px 9px;
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 700;
 	white-space: nowrap;
 }
 .tag-chip__remove {
