@@ -503,27 +503,23 @@ body {
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
    text to sit on, a bold red margin instead of a box, and a big rotating prompt
    that recedes as you type. Grows to fill the space. */
-#fieldContent { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; }
-.compose-wrap { position: relative; flex: 1 1 auto; min-height: 150px; }
+#fieldContent { display: flex; flex-direction: column; }
+.compose-wrap { position: relative; }
 .compose-field {
-	position: absolute;
-	inset: 0;
+	display: block;
 	width: 100%;
-	height: 100%;
+	min-height: 150px;
+	height: auto;
 	background-color: transparent;
-	/* Ruled notepad. Two background layers, both scrolling with the text:
-	   (1) a paper veil that fades the rules to blank toward the bottom, so an
-	   empty note reads as inviting paper rather than an unfilled worksheet — it
-	   sits behind the text, so typed lines stay full-strength; (2) the rules,
-	   each sitting just under its line's baseline so text reads as written ON
-	   the line. */
-	background-image:
-		linear-gradient( to bottom, transparent 42%, var(--field) 88% ),
-		repeating-linear-gradient( to bottom,
-			transparent 0, transparent 26px,
-			var(--rule) 26px, var(--rule) 27px,
-			transparent 27px, transparent 30px );
-	background-attachment: local, local;
+	/* Ruled legal-pad — faint hairlines sitting just under each baseline so text
+	   reads as written ON the line. The field auto-grows with its content (see
+	   the JS), so an empty note stays a short pad and the page grain runs on,
+	   uninterrupted, below — no paper veil, so no hard seam where the texture
+	   would otherwise stop. */
+	background-image: repeating-linear-gradient( to bottom,
+		transparent 0, transparent 26px,
+		var(--rule) 26px, var(--rule) 27px,
+		transparent 27px, transparent 30px );
 	border: none;
 	padding: 6px 4px 4px 0;
 	font-size: 18px;
@@ -533,6 +529,7 @@ body {
 	color: var(--text);
 	resize: none;
 	outline: none;
+	overflow: hidden;
 }
 
 /* Big expressive prompt overlay — fades out once there's content. */
@@ -794,15 +791,17 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* ── Bottom bar + buttons ───────────────────────────────────────────────── */
 
-/* The footer carries a soft riso halftone at its top edge — ink-hue polka dots
-   fading up into the compose area, so the whole section reads as a screened
-   band rather than a hard ledge. */
+/* The footer reads as a shaded band of the same paper — depth by colour, not a
+   second dot grid. A soft ink wash rises from the divider; the page grain shows
+   straight through it, continuous, so there's no stripe and no hard edge. */
 .bottom-bar {
 	position: relative;
 	flex-shrink: 0;
 	padding: 12px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 12px);
 	border-top: 2px solid var(--line);
+	background: linear-gradient( to bottom,
+		color-mix( in srgb, var(--ink) 13%, transparent ), transparent 80% );
 }
 .bottom-bar::before {
 	content: "";
@@ -810,12 +809,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	left: 0;
 	right: 0;
 	bottom: 100%;
-	height: 20px;
-	background-image: radial-gradient( var(--ink) 1.4px, transparent 1.8px );
-	background-size: 6px 6px;
-	-webkit-mask-image: linear-gradient( to top, #000, transparent );
-	        mask-image: linear-gradient( to top, #000, transparent );
-	opacity: 0.45;
+	height: 52px;
+	background: linear-gradient( to top,
+		color-mix( in srgb, var(--ink) 16%, transparent ), transparent );
 	pointer-events: none;
 }
 
@@ -1365,6 +1361,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	// Big rotating prompt overlay — set its text, and fade it once typing starts.
 	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
+	function autoGrowContent() {
+		contentInput.style.height = 'auto';
+		contentInput.style.height = contentInput.scrollHeight + 'px';
+	}
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
@@ -1530,6 +1530,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		updateCounter();
 		saveDraft();
 		updatePostBtn();
+		autoGrowContent();
 	}
 
 	// ── Post button state ─────────────────────────────────────────────────────
@@ -1548,7 +1549,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 
 	urlInput.addEventListener( 'input', function () { updateSpecimen(); updatePostBtn(); saveDraft(); } );
-	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); syncPrompt(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// ── Photo picker ──────────────────────────────────────────────────────────
@@ -1888,6 +1889,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	loadDraft();
 	updateCounter();
 	syncPrompt();
+	autoGrowContent();
 
 } )();
 </script>
