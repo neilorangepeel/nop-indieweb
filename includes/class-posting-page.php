@@ -265,11 +265,15 @@ body {
 		justify-content: center;
 	}
 	.app {
-		height: calc(100dvh - 48px);
-		max-height: 880px;
-		width: 100%;
-		max-width: 480px;
+		height: min(880px, 100dvh - 48px);
+		/* Match the phone: a modern iPhone is 19.5:9, so the poster takes that
+		   ratio (width derives from the height) and its display corner radius —
+		   ~14% of the width, i.e. ~6% of the height — reads as the real device. */
+		aspect-ratio: 9 / 19.5;
+		width: auto;
+		max-width: calc(100vw - 40px);
 		border: 2px solid var(--line);
+		border-radius: calc(min(880px, 100dvh - 48px) * 0.06);
 		box-shadow: var(--shadow);
 	}
 }
