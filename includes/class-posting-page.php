@@ -492,6 +492,8 @@ body {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	/* Anchors the floating .bottom-bar (absolute) to the view's bottom edge. */
+	position: relative;
 }
 
 /* ── Type selector ──────────────────────────────────────────────────────── */
@@ -616,9 +618,11 @@ body {
 }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
-	   shrink below its content — so a tall form overflows into the scroll. */
+	   shrink below its content — so a tall form overflows into the scroll. The
+	   deep bottom padding clears the floating Post button so the last line can
+	   scroll above it. */
 	flex: 1 0 auto;
-	padding: 16px;
+	padding: 16px 16px calc(var(--safe-bottom) + 88px);
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
@@ -961,23 +965,26 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* ── Bottom bar + buttons ───────────────────────────────────────────────── */
 
-/* The footer is the dark device-ink band — the same tone as the status bar and
-   border — filling to the shell's bottom edge, where overflow:hidden on .app
-   clips it to the rounded corner so it hugs the iPhone curve. Padding frames the
-   button evenly: a touch more on the sides, and the bottom reserves the iOS
-   home-indicator zone (--safe-bottom, faked on the desktop mock like --safe-top)
-   so the button always clears the curve in both contexts. */
+/* The footer floats: no band, just the button over the continuous grain, which
+   now runs to the shell's bottom edge (clipped to the rounded corner by .app's
+   overflow:hidden). The bar is a transparent overlay pinned to the view bottom;
+   it ignores pointer events so a drag over it still scrolls the content beneath,
+   while the button itself stays tappable. Bottom padding lifts the button clear
+   of the iOS home-indicator zone (--safe-bottom, faked on the desktop mock). */
 .bottom-bar {
-	flex-shrink: 0;
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 4;
 	padding: 14px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 14px);
-	background: var(--device-ink);
+	background: transparent;
+	pointer-events: none;
 }
-/* The button hugs the iPhone's bottom curve: its bottom corners run concentric
-   with the shell (radius ≈ the shell's inner radius minus the 12px inset), so
-   the dark footer reads as a thin even frame following the curve. Top corners
-   stay tighter since they're nowhere near the shell's corners. */
-.bottom-bar .btn { border-radius: 20px 20px 36px 36px; }
+.bottom-bar .btn { pointer-events: auto; }
+/* Free-floating stadium pill, no longer shaped to hug the shell corner. */
+.bottom-bar .btn { border-radius: var(--nop-radius-pill); }
 
 .btn {
 	display: block;
@@ -996,17 +1003,19 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	text-decoration: none;
 }
 
-/* Post button — solid accent, knockout label. Flat by design: the footer's
-   halftone (see .bottom-bar) gives the section its depth, so the button itself
-   stays clean and just settles a touch on press. */
+/* Post button — solid accent, knockout label. Floats over the grain on a soft
+   shadow (the band that used to carry the section's depth is gone); it settles
+   onto a tighter shadow on press. */
 .btn-primary {
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--accent);
-	transition: transform 0.08s, opacity 0.18s ease;
+	box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+	transition: transform 0.08s, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 .btn-primary:active {
 	transform: translate(0, 2px);
+	box-shadow: 0 3px 9px rgba(0,0,0,0.16);
 }
 /* Disabled stays a solid, muted primary — never a ghost outline — so the
    commit target always reads as the primary action. When the form becomes valid
@@ -1018,6 +1027,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	opacity: 1;
 	cursor: default;
 	transform: none;
+	box-shadow: 0 3px 10px rgba(0,0,0,0.10);
 }
 .btn-secondary { background: var(--field); color: var(--text); }
 .btn-secondary:active { transform: translate(1px, 1px); }
@@ -1068,7 +1078,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	flex: 1;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
-	padding: 16px;
+	/* deep bottom padding clears the floating "Post another" button */
+	padding: 16px 16px calc(var(--safe-bottom) + 88px);
 }
 .success-hero {
 	position: relative;
@@ -1240,7 +1251,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.field-group.is-conditional:not([hidden]) { animation: none; }
 	.compose-prompt, .sky__body, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
 	.syndicate-details::details-content { transition: none; }
-	.btn-primary:active { transform: none; box-shadow: var(--shadow); }
+	.btn-primary:active { transform: none; }
 	.toast { transition: opacity 0.01ms; }
 }
 
