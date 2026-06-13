@@ -445,22 +445,33 @@ body {
 	overscroll-behavior: contain;
 	display: flex;
 	flex-direction: column;
-	/* Conditional depth as pure-CSS scroll shadows (Lea Verou technique). Two
-	   translucent ink "shadows" are pinned to the top and bottom edges
-	   (background-attachment: scroll); two paper "covers" scroll with the
-	   content (local) and mask each shadow at its extreme. Result: the top wash
-	   fades in only once you've scrolled down, the bottom wash only while
-	   there's more below. Grain shows through the translucent shadows; the
-	   covers paint paper only over the thin top/bottom strips of content. */
-	background:
-		linear-gradient( var(--field) 28%, transparent ) center top,
-		linear-gradient( transparent, var(--field) 72% ) center bottom,
-		linear-gradient( to bottom, color-mix( in srgb, var(--ink) 17%, transparent ), transparent ) center top,
-		linear-gradient( to top, color-mix( in srgb, var(--ink) 17%, transparent ), transparent ) center bottom;
-	background-repeat: no-repeat;
-	background-size: 100% 42px, 100% 42px, 100% 30px, 100% 30px;
-	background-attachment: local, local, scroll, scroll;
 }
+/* Conditional depth as scroll shadows — but drawn as translucent ink washes
+   OVER the continuous grain, with NO opaque paper covers (those revealed a
+   dot-free off-white patch on the textured paper). Two sticky overlays ride the
+   top and bottom edges; a tiny scroll handler toggles .has-above / .has-below
+   to fade them in. Grain runs through them, uninterrupted. */
+.scroll-fade {
+	position: sticky;
+	z-index: 3;
+	flex-shrink: 0;
+	height: 34px;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.18s ease;
+}
+.scroll-fade-top {
+	top: 0;
+	margin-bottom: -34px;
+	background: linear-gradient( to bottom, color-mix( in srgb, var(--ink) 17%, transparent ), transparent );
+}
+.scroll-fade-bottom {
+	bottom: 0;
+	margin-top: -34px;
+	background: linear-gradient( to top, color-mix( in srgb, var(--ink) 17%, transparent ), transparent );
+}
+.compose-scroll.has-above .scroll-fade-top    { opacity: 1; }
+.compose-scroll.has-below .scroll-fade-bottom { opacity: 1; }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. */
@@ -1110,6 +1121,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			<!-- Scroll region: greeting + type selector + fields scroll as one;
 			     masthead and Post button stay pinned. -->
 			<div class="compose-scroll">
+			<div class="scroll-fade scroll-fade-top" aria-hidden="true"></div>
 			<p class="greeting" id="greeting"></p>
 
 			<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
@@ -1202,6 +1214,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				</details>
 
 				</div><!-- .compose-fields -->
+				<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>
 			</div><!-- .compose-scroll -->
 
 			<div class="bottom-bar">
@@ -1365,7 +1378,18 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	function autoGrowContent() {
 		contentInput.style.height = 'auto';
 		contentInput.style.height = contentInput.scrollHeight + 'px';
+		updateScrollFades();
 	}
+	var composeScroll = document.querySelector( '.compose-scroll' );
+	function updateScrollFades() {
+		if ( ! composeScroll ) return;
+		var top = composeScroll.scrollTop;
+		var max = composeScroll.scrollHeight - composeScroll.clientHeight;
+		composeScroll.classList.toggle( 'has-above', top > 4 );
+		composeScroll.classList.toggle( 'has-below', top < max - 4 );
+	}
+	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+	window.addEventListener( 'resize', updateScrollFades );
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
