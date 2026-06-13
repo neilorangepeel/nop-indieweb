@@ -265,16 +265,12 @@ body {
 		justify-content: center;
 	}
 	.app {
-		/* Always hold the 19.5:9 phone ratio. --frame-h is the tightest of the
-		   max cap, the viewport height, and what the viewport width allows, so the
-		   frame scales to fit any window without ever distorting; width derives
-		   from it via aspect-ratio, and the corner radius (~6% of height) too. */
-		--frame-h: min(880px, 100dvh - 48px, (100vw - 40px) * 2.1667);
-		aspect-ratio: 9 / 19.5;
-		height: var(--frame-h);
-		width: auto;
+		/* A fixed, phone-sized poster floating in the browser — iPhone point
+		   dimensions (390x844, 19.5:9) with the display corner radius. */
+		width: 390px;
+		height: 844px;
 		border: 2px solid var(--line);
-		border-radius: calc(var(--frame-h) * 0.06);
+		border-radius: 50px;
 		box-shadow: var(--shadow);
 	}
 }
