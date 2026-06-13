@@ -271,7 +271,6 @@ body {
 		height: 844px;
 		border: 2px solid var(--line);
 		border-radius: 50px;
-		box-shadow: var(--shadow);
 	}
 }
 
