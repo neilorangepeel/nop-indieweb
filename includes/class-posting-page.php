@@ -269,13 +269,16 @@ body {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
 		   dimensions (390x844, 19.5:9) with the display corner radius. The faux
 		   safe-area insets reserve the real iOS status-bar / home-indicator zones
-		   so we design with the device chrome in mind. */
+		   so we design with the device chrome in mind. --device-ink (the kind ink
+		   a shade deeper) tones the faux chrome AND this outer border, so the
+		   device dressing reads as one hue. */
 		width: 390px;
 		height: 844px;
-		border: 2px solid var(--line);
-		border-radius: 50px;
 		--safe-top: 59px;
 		--safe-bottom: 34px;
+		--device-ink: color-mix( in srgb, var(--ink) 80%, #000 );
+		border: 2px solid var(--device-ink);
+		border-radius: 50px;
 	}
 	.app .device-chrome { display: flex; }
 	/* Home indicator pill */
@@ -288,7 +291,7 @@ body {
 		width: 134px;
 		height: 5px;
 		border-radius: 3px;
-		background: var(--charcoal);
+		background: var(--device-ink);
 		opacity: 0.85;
 		pointer-events: none;
 		z-index: 5;
@@ -310,7 +313,7 @@ body {
 	padding: 15px 34px 0;
 	align-items: center;
 	justify-content: space-between;
-	color: var(--charcoal);
+	color: var(--device-ink, var(--charcoal));
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
@@ -329,7 +332,7 @@ body {
 	width: 122px;
 	height: 36px;
 	border-radius: 18px;
-	background: #0b0b0b;
+	background: currentColor;
 }
 .device-chrome__icons { display: flex; align-items: center; gap: 7px; }
 .device-chrome__icons svg { display: block; }
@@ -337,7 +340,7 @@ body {
 	position: relative;
 	width: 25px;
 	height: 12px;
-	border: 1px solid color-mix(in srgb, var(--charcoal) 38%, transparent);
+	border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
 	border-radius: 3.5px;
 	padding: 1.5px;
 }
@@ -350,13 +353,13 @@ body {
 	width: 1.8px;
 	height: 4px;
 	border-radius: 0 1px 1px 0;
-	background: color-mix(in srgb, var(--charcoal) 38%, transparent);
+	background: color-mix(in srgb, currentColor 38%, transparent);
 }
 .device-chrome__battery i {
 	display: block;
 	height: 100%;
 	width: 72%;
-	background: var(--charcoal);
+	background: currentColor;
 	border-radius: 1.5px;
 }
 
