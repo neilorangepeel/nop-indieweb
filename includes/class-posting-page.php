@@ -258,6 +258,9 @@ body {
 	background-image: radial-gradient(var(--grain) 0.6px, transparent 0.9px);
 	background-size: 4px 4px;
 }
+/* While JS sets the initial kind on load, suppress all transitions/animations so
+   it doesn't re-ink or pop into view. Removed on the next frame. */
+.app.no-anim, .app.no-anim * { transition: none !important; animation: none !important; }
 
 /* On phones the paper runs full-bleed — no side frame. Edge borders sit in
    the zone the rounded display corners and sub-pixel rounding clip, so they
@@ -1809,6 +1812,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				throw new Error( errBody.message || 'Posting failed (' + response.status + ')' );
 			}
 
+			recordKindUse( currentType );   // float this kind to the front next time
+
 			var permalink = response.headers.get( 'Location' ) || '';
 			var editUrl   = response.headers.get( 'X-Edit-URL' ) || '';
 
@@ -2055,14 +2060,49 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		}, 3500 );
 	}
 
+	// ── Kind order — most-recently-used first (localStorage) ─────────────────────
+	var KIND_MRU_KEY = 'nop_kind_mru';
+	function readKindMru() {
+		try { var a = JSON.parse( localStorage.getItem( KIND_MRU_KEY ) || '[]' ); return Array.isArray( a ) ? a : []; }
+		catch ( e ) { return []; }
+	}
+	function recordKindUse( kind ) {
+		try {
+			var mru = readKindMru().filter( function ( k ) { return k !== kind; } );
+			mru.unshift( kind );
+			localStorage.setItem( KIND_MRU_KEY, JSON.stringify( mru ) );
+		} catch ( e ) {}
+	}
+	function applyKindOrder() {
+		var grid = document.getElementById( 'typeBar' );
+		var mru  = readKindMru();
+		if ( ! grid || ! mru.length ) { return; }
+		Array.prototype.slice.call( grid.querySelectorAll( '.type-btn' ) ).sort( function ( a, b ) {
+			var ia = mru.indexOf( a.dataset.type ); if ( ia < 0 ) { ia = 99; }
+			var ib = mru.indexOf( b.dataset.type ); if ( ib < 0 ) { ib = 99; }
+			return ia - ib;
+		} ).forEach( function ( btn ) { grid.appendChild( btn ); } );
+	}
+	function mruDefaultKind() {
+		var mru = readKindMru();
+		return ( mru[0] && TYPE_CONFIG[ mru[0] ] ) ? mru[0] : 'note';
+	}
+
 	// ── Init ───────────────────────────────────────────────────────────────────
 
+	applyKindOrder();                         // tiles in most-recently-used order
+	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
 	setPrompt( notePrompt );
+	var hadDraft = false;
+	try { hadDraft = !! localStorage.getItem( DRAFT_KEY ); } catch ( e ) {}
 	loadDraft();
+	if ( ! hadDraft ) { switchType( mruDefaultKind() ); }   // no draft → open on the last-used kind
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();
 	updateThemeColor();
+	app.offsetHeight;                         // flush, then re-enable transitions
+	app.classList.remove( 'no-anim' );
 
 } )();
 </script>
