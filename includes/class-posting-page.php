@@ -275,27 +275,11 @@ body {
 		width: 390px;
 		height: 844px;
 		--safe-top: 59px;
-		--safe-bottom: 34px;
 		--device-ink: color-mix( in srgb, var(--ink) 80%, #000 );
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
 	.app .device-chrome { display: flex; }
-	/* Home indicator pill */
-	.app::after {
-		content: "";
-		position: absolute;
-		bottom: 9px;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 134px;
-		height: 5px;
-		border-radius: 3px;
-		background: var(--device-ink);
-		opacity: 0.85;
-		pointer-events: none;
-		z-index: 5;
-	}
 }
 
 /* ── Faux iOS chrome ──────────────────────────────────────────────────────
