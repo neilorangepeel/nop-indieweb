@@ -111,8 +111,7 @@ class Posting_Page {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F4EFE6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15140F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="themeColor" content="#006066">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
@@ -235,6 +234,9 @@ body {
 	--rule:     color-mix(in srgb, var(--ink) 16%, transparent);
 	--grain:    color-mix(in srgb, var(--ink) 7%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
+	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
+	   frame border) and the browser theme-color (status-bar / notch tint). */
+	--device-ink: color-mix(in srgb, var(--ink) 80%, #000);
 
 	/* The kind-switch moment: --ink is a registered <color>, so the whole
 	   poster crossfades to the new ink instead of snapping. */
@@ -275,7 +277,6 @@ body {
 		width: 390px;
 		height: 844px;
 		--safe-top: 59px;
-		--device-ink: color-mix( in srgb, var(--ink) 80%, #000 );
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
@@ -293,11 +294,15 @@ body {
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 54px;
-	padding: 15px 34px 0;
+	height: var(--safe-top, 54px);
+	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
-	color: var(--device-ink, var(--charcoal));
+	/* The notch/status-bar area can't carry the grain, so it becomes a solid
+	   deep-ink band with light (paper) content — the same dark UI tone as the
+	   footer and frame border. */
+	background: var(--device-ink);
+	color: var(--field);
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
@@ -316,7 +321,7 @@ body {
 	width: 122px;
 	height: 36px;
 	border-radius: 18px;
-	background: currentColor;
+	background: color-mix(in srgb, var(--device-ink) 45%, #000);
 }
 .device-chrome__icons { display: flex; align-items: center; gap: 7px; }
 .device-chrome__icons svg { display: block; }
@@ -352,8 +357,8 @@ body {
 .masthead {
 	flex-shrink: 0;
 	padding: 0 16px 14px;
-	/* Extra top room so the logo/clock clear the shell's rounded corners. */
-	padding-top: calc(var(--safe-top) + 20px);
+	/* Sits just below the dark status-bar band (which fills the safe-top zone). */
+	padding-top: calc(var(--safe-top) + 12px);
 	border-bottom: 2px solid var(--line);
 }
 .masthead__top {
@@ -900,15 +905,15 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* ── Bottom bar + buttons ───────────────────────────────────────────────── */
 
-/* The footer's depth now comes from the compose area's bottom scroll-shadow
-   (see .compose-scroll), which only appears while there's more to scroll — so
-   the bar itself stays clean, just the structural divider. */
+/* The footer is the dark device-ink band — the same tone as the status bar and
+   border — filling to the shell's bottom edge, where overflow:hidden on .app
+   clips it to the rounded corner so it hugs the iPhone curve. The extra bottom
+   padding follows that curve, keeping the button clear of it. */
 .bottom-bar {
 	flex-shrink: 0;
-	padding: 12px 16px;
-	/* More bottom room so the button floats clear of the shell's rounded corner. */
-	padding-bottom: calc(var(--safe-bottom) + 18px);
-	border-top: 2px solid var(--line);
+	padding: 14px 18px;
+	padding-bottom: calc(var(--safe-bottom) + 26px);
+	background: var(--device-ink);
 }
 /* The Post button rounds up to echo the shell's curve rather than sitting as a
    sharp box against it. */
@@ -935,8 +940,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    halftone (see .bottom-bar) gives the section its depth, so the button itself
    stays clean and just settles a touch on press. */
 .btn-primary {
-	background: var(--accent);
-	color: var(--on-accent);
+	background: var(--field);
+	color: var(--ink);
+	border-color: transparent;
 	transition: transform 0.08s, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
 .btn-primary:active {
@@ -946,9 +952,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    commit target always reads as the primary action. When the form becomes valid
    the fill saturates to full accent and the offset shadow grows: it "charges". */
 .btn-primary:disabled {
-	background: color-mix( in srgb, var(--ink) 15%, var(--paper) );
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
-	border-color: color-mix( in srgb, var(--ink) 32%, transparent );
+	background: color-mix( in srgb, var(--field) 15%, var(--device-ink) );
+	color: color-mix( in srgb, var(--field) 45%, var(--device-ink) );
+	border-color: transparent;
 	opacity: 1;
 	cursor: default;
 	transform: none;
@@ -1177,6 +1183,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 <body>
 <div class="app" id="app" data-type="note">
 
+	<span id="inkProbe" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--device-ink)"></span>
+
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
 	<div class="device-chrome" aria-hidden="true">
 		<span class="device-chrome__time" id="deviceTime">19:07</span>
@@ -1396,6 +1404,25 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var clockTimeEl = document.getElementById( 'clockTime' );
 	var clockDateEl = document.getElementById( 'clockDate' );
 	var deviceTimeEl = document.getElementById( 'deviceTime' );
+	var themeColorEl = document.getElementById( 'themeColor' );
+	var inkProbe     = document.getElementById( 'inkProbe' );
+	function updateThemeColor() {
+		if ( ! themeColorEl || ! inkProbe ) { return; }
+		// getComputedStyle hands back color(srgb …) from color-mix in some engines
+		// and rgb(…) in others; normalise either to #hex, which theme-color parses
+		// everywhere.
+		var c = getComputedStyle( inkProbe ).color;
+		var r, g, b, m = c.match( /color\(\s*srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/ );
+		if ( m ) {
+			r = Math.round( m[1] * 255 ); g = Math.round( m[2] * 255 ); b = Math.round( m[3] * 255 );
+		} else {
+			m = c.match( /(\d+)\D+(\d+)\D+(\d+)/ );
+			if ( ! m ) { return; }
+			r = +m[1]; g = +m[2]; b = +m[3];
+		}
+		var hex = '#' + [ r, g, b ].map( function ( x ) { return ( '0' + x.toString( 16 ) ).slice( -2 ); } ).join( '' );
+		themeColorEl.setAttribute( 'content', hex );
+	}
 	var greetingEl  = document.getElementById( 'greeting' );
 	var skyBody     = document.getElementById( 'skyBody' );
 	var lastTime = '', lastDate = '', lastGreeting = '';
@@ -1661,6 +1688,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		saveDraft();
 		updatePostBtn();
 		autoGrowContent();
+		setTimeout( updateThemeColor, 450 );
 	}
 
 	// ── Post button state ─────────────────────────────────────────────────────
@@ -2020,6 +2048,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();
+	updateThemeColor();
 
 } )();
 </script>
