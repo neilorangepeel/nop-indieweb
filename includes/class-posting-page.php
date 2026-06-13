@@ -203,9 +203,9 @@ html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transpar
 	   alignHalftone); --grain-dot / --ht-dot are the two dot radii (background
 	   speckle vs the bigger halftone "drop-shadow" stud). Live-tunable via the
 	   grain panel, persisted to localStorage. */
-	--grain-pitch: 4px;
-	--grain-dot:   0.6px;
-	--ht-dot:      1px;
+	--grain-pitch: 3px;
+	--grain-dot:   0.8px;
+	--ht-dot:      0.8px;
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
