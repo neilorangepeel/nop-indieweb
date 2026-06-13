@@ -794,11 +794,29 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* ── Bottom bar + buttons ───────────────────────────────────────────────── */
 
+/* The footer carries a soft riso halftone at its top edge — ink-hue polka dots
+   fading up into the compose area, so the whole section reads as a screened
+   band rather than a hard ledge. */
 .bottom-bar {
+	position: relative;
 	flex-shrink: 0;
 	padding: 12px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 12px);
 	border-top: 2px solid var(--line);
+}
+.bottom-bar::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 100%;
+	height: 20px;
+	background-image: radial-gradient( var(--ink) 1.4px, transparent 1.8px );
+	background-size: 6px 6px;
+	-webkit-mask-image: linear-gradient( to top, #000, transparent );
+	        mask-image: linear-gradient( to top, #000, transparent );
+	opacity: 0.45;
+	pointer-events: none;
 }
 
 .btn {
@@ -818,38 +836,16 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	text-decoration: none;
 }
 
-/* Post button — solid accent, knockout label. Instead of a hard offset block
-   (which fought the rounded corners), it casts a soft halftone: ink-hue polka
-   dots below the button fading down into the paper — the same riso screen as the
-   page grain. The dots clear on press and when disabled. */
+/* Post button — solid accent, knockout label. Flat by design: the footer's
+   halftone (see .bottom-bar) gives the section its depth, so the button itself
+   stays clean and just settles a touch on press. */
 .btn-primary {
-	position: relative;
 	background: var(--accent);
 	color: var(--on-accent);
 	transition: transform 0.08s, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
-.btn-primary::after {
-	content: "";
-	position: absolute;
-	left: 5px;
-	right: 5px;
-	top: 100%;
-	height: 16px;
-	margin-top: 3px;
-	background-image: radial-gradient( var(--ink) 1.4px, transparent 1.8px );
-	background-size: 6px 6px;
-	-webkit-mask-image: linear-gradient( to bottom, #000, transparent );
-	        mask-image: linear-gradient( to bottom, #000, transparent );
-	opacity: 0.6;
-	pointer-events: none;
-	transition: opacity 0.18s ease;
-}
 .btn-primary:active {
-	transform: translate(0, 3px);
-}
-.btn-primary:active::after,
-.btn-primary:disabled::after {
-	opacity: 0;
+	transform: translate(0, 2px);
 }
 /* Disabled stays a solid, muted primary — never a ghost outline — so the
    commit target always reads as the primary action. When the form becomes valid
