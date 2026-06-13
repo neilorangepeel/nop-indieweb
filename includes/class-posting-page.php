@@ -180,7 +180,13 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 	--display: 'Brandon Text Condensed', 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 
-	--radius: 2px;
+	/* Corner radius via the shared --nop-radius system, so /post matches the
+	   blocks. This page is a standalone document (no theme.json cascade), so it
+	   carries the brand value here rather than inheriting it — keep in sync with
+	   the theme's :root{--nop-radius} (currently 4px). --radius stays a local
+	   alias so the existing rules below are untouched. */
+	--nop-radius: 4px;
+	--radius: var( --nop-radius, 2px );
 
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
