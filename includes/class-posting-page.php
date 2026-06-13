@@ -1045,10 +1045,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	padding: 14px 26px;
 	box-shadow: var(--shadow);
 	rotate: -3deg;
-	animation: stamp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+	animation: stamp 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 @keyframes stamp {
-	0%   { transform: scale(1.5); opacity: 0; }
+	0%   { transform: scale(1.12); opacity: 0; }
 	100% { transform: scale(1); opacity: 1; }
 }
 .success-check { flex-shrink: 0; display: flex; }
