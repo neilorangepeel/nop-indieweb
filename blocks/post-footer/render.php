@@ -19,6 +19,7 @@ $comment_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fil
 
 $repost_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
 
+
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 
 if ( ! $post_id ) {
@@ -33,10 +34,10 @@ if ( ! $post_id ) {
 			<?php echo $comment_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-post-footer__pill-count" aria-label="<?php /* translators: %d: number of comments */ echo esc_attr( sprintf( _n( '%d comment', '%d comments', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
 		</span>
-		<span class="nop-post-footer__pill">
+		<button class="nop-post-footer__pill nop-post-footer__pill--share" type="button" aria-label="<?php esc_attr_e( 'Share', 'nop-indieweb' ); ?>">
 			<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
-			<span class="nop-post-footer__pill-count" aria-label="<?php /* translators: %d: number of reposts */ echo esc_attr( sprintf( _n( '%d repost', '%d reposts', 4, 'nop-indieweb' ), 4 ) ); ?>">4</span>
-		</span>
+			<span class="nop-post-footer__pill-count" aria-hidden="true">4</span>
+		</button>
 		<span class="nop-post-footer__sep" aria-hidden="true">·</span>
 		<span class="nop-post-footer__source">
 			<span class="nop-post-footer__source-label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
@@ -151,14 +152,20 @@ $wrapper = get_block_wrapper_attributes( [
 	</a>
 
 	<?php /* translators: %d: number of reposts */ ?>
-	<span class="nop-post-footer__pill" aria-label="<?php echo esc_attr( sprintf( _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ), $repost_count ) ); ?>">
+	<button class="nop-post-footer__pill nop-post-footer__pill--share"
+	        type="button"
+	        data-url="<?php echo esc_attr( (string) get_permalink( $post_id ) ); ?>"
+	        data-title="<?php echo esc_attr( (string) get_the_title( $post_id ) ); ?>"
+	        aria-label="<?php echo esc_attr( $repost_count > 0
+	            ? sprintf( _n( 'Share · %d repost', 'Share · %d reposts', $repost_count, 'nop-indieweb' ), $repost_count )
+	            : __( 'Share', 'nop-indieweb' ) ); ?>">
 		<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"
 		      <?php echo 0 === $repost_count ? 'hidden' : ''; ?>>
 			<?php echo esc_html( (string) $repost_count ); ?>
 		</span>
-	</span>
+	</button>
 
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-footer__sep" aria-hidden="true">·</span>

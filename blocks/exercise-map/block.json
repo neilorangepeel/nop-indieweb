@@ -8,7 +8,7 @@
 	"icon": "location-alt",
 	"keywords": ["exercise", "workout", "map", "location", "geoapify", "openstreetmap"],
 	"editorScript": "file:./editor.js",
-	"style": "nop-blocks-shared",
+	"style": ["nop-blocks-shared", "file:./style.css"],
 	"render": "file:./render.php",
 	"usesContext": ["postId", "postType"],
 	"supports": {

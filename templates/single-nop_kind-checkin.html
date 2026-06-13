@@ -99,16 +99,21 @@
 
 			<!-- wp:nop-indieweb/checkin-map /-->
 
-			<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
-			<div class="wp-block-group">
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"style":{"layout":{"selfStretch":"fill"}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
-				<p class="has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">Coordinates</p>
-				<!-- /wp:paragraph -->
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
+			<p class="has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">Coordinates</p>
+			<!-- /wp:paragraph -->
 
-				<!-- wp:nop-indieweb/like-button /-->
-			</div>
-			<!-- /wp:group -->
+		</div>
+		<!-- /wp:group -->
 
+		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"backgroundColor":"accent-6"} -->
+		<hr class="wp-block-separator alignfull has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background is-style-default" style="margin-top:0;margin-bottom:0"/>
+		<!-- /wp:separator -->
+
+		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
+		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+			<!-- wp:nop-indieweb/post-footer /-->
+			<!-- wp:nop-indieweb/webmentions /-->
 		</div>
 		<!-- /wp:group -->
 
@@ -124,8 +129,8 @@
 	<div class="wp-block-group alignwide" style="border-top-color:#e5e7eb;border-top-width:1px">
 		<!-- wp:group {"tagName":"nav","align":"wide","style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"},"ariaLabel":"Post navigation"} -->
 		<nav class="wp-block-group alignwide" aria-label="Post navigation" style="padding-top:2rem;padding-bottom:2rem">
-			<!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow"} /-->
-			<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow"} /-->
+			<!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
+			<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
 		</nav>
 		<!-- /wp:group -->
 	</div>

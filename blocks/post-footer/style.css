@@ -35,3 +35,19 @@ a.nop-post-footer__pill--link:hover {
 	gap:         0.25rem;
 	color:       var(--nop-muted);
 }
+
+/* Brief success state after clipboard copy */
+.nop-post-footer__pill--share.is-copied {
+	color:        var(--wp--preset--color--accent-3, currentColor);
+	border-color: currentColor;
+}
+
+/* Comment focus flash — applied to respond's parent so padding is included naturally */
+@keyframes nop-comment-focus-pulse {
+	0%, 100% { background-color: transparent; }
+	20%      { background-color: var(--wp--preset--color--accent-6, rgba(0,0,0,0.06)); }
+}
+
+.nop-comment-focus-pulse {
+	animation: nop-comment-focus-pulse 0.9s ease-out;
+}
