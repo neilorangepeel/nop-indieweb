@@ -426,11 +426,22 @@ body {
 
 /* ── Compose ────────────────────────────────────────────────────────────── */
 
+/* The single scroll region: greeting + type selector + fields scroll together.
+   The masthead and the Post button (.bottom-bar) stay pinned outside it. Bare
+   flex column so the greeting/type-grid keep their full-bleed dividers; field
+   padding lives on .compose-fields below. */
 .compose-scroll {
 	flex: 1;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
+	display: flex;
+	flex-direction: column;
+}
+.compose-fields {
+	/* grow to fill when content is short (textarea fills the frame), but never
+	   shrink below its content — so a tall form overflows into the scroll. */
+	flex: 1 0 auto;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
@@ -1060,6 +1071,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 		<!-- Compose view -->
 		<div id="view-compose">
+			<!-- Scroll region: greeting + type selector + fields scroll as one;
+			     masthead and Post button stay pinned. -->
+			<div class="compose-scroll">
 			<p class="greeting" id="greeting"></p>
 
 			<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
@@ -1089,7 +1103,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				</button>
 			</div><!-- .type-grid -->
 
-			<div class="compose-scroll">
+			<div class="compose-fields">
 
 				<!-- URL field (reply, like, bookmark, repost) -->
 				<div class="field-group is-conditional" id="fieldUrl" hidden>
@@ -1151,6 +1165,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<div class="syndicators" id="syndicators"></div>
 				</details>
 
+				</div><!-- .compose-fields -->
 			</div><!-- .compose-scroll -->
 
 			<div class="bottom-bar">
