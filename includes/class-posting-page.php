@@ -245,6 +245,7 @@ body {
 	height: 100vh;
 	height: 100dvh;
 	overflow: hidden;
+	position: relative;
 	margin: 0 auto;
 	color: var(--text);
 	background-color: var(--field);
@@ -266,12 +267,97 @@ body {
 	}
 	.app {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
-		   dimensions (390x844, 19.5:9) with the display corner radius. */
+		   dimensions (390x844, 19.5:9) with the display corner radius. The faux
+		   safe-area insets reserve the real iOS status-bar / home-indicator zones
+		   so we design with the device chrome in mind. */
 		width: 390px;
 		height: 844px;
 		border: 2px solid var(--line);
 		border-radius: 50px;
+		--safe-top: 59px;
+		--safe-bottom: 34px;
 	}
+	.app .device-chrome { display: flex; }
+	/* Home indicator pill */
+	.app::after {
+		content: "";
+		position: absolute;
+		bottom: 9px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 134px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--charcoal);
+		opacity: 0.85;
+		pointer-events: none;
+		z-index: 5;
+	}
+}
+
+/* ── Faux iOS chrome ──────────────────────────────────────────────────────
+   The status bar (time / signal / wifi / battery), Dynamic Island and home
+   indicator. Shown ONLY on the desktop floating phone (display flipped on in
+   the frame media query); a real device renders the actual system chrome in
+   this same safe-area zone, so it's hidden there. */
+.device-chrome {
+	display: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 54px;
+	padding: 15px 34px 0;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--charcoal);
+	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+	pointer-events: none;
+	z-index: 5;
+}
+.device-chrome__time {
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	font-variant-numeric: tabular-nums;
+}
+.device-chrome__island {
+	position: absolute;
+	top: 11px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 122px;
+	height: 36px;
+	border-radius: 18px;
+	background: #0b0b0b;
+}
+.device-chrome__icons { display: flex; align-items: center; gap: 7px; }
+.device-chrome__icons svg { display: block; }
+.device-chrome__battery {
+	position: relative;
+	width: 25px;
+	height: 12px;
+	border: 1px solid color-mix(in srgb, var(--charcoal) 38%, transparent);
+	border-radius: 3.5px;
+	padding: 1.5px;
+}
+.device-chrome__battery::after {
+	content: "";
+	position: absolute;
+	right: -3px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1.8px;
+	height: 4px;
+	border-radius: 0 1px 1px 0;
+	background: color-mix(in srgb, var(--charcoal) 38%, transparent);
+}
+.device-chrome__battery i {
+	display: block;
+	height: 100%;
+	width: 72%;
+	background: var(--charcoal);
+	border-radius: 1.5px;
 }
 
 /* ── Masthead ───────────────────────────────────────────────────────────── */
@@ -1104,6 +1190,17 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 <body>
 <div class="app" id="app" data-type="note">
 
+	<!-- Faux iOS chrome — desktop floating-phone mock only -->
+	<div class="device-chrome" aria-hidden="true">
+		<span class="device-chrome__time" id="deviceTime">19:07</span>
+		<span class="device-chrome__island"></span>
+		<span class="device-chrome__icons">
+			<svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8.5" width="3" height="3.5" rx="1"/><rect x="4.9" y="5.7" width="3" height="6.3" rx="1"/><rect x="9.8" y="2.8" width="3" height="9.2" rx="1"/><rect x="14.7" y="0" width="3" height="12" rx="1"/></svg>
+			<svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.8.7 4.5a10.4 10.4 0 0 1 14.6 0L8 11.8Z"/></svg>
+			<span class="device-chrome__battery"><i></i></span>
+		</span>
+	</div>
+
 	<!-- Masthead -->
 	<header class="masthead">
 		<div class="masthead__top">
@@ -1311,6 +1408,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	var clockTimeEl = document.getElementById( 'clockTime' );
 	var clockDateEl = document.getElementById( 'clockDate' );
+	var deviceTimeEl = document.getElementById( 'deviceTime' );
 	var greetingEl  = document.getElementById( 'greeting' );
 	var skyBody     = document.getElementById( 'skyBody' );
 	var lastTime = '', lastDate = '', lastGreeting = '';
@@ -1346,6 +1444,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
 		if ( time !== lastTime ) {
 			clockTimeEl.textContent = time;
+			if ( deviceTimeEl ) { deviceTimeEl.textContent = time; }
 			lastTime = time;
 			updateSky( now );
 			var greet = greetingFor( now.getHours() );
