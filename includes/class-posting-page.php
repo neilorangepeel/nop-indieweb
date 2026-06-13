@@ -249,7 +249,7 @@ body {
 	--accent:   var(--ink);
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
 	--rule:     color-mix(in srgb, var(--ink) 36%, transparent);
-	--grain:    color-mix(in srgb, var(--ink) 12%, transparent);
+	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
 	   frame border) and the browser theme-color (status-bar / notch tint). */
@@ -270,9 +270,10 @@ body {
 	position: relative;
 	margin: 0 auto;
 	color: var(--text);
-	/* A touch of ink over the field so the poster reads a shade darker than the
-	   same-hue body it floats on — one tone, slightly deeper panel. */
-	background-color: color-mix(in srgb, var(--ink) 6%, var(--field));
+	/* Same off-white as the html/body field — NO tint fill. The poster's depth
+	   comes only from its dots being a touch darker than the field's (see --grain
+	   vs the body grain), so the background colour never changes, just the dots. */
+	background-color: var(--field);
 	/* Faint halftone grain — the organic "printed on paper" texture. */
 	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
