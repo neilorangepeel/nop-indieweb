@@ -445,6 +445,21 @@ body {
 	overscroll-behavior: contain;
 	display: flex;
 	flex-direction: column;
+	/* Conditional depth as pure-CSS scroll shadows (Lea Verou technique). Two
+	   translucent ink "shadows" are pinned to the top and bottom edges
+	   (background-attachment: scroll); two paper "covers" scroll with the
+	   content (local) and mask each shadow at its extreme. Result: the top wash
+	   fades in only once you've scrolled down, the bottom wash only while
+	   there's more below. Grain shows through the translucent shadows; the
+	   covers paint paper only over the thin top/bottom strips of content. */
+	background:
+		linear-gradient( var(--field) 28%, transparent ) center top,
+		linear-gradient( transparent, var(--field) 72% ) center bottom,
+		linear-gradient( to bottom, color-mix( in srgb, var(--ink) 17%, transparent ), transparent ) center top,
+		linear-gradient( to top, color-mix( in srgb, var(--ink) 17%, transparent ), transparent ) center bottom;
+	background-repeat: no-repeat;
+	background-size: 100% 42px, 100% 42px, 100% 30px, 100% 30px;
+	background-attachment: local, local, scroll, scroll;
 }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
@@ -791,28 +806,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* ── Bottom bar + buttons ───────────────────────────────────────────────── */
 
-/* The footer reads as a shaded band of the same paper — depth by colour, not a
-   second dot grid. A soft ink wash rises from the divider; the page grain shows
-   straight through it, continuous, so there's no stripe and no hard edge. */
+/* The footer's depth now comes from the compose area's bottom scroll-shadow
+   (see .compose-scroll), which only appears while there's more to scroll — so
+   the bar itself stays clean, just the structural divider. */
 .bottom-bar {
-	position: relative;
 	flex-shrink: 0;
 	padding: 12px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 12px);
 	border-top: 2px solid var(--line);
-	background: linear-gradient( to bottom,
-		color-mix( in srgb, var(--ink) 13%, transparent ), transparent 80% );
-}
-.bottom-bar::before {
-	content: "";
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 100%;
-	height: 52px;
-	background: linear-gradient( to top,
-		color-mix( in srgb, var(--ink) 16%, transparent ), transparent );
-	pointer-events: none;
 }
 
 .btn {
