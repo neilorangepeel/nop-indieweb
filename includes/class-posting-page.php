@@ -1244,67 +1244,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.toast { transition: opacity 0.01ms; }
 }
 
-/* ── Grain tuner ───────────────────────────────────────────────────────────
-   Temporary dev panel — live-tune the grain/halftone geometry on-device. A
-   collapsed pill in the corner that expands to three slider+number rows.
-   Sits OUTSIDE .app, so it can only use :root-scoped tokens (--ink is mirrored
-   onto :root in JS; --field / --charcoal live there) — NOT the .app-scoped
-   --device-ink / --line / --text. Remove once values are baked into :root. */
-.grain-tuner {
-	position: fixed;
-	right: calc(var(--safe-right, 0px) + 12px);
-	bottom: calc(var(--safe-bottom) + 12px);
-	z-index: 60;
-	font-family: var(--display);
-}
-.grain-tuner__toggle {
-	display: block;
-	margin-left: auto;
-	padding: 7px 12px;
-	background: var(--ink);
-	color: #f4f0e7;
-	border: none;
-	border-radius: var(--nop-radius-pill);
-	font: inherit;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	cursor: pointer;
-	box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
-.grain-tuner__body {
-	display: none;
-	margin-top: 8px;
-	padding: 12px;
-	width: 240px;
-	background: var(--field);
-	border: 2px solid var(--ink);
-	border-radius: var(--radius);
-	box-shadow: 0 6px 20px rgba(0,0,0,0.28);
-}
-.grain-tuner.is-open .grain-tuner__body { display: block; }
-.grain-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.grain-row:first-child { margin-top: 0; }
-.grain-row label {
-	flex: 0 0 84px;
-	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--charcoal);
-}
-.grain-row input[type="range"] { flex: 1; min-width: 0; accent-color: var(--ink); }
-.grain-row input[type="number"] {
-	flex: 0 0 56px;
-	padding: 3px 5px;
-	background: var(--field);
-	border: 1px solid var(--ink);
-	border-radius: 3px;
-	color: var(--charcoal);
-	font: inherit;
-	font-size: 12px;
-}
 </style>
 </head>
 <body>
@@ -1503,29 +1442,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 </div><!-- .app -->
-
-<!-- Grain tuner — temporary dev control (see .grain-tuner). Each row binds a
-     range + number to one --grain-* var; values persist to localStorage. -->
-<div class="grain-tuner" id="grainTuner">
-	<button type="button" class="grain-tuner__toggle" id="grainToggle" aria-expanded="false"><?php esc_html_e( 'Grain', 'nop-indieweb' ); ?></button>
-	<div class="grain-tuner__body">
-		<div class="grain-row">
-			<label for="grainHtDot"><?php esc_html_e( 'Shadow dot', 'nop-indieweb' ); ?></label>
-			<input type="range"   id="grainHtDot"    data-var="--ht-dot"      min="0.4" max="3"  step="0.05">
-			<input type="number"  id="grainHtDotNum" data-var="--ht-dot"      min="0.4" max="3"  step="0.05">
-		</div>
-		<div class="grain-row">
-			<label for="grainDot"><?php esc_html_e( 'Background dot', 'nop-indieweb' ); ?></label>
-			<input type="range"   id="grainDot"      data-var="--grain-dot"   min="0.2" max="2"  step="0.05">
-			<input type="number"  id="grainDotNum"   data-var="--grain-dot"   min="0.2" max="2"  step="0.05">
-		</div>
-		<div class="grain-row">
-			<label for="grainPitch"><?php esc_html_e( 'Gap', 'nop-indieweb' ); ?></label>
-			<input type="range"   id="grainPitch"    data-var="--grain-pitch" min="2"   max="12" step="0.1">
-			<input type="number"  id="grainPitchNum" data-var="--grain-pitch" min="2"   max="12" step="0.1">
-		</div>
-	</div>
-</div>
 
 <script>
 (function () {
@@ -1737,47 +1653,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 	window.addEventListener( 'resize', function () { updateScrollFades(); alignHalftone(); } );
 
-	// ── Grain tuner (temporary dev control) ──────────────────────────────────
-	// Live-tune the grain/halftone geometry; values persist to localStorage.
-	// Each input's data-var names the --grain-* it drives; range + number stay
-	// in sync. Writing to :root re-tints body + app + halftone, then re-aligns.
-	( function () {
-		var tuner = document.getElementById( 'grainTuner' );
-		if ( ! tuner ) { return; }
-		var toggle = document.getElementById( 'grainToggle' );
-		var KEY    = 'nop_post_grain';
-		var VARS   = [ '--ht-dot', '--grain-dot', '--grain-pitch' ];
-		var inputs = tuner.querySelectorAll( 'input[data-var]' );
-		function cssNum( name ) { return parseFloat( getComputedStyle( root ).getPropertyValue( name ) ) || 0; }
-		function setVar( name, val ) {
-			root.style.setProperty( name, val + 'px' );
-			inputs.forEach( function ( inp ) { if ( inp.dataset.var === name ) { inp.value = val; } } );
-		}
-		function save() {
-			var data = {};
-			VARS.forEach( function ( name ) { data[ name ] = cssNum( name ); } );
-			try { localStorage.setItem( KEY, JSON.stringify( data ) ); } catch ( e ) {}
-		}
-		var saved = {};
-		try { saved = JSON.parse( localStorage.getItem( KEY ) || '{}' ) || {}; } catch ( e ) {}
-		VARS.forEach( function ( name ) {
-			setVar( name, ( typeof saved[ name ] === 'number' ) ? saved[ name ] : cssNum( name ) );
-		} );
-		alignHalftone();
-		inputs.forEach( function ( inp ) {
-			inp.addEventListener( 'input', function () {
-				var v = parseFloat( inp.value );
-				if ( isNaN( v ) ) { return; }
-				setVar( inp.dataset.var, v );
-				save();
-				alignHalftone();
-			} );
-		} );
-		toggle.addEventListener( 'click', function () {
-			var open = tuner.classList.toggle( 'is-open' );
-			toggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
-		} );
-	} )();
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
