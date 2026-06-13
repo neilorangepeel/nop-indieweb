@@ -50,7 +50,19 @@
 			// Scoping to the root supports both layouts.
 			var countEl = el.querySelector( cfg.countSelector );
 
-			if ( ! btn || btn.disabled || ! countEl ) {
+			if ( ! btn || ! countEl ) {
+				return;
+			}
+
+			// keepEnabled: lock via an is-liked/is-busy class instead of the
+			// disabled attribute, so the button stays interactive after liking
+			// (post-footer reveals the facepile by clicking the count, which a
+			// disabled button would swallow). like-button keeps using disabled.
+			var alreadyLiked = cfg.keepEnabled
+				? btn.classList.contains( 'is-liked' )
+				: btn.disabled;
+
+			if ( alreadyLiked ) {
 				return;
 			}
 
@@ -67,7 +79,15 @@
 			} );
 
 			btn.addEventListener( 'click', function () {
-				btn.disabled = true;
+				if ( cfg.keepEnabled ) {
+					// Guard re-entry without disabling, so the count stays clickable.
+					if ( btn.classList.contains( 'is-busy' ) || btn.classList.contains( 'is-liked' ) ) {
+						return;
+					}
+					btn.classList.add( 'is-busy' );
+				} else {
+					btn.disabled = true;
+				}
 				btn.classList.add( 'is-animating' );
 				statusEl.textContent = '';
 
@@ -89,6 +109,7 @@
 					.then( function ( r ) { return r.json(); } )
 					.then( function ( data ) {
 						el.classList.add( 'is-liked' );
+						btn.classList.remove( 'is-busy' );
 						btn.classList.add( 'is-liked' );
 						btn.setAttribute( 'aria-pressed', 'true' );
 
@@ -104,7 +125,11 @@
 						}
 					} )
 					.catch( function () {
-						btn.disabled = false;
+						if ( cfg.keepEnabled ) {
+							btn.classList.remove( 'is-busy' );
+						} else {
+							btn.disabled = false;
+						}
 						btn.classList.remove( 'is-animating' );
 						countEl.textContent = previousCount;
 						countEl.setAttribute( 'aria-label', formatLabel( previousCount ) );

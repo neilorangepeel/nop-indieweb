@@ -1,28 +1,61 @@
 /**
  * Post Footer — front-end behaviour.
  *
- * Delegates the like fetch/animation/rollback to the shared helper.
- * The aria-label swap on liked is the only block-specific bit.
+ * Delegates the like fetch/animation/rollback to the shared helper (with
+ * keepEnabled so the pill stays live after liking and its caret keeps working).
+ * The caret next to the like/share count reveals a facepile panel without
+ * triggering the pill's own action. Plus the comment pill scroll-to-form and
+ * the share pill's Web Share / clipboard fallback.
  */
 ( function () {
 	'use strict';
 
-	if ( ! window.nopIndieWeb || ! window.nopIndieWeb.attachLikeAction ) {
-		return;
-	}
-
 	var __ = ( window.wp && window.wp.i18n ) ? window.wp.i18n.__ : function ( s ) { return s; };
 
-	window.nopIndieWeb.attachLikeAction( {
-		rootSelector:   '.nop-post-footer',
-		buttonSelector: '.nop-post-footer__pill--like',
-		countSelector:  '.nop-post-footer__pill-count',
-		statusClass:    'nop-post-footer__status',
-		onLiked: function ( _el, btn ) {
-			btn.setAttribute( 'aria-label', __( 'Liked', 'nop-indieweb' ) );
-		},
+	if ( window.nopIndieWeb && window.nopIndieWeb.attachLikeAction ) {
+		window.nopIndieWeb.attachLikeAction( {
+			rootSelector:   '.nop-post-footer',
+			buttonSelector: '.nop-post-footer__pill--like',
+			countSelector:  '.nop-post-footer__pill-count',
+			statusClass:    'nop-post-footer__status',
+			keepEnabled:    true,
+			onLiked: function ( _el, btn ) {
+				btn.setAttribute( 'aria-label', __( 'Liked', 'nop-indieweb' ) );
+			},
+		} );
+	}
+
+	// ── Caret reveals (who liked / reposted) ──────────────────────────────────
+	// The caret lives inside the pill's button, so stop the event before it
+	// reaches the pill's like/share handler.
+	function toggleReveal( caret ) {
+		var root  = caret.closest( '.nop-post-footer' );
+		var key   = caret.getAttribute( 'data-reveal' );
+		if ( ! root || ! key ) { return; }
+		var panel = root.querySelector( '.nop-post-footer__reveal-panel[data-panel="' + key + '"]' );
+		if ( ! panel ) { return; }
+		var open = panel.hasAttribute( 'hidden' );
+		if ( open ) { panel.removeAttribute( 'hidden' ); } else { panel.setAttribute( 'hidden', '' ); }
+		caret.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+		caret.classList.toggle( 'is-open', open );
+	}
+
+	document.querySelectorAll( '.nop-post-footer__reveal' ).forEach( function ( caret ) {
+		caret.addEventListener( 'click', function ( e ) {
+			e.stopPropagation();
+			e.preventDefault();
+			toggleReveal( caret );
+		} );
+		caret.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' ) {
+				e.stopPropagation();
+				e.preventDefault();
+				toggleReveal( caret );
+			}
+		} );
 	} );
 
+	// ── Comment pill → scroll to the reply textarea ───────────────────────────
 	var commentPill = document.querySelector( '.nop-post-footer__pill--link' );
 	if ( commentPill ) {
 		commentPill.addEventListener( 'click', function ( e ) {
@@ -45,10 +78,11 @@
 		} );
 	}
 
+	// ── Share pill → Web Share API with clipboard fallback ────────────────────
 	document.querySelectorAll( '.nop-post-footer__pill--share' ).forEach( function ( btn ) {
 		btn.addEventListener( 'click', function () {
-			var url      = btn.getAttribute( 'data-url' ) || window.location.href;
-			var title    = btn.getAttribute( 'data-title' ) || document.title;
+			var url       = btn.getAttribute( 'data-url' ) || window.location.href;
+			var title     = btn.getAttribute( 'data-title' ) || document.title;
 			var origLabel = btn.getAttribute( 'aria-label' );
 
 			if ( navigator.share ) {

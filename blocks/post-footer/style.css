@@ -42,6 +42,108 @@ a.nop-post-footer__pill--link:hover {
 	border-color: currentColor;
 }
 
+/* ── Pill action hover ────────────────────────────────────────────────────
+   The like and share pills light up on hover so the icon+count reads as the
+   primary action — but NOT when the caret is hovered, so the "peek" control
+   stays visually separate from the "like / share" action. */
+.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) {
+	border-color: var(--nop-like-color);
+	color:        var(--nop-like-color-strong);
+}
+
+.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) {
+	border-color: var(--nop-repost-color);
+	color:        var(--nop-repost-color-strong);
+}
+
+/* Icon nudge is motion — gate it so reduced-motion users still get the colour. */
+@media (prefers-reduced-motion: no-preference) {
+	.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon,
+	.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon {
+		transform: scale(1.08);
+	}
+}
+
+/* ── Reveal caret (who liked / reposted) ──────────────────────────────────── */
+
+/* Sits inside the pill, after the count. Its own hit area + colour so it reads
+   as a distinct "peek" control separate from the pill's like/share action. */
+.nop-post-footer__reveal {
+	display:        inline-flex;
+	align-items:    center;
+	margin-inline-start: 0.125rem;
+	padding:        2px;
+	border-radius:  var(--nop-radius, 2px);
+	color:          var(--nop-muted);
+	cursor:         pointer;
+	transition:     transform 150ms ease, color 150ms ease;
+}
+
+.nop-post-footer__reveal:hover,
+.nop-post-footer__reveal:focus-visible {
+	color: var(--nop-text);
+}
+
+.nop-post-footer__reveal:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 1px;
+}
+
+.nop-post-footer__reveal.is-open {
+	transform: rotate(180deg);
+}
+
+/* ── Reveal panel (facepile + names, drops to its own line) ────────────────── */
+
+.nop-post-footer__reveal-panel {
+	flex-basis:  100%;
+	display:     flex;
+	align-items: center;
+	flex-wrap:   wrap;
+	gap:         0.5rem 0.75rem;
+	margin:      0.6rem 0 0.35rem;
+}
+
+.nop-post-footer__reveal-panel[hidden] {
+	display: none;
+}
+
+.nop-post-footer__reveal-names {
+	font-size: 0.8125rem;
+	color:     var(--nop-muted);
+}
+
+.nop-post-footer__reveal-names a {
+	color:           inherit;
+	text-decoration: none;
+}
+
+.nop-post-footer__reveal-names a:hover strong {
+	text-decoration: underline;
+}
+
+/* Gentle overlap + ring so the facepile reads as a cluster without crowding. */
+.nop-post-footer__reveal-panel .nop-webmentions__facepile {
+	gap: 0;
+}
+
+.nop-post-footer__reveal-panel .nop-webmentions__avatar-wrap:not(:first-child) {
+	margin-inline-start: -6px;
+}
+
+.nop-post-footer__reveal-panel .nop-webmentions__avatar,
+.nop-post-footer__reveal-panel .nop-webmentions__overflow {
+	box-shadow: 0 0 0 2px var(--wp--preset--color--base, #fff);
+}
+
+/* Force the overflow bubble opaque — its token background can be translucent,
+   which let the avatar behind it bleed through and look like a glitch. The
+   base colour sits underneath the divider tint so it always reads solid. */
+.nop-post-footer__reveal-panel .nop-webmentions__overflow {
+	background-color: var(--wp--preset--color--base, #fff);
+	background-image: linear-gradient( var(--nop-divider-color), var(--nop-divider-color) );
+}
+
 /* Textarea invite — colour flash only (reduced motion) */
 @keyframes nop-textarea-color {
 	0%, 100% { background-color: transparent; }

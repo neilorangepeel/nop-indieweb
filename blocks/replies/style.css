@@ -10,13 +10,17 @@
 	gap:            var(--wp--preset--spacing--30, 1.25rem);
 }
 
-/* ── Section heading ─────────────────────────────────────────────────────── */
+/* ── Section eyebrow ─────────────────────────────────────────────────────── */
 
-.nop-webmentions__heading {
-	margin:      0;
-	font-size:   var(--wp--preset--font-size--medium, 1.25rem);
-	font-weight: 600;
-	line-height: 1.3;
+/* Quiet uppercase label — matches the "Leave a reply" eyebrow on the form, and
+   deliberately carries no count (the comment pill above already shows it). */
+.nop-replies__label {
+	margin:         0;
+	font-size:      0.6875rem;
+	font-weight:    600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color:          var(--nop-muted);
 }
 
 /* ── Platform tag pill ───────────────────────────────────────────────────── */

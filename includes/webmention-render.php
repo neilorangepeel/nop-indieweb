@@ -278,6 +278,41 @@ function nop_wm_liked_by( array $likes ): string {
 	);
 }
 
+function nop_wm_reposted_by( array $reposts ): string {
+	$count = count( $reposts );
+	if ( 0 === $count ) {
+		return '';
+	}
+	$name = static function ( array $entry ): string {
+		$author = esc_html( $entry['author'] );
+		$url    = esc_url( $entry['author_url'] ?? '' );
+		return $url
+			? '<a href="' . $url . '" target="_blank" rel="noopener noreferrer"><strong>' . $author . '</strong></a>'
+			: '<strong>' . $author . '</strong>';
+	};
+	if ( 1 === $count ) {
+		/* translators: %s: author name */
+		return sprintf( __( 'Reposted by %s', 'nop-indieweb' ), $name( $reposts[0] ) );
+	}
+	if ( 2 === $count ) {
+		/* translators: 1: first author, 2: second author */
+		return sprintf( __( 'Reposted by %1$s and %2$s', 'nop-indieweb' ), $name( $reposts[0] ), $name( $reposts[1] ) );
+	}
+	$others = $count - 2;
+	return sprintf(
+		/* translators: 1: first author, 2: second author, 3: number of additional reposters */
+		_n(
+			'Reposted by %1$s, %2$s and %3$d other',
+			'Reposted by %1$s, %2$s and %3$d others',
+			$others,
+			'nop-indieweb'
+		),
+		$name( $reposts[0] ),
+		$name( $reposts[1] ),
+		$others
+	);
+}
+
 function nop_wm_time_ago( string $date_gmt ): string {
 	$ts   = strtotime( $date_gmt );
 	if ( ! $ts ) {
@@ -383,14 +418,6 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 	</div>
 	<?php
 	return (string) ob_get_clean();
-}
-
-function nop_wm_repost_icon(): string {
-	return '<svg class="nop-webmentions__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="13" height="13"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
-}
-
-function nop_wm_heart_icon(): string {
-	return '<svg class="nop-reactions__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
 }
 
 /**

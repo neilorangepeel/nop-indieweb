@@ -545,7 +545,6 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-map' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/weather-temp' );
-		register_block_type( NOP_INDIEWEB_DIR . 'blocks/reactions' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/replies' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/comment-form' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/like-button' );
@@ -860,10 +859,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">like-button (custom block — site likes + aggregated webmention likes)</p><!-- /wp:paragraph -->
 <!-- wp:nop-indieweb/like-button /-->
 
-<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">reactions (custom block — merged likes + reposts band)</p><!-- /wp:paragraph -->
-<!-- wp:nop-indieweb/reactions /-->
-
-<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">replies (custom block — threaded conversation)</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">replies (custom block — threaded conversation; reactions revealed from the post-footer pills)</p><!-- /wp:paragraph -->
 <!-- wp:nop-indieweb/replies /-->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">comment-form (custom block — leave a reply)</p><!-- /wp:paragraph -->

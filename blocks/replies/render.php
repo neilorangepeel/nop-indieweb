@@ -43,17 +43,15 @@ if ( ! $preview && comments_open( $post_id ) ) {
 }
 
 $comments_open = ! $preview && comments_open( $post_id );
-$reply_count   = count( $replies );
-/* translators: %d: number of replies */
-$heading_text  = sprintf( _n( '%d Response', '%d Responses', $reply_count, 'nop-indieweb' ), $reply_count );
 
-$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
+// id="comments" gives the post-footer comment pill a real anchor target when
+// JS is off; the heading is always present for the document outline / screen
+// readers, shown as the eyebrow only when showHeading is on.
+$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' => 'comments' ] );
 ?>
-<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
+<section <?php echo wp_kses_data( $wrapper_attrs ); ?> aria-labelledby="nop-replies-heading">
 
-	<?php if ( $show_heading ) : ?>
-	<h2 class="nop-webmentions__heading"><?php echo esc_html( $heading_text ); ?></h2>
-	<?php endif; ?>
+	<h2 id="nop-replies-heading" class="nop-replies__label<?php echo $show_heading ? '' : ' screen-reader-text'; ?>"><?php esc_html_e( 'Replies', 'nop-indieweb' ); ?></h2>
 
 	<ul class="nop-webmentions__replies">
 		<?php foreach ( $replies as $entry ) :
@@ -66,18 +64,18 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 			$platform_tag = nop_wm_platform_tag( (string) ( $entry['platform'] ?? '' ), ! empty( $entry['via_bridgy'] ) );
 			$author_name  = $entry['author'];
 		?>
-		<li class="nop-webmentions__reply" id="nop-wm-<?php echo esc_attr( (string) $entry['id'] ); ?>">
+		<li class="nop-webmentions__reply h-cite" id="nop-wm-<?php echo esc_attr( (string) $entry['id'] ); ?>">
 			<div class="nop-webmentions__reply-avatar" aria-hidden="true">
 				<?php echo nop_wm_avatar_wrap( $entry, 40 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 			</div>
 			<div class="nop-webmentions__reply-body">
 				<p class="nop-webmentions__reply-meta">
 					<?php if ( $profile_url ) : ?>
-					<a href="<?php echo esc_url( $profile_url ); ?>" target="_blank" rel="noopener noreferrer">
-						<strong><?php echo esc_html( $author_name ); ?></strong>
+					<a class="p-author h-card u-url" href="<?php echo esc_url( $profile_url ); ?>" target="_blank" rel="noopener noreferrer">
+						<strong class="p-name"><?php echo esc_html( $author_name ); ?></strong>
 					</a>
 					<?php else : ?>
-					<strong><?php echo esc_html( $author_name ); ?></strong>
+					<strong class="p-author p-name"><?php echo esc_html( $author_name ); ?></strong>
 					<?php endif; ?>
 					<?php if ( $entry['handle'] ) : ?>
 					<span class="nop-webmentions__reply-handle"><?php echo esc_html( $entry['handle'] ); ?></span>
@@ -86,8 +84,8 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 					<?php echo $platform_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 					<?php endif; ?>
 					<?php if ( $time_display ) : ?>
-					<a href="<?php echo esc_url( $reply_url ); ?>" class="nop-webmentions__reply-time" target="_blank" rel="noopener noreferrer">
-						<time datetime="<?php echo esc_attr( $time_iso ); ?>" aria-label="<?php echo esc_attr( $time_label ); ?>"><?php echo esc_html( $time_display ); ?></time>
+					<a href="<?php echo esc_url( $reply_url ); ?>" class="nop-webmentions__reply-time u-url" target="_blank" rel="noopener noreferrer">
+						<time class="dt-published" datetime="<?php echo esc_attr( $time_iso ); ?>" aria-label="<?php echo esc_attr( $time_label ); ?>"><?php echo esc_html( $time_display ); ?></time>
 					</a>
 					<?php endif; ?>
 					<?php if ( $comments_open ) : ?>
@@ -95,7 +93,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 					<?php endif; ?>
 				</p>
 				<?php if ( $entry['content'] ) : ?>
-				<div class="nop-webmentions__reply-content"><?php echo wp_kses_post( $entry['content'] ); ?></div>
+				<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $entry['content'] ); ?></div>
 				<?php endif; ?>
 
 				<?php if ( $children ) : ?>
@@ -105,16 +103,16 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 						$child_label    = nop_wm_time_label( $child->comment_date_gmt );
 						$child_time_iso = gmdate( 'c', (int) strtotime( $child->comment_date_gmt ) );
 					?>
-					<li class="nop-webmentions__comment-reply" id="nop-wm-<?php echo esc_attr( (string) $child->comment_ID ); ?>">
+					<li class="nop-webmentions__comment-reply h-cite" id="nop-wm-<?php echo esc_attr( (string) $child->comment_ID ); ?>">
 						<div class="nop-webmentions__comment-reply-avatar" aria-hidden="true">
 							<?php echo get_avatar( $child, 28, '', $child->comment_author, [ 'class' => 'nop-webmentions__avatar' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_avatar returns safe markup ?>
 						</div>
 						<div class="nop-webmentions__comment-reply-body">
 							<p class="nop-webmentions__reply-meta">
-								<strong><?php echo esc_html( $child->comment_author ); ?></strong>
+								<strong class="p-author p-name"><?php echo esc_html( $child->comment_author ); ?></strong>
 								<?php if ( $child_time ) : ?>
 								<span class="nop-webmentions__reply-time">
-									<time datetime="<?php echo esc_attr( $child_time_iso ); ?>" aria-label="<?php echo esc_attr( $child_label ); ?>"><?php echo esc_html( $child_time ); ?></time>
+									<time class="dt-published" datetime="<?php echo esc_attr( $child_time_iso ); ?>" aria-label="<?php echo esc_attr( $child_label ); ?>"><?php echo esc_html( $child_time ); ?></time>
 								</span>
 								<?php endif; ?>
 								<?php if ( $comments_open ) : ?>
@@ -122,7 +120,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 								<?php endif; ?>
 							</p>
 							<?php if ( $child->comment_content ) : ?>
-							<div class="nop-webmentions__reply-content"><?php echo wp_kses_post( $child->comment_content ); ?></div>
+							<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $child->comment_content ); ?></div>
 							<?php endif; ?>
 						</div>
 					</li>
@@ -134,4 +132,4 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies' ] );
 		<?php endforeach; ?>
 	</ul>
 
-</div>
+</section>
