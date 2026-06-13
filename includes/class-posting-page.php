@@ -455,42 +455,29 @@ body {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 150px;
+	height: 240px;
 	pointer-events: none;
 	opacity: 0;
-	/* TRUE halftone. Three dot layers share one 6px grid (so they sit on the same
-	   centres and read as a single screen) but grow in radius and ink toward the
-	   origin edge — fine grain far into the content, coarse near-touching dots at
-	   the edge that flood the paper between the letters until the text drowns in
-	   ink. The base layer is the fine grain reaching the full length; ::before is
-	   the mid dots; ::after is the coarse edge dots. Each layer's mask sets how
-	   far it reaches (per direction below). Opacity is scroll-position driven. */
-	background-image: radial-gradient( color-mix( in srgb, var(--ink) 38%, transparent ) 0.8px, transparent 1.4px );
-	background-size: 6px 6px;
+	/* A single halftone screen in the ink hue on a transparent ground — the page
+	   grain shows between the dots. The mask shapes the darkness as a "hockey
+	   stick": a long, subtle tail reaching far into the content that ramps up
+	   sharply at the origin edge (the % stops hold the ratio at any height).
+	   Element opacity is driven by scroll position in JS so it fades by position. */
+	background-image: radial-gradient( color-mix( in srgb, var(--ink) 58%, transparent ) 1px, transparent 1.7px );
+	background-size: 5px 5px;
 }
-.scroll-fade::before,
-.scroll-fade::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	background-size: 6px 6px;
+.scroll-fade-top {
+	top: 0;
+	margin-bottom: -240px;
+	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
-.scroll-fade::before { background-image: radial-gradient( color-mix( in srgb, var(--ink) 60%, transparent ) 1.7px, transparent 2.3px ); }
-.scroll-fade::after  { background-image: radial-gradient( color-mix( in srgb, var(--ink) 82%, transparent ) 2.7px, transparent 3.2px ); }
-
-.scroll-fade-top    { top: 0;    margin-bottom: -150px; }
-.scroll-fade-bottom { bottom: 0; margin-top: -150px; }
-
-/* base (fine) — full hockey-stick reach */
-.scroll-fade-top    { -webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% ); }
-.scroll-fade-bottom { -webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% ); }
-/* ::before (mid) — reaches ~60% in */
-.scroll-fade-top::before    { -webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.55) 8%, rgba(0,0,0,0.14) 34%, transparent 60% );        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.55) 8%, rgba(0,0,0,0.14) 34%, transparent 60% ); }
-.scroll-fade-bottom::before { -webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.55) 8%, rgba(0,0,0,0.14) 34%, transparent 60% );        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.55) 8%, rgba(0,0,0,0.14) 34%, transparent 60% ); }
-/* ::after (coarse) — only at the edge, ~30% in */
-.scroll-fade-top::after    { -webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 6%, transparent 32% );        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 6%, transparent 32% ); }
-.scroll-fade-bottom::after { -webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 6%, transparent 32% );        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 6%, transparent 32% ); }
+.scroll-fade-bottom {
+	bottom: 0;
+	margin-top: -240px;
+	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. */
