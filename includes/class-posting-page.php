@@ -1246,7 +1246,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 /* ── Grain tuner ───────────────────────────────────────────────────────────
    Temporary dev panel — live-tune the grain/halftone geometry on-device. A
    collapsed pill in the corner that expands to three slider+number rows.
-   Remove once the values are baked into the :root defaults. */
+   Sits OUTSIDE .app, so it can only use :root-scoped tokens (--ink is mirrored
+   onto :root in JS; --field / --charcoal live there) — NOT the .app-scoped
+   --device-ink / --line / --text. Remove once values are baked into :root. */
 .grain-tuner {
 	position: fixed;
 	right: calc(var(--safe-right, 0px) + 12px);
@@ -1258,7 +1260,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	display: block;
 	margin-left: auto;
 	padding: 7px 12px;
-	background: var(--device-ink);
+	background: var(--ink);
 	color: #f4f0e7;
 	border: none;
 	border-radius: var(--nop-radius-pill);
@@ -1276,7 +1278,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	padding: 12px;
 	width: 240px;
 	background: var(--field);
-	border: 2px solid var(--line);
+	border: 2px solid var(--ink);
 	border-radius: var(--radius);
 	box-shadow: 0 6px 20px rgba(0,0,0,0.28);
 }
@@ -1289,16 +1291,16 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: var(--text);
+	color: var(--charcoal);
 }
 .grain-row input[type="range"] { flex: 1; min-width: 0; accent-color: var(--ink); }
 .grain-row input[type="number"] {
 	flex: 0 0 56px;
 	padding: 3px 5px;
 	background: var(--field);
-	border: 1px solid var(--line);
+	border: 1px solid var(--ink);
 	border-radius: 3px;
-	color: var(--text);
+	color: var(--charcoal);
 	font: inherit;
 	font-size: 12px;
 }
