@@ -113,7 +113,7 @@ class Posting_Page {
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" id="themeColor" content="#006066">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
 <?php if ( $icon_url ) : ?>
 <link rel="apple-touch-icon" href="<?php echo esc_url( $icon_url ); ?>">
@@ -138,12 +138,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 ?>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Browser chrome in the palette: text selection inverts (ink fill, paper text);
-   the page scrollbar takes the neutral desk charcoal. The compose scroller gets
-   an ink-toned thin bar (below). */
+/* Browser chrome in the palette: text selection inverts (ink fill, paper text)
+   and the page scrollbar takes the kind ink too — --ink is mirrored onto :root in
+   JS, so html (outside .app) can read it. The compose scroller (below) matches. */
 ::selection      { background: var(--ink); color: var(--paper); }
 ::-moz-selection { background: var(--ink); color: var(--paper); }
-html { scrollbar-color: color-mix(in srgb, var(--charcoal) 38%, transparent) transparent; }
+html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transparent; }
 [hidden] { display: none !important; }
 
 /*
@@ -197,6 +197,15 @@ html { scrollbar-color: color-mix(in srgb, var(--charcoal) 38%, transparent) tra
 
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
+
+	/* Grain / halftone geometry — one shared grid. --grain-pitch is the dot gap
+	   (drives the page grain AND the scroll-fade halftone, kept phase-locked in
+	   alignHalftone); --grain-dot / --ht-dot are the two dot radii (background
+	   speckle vs the bigger halftone "drop-shadow" stud). Live-tunable via the
+	   grain panel, persisted to localStorage. */
+	--grain-pitch: 4px;
+	--grain-dot:   0.6px;
+	--ht-dot:      1px;
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -219,10 +228,11 @@ body {
 	min-height: -webkit-fill-available;
 	overflow: hidden;
 	background-color: var(--field);
-	/* Full-bleed neutral grain — on desktop the framed poster sits on a textured
-	   field instead of a void; on phone it's covered by the app. */
-	background-image: radial-gradient(color-mix(in srgb, var(--charcoal) 7%, transparent) 0.6px, transparent 0.9px);
-	background-size: 4px 4px;
+	/* Full-bleed grain in the kind hue — the framed poster floats on a field that
+	   shares its ink (--ink mirrored onto :root in JS so it reaches body, which sits
+	   outside .app); on phone it's covered by the app. Shares the poster's grid. */
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
 	color: var(--charcoal);
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -238,7 +248,7 @@ body {
 	--text:     var(--ink);
 	--accent:   var(--ink);
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
-	--rule:     color-mix(in srgb, var(--ink) 26%, transparent);
+	--rule:     color-mix(in srgb, var(--ink) 36%, transparent);
 	--grain:    color-mix(in srgb, var(--ink) 12%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
@@ -260,10 +270,12 @@ body {
 	position: relative;
 	margin: 0 auto;
 	color: var(--text);
-	background-color: var(--field);
+	/* A touch of ink over the field so the poster reads a shade darker than the
+	   same-hue body it floats on — one tone, slightly deeper panel. */
+	background-color: color-mix(in srgb, var(--ink) 6%, var(--field));
 	/* Faint halftone grain — the organic "printed on paper" texture. */
-	background-image: radial-gradient(var(--grain) 0.6px, transparent 0.9px);
-	background-size: 4px 4px;
+	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 /* While JS sets the initial kind on load, suppress all transitions/animations so
    it doesn't re-ink or pop into view. Removed on the next frame. */
@@ -290,19 +302,24 @@ body {
 		width: 390px;
 		height: 844px;
 		--safe-top: 59px;
+		--safe-bottom: 34px;
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
-	.app .device-chrome { display: flex; }
+	.app .device-chrome > * { visibility: visible; }
 }
 
-/* ── Faux iOS chrome ──────────────────────────────────────────────────────
-   The status bar (time / signal / wifi / battery), Dynamic Island and home
-   indicator. Shown ONLY on the desktop floating phone (display flipped on in
-   the frame media query); a real device renders the actual system chrome in
-   this same safe-area zone, so it's hidden there. */
+/* ── iOS chrome band ───────────────────────────────────────────────────────
+   The deep-ink band that fills the status-bar safe area. It renders in BOTH
+   contexts so the bar always reads in our ink:
+   • Real device — viewport-fit=cover lets the app run up under the status bar,
+     so without this the light paper top would show through and iOS would tint
+     the bar light. The band fills that safe-top zone with --device-ink; iOS
+     draws the real clock/battery (white, from our dark theme-color) on top, so
+     the faux content below stays hidden there.
+   • Desktop mock — no real iOS chrome, so the faux time / island / icons show. */
 .device-chrome {
-	display: none;
+	display: flex;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -311,17 +328,19 @@ body {
 	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
-	/* The notch/status-bar area can't carry the grain, so it becomes a solid
-	   deep-ink band with light content — matching the real iOS status bar, which
-	   always renders white-ish text on our dark theme-color tint. Fixed light
-	   (NOT var(--field), which flips dark in dark mode) so the mock matches iOS
-	   in both schemes. */
+	/* The notch/status-bar area can't carry the grain, so it's a solid deep-ink
+	   band. Faux content is fixed light (NOT var(--field), which flips dark in
+	   dark mode) so the desktop mock matches the real iOS bar in both schemes. */
 	background: var(--device-ink);
 	color: #f4f0e7;
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
 }
+/* Faux status-bar content is the desktop mock's stand-in for the real iOS
+   clock/battery — hidden on real devices (revealed in the frame media query),
+   where iOS renders the genuine chrome over the band. */
+.device-chrome > * { visibility: hidden; }
 .device-chrome__time {
 	font-size: 16px;
 	font-weight: 600;
@@ -570,13 +589,13 @@ body {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient( color-mix( in srgb, var(--ink) 100%, transparent ) 1px, transparent 1.7px );
-	/* Same 4px pitch as the page grain so the halftone shares its dot density and
+	background-image: radial-gradient( color-mix( in srgb, var(--ink) 100%, transparent ) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px) );
+	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
 	   global grid via background-attachment: fixed, which breaks on this sticky
 	   overlay / iOS — so this matches size, not phase.) */
-	background-size: 4px 4px;
+	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 .scroll-fade-top {
 	top: 0;
@@ -943,12 +962,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 /* The footer is the dark device-ink band — the same tone as the status bar and
    border — filling to the shell's bottom edge, where overflow:hidden on .app
-   clips it to the rounded corner so it hugs the iPhone curve. The extra bottom
-   padding follows that curve, keeping the button clear of it. */
+   clips it to the rounded corner so it hugs the iPhone curve. Padding frames the
+   button evenly: a touch more on the sides, and the bottom reserves the iOS
+   home-indicator zone (--safe-bottom, faked on the desktop mock like --safe-top)
+   so the button always clears the curve in both contexts. */
 .bottom-bar {
 	flex-shrink: 0;
-	padding: 12px;
-	padding-bottom: calc(var(--safe-bottom) + 12px);
+	padding: 14px 16px;
+	padding-bottom: calc(var(--safe-bottom) + 14px);
 	background: var(--device-ink);
 }
 /* The button hugs the iPhone's bottom curve: its bottom corners run concentric
@@ -1181,8 +1202,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 /* Over-limit: a muted, palette-matched red on the same chip — a quiet warning,
    not a loud red block. */
 .char-count.is-over {
-	background: color-mix( in srgb, var(--red) 16%, var(--surface) );
-	color: color-mix( in srgb, var(--red) 68%, var(--charcoal) );
+	background: color-mix( in srgb, var(--red) 10%, var(--surface) );
+	color: color-mix( in srgb, var(--red) 50%, var(--charcoal) );
 }
 
 /* Toast */
@@ -1220,6 +1241,66 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; box-shadow: var(--shadow); }
 	.toast { transition: opacity 0.01ms; }
+}
+
+/* ── Grain tuner ───────────────────────────────────────────────────────────
+   Temporary dev panel — live-tune the grain/halftone geometry on-device. A
+   collapsed pill in the corner that expands to three slider+number rows.
+   Remove once the values are baked into the :root defaults. */
+.grain-tuner {
+	position: fixed;
+	right: calc(var(--safe-right, 0px) + 12px);
+	bottom: calc(var(--safe-bottom) + 12px);
+	z-index: 60;
+	font-family: var(--display);
+}
+.grain-tuner__toggle {
+	display: block;
+	margin-left: auto;
+	padding: 7px 12px;
+	background: var(--device-ink);
+	color: #f4f0e7;
+	border: none;
+	border-radius: var(--nop-radius-pill);
+	font: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.grain-tuner__body {
+	display: none;
+	margin-top: 8px;
+	padding: 12px;
+	width: 240px;
+	background: var(--field);
+	border: 2px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+}
+.grain-tuner.is-open .grain-tuner__body { display: block; }
+.grain-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.grain-row:first-child { margin-top: 0; }
+.grain-row label {
+	flex: 0 0 84px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--text);
+}
+.grain-row input[type="range"] { flex: 1; min-width: 0; accent-color: var(--ink); }
+.grain-row input[type="number"] {
+	flex: 0 0 56px;
+	padding: 3px 5px;
+	background: var(--field);
+	border: 1px solid var(--line);
+	border-radius: 3px;
+	color: var(--text);
+	font: inherit;
+	font-size: 12px;
 }
 </style>
 </head>
@@ -1419,6 +1500,30 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 </div><!-- .app -->
+
+<!-- Grain tuner — temporary dev control (see .grain-tuner). Each row binds a
+     range + number to one --grain-* var; values persist to localStorage. -->
+<div class="grain-tuner" id="grainTuner">
+	<button type="button" class="grain-tuner__toggle" id="grainToggle" aria-expanded="false"><?php esc_html_e( 'Grain', 'nop-indieweb' ); ?></button>
+	<div class="grain-tuner__body">
+		<div class="grain-row">
+			<label for="grainHtDot"><?php esc_html_e( 'Shadow dot', 'nop-indieweb' ); ?></label>
+			<input type="range"   id="grainHtDot"    data-var="--ht-dot"      min="0.4" max="3"  step="0.05">
+			<input type="number"  id="grainHtDotNum" data-var="--ht-dot"      min="0.4" max="3"  step="0.05">
+		</div>
+		<div class="grain-row">
+			<label for="grainDot"><?php esc_html_e( 'Background dot', 'nop-indieweb' ); ?></label>
+			<input type="range"   id="grainDot"      data-var="--grain-dot"   min="0.2" max="2"  step="0.05">
+			<input type="number"  id="grainDotNum"   data-var="--grain-dot"   min="0.2" max="2"  step="0.05">
+		</div>
+		<div class="grain-row">
+			<label for="grainPitch"><?php esc_html_e( 'Gap', 'nop-indieweb' ); ?></label>
+			<input type="range"   id="grainPitch"    data-var="--grain-pitch" min="2"   max="12" step="0.1">
+			<input type="number"  id="grainPitchNum" data-var="--grain-pitch" min="2"   max="12" step="0.1">
+		</div>
+	</div>
+</div>
+
 <script>
 (function () {
 	'use strict';
@@ -1487,6 +1592,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 	var OKLCH_OK = !! ( window.CSS && CSS.supports && CSS.supports( 'color', 'color-mix(in oklch, red, blue)' ) );
 	var inkRAF;
+	// The body's field tints from --ink too, but body sits outside .app, so mirror
+	// the ink onto :root — app keeps its own (its CSS rule beats the inherited value),
+	// while body finally has a hue to read. Driven here so both sweep in lockstep.
+	var root = document.documentElement;
 	function animateInk( from, to ) {
 		cancelAnimationFrame( inkRAF );
 		if ( ! to ) { return; }
@@ -1494,6 +1603,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		// scheme-aware CSS value instantly.
 		if ( ! OKLCH_OK || app.classList.contains( 'no-anim' ) || ! from || from === to ) {
 			app.style.removeProperty( '--ink' );
+			root.style.setProperty( '--ink', to );
 			return;
 		}
 		var start = 0;
@@ -1501,9 +1611,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			if ( ! start ) { start = now; }
 			var t = Math.min( ( now - start ) / 400, 1 );                       // ≈ --fade
 			var e = t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2;     // easeInOut
-			app.style.setProperty( '--ink', 'color-mix(in oklch, ' + from + ', ' + to + ' ' + ( e * 100 ).toFixed( 2 ) + '%)' );
+			var mix = 'color-mix(in oklch, ' + from + ', ' + to + ' ' + ( e * 100 ).toFixed( 2 ) + '%)';
+			app.style.setProperty( '--ink', mix );
+			root.style.setProperty( '--ink', mix );
 			if ( t < 1 ) { inkRAF = requestAnimationFrame( step ); }
-			else { app.style.removeProperty( '--ink' ); }                       // hand back to the CSS value
+			else { app.style.removeProperty( '--ink' ); root.style.setProperty( '--ink', to ); }  // app → CSS value; root holds the steady ink
 		}
 		inkRAF = requestAnimationFrame( step );
 	}
@@ -1606,20 +1718,63 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 	function alignHalftone() {
 		if ( ! composeScroll || ! fadeTop || ! fadeBottom ) { return; }
-		// Phase-lock the halftone's 4px dot grid to the page-grain grid so the studs
-		// land concentric on the grain dots. The grain origin is .app's padding-box
-		// top; each overlay's grid starts at its own (offset) box top, so cancel the
-		// difference mod 4 with background-position-y.
+		// Phase-lock the halftone's dot grid to the page-grain grid so the studs land
+		// concentric on the grain dots. The grain origin is .app's padding-box top;
+		// each overlay's grid starts at its own (offset) box top, so cancel the
+		// difference mod the live pitch with background-position-y.
+		var pitch = parseFloat( getComputedStyle( root ).getPropertyValue( '--grain-pitch' ) ) || 4;
 		var ar = app.getBoundingClientRect();
 		var grainTop = ar.top + ( parseFloat( getComputedStyle( app ).borderTopWidth ) || 0 );
 		var sr = composeScroll.getBoundingClientRect();
 		var h  = fadeBottom.offsetHeight || 120;
-		function mod4( y ) { return ( ( y % 4 ) + 4 ) % 4; }
-		fadeTop.style.setProperty( '--ht-top', ( -mod4( sr.top - grainTop ) ).toFixed( 2 ) + 'px' );
-		fadeBottom.style.setProperty( '--ht-bottom', ( -mod4( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
+		function modP( y ) { return ( ( y % pitch ) + pitch ) % pitch; }
+		fadeTop.style.setProperty( '--ht-top', ( -modP( sr.top - grainTop ) ).toFixed( 2 ) + 'px' );
+		fadeBottom.style.setProperty( '--ht-bottom', ( -modP( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 	window.addEventListener( 'resize', function () { updateScrollFades(); alignHalftone(); } );
+
+	// ── Grain tuner (temporary dev control) ──────────────────────────────────
+	// Live-tune the grain/halftone geometry; values persist to localStorage.
+	// Each input's data-var names the --grain-* it drives; range + number stay
+	// in sync. Writing to :root re-tints body + app + halftone, then re-aligns.
+	( function () {
+		var tuner = document.getElementById( 'grainTuner' );
+		if ( ! tuner ) { return; }
+		var toggle = document.getElementById( 'grainToggle' );
+		var KEY    = 'nop_post_grain';
+		var VARS   = [ '--ht-dot', '--grain-dot', '--grain-pitch' ];
+		var inputs = tuner.querySelectorAll( 'input[data-var]' );
+		function cssNum( name ) { return parseFloat( getComputedStyle( root ).getPropertyValue( name ) ) || 0; }
+		function setVar( name, val ) {
+			root.style.setProperty( name, val + 'px' );
+			inputs.forEach( function ( inp ) { if ( inp.dataset.var === name ) { inp.value = val; } } );
+		}
+		function save() {
+			var data = {};
+			VARS.forEach( function ( name ) { data[ name ] = cssNum( name ); } );
+			try { localStorage.setItem( KEY, JSON.stringify( data ) ); } catch ( e ) {}
+		}
+		var saved = {};
+		try { saved = JSON.parse( localStorage.getItem( KEY ) || '{}' ) || {}; } catch ( e ) {}
+		VARS.forEach( function ( name ) {
+			setVar( name, ( typeof saved[ name ] === 'number' ) ? saved[ name ] : cssNum( name ) );
+		} );
+		alignHalftone();
+		inputs.forEach( function ( inp ) {
+			inp.addEventListener( 'input', function () {
+				var v = parseFloat( inp.value );
+				if ( isNaN( v ) ) { return; }
+				setVar( inp.dataset.var, v );
+				save();
+				alignHalftone();
+			} );
+		} );
+		toggle.addEventListener( 'click', function () {
+			var open = tuner.classList.toggle( 'is-open' );
+			toggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+		} );
+	} )();
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
