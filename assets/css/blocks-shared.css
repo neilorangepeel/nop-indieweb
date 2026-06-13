@@ -10,6 +10,11 @@
  * inherits the active palette automatically.
  */
 
+:root {
+	--nop-radius:      0px;
+	--nop-radius-pill: 9999px;
+}
+
 :where(
 	.nop-cite-card,
 	.nop-film-card,
@@ -27,7 +32,6 @@
 	--nop-text:          var(--wp--preset--color--contrast, inherit);
 
 	/* Pill pattern */
-	--nop-pill-radius:    2rem;
 	--nop-pill-padding:   0.375rem 0.875rem 0.375rem 0.75rem;
 	--nop-pill-gap:       0.375rem;
 	--nop-pill-border:    1px solid var(--nop-divider-color);
@@ -53,7 +57,7 @@
 	gap:           var(--nop-pill-gap);
 	padding:       var(--nop-pill-padding);
 	border:        var(--nop-pill-border);
-	border-radius: var(--nop-pill-radius);
+	border-radius: var(--nop-radius-pill);
 	line-height:   1;
 	white-space:   nowrap;
 	color:         inherit;
@@ -189,7 +193,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 .nop-checkin-map__placeholder {
 	aspect-ratio:     2 / 1;
 	background-color: color-mix(in srgb, currentColor 8%, transparent);
-	border-radius:    4px;
+	border-radius:    var(--nop-radius);
 }
 
 /* Attribution pill — corner overlay on the map. Matches the convention used
@@ -202,7 +206,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	margin:             0;
 	padding:            2px 6px;
 	background-color:   rgba(255, 255, 255, 0.85);
-	border-radius:      3px;
+	border-radius:      var(--nop-radius);
 	font-size:          0.6875rem;
 	line-height:        1.4;
 	backdrop-filter:    blur(2px);
@@ -245,7 +249,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 .nop-exercise-map__placeholder {
 	aspect-ratio:     2 / 1;
 	background-color: color-mix(in srgb, currentColor 8%, transparent);
-	border-radius:    4px;
+	border-radius:    var(--nop-radius);
 }
 
 .nop-exercise-map__caption {
@@ -255,7 +259,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	margin:             0;
 	padding:            2px 6px;
 	background-color:   rgba(255, 255, 255, 0.85);
-	border-radius:      3px;
+	border-radius:      var(--nop-radius);
 	font-size:          0.6875rem;
 	line-height:        1.4;
 	backdrop-filter:    blur(2px);
@@ -302,7 +306,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 a.nop-post-footer__pill--link:focus-visible {
 	outline:        2px solid currentColor;
 	outline-offset: 2px;
-	border-radius:  var(--nop-pill-radius);
+	border-radius:  var(--nop-radius-pill);
 }
 
 .nop-syndication-panel__link:focus-visible {

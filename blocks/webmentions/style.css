@@ -83,7 +83,7 @@
 	font-weight:    600;
 	letter-spacing: 0.02em;
 	padding:        2px 6px;
-	border-radius:  4px;
+	border-radius:  var(--nop-radius);
 	line-height:    1.5;
 }
 
@@ -359,7 +359,7 @@
 	width:           100%;
 	padding:         0.5rem 0.75rem;
 	border:          1px solid color-mix(in srgb, currentColor 30%, transparent);
-	border-radius:   6px;
+	border-radius:   var(--nop-radius);
 	background:      transparent;
 	font-family:     inherit;
 	font-size:       var(--wp--preset--font-size--small, 0.875rem);
@@ -411,7 +411,7 @@
 	gap:            var(--nop-pill-gap);
 	padding:        var(--nop-pill-padding);
 	border:         1px solid currentColor;
-	border-radius:  var(--nop-pill-radius);
+	border-radius:  var(--nop-radius-pill);
 	background:     transparent;
 	font-family:    inherit;
 	font-size:      var(--wp--preset--font-size--small, 0.875rem);

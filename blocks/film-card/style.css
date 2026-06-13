@@ -22,7 +22,7 @@
 	width:         100%;
 	aspect-ratio:  2 / 3;
 	object-fit:    cover;
-	border-radius: 4px;
+	border-radius: var(--nop-radius);
 	box-shadow:    0 2px 10px rgba(0, 0, 0, 0.15);
 	transition:    box-shadow 0.2s, transform 0.2s;
 }
