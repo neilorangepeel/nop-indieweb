@@ -30,16 +30,18 @@
 			if ( ! textarea ) { return; }
 			e.preventDefault();
 			var reduced = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+
+			// Estimate how long smooth-scroll will take based on distance to centre.
+			var dist  = Math.abs( textarea.getBoundingClientRect().top - window.innerHeight / 2 );
+			var delay = reduced ? 0 : Math.min( Math.max( dist * 0.4, 150 ), 600 );
+
 			textarea.scrollIntoView( { behavior: reduced ? 'instant' : 'smooth', block: 'center' } );
-			textarea.focus( { preventScroll: true } );
-			var respond = document.getElementById( 'respond' );
-			var flashTarget = respond && ( respond.parentElement || respond );
-			if ( flashTarget && ! reduced ) {
-				flashTarget.classList.add( 'nop-comment-focus-pulse' );
-				setTimeout( function () {
-					flashTarget.classList.remove( 'nop-comment-focus-pulse' );
-				}, 900 );
-			}
+
+			setTimeout( function () {
+				textarea.focus( { preventScroll: true } );
+				textarea.classList.add( 'nop-textarea-invite' );
+				setTimeout( function () { textarea.classList.remove( 'nop-textarea-invite' ); }, 1000 );
+			}, delay );
 		} );
 	}
 

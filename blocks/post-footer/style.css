@@ -42,12 +42,56 @@ a.nop-post-footer__pill--link:hover {
 	border-color: currentColor;
 }
 
-/* Comment focus flash — applied to respond's parent so padding is included naturally */
-@keyframes nop-comment-focus-pulse {
+/* Textarea invite — colour flash only (reduced motion) */
+@keyframes nop-textarea-color {
 	0%, 100% { background-color: transparent; }
-	20%      { background-color: var(--wp--preset--color--accent-6, rgba(0,0,0,0.06)); }
+	25%, 65%  { background-color: var(--wp--preset--color--accent-6, rgba(0,0,0,0.05));
+	            border-color:     var(--wp--preset--color--accent-4, #9ca3af); }
 }
 
-.nop-comment-focus-pulse {
-	animation: nop-comment-focus-pulse 0.9s ease-out;
+.nop-textarea-invite {
+	animation: nop-textarea-color 1s ease-out;
+}
+
+/* Liftoff + gravity fall for motion-on users.
+   Rise slow and proud, fall fast like gravity, squash on impact, tiny settle. */
+@media (prefers-reduced-motion: no-preference) {
+	@keyframes nop-textarea-liftoff {
+		0% {
+			/* spring launch easing carries it past the peak before snapping */
+			animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1.5);
+			transform:        translateY(0) scale(1);
+			background-color: transparent;
+			box-shadow:       none;
+		}
+		38% {
+			/* peak lift — floating above the page */
+			animation-timing-function: cubic-bezier(0.8, 0, 1, 0.75);
+			transform:        translateY(-8px) scale(1.06, 1.04);
+			background-color: var(--wp--preset--color--base, #fff);
+			border-color:     var(--wp--preset--color--accent-4, #9ca3af);
+			box-shadow:       0 12px 28px rgba(0,0,0,0.1);
+		}
+		65% {
+			/* slam — gravity wins, squash on impact */
+			animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
+			transform:        translateY(0) scaleX(1.03) scaleY(0.92);
+			background-color: transparent;
+			box-shadow:       0 2px 6px rgba(0,0,0,0.06);
+		}
+		82% {
+			/* tiny spring rebound */
+			transform:        translateY(-3px) scale(1.005);
+			box-shadow:       none;
+		}
+		100% {
+			transform:        translateY(0) scale(1);
+			background-color: transparent;
+			box-shadow:       none;
+		}
+	}
+
+	.nop-textarea-invite {
+		animation: nop-textarea-liftoff 1s ease-out;
+	}
 }
