@@ -307,21 +307,25 @@ body {
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
+	/* Anchor the band inside the floating phone (not the browser viewport). */
+	.app .device-chrome { position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
 
 /* ── iOS chrome band ───────────────────────────────────────────────────────
    The accent band that fills the status-bar safe area. It renders in BOTH
    contexts so the bar always reads in the kind's accent:
-   • Real device — viewport-fit=cover lets the app run up under the status bar,
-     so without this the paper top would show through. The band fills that
-     safe-top zone with the accent (--ink); iOS draws the real clock/battery on
-     top, auto-picking black/white from the accent's luminance (theme-color),
-     so the faux content below stays hidden there.
-   • Desktop mock — no real iOS chrome, so the faux time / island / icons show. */
+   • Real device — viewport-fit=cover lets the app run up under the status bar.
+     position:fixed (not absolute) + full width + pinned to the top edge is what
+     iOS 26 Safari samples to tint the status bar: it reads the background-color
+     of fixed/sticky elements within ~4px of the edge (theme-color is ignored as
+     of iOS 26), so the accent here drives the bar tint and re-tints per kind.
+     iOS draws the real clock/battery on top in auto black/white.
+   • Desktop mock — overridden back to absolute in the frame media query so the
+     band stays inside the floating phone; the faux time / island / icons show. */
 .device-chrome {
 	display: flex;
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
