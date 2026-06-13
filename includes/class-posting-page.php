@@ -818,17 +818,38 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	text-decoration: none;
 }
 
-/* Post button — solid accent, knockout label, hard offset shadow that
-   collapses on press. */
+/* Post button — solid accent, knockout label. Instead of a hard offset block
+   (which fought the rounded corners), it casts a soft halftone: ink-hue polka
+   dots below the button fading down into the paper — the same riso screen as the
+   page grain. The dots clear on press and when disabled. */
 .btn-primary {
+	position: relative;
 	background: var(--accent);
 	color: var(--on-accent);
-	box-shadow: var(--shadow);
-	transition: transform 0.08s, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+	transition: transform 0.08s, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+.btn-primary::after {
+	content: "";
+	position: absolute;
+	left: 5px;
+	right: 5px;
+	top: 100%;
+	height: 16px;
+	margin-top: 3px;
+	background-image: radial-gradient( var(--ink) 1.4px, transparent 1.8px );
+	background-size: 6px 6px;
+	-webkit-mask-image: linear-gradient( to bottom, #000, transparent );
+	        mask-image: linear-gradient( to bottom, #000, transparent );
+	opacity: 0.6;
+	pointer-events: none;
+	transition: opacity 0.18s ease;
 }
 .btn-primary:active {
-	transform: translate(4px, 4px);
-	box-shadow: 0 0 0 var(--line);
+	transform: translate(0, 3px);
+}
+.btn-primary:active::after,
+.btn-primary:disabled::after {
+	opacity: 0;
 }
 /* Disabled stays a solid, muted primary — never a ghost outline — so the
    commit target always reads as the primary action. When the form becomes valid
@@ -839,7 +860,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	border-color: color-mix( in srgb, var(--ink) 32%, transparent );
 	opacity: 1;
 	cursor: default;
-	box-shadow: 0 0 0 var(--ink);
 	transform: none;
 }
 .btn-secondary { background: var(--field); color: var(--text); }
