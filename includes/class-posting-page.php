@@ -111,7 +111,7 @@ class Posting_Page {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" id="themeColor" content="#006066">
+<meta name="theme-color" id="themeColor" content="#00787F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
@@ -311,13 +311,13 @@ body {
 }
 
 /* ── iOS chrome band ───────────────────────────────────────────────────────
-   The deep-ink band that fills the status-bar safe area. It renders in BOTH
-   contexts so the bar always reads in our ink:
+   The accent band that fills the status-bar safe area. It renders in BOTH
+   contexts so the bar always reads in the kind's accent:
    • Real device — viewport-fit=cover lets the app run up under the status bar,
-     so without this the light paper top would show through and iOS would tint
-     the bar light. The band fills that safe-top zone with --device-ink; iOS
-     draws the real clock/battery (white, from our dark theme-color) on top, so
-     the faux content below stays hidden there.
+     so without this the paper top would show through. The band fills that
+     safe-top zone with the accent (--ink); iOS draws the real clock/battery on
+     top, auto-picking black/white from the accent's luminance (theme-color),
+     so the faux content below stays hidden there.
    • Desktop mock — no real iOS chrome, so the faux time / island / icons show. */
 .device-chrome {
 	display: flex;
@@ -329,11 +329,12 @@ body {
 	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
-	/* The notch/status-bar area can't carry the grain, so it's a solid deep-ink
-	   band. Faux content is fixed light (NOT var(--field), which flips dark in
-	   dark mode) so the desktop mock matches the real iOS bar in both schemes. */
-	background: var(--device-ink);
-	color: #f4f0e7;
+	/* The status bar is the full accent in both schemes; --on-accent (the paper
+	   colour, which flips off-white↔near-black) is always the accent's opposite,
+	   so the faux text stays legible — light text on the darker light-mode accent,
+	   dark text on the brighter dark-mode accent — matching what iOS auto-picks. */
+	background: var(--ink);
+	color: var(--on-accent);
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
@@ -1260,7 +1261,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 <body>
 <div class="app" id="app" data-type="note">
 
-	<span id="inkProbe" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--device-ink)"></span>
+	<span id="inkProbe" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
 	<span id="inkNow" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
 
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
