@@ -186,6 +186,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   the theme's :root{--nop-radius} (currently 4px). --radius stays a local
 	   alias so the existing rules below are untouched. */
 	--nop-radius: 4px;
+	--nop-radius-pill: 9999px;
 	--radius: var( --nop-radius, 2px );
 
 	--safe-top:    env(safe-area-inset-top, 0px);
@@ -331,36 +332,35 @@ body {
    and swaps the glyph only on the per-minute tick (no per-second repaint). */
 .sky {
 	position: relative;
-	height: 22px;
-	margin-top: 10px;
+	height: 28px;
+	margin-top: 12px;
 }
 .sky__arc {
 	position: absolute;
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	color: color-mix(in srgb, var(--ink) 38%, transparent);
+	color: color-mix(in srgb, var(--ink) 50%, transparent);
 }
 .sky__body {
 	position: absolute;
-	width: 20px;
-	height: 20px;
+	width: 26px;
+	height: 26px;
 	color: var(--ink);
 	transform: translate(-50%, -50%);
 	transition: left 0.6s ease, top 0.6s ease;
 }
-.sky__body svg { display: block; width: 20px; height: 20px; }
+.sky__body svg { display: block; width: 26px; height: 26px; }
 .sky__body .sky__moon { display: none; }
 .sky__body.is-moon .sky__sun { display: none; }
 .sky__body.is-moon .sky__moon { display: block; }
 
 .greeting {
 	flex-shrink: 0;
-	padding: 10px 16px;
+	padding: 12px 16px 8px;
 	font-size: 14px;
 	font-weight: 700;
 	letter-spacing: -0.01em;
-	border-bottom: 2px solid var(--line);
 }
 
 /* ── Views ──────────────────────────────────────────────────────────────── */
@@ -387,7 +387,7 @@ body {
 	grid-template-columns: repeat(3, 1fr);
 	gap: 6px;
 	flex-shrink: 0;
-	padding: 12px;
+	padding: 10px 12px;
 	border-bottom: 2px solid var(--line);
 }
 .type-btn {
@@ -395,11 +395,13 @@ body {
 	flex-direction: column;
 	align-items: center;
 	gap: 3px;
-	padding: 9px 4px;
-	border: 2px solid var(--line);
+	padding: 7px 4px;
+	/* Inactive tiles sit back — muted border + ink — so the filled active kind
+	   and the compose area lead the eye, not the whole six-up grid. */
+	border: 2px solid color-mix( in srgb, var(--ink) 30%, transparent );
 	border-radius: var(--radius);
 	background: var(--field);
-	color: var(--text);
+	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
 	font-size: 10px;
 	font-weight: 800;
 	font-family: var(--display);
@@ -485,8 +487,8 @@ body {
    so the text on them stays easy to read. */
 .text-field {
 	width: 100%;
-	background: var(--surface);
-	border: none;
+	background: transparent;
+	border: 2px solid color-mix( in srgb, var(--ink) 38%, transparent );
 	border-radius: var(--radius);
 	padding: 11px 12px;
 	font-size: 16px;
@@ -495,7 +497,7 @@ body {
 	color: var(--text);
 	outline: none;
 }
-.text-field:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+.text-field:focus { border-color: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
 
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
@@ -509,13 +511,21 @@ body {
 	width: 100%;
 	height: 100%;
 	background-color: transparent;
-	/* Ruled notepad — horizontal rule lines only (no margin line, no box-shadow). */
-	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent 29px,
-		var(--rule) 29px, var(--rule) 30px );
-	background-attachment: local;
+	/* Ruled notepad. Two background layers, both scrolling with the text:
+	   (1) a paper veil that fades the rules to blank toward the bottom, so an
+	   empty note reads as inviting paper rather than an unfilled worksheet — it
+	   sits behind the text, so typed lines stay full-strength; (2) the rules,
+	   each sitting just under its line's baseline so text reads as written ON
+	   the line. */
+	background-image:
+		linear-gradient( to bottom, transparent 42%, var(--field) 88% ),
+		repeating-linear-gradient( to bottom,
+			transparent 0, transparent 26px,
+			var(--rule) 26px, var(--rule) 27px,
+			transparent 27px, transparent 30px );
+	background-attachment: local, local;
 	border: none;
-	padding: 5px 4px 4px 0;
+	padding: 6px 4px 4px 0;
 	font-size: 18px;
 	line-height: 30px;
 	font-family: inherit;
@@ -608,14 +618,14 @@ body {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
-	background: var(--surface);
-	border: none;
+	background: transparent;
+	border: 2px solid color-mix( in srgb, var(--ink) 38%, transparent );
 	border-radius: var(--radius);
 	padding: 8px 10px;
 	min-height: 46px;
 	cursor: text;
 }
-.tags-field:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.tags-field:focus-within { border-color: var(--accent); }
 .tag-chip {
 	display: inline-flex;
 	align-items: center;
@@ -820,13 +830,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	transform: translate(4px, 4px);
 	box-shadow: 0 0 0 var(--line);
 }
-/* Disabled is structured, not washed out; when the form becomes valid the fill
-   sweeps in and the offset shadow grows — the button visibly "charges". */
+/* Disabled stays a solid, muted primary — never a ghost outline — so the
+   commit target always reads as the primary action. When the form becomes valid
+   the fill saturates to full accent and the offset shadow grows: it "charges". */
 .btn-primary:disabled {
-	background: var(--field);
-	color: var(--text);
-	border-color: var(--line);
-	opacity: 0.45;
+	background: color-mix( in srgb, var(--ink) 15%, var(--paper) );
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	border-color: color-mix( in srgb, var(--ink) 32%, transparent );
+	opacity: 1;
 	cursor: default;
 	box-shadow: 0 0 0 var(--ink);
 	transform: none;
@@ -999,16 +1010,20 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 }
 .success-actions { display: flex; flex-direction: column; gap: 10px; }
 
-/* Character counter */
+/* Character counter — a small countdown chip that only appears as you near a
+   syndication limit (see updateCounter), so it never floats as a stray number. */
 .char-count {
 	align-self: flex-end;
-	margin-top: 6px;
+	margin-top: 4px;
+	padding: 2px 9px;
+	border-radius: var(--nop-radius-pill);
+	background: var(--surface);
 	font-size: 11px;
 	font-weight: 800;
-	opacity: 0.6;
+	color: var(--text);
 	font-variant-numeric: tabular-nums;
 }
-.char-count.is-over { color: var(--red); opacity: 1; }
+.char-count.is-over { background: var(--red); color: var(--field); }
 
 /* Toast */
 .toast {
@@ -1066,7 +1081,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			</div>
 		</div>
 		<div class="sky" aria-hidden="true">
-			<svg class="sky__arc" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M3 16 Q50 4 97 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+			<svg class="sky__arc" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M3 16 Q50 4 97 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
 			<span class="sky__body is-sun" id="skyBody">
 				<svg class="sky__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
 				<svg class="sky__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
@@ -1804,20 +1819,18 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 
 	function updateCounter() {
-		var el = document.getElementById( 'charCount' );
-		if ( ! TYPE_CONFIG[ currentType ].hasContent ) { el.hidden = true; return; }
+		var el  = document.getElementById( 'charCount' );
 		var len = contentInput.value.length;
 		var lim = currentLimit();
-		el.hidden = false;
-		if ( lim ) {
-			// Within 50 of the limit the counter flips to a countdown.
-			var left = lim - len;
-			el.textContent = left <= 50 ? String( left ) : len + ' / ' + lim;
-			el.classList.toggle( 'is-over', len > lim );
-		} else {
-			el.textContent = String( len );
-			el.classList.remove( 'is-over' );
+		// Only surface the counter when a syndication limit applies and you're
+		// within 50 of it (or over) — otherwise it's noise, so stay hidden.
+		if ( ! TYPE_CONFIG[ currentType ].hasContent || ! lim || ( lim - len ) > 50 ) {
+			el.hidden = true;
+			return;
 		}
+		el.hidden = false;
+		el.textContent = String( lim - len );
+		el.classList.toggle( 'is-over', len > lim );
 	}
 
 	// ── Streak ─────────────────────────────────────────────────────────────────
