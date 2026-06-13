@@ -241,9 +241,9 @@ body {
 	   sweep instead of each element lagging at its own speed. */
 	--fade: 0.4s;
 
-	/* The kind-switch moment: --ink is a registered <color>, so the whole
-	   poster crossfades to the new ink instead of snapping. */
-	transition: --ink var(--fade) ease;
+	/* The kind-switch crossfade is driven in JS through OKLCH (a hue rotation,
+	   like a colour-picker), not a CSS transition — see animateInk(). Every
+	   element just reads var(--ink), so they all re-ink together in one sweep. */
 
 	display: flex;
 	flex-direction: column;
@@ -503,7 +503,9 @@ body {
 	letter-spacing: 0.06em;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
-	transition: background var(--fade) ease, color var(--fade) ease;
+	/* No own colour transition: the tile's ink rides the --ink crossfade directly
+	   (in sync with the chrome), instead of a transition that chases the moving
+	   value and lags. Selection just snaps + pops. */
 }
 .type-btn__icon {
 	display: flex;
@@ -897,7 +899,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--on-accent);
-	transition: background-color var(--fade) ease;
 }
 .syndicator-box svg {
 	display: block;
@@ -960,7 +961,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--accent);
-	transition: transform 0.08s, background-color var(--fade) ease, color var(--fade) ease, opacity 0.18s ease;
+	transition: transform 0.08s, opacity 0.18s ease;
 }
 .btn-primary:active {
 	transform: translate(0, 2px);
@@ -1201,6 +1202,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 <div class="app" id="app" data-type="note">
 
 	<span id="inkProbe" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--device-ink)"></span>
+	<span id="inkNow" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
 
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
 	<div class="device-chrome" aria-hidden="true">
@@ -1439,6 +1441,46 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		}
 		var hex = '#' + [ r, g, b ].map( function ( x ) { return ( '0' + x.toString( 16 ) ).slice( -2 ); } ).join( '' );
 		themeColorEl.setAttribute( 'content', hex );
+	}
+
+	// ── Re-ink: a colour-picker-style hue rotation through OKLCH ──────────────────
+	// Drive --ink in JS so the kind switch sweeps through the hue wheel (teal →
+	// green → orange) rather than a flat RGB crossfade. Every element reads
+	// var(--ink), so they all rotate together — one uniform sweep.
+	var inkNow    = document.getElementById( 'inkNow' );
+	var KIND_VAR  = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet' };
+	var INK       = {};
+	function buildInkMap() {
+		var probe = document.createElement( 'span' );
+		probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+		app.appendChild( probe );
+		Object.keys( KIND_VAR ).forEach( function ( k ) {
+			probe.style.color = 'var(' + KIND_VAR[ k ] + ')';
+			INK[ k ] = getComputedStyle( probe ).color;
+		} );
+		app.removeChild( probe );
+	}
+	var OKLCH_OK = !! ( window.CSS && CSS.supports && CSS.supports( 'color', 'color-mix(in oklch, red, blue)' ) );
+	var inkRAF;
+	function animateInk( from, to ) {
+		cancelAnimationFrame( inkRAF );
+		if ( ! to ) { return; }
+		// Initial load (no-anim), unsupported engine, or no change → settle to the
+		// scheme-aware CSS value instantly.
+		if ( ! OKLCH_OK || app.classList.contains( 'no-anim' ) || ! from || from === to ) {
+			app.style.removeProperty( '--ink' );
+			return;
+		}
+		var start = 0;
+		function step( now ) {
+			if ( ! start ) { start = now; }
+			var t = Math.min( ( now - start ) / 400, 1 );                       // ≈ --fade
+			var e = t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2;     // easeInOut
+			app.style.setProperty( '--ink', 'color-mix(in oklch, ' + from + ', ' + to + ' ' + ( e * 100 ).toFixed( 2 ) + '%)' );
+			if ( t < 1 ) { inkRAF = requestAnimationFrame( step ); }
+			else { app.style.removeProperty( '--ink' ); }                       // hand back to the CSS value
+		}
+		inkRAF = requestAnimationFrame( step );
 	}
 	var greetingEl  = document.getElementById( 'greeting' );
 	var skyBody     = document.getElementById( 'skyBody' );
@@ -1681,7 +1723,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		currentType = type;
 		var cfg = TYPE_CONFIG[ type ];
 
+		var prevInk = inkNow ? getComputedStyle( inkNow ).color : '';
 		app.dataset.type = type;
+		animateInk( prevInk, INK[ type ] );
 
 		document.querySelectorAll( '.type-btn' ).forEach( function (b) {
 			var active = b.dataset.type === type;
@@ -2090,6 +2134,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	// ── Init ───────────────────────────────────────────────────────────────────
 
+	buildInkMap();                            // resolve each kind's ink for OKLCH tweening
+	if ( window.matchMedia ) {
+		try { window.matchMedia( '(prefers-color-scheme: dark)' ).addEventListener( 'change', buildInkMap ); } catch ( e ) {}
+	}
 	applyKindOrder();                         // tiles in most-recently-used order
 	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
 	setPrompt( notePrompt );
