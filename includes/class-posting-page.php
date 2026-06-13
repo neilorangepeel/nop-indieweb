@@ -560,17 +560,26 @@ body {
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
 	background-image: radial-gradient( color-mix( in srgb, var(--ink) 100%, transparent ) 1px, transparent 1.7px );
-	background-size: 5px 5px;
+	/* Same 4px pitch as the page grain so the halftone shares its dot density and
+	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
+	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
+	   global grid via background-attachment: fixed, which breaks on this sticky
+	   overlay / iOS — so this matches size, not phase.) */
+	background-size: 4px 4px;
 }
 .scroll-fade-top {
 	top: 0;
 	margin-bottom: -120px;
+	/* phase-locked to the page-grain grid in JS (alignHalftone) so the halftone
+	   studs land concentric on the grain dots — same grid, bigger dot. */
+	background-position: 0 var(--ht-top, 0);
 	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
 .scroll-fade-bottom {
 	bottom: 0;
 	margin-top: -120px;
+	background-position: 0 var(--ht-bottom, 0);
 	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
@@ -1579,8 +1588,22 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
 		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
 	}
+	function alignHalftone() {
+		if ( ! composeScroll || ! fadeTop || ! fadeBottom ) { return; }
+		// Phase-lock the halftone's 4px dot grid to the page-grain grid so the studs
+		// land concentric on the grain dots. The grain origin is .app's padding-box
+		// top; each overlay's grid starts at its own (offset) box top, so cancel the
+		// difference mod 4 with background-position-y.
+		var ar = app.getBoundingClientRect();
+		var grainTop = ar.top + ( parseFloat( getComputedStyle( app ).borderTopWidth ) || 0 );
+		var sr = composeScroll.getBoundingClientRect();
+		var h  = fadeBottom.offsetHeight || 120;
+		function mod4( y ) { return ( ( y % 4 ) + 4 ) % 4; }
+		fadeTop.style.setProperty( '--ht-top', ( -mod4( sr.top - grainTop ) ).toFixed( 2 ) + 'px' );
+		fadeBottom.style.setProperty( '--ht-bottom', ( -mod4( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
+	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
-	window.addEventListener( 'resize', updateScrollFades );
+	window.addEventListener( 'resize', function () { updateScrollFades(); alignHalftone(); } );
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
@@ -2151,6 +2174,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	updateThemeColor();
 	app.offsetHeight;                         // flush, then re-enable transitions
 	app.classList.remove( 'no-anim' );
+	alignHalftone();
+	requestAnimationFrame( alignHalftone );   // re-align once layout (safe-area) settles
+	if ( document.fonts && document.fonts.ready ) { document.fonts.ready.then( alignHalftone ); }  // and after the web font reflows the masthead
 
 } )();
 </script>
