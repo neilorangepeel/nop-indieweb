@@ -543,9 +543,9 @@ body {
 	   uninterrupted, below — no paper veil, so no hard seam where the texture
 	   would otherwise stop. */
 	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent 26px,
-		var(--rule) 26px, var(--rule) 27px,
-		transparent 27px, transparent 30px );
+		transparent 0, transparent 24px,
+		var(--rule) 24px, var(--rule) 25px,
+		transparent 25px, transparent 30px );
 	border: none;
 	padding: 6px 4px 4px 0;
 	font-size: 18px;
