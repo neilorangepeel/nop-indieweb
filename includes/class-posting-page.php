@@ -455,26 +455,26 @@ body {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 80px;
+	height: 140px;
 	pointer-events: none;
 	opacity: 0;
 	/* A halftone screen in the ink hue on a transparent ground — the page grain
 	   shows between the dots. The mask shapes the darkness as a "hockey stick":
 	   a long, subtle tail reaching into the content that ramps up sharply right
-	   at the origin edge. Element opacity is driven by scroll position in JS so
-	   it fades in by position rather than popping. */
-	background-image: radial-gradient( color-mix( in srgb, var(--ink) 42%, transparent ) 1px, transparent 1.7px );
+	   at the origin edge (the % stops hold the ratio at any height). Element
+	   opacity is driven by scroll position in JS so it fades in by position. */
+	background-image: radial-gradient( color-mix( in srgb, var(--ink) 58%, transparent ) 1px, transparent 1.7px );
 	background-size: 5px 5px;
 }
 .scroll-fade-top {
 	top: 0;
-	margin-bottom: -80px;
+	margin-bottom: -140px;
 	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
 .scroll-fade-bottom {
 	bottom: 0;
-	margin-top: -80px;
+	margin-top: -140px;
 	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
