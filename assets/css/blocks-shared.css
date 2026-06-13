@@ -17,14 +17,16 @@
 
 :where(
 	.nop-cite-card,
+	.nop-comment-form,
 	.nop-film-card,
 	.nop-film-meta,
 	.nop-like-button,
 	.nop-post-footer,
 	.nop-post-source,
+	.nop-reactions,
+	.nop-replies,
 	.nop-rsvp-meta,
-	.nop-syndication-panel,
-	.nop-webmentions
+	.nop-syndication-panel
 ) {
 	/* Surfaces / text */
 	--nop-divider-color: var(--wp--preset--color--accent-6, #e5e7eb);
@@ -142,6 +144,88 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 /* Slight tweak — RSVP block sat closer in the original layout */
 .nop-rsvp-meta {
 	margin-block-start: 1.5em;
+}
+
+/* ── Avatars / facepile (shared by reactions + replies) ───────────────────── */
+
+.nop-webmentions__avatar-wrap {
+	flex-shrink:   0;
+	border-radius: 50%;
+}
+
+.nop-webmentions__avatar-link {
+	display:         block;
+	border-radius:   50%;
+	overflow:        hidden;
+	line-height:     0;
+	text-decoration: none;
+	transition:      transform 150ms ease;
+}
+
+.nop-webmentions__avatar-link:hover {
+	transform: translateY(-3px);
+	position:  relative;
+	z-index:   1;
+}
+
+.nop-webmentions__avatar {
+	display:       block;
+	border-radius: 50%;
+	object-fit:    cover;
+}
+
+.nop-webmentions__avatar--fallback {
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	border-radius:   50%;
+	background:      var(--nop-divider-color);
+	color:           var(--nop-muted);
+	overflow:        hidden;
+}
+
+.nop-webmentions__avatar--placeholder {
+	display:       block;
+	border-radius: 50%;
+	background:    var(--nop-divider-color);
+	opacity:       0.35;
+}
+
+/* Sized variants — reactions band (28px), facepile (36px), reply rows (40px). */
+.nop-webmentions__avatar--28 {
+	width:  28px;
+	height: 28px;
+}
+
+.nop-webmentions__avatar--36 {
+	width:  36px;
+	height: 36px;
+}
+
+.nop-webmentions__avatar--40 {
+	width:  40px;
+	height: 40px;
+}
+
+.nop-webmentions__facepile {
+	display:        flex;
+	flex-direction: row;
+	align-items:    center;
+	flex-wrap:      wrap;
+	gap:            4px;
+}
+
+.nop-webmentions__overflow {
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	border-radius:   50%;
+	background:      var(--nop-divider-color);
+	font-size:       0.6875rem;
+	font-weight:     700;
+	color:           var(--wp--preset--color--accent-3, #374151);
+	line-height:     1;
+	letter-spacing:  -0.02em;
 }
 
 /* ── Weather icon / weather temp ──────────────────────────────────────────── */
@@ -380,14 +464,16 @@ a.nop-post-footer__pill--link:focus-visible {
 @media (prefers-color-scheme: dark) {
 	:where(
 		.nop-cite-card,
+		.nop-comment-form,
 		.nop-film-card,
 		.nop-film-meta,
 		.nop-like-button,
 		.nop-post-footer,
 		.nop-post-source,
+		.nop-reactions,
+		.nop-replies,
 		.nop-rsvp-meta,
-		.nop-syndication-panel,
-		.nop-webmentions
+		.nop-syndication-panel
 	) {
 		--nop-divider-color: var(--wp--preset--color--accent-6, rgba(255, 255, 255, 0.14));
 		--nop-muted:         var(--wp--preset--color--accent-4, #9ca3af);

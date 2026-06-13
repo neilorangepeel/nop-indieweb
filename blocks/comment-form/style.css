@@ -1,0 +1,140 @@
+/*
+ * Comment Form block — compact leave-a-reply form.
+ * Focus rings and reduced-motion handling live in assets/css/blocks-shared.css.
+ */
+
+/* ── Inline comment form ─────────────────────────────────────────────────── */
+
+.nop-webmentions__form {
+	padding-top: var(--wp--preset--spacing--30, 1.25rem);
+	border-top:  1px solid var(--nop-divider-color);
+}
+
+/* Eyebrow label above the form — uppercase + tracking reads as a section marker
+   rather than competing with the response content above it. */
+.nop-webmentions__form-label {
+	margin:         0 0 0.75rem;
+	font-size:      0.6875rem;
+	font-weight:    600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color:          var(--nop-muted);
+}
+
+/* Cancel reply link — shown by comment-reply.js when a threaded reply is active. */
+.nop-webmentions__cancel-reply {
+	display:         block;
+	margin-bottom:   0.625rem;
+	font-size:       0.8125rem;
+	color:           var(--nop-muted);
+	text-decoration: none;
+}
+
+.nop-webmentions__cancel-reply:hover {
+	text-decoration: underline;
+	color:           var(--nop-text);
+}
+
+.nop-webmentions__form-form {
+	display:        flex;
+	flex-direction: column;
+	gap:            0.75rem;
+	margin:         0;
+}
+
+.nop-webmentions__form-field {
+	margin: 0;
+}
+
+.nop-webmentions__form-field input,
+.nop-webmentions__form-field textarea {
+	width:           100%;
+	padding:         0.5rem 0.75rem;
+	border:          1px solid color-mix(in srgb, currentColor 30%, transparent);
+	border-radius:   var(--nop-radius);
+	background:      transparent;
+	font-family:     inherit;
+	font-size:       var(--wp--preset--font-size--small, 0.875rem);
+	line-height:     1.5;
+	color:           inherit;
+	box-sizing:      border-box;
+}
+
+.nop-webmentions__form-field input::placeholder,
+.nop-webmentions__form-field textarea::placeholder {
+	color:   var(--nop-muted);
+	opacity: 1;
+}
+
+.nop-webmentions__form-field textarea {
+	resize:     vertical;
+	min-height: 5rem;
+}
+
+.nop-webmentions__form-field input:focus,
+.nop-webmentions__form-field textarea:focus {
+	outline:        2px solid currentColor;
+	outline-offset: -2px;
+	border-color:   transparent;
+}
+
+@media (min-width: 480px) {
+	.nop-webmentions__form-form {
+		display:               grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap:            0.75rem;
+		row-gap:               0.75rem;
+	}
+	.nop-webmentions__form-field--comment,
+	.nop-webmentions__form-logged-in,
+	.nop-webmentions__form-form > .form-submit {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Submit — primary CTA, filled on hover. */
+.nop-webmentions__form-form .form-submit {
+	margin: 0;
+}
+
+.nop-webmentions__form-submit {
+	display:        inline-flex;
+	align-items:    center;
+	gap:            var(--nop-pill-gap);
+	padding:        var(--nop-pill-padding);
+	border:         1px solid currentColor;
+	border-radius:  var(--nop-radius-pill);
+	background:     transparent;
+	font-family:    inherit;
+	font-size:      var(--wp--preset--font-size--small, 0.875rem);
+	font-weight:    600;
+	letter-spacing: 0.02em;
+	color:          inherit;
+	cursor:         pointer;
+	transition:     color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.nop-webmentions__form-submit:hover {
+	background:   var(--wp--preset--color--contrast, currentColor);
+	color:        var(--wp--preset--color--base, #fff);
+	border-color: transparent;
+}
+
+.nop-webmentions__form-submit:focus-visible {
+	outline:        2px solid currentColor;
+	outline-offset: 2px;
+}
+
+@media (max-width: 479px) {
+	.nop-webmentions__form-submit {
+		width:           100%;
+		justify-content: center;
+	}
+}
+
+/* Logged-in state — "Logged in as X. Log out?" */
+.nop-webmentions__form-form .logged-in-as {
+	font-size: var(--wp--preset--font-size--small, 0.875rem);
+	color:     var(--nop-muted);
+	margin:    0;
+}

@@ -1,17 +1,167 @@
 <?php
 /**
- * Webmentions block — render helpers.
+ * Shared render library for the Responses blocks (reactions, replies,
+ * comment-form).
  *
- * Pulled out of render.php so they're declared exactly once per request via
- * require_once. WordPress includes render.php fresh on every block render,
- * so any top-level function declaration there would fatal on the second
- * render in the same request (e.g. a query loop containing this block).
+ * Holds the fetch/bucket logic and the markup helpers that the three
+ * conversation blocks share. Loaded once per request via require_once from
+ * each block's render.php, so the function declarations and the per-post
+ * data fetch happen exactly once even when a query loop renders several of
+ * these blocks on one page.
  */
 declare( strict_types=1 );
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+
+/**
+ * Fetch and bucket every response for a post — likes, reposts, replies, and
+ * the WordPress comments nested under webmention replies — in a single pass.
+ *
+ * Memoized per request so the reactions, replies, and comment-form blocks all
+ * share one fetch: the DB queries run once no matter how many of the three
+ * blocks appear on the page.
+ *
+ * @return array{likes:array,reposts:array,replies:array,comment_children:array}
+ */
+function nop_wm_get_data( int $post_id ): array {
+	static $cache = [];
+	if ( isset( $cache[ $post_id ] ) ) {
+		return $cache[ $post_id ];
+	}
+
+	if ( ! $post_id ) {
+		return $cache[ $post_id ] = [ 'likes' => [], 'reposts' => [], 'replies' => [], 'comment_children' => [] ];
+	}
+
+	// ── Fetch all webmentions ─────────────────────────────────────────────────
+	/**
+	 * Maximum number of webmentions to fetch per post. Filterable via
+	 * nop_indieweb_webmention_fetch_limit for high-traffic posts.
+	 */
+	$wm_limit = (int) apply_filters( 'nop_indieweb_webmention_fetch_limit', 100 );
+
+	$webmentions = get_comments( [
+		'post_id' => $post_id,
+		'type'    => 'webmention',
+		'status'  => 'approve',
+		'number'  => $wm_limit,
+		'orderby' => 'comment_date_gmt',
+		'order'   => 'ASC',
+	] );
+
+	// ── Fetch all regular WordPress comments ──────────────────────────────────
+	$wp_comments_limit = (int) apply_filters( 'nop_indieweb_wp_comments_fetch_limit', 100 );
+
+	$wp_comments = get_comments( [
+		'post_id' => $post_id,
+		'type'    => 'comment',
+		'status'  => 'approve',
+		'number'  => $wp_comments_limit,
+		'orderby' => 'comment_date_gmt',
+		'order'   => 'ASC',
+	] );
+
+	// ── Sort webmentions into buckets ─────────────────────────────────────────
+	$likes          = [];
+	$reposts        = [];
+	$replies        = [];
+	$webmention_ids = [];
+
+	foreach ( $webmentions as $wm ) {
+		$type             = get_comment_meta( $wm->comment_ID, 'webmention_type', true );
+		$webmention_ids[] = (int) $wm->comment_ID;
+		$source           = get_comment_meta( $wm->comment_ID, 'webmention_source', true );
+
+		$entry = [
+			'id'         => $wm->comment_ID,
+			'author'     => $wm->comment_author,
+			'author_url' => $wm->comment_author_url,
+			'photo'      => get_comment_meta( $wm->comment_ID, 'webmention_author_photo',  true ),
+			'handle'     => get_comment_meta( $wm->comment_ID, 'webmention_author_handle', true ),
+			'platform'   => get_comment_meta( $wm->comment_ID, 'webmention_platform',      true ),
+			'via_bridgy' => $source && str_contains( $source, 'brid.gy' ),
+			'source'     => $source ?: ( get_comment_meta( $wm->comment_ID, 'webmention_original_url', true ) ?: $wm->comment_author_url ),
+			'content'    => $wm->comment_content,
+			'date'       => $wm->comment_date_gmt,
+		];
+
+		if ( 'like' === $type ) {
+			$likes[] = $entry;
+		} elseif ( 'repost' === $type ) {
+			$reposts[] = $entry;
+		} else {
+			$replies[] = $entry;
+		}
+	}
+
+	// ── Distribute regular comments ───────────────────────────────────────────
+	// Children of a webmention → nested below that webmention inline.
+	// Everything else (top-level or comment→comment) → into the replies list.
+	$comment_children = [];
+
+	foreach ( $wp_comments as $c ) {
+		$parent = (int) $c->comment_parent;
+
+		if ( $parent > 0 && in_array( $parent, $webmention_ids, true ) ) {
+			$comment_children[ $parent ][] = $c;
+			continue;
+		}
+
+		$replies[] = [
+			'id'         => $c->comment_ID,
+			'author'     => $c->comment_author,
+			'author_url' => $c->comment_author_url,
+			'photo'      => get_avatar_url( $c, [ 'size' => 80 ] ),
+			'handle'     => '',
+			'platform'   => '',
+			'source'     => $c->comment_author_url,
+			'content'    => $c->comment_content,
+			'date'       => $c->comment_date_gmt,
+		];
+	}
+
+	usort( $replies, static fn( array $a, array $b ) => strcmp( $a['date'], $b['date'] ) );
+
+	return $cache[ $post_id ] = [
+		'likes'            => $likes,
+		'reposts'          => $reposts,
+		'replies'          => $replies,
+		'comment_children' => $comment_children,
+	];
+}
+
+/**
+ * Resolve the post being rendered, honouring ?post_id= only inside the editor
+ * block-renderer request and only for a post the current user may edit.
+ * Shared by the three blocks' render.php so their editor previews target the
+ * post being authored rather than leaking arbitrary post data.
+ */
+function nop_wm_resolve_post_id( $block ): int {
+	$post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
+
+	$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
+		&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
+
+	if ( $is_editor && isset( $_GET['post_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$candidate = absint( $_GET['post_id'] ); // phpcs:ignore WordPress.Security.NonceVerification
+		if ( $candidate && current_user_can( 'edit_post', $candidate ) ) {
+			$post_id = $candidate;
+		}
+	}
+
+	return $post_id;
+}
+
+/**
+ * True when the current render is the editor's block-renderer request, used to
+ * show sample content instead of an empty box in the site editor.
+ */
+function nop_wm_is_editor_preview(): bool {
+	return defined( 'REST_REQUEST' ) && REST_REQUEST
+		&& isset( $_GET['context'] ) && 'edit' === $_GET['context']; // phpcs:ignore WordPress.Security.NonceVerification
 }
 
 function nop_wm_avatar_wrap( array $entry, int $size ): string {
@@ -164,17 +314,6 @@ function nop_wm_time_label( string $date_gmt ): string {
 	return (string) wp_date( 'j F Y', $ts );
 }
 
-function nop_wm_render_empty_state( int $post_id ): void {
-	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-webmentions nop-webmentions--empty' ] );
-	$message       = comments_open( $post_id )
-		? __( 'Be the first to respond — comment below, or reply from your own site.', 'nop-indieweb' )
-		: __( 'Be the first to respond — reply from your own site.', 'nop-indieweb' );
-	echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
-	echo '<p class="nop-webmentions__empty">' . esc_html( $message ) . '</p>';
-	echo nop_wm_render_comment_form( $post_id, false ); // phpcs:ignore
-	echo '</div>';
-}
-
 /**
  * Compact inline comment form for the bottom of the Responses section.
  * Returns empty string when comments are closed on this post.
@@ -184,9 +323,11 @@ function nop_wm_render_empty_state( int $post_id ): void {
  * fields: IndieWeb visitors send a webmention; casual visitors don't need them.
  *
  * $show_heading — false in the empty state (invitation text already labels it).
+ * $force        — true in the editor preview to render regardless of whether
+ *                 comments are open (the template editor has no real post).
  */
-function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): string {
-	if ( ! comments_open( $post_id ) ) {
+function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bool $force = false ): string {
+	if ( ! $force && ! comments_open( $post_id ) ) {
 		return '';
 	}
 
@@ -246,4 +387,46 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true ): 
 
 function nop_wm_repost_icon(): string {
 	return '<svg class="nop-webmentions__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="13" height="13"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+}
+
+function nop_wm_heart_icon(): string {
+	return '<svg class="nop-reactions__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+}
+
+/**
+ * Representative sample responses for the editor preview, so each block shows
+ * realistic content in the site editor (where there is no real post) instead
+ * of an empty box. Avatars resolve to fallback silhouettes — no network.
+ */
+function nop_wm_sample_data(): array {
+	$mk = static fn( string $author, string $handle, string $platform, string $content, string $date ): array => [
+		'id'         => 0,
+		'author'     => $author,
+		'author_url' => '',
+		'photo'      => '',
+		'handle'     => $handle,
+		'platform'   => $platform,
+		'via_bridgy' => false,
+		'source'     => '',
+		'content'    => $content,
+		'date'       => $date,
+	];
+
+	return [
+		'likes' => [
+			$mk( 'Jeremy Keith', '', 'mastodon', '', '2026-05-10 09:00:00' ),
+			$mk( 'Tantek Çelik', '', 'mastodon', '', '2026-05-10 09:05:00' ),
+			$mk( 'Sophie Koonin', '', 'bluesky', '', '2026-05-10 09:10:00' ),
+			$mk( 'Chris Aldrich', '', 'mastodon', '', '2026-05-10 09:15:00' ),
+		],
+		'reposts' => [
+			$mk( 'Aaron Parecki', '', 'mastodon', '', '2026-05-10 10:00:00' ),
+			$mk( 'Marty McGuire', '', 'bluesky', '', '2026-05-10 10:05:00' ),
+		],
+		'replies' => [
+			$mk( 'Jeremy Keith', '@adactio@mastodon.social', 'mastodon', 'Love seeing the IndieWeb principles put into practice like this. Your own site, your own data.', '2026-05-10 11:00:00' ),
+			$mk( 'Sophie Koonin', '@localghost.dev', 'bluesky', 'This is exactly the kind of thing I want for my own site — brilliant work Neil.', '2026-05-10 11:30:00' ),
+		],
+		'comment_children' => [],
+	];
 }

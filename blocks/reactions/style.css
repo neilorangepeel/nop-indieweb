@@ -1,0 +1,58 @@
+/*
+ * Reactions block — compact single-row band of likes + reposts.
+ * Avatar / facepile / overflow base styles live in assets/css/blocks-shared.css
+ * (shared with the replies block).
+ */
+
+.nop-reactions {
+	display:     flex;
+	flex-wrap:   wrap;
+	align-items: center;
+	gap:         0.4rem 1.5rem;
+	font-size:   var(--wp--preset--font-size--small, 0.875rem);
+}
+
+.nop-reactions__group {
+	display:     inline-flex;
+	align-items: center;
+	gap:         0.5rem;
+}
+
+.nop-reactions__label {
+	display:              inline-flex;
+	align-items:          center;
+	gap:                  0.3rem;
+	color:                var(--nop-muted);
+	font-weight:          600;
+	font-variant-numeric: tabular-nums;
+	white-space:          nowrap;
+}
+
+.nop-reactions__group--likes .nop-reactions__icon {
+	color: var(--nop-like-color, hsl(340 80% 60%));
+}
+
+/* Covers both the heart (.nop-reactions__icon) and the reused repost glyph
+   (.nop-webmentions__icon) so neither collapses or stretches in the label. */
+.nop-reactions__label svg {
+	flex-shrink: 0;
+}
+
+.nop-reactions__count {
+	line-height: 1;
+}
+
+/* Tighter overlap than the reply facepile — this is a glanceable sparkline. */
+.nop-reactions__group .nop-webmentions__facepile {
+	gap: 0;
+}
+
+.nop-reactions__group .nop-webmentions__avatar-wrap:not(:first-child) {
+	margin-inline-start: -8px;
+}
+
+/* White ring so overlapping avatars read as separate discs against each other. */
+.nop-reactions__group .nop-webmentions__avatar,
+.nop-reactions__group .nop-webmentions__overflow {
+	box-shadow: 0 0 0 2px var(--wp--preset--color--base, #fff);
+}

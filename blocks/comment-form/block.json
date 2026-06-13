@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/comment-form",
+	"title": "Comment Form",
+	"description": "Compact leave-a-reply form for the post. Textarea first, then name and email for logged-out visitors.",
+	"category": "nop-indieweb-conversations",
+	"icon": "edit",
+	"keywords": ["comment", "reply", "form", "respond", "indieweb"],
+	"editorScript": "file:./editor.js",
+	"style": ["nop-blocks-shared", "file:./style.css"],
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": false,
+			"gradients": false,
+			"link": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true
+			}
+		}
+	}
+}
