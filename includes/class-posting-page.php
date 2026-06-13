@@ -222,6 +222,13 @@ html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transpar
 html {
 	height: 100%;
 	height: -webkit-fill-available;
+	/* Paint the field + grain on the ROOT so it propagates to the whole viewport
+	   canvas — including the strip iOS Safari reveals when its toolbar collapses
+	   after first paint. Without this, that strip shows bare canvas (a grain-less
+	   gap at the bottom on load) until you scroll. Matches the body field grain. */
+	background-color: var(--field);
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 body {
 	height: 100%;
