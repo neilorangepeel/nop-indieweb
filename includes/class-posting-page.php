@@ -265,15 +265,16 @@ body {
 		justify-content: center;
 	}
 	.app {
-		height: min(880px, 100dvh - 48px);
-		/* Match the phone: a modern iPhone is 19.5:9, so the poster takes that
-		   ratio (width derives from the height) and its display corner radius —
-		   ~14% of the width, i.e. ~6% of the height — reads as the real device. */
+		/* Always hold the 19.5:9 phone ratio. --frame-h is the tightest of the
+		   max cap, the viewport height, and what the viewport width allows, so the
+		   frame scales to fit any window without ever distorting; width derives
+		   from it via aspect-ratio, and the corner radius (~6% of height) too. */
+		--frame-h: min(880px, 100dvh - 48px, (100vw - 40px) * 2.1667);
 		aspect-ratio: 9 / 19.5;
+		height: var(--frame-h);
 		width: auto;
-		max-width: calc(100vw - 40px);
 		border: 2px solid var(--line);
-		border-radius: calc(min(880px, 100dvh - 48px) * 0.06);
+		border-radius: calc(var(--frame-h) * 0.06);
 		box-shadow: var(--shadow);
 	}
 }
