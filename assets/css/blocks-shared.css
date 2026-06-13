@@ -2,17 +2,36 @@
  * NOP IndieWeb — shared front-end design tokens and utilities.
  *
  * Loaded once when any nop-indieweb block is on the page (registered as
- * "nop-blocks-shared" and listed in each block.json `style` array). Lets
- * every block reference one source of truth for colours, the pill pattern,
- * section dividers, and reduced-motion handling.
+ * "nop-blocks-shared" and listed in each block.json `style` array).
  *
- * Tokens fall back to theme-supplied --wp--preset--* values so the plugin
- * inherits the active palette automatically.
+ * ── Styling architecture (one owner per concern) ──────────────────────────
+ *   1. Brand VALUES        → the active theme (theme.json). The plugin only
+ *                            defines neutral / semantic *defaults* below, as
+ *                            :root custom properties the theme can override.
+ *   2. Theme-specific tweaks → the theme's theme.json styles.blocks.nop-indieweb/*.
+ *   3. User-adjustable      → each block.json `supports` (typography/colour/spacing).
+ *   4. Structure & interaction → this file + per-block style.css (layout, :has(),
+ *                            hover, @media, animations — what JSON can't express).
+ *
+ * The discipline: the plugin never hardcodes a brand value — it writes
+ * var(--nop-token, <neutral default>). Brand-overridable tokens MUST live at
+ * :root (a value set on the block root via :where() would shadow a theme's
+ * :root override). Preset-derived and structural tokens stay block-scoped.
  */
 
 :root {
+	/* Brand-overridable tokens — theme.json sets the values; these defaults
+	   keep the plugin self-contained on any theme. */
 	--nop-radius:      0px;
 	--nop-radius-pill: 9999px;
+
+	--nop-like-color:          hsl(340 80% 60%);
+	--nop-like-color-strong:   hsl(340 80% 50%);
+	--nop-repost-color:        hsl(152 58% 43%);
+	--nop-repost-color-strong: hsl(152 62% 35%);
+
+	--nop-star-on:  #f59f00;
+	--nop-star-off: #d4d4d8;
 }
 
 :where(
@@ -27,30 +46,18 @@
 	.nop-rsvp-meta,
 	.nop-syndication-panel
 ) {
-	/* Surfaces / text */
+	/* Surfaces / text — derived from the theme's palette presets. */
 	--nop-divider-color: var(--wp--preset--color--accent-6, #e5e7eb);
 	--nop-muted:         var(--wp--preset--color--accent-4, #6b7280);
 	--nop-text:          var(--wp--preset--color--contrast, inherit);
 
-	/* Pill pattern */
+	/* Pill pattern — structural metrics, not brand. */
 	--nop-pill-padding:   0.375rem 0.875rem 0.375rem 0.75rem;
 	--nop-pill-gap:       0.375rem;
 	--nop-pill-border:    1px solid var(--nop-divider-color);
 
-	/* Like / heart accent */
-	--nop-like-color:        hsl(340 80% 60%);
-	--nop-like-color-strong: hsl(340 80% 50%);
-
-	/* Repost / share accent */
-	--nop-repost-color:        hsl(152 58% 43%);
-	--nop-repost-color-strong: hsl(152 62% 35%);
-
 	/* Section divider applied to top-of-block separators */
 	--nop-section-spacing: 1.25em;
-
-	/* Star colours (film blocks) */
-	--nop-star-on:  #f59f00;
-	--nop-star-off: #d4d4d8;
 }
 
 /* ── Pill pattern (used by like + post-footer) ────────────────────────────── */

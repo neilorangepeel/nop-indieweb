@@ -75,3 +75,17 @@ add_filter( 'auth_cookie_expiration', function ( int $expiration, int $user_id )
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.
+
+## Styling architecture — one owner per concern
+
+The plugin must stay self-contained and restyleable by any theme (it's intended to be opened up to others). Style lives in one place per concern:
+
+1. **Brand VALUES → the active theme** (`theme.json`). The plugin only defines neutral/semantic *defaults* as `:root` custom properties (`assets/css/blocks-shared.css`). The neilorangepeel theme sets the real values in `theme.json`'s top-level `styles.css` (e.g. `:root{--nop-radius:4px}`).
+2. **Theme-specific block tweaks → the theme's `theme.json` `styles.blocks.nop-indieweb/<block>.css`** (the core per-block `css` property). This is the WordPress-native seam any theme uses to re-brand a block — no plugin edits.
+3. **User-adjustable styling → each `block.json` `supports`** (typography/colour/spacing).
+4. **Structure & interaction → the plugin's CSS files** (`blocks-shared.css` + per-block `style.css`): layout, `:has()`, hover, `@media`, animations, facepile, microformats — everything declarative JSON can't express.
+
+**Rules:**
+- The plugin never hardcodes a brand value — always `var(--nop-token, <neutral default>)`.
+- A token meant to be theme-overridable **must be defined at `:root`** in `blocks-shared.css`. A value set on a block root via `:where()` shadows a theme's `:root` override. Preset-derived (`--nop-divider-color` etc.) and structural (`--nop-pill-*`) tokens stay block-scoped.
+- Don't migrate structural CSS into `theme.json` `css` strings — it fragments the source of truth. Platform brand colours (Mastodon/Bluesky/Pixelfed) and pure effects (box-shadows) stay hardcoded in the plugin CSS by design.
