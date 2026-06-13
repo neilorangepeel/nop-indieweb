@@ -237,10 +237,13 @@ body {
 	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
 	   frame border) and the browser theme-color (status-bar / notch tint). */
 	--device-ink: color-mix(in srgb, var(--ink) 80%, #000);
+	/* One rate for every colour change, so the whole UI re-inks as a single
+	   sweep instead of each element lagging at its own speed. */
+	--fade: 0.4s;
 
 	/* The kind-switch moment: --ink is a registered <color>, so the whole
 	   poster crossfades to the new ink instead of snapping. */
-	transition: --ink 0.4s ease;
+	transition: --ink var(--fade) ease;
 
 	display: flex;
 	flex-direction: column;
@@ -497,7 +500,7 @@ body {
 	letter-spacing: 0.06em;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
-	transition: background 0.1s, color 0.1s;
+	transition: background var(--fade) ease, color var(--fade) ease;
 }
 .type-btn__icon {
 	display: flex;
@@ -891,7 +894,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--on-accent);
-	transition: background-color 0.12s;
+	transition: background-color var(--fade) ease;
 }
 .syndicator-box svg {
 	display: block;
@@ -954,7 +957,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--accent);
-	transition: transform 0.08s, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+	transition: transform 0.08s, background-color var(--fade) ease, color var(--fade) ease, opacity 0.18s ease;
 }
 .btn-primary:active {
 	transform: translate(0, 2px);
