@@ -531,8 +531,10 @@ body {
 	line-height: 1.05;
 	text-transform: uppercase;
 	letter-spacing: 0.01em;
-	color: var(--text);
-	opacity: 0.22;
+	/* A solid faint tint — not translucent ink — so the ruled lines and the
+	   page grain don't bleed through the letters; they sit behind the opaque
+	   glyphs and resume either side, like a label printed on ruled paper. */
+	color: color-mix( in srgb, var(--ink) 26%, var(--paper) );
 	pointer-events: none;
 	transition: opacity 0.18s ease, transform 0.18s ease;
 }
