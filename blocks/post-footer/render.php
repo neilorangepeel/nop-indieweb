@@ -151,10 +151,15 @@ $reply_count  = $counts[ $post_id ]['reply'];
 
 // Reactor identities for the reveal panels — shares the per-request memo with
 // the replies block, so the facepiles cost no extra queries.
-$data            = nop_wm_get_data( $post_id );
-$likes_entries   = $data['likes'];
-$reposts_entries = $data['reposts'];
-$repost_count    = count( $reposts_entries );
+$data = nop_wm_get_data( $post_id );
+
+// A reaction is only revealable if we can actually show who it was — a name or
+// a photo. Anonymous site-likes still count toward the pill, but have nothing
+// to reveal; without this filter the caret opens an empty "Liked by" panel.
+$revealable      = static fn( array $e ): bool => '' !== trim( (string) ( $e['author'] ?? '' ) ) || ! empty( $e['photo'] );
+$repost_count    = count( $data['reposts'] );
+$likes_entries   = array_values( array_filter( $data['likes'],   $revealable ) );
+$reposts_entries = array_values( array_filter( $data['reposts'], $revealable ) );
 
 $has_like_reveal   = ! empty( $likes_entries );
 $has_repost_reveal = ! empty( $reposts_entries );
@@ -253,10 +258,10 @@ $wrapper = get_block_wrapper_attributes( [
 
 	<?php
 	if ( $has_like_reveal ) {
-		echo $panel( 'likes', $likes_entries, $like_count, nop_wm_liked_by( $likes_entries ), false, $likes_panel_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper output escaped at source
+		echo $panel( 'likes', $likes_entries, count( $likes_entries ), nop_wm_liked_by( $likes_entries ), false, $likes_panel_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper output escaped at source
 	}
 	if ( $has_repost_reveal ) {
-		echo $panel( 'reposts', $reposts_entries, $repost_count, nop_wm_reposted_by( $reposts_entries ), false, $reposts_panel_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper output escaped at source
+		echo $panel( 'reposts', $reposts_entries, count( $reposts_entries ), nop_wm_reposted_by( $reposts_entries ), false, $reposts_panel_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper output escaped at source
 	}
 	?>
 
