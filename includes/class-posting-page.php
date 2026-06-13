@@ -462,19 +462,28 @@ body {
 /* ── Type selector ──────────────────────────────────────────────────────── */
 
 .type-grid {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	display: flex;
 	gap: 6px;
 	flex-shrink: 0;
 	padding: 10px 12px;
+	/* One row of square tiles that scrolls sideways if they don't all fit —
+	   saves the vertical height the old two-row grid took. */
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
 	border-bottom: 2px solid var(--line);
 }
+.type-grid::-webkit-scrollbar { display: none; }
 .type-btn {
+	flex: 0 0 72px;
+	aspect-ratio: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 3px;
-	padding: 7px 4px;
+	justify-content: center;
+	gap: 5px;
+	padding: 6px 4px;
 	/* Inactive tiles sit back — muted border + ink — so the filled active kind
 	   and the compose area lead the eye, not the whole six-up grid. */
 	border: 2px solid color-mix( in srgb, var(--ink) 30%, transparent );
@@ -911,13 +920,15 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    padding follows that curve, keeping the button clear of it. */
 .bottom-bar {
 	flex-shrink: 0;
-	padding: 14px 18px;
-	padding-bottom: calc(var(--safe-bottom) + 26px);
+	padding: 12px;
+	padding-bottom: calc(var(--safe-bottom) + 12px);
 	background: var(--device-ink);
 }
-/* The Post button rounds up to echo the shell's curve rather than sitting as a
-   sharp box against it. */
-.bottom-bar .btn { border-radius: 24px; }
+/* The button hugs the iPhone's bottom curve: its bottom corners run concentric
+   with the shell (radius ≈ the shell's inner radius minus the 12px inset), so
+   the dark footer reads as a thin even frame following the curve. Top corners
+   stay tighter since they're nowhere near the shell's corners. */
+.bottom-bar .btn { border-radius: 20px 20px 36px 36px; }
 
 .btn {
 	display: block;
@@ -940,9 +951,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    halftone (see .bottom-bar) gives the section its depth, so the button itself
    stays clean and just settles a touch on press. */
 .btn-primary {
-	background: var(--field);
-	color: var(--ink);
-	border-color: transparent;
+	background: var(--accent);
+	color: var(--on-accent);
+	border-color: var(--accent);
 	transition: transform 0.08s, background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
 .btn-primary:active {
@@ -952,8 +963,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    commit target always reads as the primary action. When the form becomes valid
    the fill saturates to full accent and the offset shadow grows: it "charges". */
 .btn-primary:disabled {
-	background: color-mix( in srgb, var(--field) 15%, var(--device-ink) );
-	color: color-mix( in srgb, var(--field) 45%, var(--device-ink) );
+	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
+	color: color-mix( in srgb, var(--on-accent) 38%, var(--device-ink) );
 	border-color: transparent;
 	opacity: 1;
 	cursor: default;
