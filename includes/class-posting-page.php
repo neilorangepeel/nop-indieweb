@@ -558,10 +558,12 @@ body {
 	overflow: hidden;
 }
 
-/* Big expressive prompt overlay — fades out once there's content. */
+/* Big expressive prompt overlay — fades out once there's content. Sits on the
+   first rule like the typed text: its baseline is nudged to ~24px (the first
+   rule) so the placeholder and the content you type share the same line. */
 .compose-prompt {
 	position: absolute;
-	top: 4px;
+	top: 0;
 	left: 0;
 	right: 8px;
 	font-family: var(--display);
