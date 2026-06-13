@@ -455,7 +455,7 @@ body {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 240px;
+	height: 120px;
 	pointer-events: none;
 	opacity: 0;
 	/* A single halftone screen in the ink hue on a transparent ground — the page
@@ -468,13 +468,13 @@ body {
 }
 .scroll-fade-top {
 	top: 0;
-	margin-bottom: -240px;
+	margin-bottom: -120px;
 	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
 .scroll-fade-bottom {
 	bottom: 0;
-	margin-top: -240px;
+	margin-top: -120px;
 	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
