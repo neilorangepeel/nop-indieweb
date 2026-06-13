@@ -455,23 +455,28 @@ body {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 34px;
+	height: 44px;
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity 0.18s ease;
+	/* A halftone screen in the ink hue on a transparent ground — the page grain
+	   shows between the dots. The mask fades the dots out toward the content; the
+	   element's opacity is driven continuously by scroll position in JS, so it
+	   ramps in instead of popping. */
+	background-image: radial-gradient( color-mix( in srgb, var(--ink) 42%, transparent ) 1px, transparent 1.7px );
+	background-size: 5px 5px;
 }
 .scroll-fade-top {
 	top: 0;
-	margin-bottom: -34px;
-	background: linear-gradient( to bottom, color-mix( in srgb, var(--ink) 17%, transparent ), transparent );
+	margin-bottom: -44px;
+	-webkit-mask-image: linear-gradient( to bottom, #000, transparent );
+	        mask-image: linear-gradient( to bottom, #000, transparent );
 }
 .scroll-fade-bottom {
 	bottom: 0;
-	margin-top: -34px;
-	background: linear-gradient( to top, color-mix( in srgb, var(--ink) 17%, transparent ), transparent );
+	margin-top: -44px;
+	-webkit-mask-image: linear-gradient( to top, #000, transparent );
+	        mask-image: linear-gradient( to top, #000, transparent );
 }
-.compose-scroll.has-above .scroll-fade-top    { opacity: 1; }
-.compose-scroll.has-below .scroll-fade-bottom { opacity: 1; }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. */
@@ -1384,12 +1389,17 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		updateScrollFades();
 	}
 	var composeScroll = document.querySelector( '.compose-scroll' );
+	var fadeTop       = document.querySelector( '.scroll-fade-top' );
+	var fadeBottom    = document.querySelector( '.scroll-fade-bottom' );
 	function updateScrollFades() {
 		if ( ! composeScroll ) return;
-		var top = composeScroll.scrollTop;
-		var max = composeScroll.scrollHeight - composeScroll.clientHeight;
-		composeScroll.classList.toggle( 'has-above', top > 4 );
-		composeScroll.classList.toggle( 'has-below', top < max - 4 );
+		// Opacity ramps with scroll distance (0 → 1 over RAMP px) so the halftone
+		// fades in by position rather than popping in at a threshold.
+		var RAMP  = 56;
+		var top   = composeScroll.scrollTop;
+		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
+		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
+		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 	window.addEventListener( 'resize', updateScrollFades );
