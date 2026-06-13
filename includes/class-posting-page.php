@@ -279,7 +279,8 @@ body {
 .masthead {
 	flex-shrink: 0;
 	padding: 0 16px 14px;
-	padding-top: calc(var(--safe-top) + 14px);
+	/* Extra top room so the logo/clock clear the shell's rounded corners. */
+	padding-top: calc(var(--safe-top) + 20px);
 	border-bottom: 2px solid var(--line);
 }
 .masthead__top {
@@ -832,9 +833,13 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .bottom-bar {
 	flex-shrink: 0;
 	padding: 12px 16px;
-	padding-bottom: calc(var(--safe-bottom) + 12px);
+	/* More bottom room so the button floats clear of the shell's rounded corner. */
+	padding-bottom: calc(var(--safe-bottom) + 18px);
 	border-top: 2px solid var(--line);
 }
+/* The Post button rounds up to echo the shell's curve rather than sitting as a
+   sharp box against it. */
+.bottom-bar .btn { border-radius: 24px; }
 
 .btn {
 	display: block;
