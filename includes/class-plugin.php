@@ -556,6 +556,7 @@ class Plugin {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/film-card' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-type-icon' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/kind-icon' );
 	}
 
 	public function register_block_categories( array $categories ): array {

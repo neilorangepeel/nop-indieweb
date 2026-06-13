@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/kind-icon",
+	"title": "Kind Icon",
+	"description": "Renders a lined icon matching the post's nop_kind taxonomy term (note, like, bookmark, …).",
+	"category": "nop-indieweb-meta",
+	"icon": "tag",
+	"keywords": ["kind", "icon", "post format", "indieweb"],
+	"editorScript": "file:./editor.js",
+	"style": "nop-blocks-shared",
+	"render": "file:./render.php",
+	"usesContext": ["postId", "postType"],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": false,
+			"gradients": false,
+			"link": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": false
+		}
+	}
+}
