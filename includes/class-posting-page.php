@@ -221,24 +221,25 @@ html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transpar
 
 html {
 	height: 100%;
-	height: -webkit-fill-available;
-	/* Paint the field + grain on the ROOT so it propagates to the whole viewport
-	   canvas — including the strip iOS Safari reveals when its toolbar collapses
-	   after first paint. Without this, that strip shows bare canvas (a grain-less
-	   gap at the bottom on load) until you scroll. Matches the body field grain. */
+	/* Field + grain on the ROOT so it propagates to the whole viewport canvas. */
 	background-color: var(--field);
 	background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 body {
-	height: 100%;
-	min-height: -webkit-fill-available;
+	/* Dynamic viewport units, NOT -webkit-fill-available — the old hack sized the
+	   page short in the standalone (Home Screen) app, leaving a grain-less strip
+	   at the bottom. 100dvh fills the real screen in both Safari and standalone. */
+	height: 100vh;
+	height: 100dvh;
 	overflow: hidden;
 	background-color: var(--field);
-	/* Full-bleed grain in the kind hue — the framed poster floats on a field that
-	   shares its ink (--ink mirrored onto :root in JS so it reaches body, which sits
-	   outside .app); on phone it's covered by the app. Shares the poster's grid. */
-	background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	/* Grain at the POSTER's 16% on phones: the app fills the screen there, so the
+	   only place body shows is the transient toolbar / safe-area strip the app
+	   doesn't cover — matching 16% makes that strip seamless with the poster
+	   instead of a flat or lighter gap. Desktop drops to the field's 8% (below),
+	   where body is the lighter field the floating phone sits on. */
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	color: var(--charcoal);
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -299,6 +300,8 @@ body {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		/* The lighter field the floating poster sits on (poster stays 16%). */
+		background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	}
 	.app {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
