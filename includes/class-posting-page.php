@@ -51,6 +51,16 @@ class Posting_Page {
 		if ( empty( $wp->query_vars[ self::QUERY_VAR ] ) ) {
 			return;
 		}
+		// The service worker + manifest carry no secrets and must be reachable for
+		// registration/install regardless of auth state — serve them before the gate.
+		if ( isset( $_GET['sw'] ) ) {        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public static asset, no state change
+			$this->render_service_worker();
+			exit;
+		}
+		if ( isset( $_GET['manifest'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public static asset, no state change
+			$this->render_manifest();
+			exit;
+		}
 		if ( ! is_user_logged_in() ) {
 			wp_safe_redirect( wp_login_url( home_url( '/post' ) ) );
 			exit;
@@ -60,6 +70,117 @@ class Posting_Page {
 		}
 		$this->render_page();
 		exit;
+	}
+
+	// ——— PWA: manifest + service worker ————————————————————————————————————————
+
+	/**
+	 * Web app manifest (served at /post?manifest=1) — makes the authoring app
+	 * installable. Paths derive from home_url so it works in a subdirectory.
+	 */
+	private function render_manifest(): void {
+		nocache_headers();
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/manifest+json; charset=utf-8' );
+		}
+		$path  = wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post';
+		$icons = [];
+		$i192  = get_site_icon_url( 192 );
+		$i512  = get_site_icon_url( 512 );
+		if ( $i192 ) { $icons[] = [ 'src' => $i192, 'sizes' => '192x192' ]; }
+		if ( $i512 ) { $icons[] = [ 'src' => $i512, 'sizes' => '512x512' ]; }
+
+		echo wp_json_encode( [
+			'name'             => get_bloginfo( 'name' ) . ' · Post',
+			'short_name'       => __( 'Post', 'nop-indieweb' ),
+			'start_url'        => $path,
+			'scope'            => $path,
+			'display'          => 'standalone',
+			'background_color' => '#F4EFE6',
+			'theme_color'      => '#00787F',
+			'icons'            => $icons,
+		] );
+	}
+
+	/**
+	 * Service worker (served at /post?sw=1) — precaches the app shell (the page +
+	 * Brandon fonts) so /post installs and opens offline. Network-first for the
+	 * page so the nonce stays fresh online; cache-first for the static fonts; the
+	 * Micropub/now REST routes are never cached.
+	 */
+	private function render_service_worker(): void {
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: text/javascript; charset=utf-8' );
+			header( 'Service-Worker-Allowed: /' );
+		}
+		$font_dir = get_theme_file_uri( 'assets/fonts/brandon-text' );
+		$cond_dir = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
+		$page     = home_url( '/post' );
+		$shell    = [
+			$page,
+			$font_dir . '/brandon-text_normal_400.woff2',
+			$font_dir . '/brandon-text_normal_500.woff2',
+			$font_dir . '/brandon-text_normal_700.woff2',
+			$font_dir . '/brandon-text_normal_800.woff2',
+			$cond_dir . '/brandon-text-condensed_normal_700.woff2',
+			$cond_dir . '/brandon-text-condensed_normal_800.woff2',
+		];
+		?>
+'use strict';
+var CACHE = 'nop-post-v1';
+var PAGE  = <?php echo wp_json_encode( $page ); ?>;
+var SHELL = <?php echo wp_json_encode( $shell ); ?>;
+
+self.addEventListener( 'install', function ( e ) {
+	e.waitUntil(
+		caches.open( CACHE ).then( function ( c ) {
+			// Add resiliently — one 404 shouldn't fail the whole install.
+			return Promise.all( SHELL.map( function ( u ) {
+				return c.add( new Request( u, { credentials: 'same-origin' } ) ).catch( function () {} );
+			} ) );
+		} ).then( function () { return self.skipWaiting(); } )
+	);
+} );
+
+self.addEventListener( 'activate', function ( e ) {
+	e.waitUntil(
+		caches.keys().then( function ( keys ) {
+			return Promise.all( keys.filter( function ( k ) { return k !== CACHE; } ).map( function ( k ) { return caches.delete( k ); } ) );
+		} ).then( function () { return self.clients.claim(); } )
+	);
+} );
+
+self.addEventListener( 'fetch', function ( e ) {
+	var req = e.request;
+	if ( req.method !== 'GET' ) { return; }                         // never touch POST (Micropub/media)
+	var url = new URL( req.url );
+	if ( url.pathname.indexOf( '/wp-json/' ) !== -1 ) { return; }    // never cache the API
+
+	// The /post page: network-first so the nonce refreshes online; cached shell offline.
+	if ( req.mode === 'navigate' ) {
+		e.respondWith(
+			fetch( req ).then( function ( res ) {
+				var copy = res.clone();
+				caches.open( CACHE ).then( function ( c ) { c.put( PAGE, copy ); } );
+				return res;
+			} ).catch( function () {
+				return caches.match( PAGE ).then( function ( m ) { return m || caches.match( req ); } );
+			} )
+		);
+		return;
+	}
+
+	// Static assets (fonts, etc.): cache-first, fill on first online hit.
+	e.respondWith(
+		caches.match( req ).then( function ( m ) {
+			return m || fetch( req ).then( function ( res ) {
+				if ( res && res.ok ) { var copy = res.clone(); caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } ); }
+				return res;
+			} );
+		} ).catch( function () { return caches.match( req ); } )
+	);
+} );
+		<?php
 	}
 
 	// ——— Page render ——————————————————————————————————————————————————————————
@@ -160,6 +281,7 @@ class Posting_Page {
 <?php if ( $icon_url ) : ?>
 <link rel="apple-touch-icon" href="<?php echo esc_url( $icon_url ); ?>">
 <?php endif; ?>
+<link rel="manifest" href="<?php echo esc_url( home_url( '/post?manifest=1' ) ); ?>">
 <link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <title><?php echo esc_html( $site_name ); ?></title>
@@ -1748,7 +1870,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
 		postsToday:  <?php echo wp_json_encode( $posts_today ); ?>,
 		lastPostTs:  <?php echo wp_json_encode( $last_post_ts ); ?>,
+		swUrl:       <?php echo wp_json_encode( home_url( '/post?sw=1' ) ); ?>,
+		swScope:     <?php echo wp_json_encode( wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post' ); ?>,
 	};
+
+	// Register the service worker — installs the app shell so /post opens offline.
+	if ( 'serviceWorker' in navigator ) {
+		navigator.serviceWorker.register( NOP.swUrl, { scope: NOP.swScope } ).catch( function () {} );
+	}
 
 	var DRAFT_KEY    = 'nop_post_draft';
 	var CHAR_LIMITS  = { bluesky: 300, mastodon: 500, pixelfed: 500 };
