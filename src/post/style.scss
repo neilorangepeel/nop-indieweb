@@ -540,6 +540,22 @@ body::before {
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
+/* Leading label for the kind strip — sits in the first slot (a badge's footprint),
+   a quiet caption naming the row. Scrolls with the badges. */
+.type-grid__label {
+	flex: 0 0 auto;
+	align-self: center;
+	scroll-snap-align: start;   /* the leftmost snap point, so the strip rests showing it */
+	width: 46px;
+	margin-right: 6px;
+	font-family: var(--readout);
+	font-size: var(--fs-12);
+	font-weight: 600;
+	line-height: 1.15;
+	color: var(--ink);
+	opacity: 0.55;
+}
+
 /* Horizontal twin of the vertical scroll-fades — the same ink-dot halftone screen
    + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
    screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
