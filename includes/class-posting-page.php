@@ -61,6 +61,21 @@ class Posting_Page {
 			$this->render_manifest();
 			exit;
 		}
+		// A fresh wp_rest nonce for the offline queue's replay (the page nonce can
+		// expire before connectivity returns). Owner-only, via the login cookie.
+		if ( isset( $_GET['nonce'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- mints a nonce, gated by the login cookie
+			nocache_headers();
+			if ( ! headers_sent() ) {
+				header( 'Content-Type: application/json; charset=utf-8' );
+			}
+			if ( ! is_user_logged_in() ) {
+				status_header( 401 );
+				echo wp_json_encode( [ 'nonce' => '' ] );
+				exit;
+			}
+			echo wp_json_encode( [ 'nonce' => wp_create_nonce( 'wp_rest' ) ] );
+			exit;
+		}
 		if ( ! is_user_logged_in() ) {
 			wp_safe_redirect( wp_login_url( home_url( '/post' ) ) );
 			exit;
@@ -1872,6 +1887,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		lastPostTs:  <?php echo wp_json_encode( $last_post_ts ); ?>,
 		swUrl:       <?php echo wp_json_encode( home_url( '/post?sw=1' ) ); ?>,
 		swScope:     <?php echo wp_json_encode( wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post' ); ?>,
+		nonceUrl:    <?php echo wp_json_encode( home_url( '/post?nonce=1' ) ); ?>,
 	};
 
 	// Register the service worker — installs the app shell so /post opens offline.
@@ -2560,102 +2576,127 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	// ── Post ──────────────────────────────────────────────────────────────────
 
+	// The write nonce — refreshed from the server before a queue replay (the page
+	// nonce can expire before connectivity returns). Live posts use it as-is.
+	var nonce = NOP.nonce;
+
 	postBtn.addEventListener( 'click', async function () {
+		var post = formToPost();
+
+		// Offline up front → straight to the queue (no point attempting the network).
+		if ( ! navigator.onLine && window.indexedDB ) { await queueAndAck( post ); return; }
+
 		try {
 			showView( 'progress' );
-
-			var photoUrls = [];
-			if ( currentType === 'photo' && selectedFiles.length ) {
-				for ( var i = 0; i < selectedFiles.length; i++ ) {
-					setProgress( 'Uploading ' + ( i + 1 ) + ' of ' + selectedFiles.length + '…', ( i / selectedFiles.length ) * 0.75 );
-					var uploaded = await uploadPhoto( selectedFiles[ i ] );
-					photoUrls.push( uploaded.source_url );
-				}
-			}
-
-			setProgress( 'Posting…', 0.88 );
-
-			var payload  = buildPayload( photoUrls );
-			var response = await fetch( NOP.micropubUrl, {
-				method:  'POST',
-				headers: { 'X-WP-Nonce': NOP.nonce, 'Content-Type': 'application/json' },
-				body: JSON.stringify( payload ),
-			} );
-
-			if ( response.status !== 201 ) {
-				var errBody = await response.json().catch( function () { return {}; } );
-				throw new Error( errBody.message || 'Posting failed (' + response.status + ')' );
-			}
-
-			recordKindUse( currentType );   // float this kind to the front next time
-
-			var permalink = response.headers.get( 'Location' ) || '';
-			var editUrl   = response.headers.get( 'X-Edit-URL' ) || '';
-
+			var result = await sendPost( post, setProgress );
+			recordKindUse( post.type );   // float this kind to the front next time
 			setProgress( 'Syndicating…', 0.97 );
 			await delay( 600 );
-
-			if ( currentType === 'photo' ) {
-				var caption = contentInput.value.trim();
-				if ( caption ) await navigator.clipboard.writeText( caption ).catch( function () {} );
+			if ( post.type === 'photo' && post.content ) {
+				await navigator.clipboard.writeText( post.content ).catch( function () {} );
 			}
-
-			showSuccess( permalink, editUrl, photoUrls );
-
+			showSuccess( result.permalink, result.editUrl, result.photoUrls );
 		} catch ( err ) {
-			showView( 'compose' );
-			showToast( 'Something went wrong: ' + err.message, 'error' );
+			// A dropped connection mid-send → queue it rather than lose the post.
+			if ( window.indexedDB && ( ! navigator.onLine || err instanceof TypeError ) ) {
+				await queueAndAck( post );
+			} else {
+				showView( 'compose' );
+				showToast( 'Something went wrong: ' + err.message, 'error' );
+			}
 		}
 	} );
 
-	function buildPayload( photoUrls ) {
-		var cfg   = TYPE_CONFIG[ currentType ];
+	// Snapshot the form into a plain, storable post — photo Files ride along as
+	// blobs (structured-clone keeps them through IndexedDB).
+	function formToPost() {
+		var files = [];
+		if ( currentType === 'photo' ) {
+			for ( var i = 0; i < selectedFiles.length; i++ ) {
+				files.push( { blob: selectedFiles[ i ], name: selectedFiles[ i ].name || 'photo.jpg', type: selectedFiles[ i ].type || 'image/jpeg', alt: ( photoAlts[ i ] || '' ) } );
+			}
+		}
+		return {
+			id:          'p' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 7 ),
+			type:        currentType,
+			content:     contentInput.value.trim(),
+			url:         urlInput.value.trim(),
+			rsvp:        currentRsvp,
+			tags:        currentTags.slice(),
+			syndicateTo: Array.prototype.map.call( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
+			files:       files,
+		};
+	}
+
+	// The single place a post is actually sent — shared by the live path and the
+	// queue replay. Uploads photos, then creates the post via Micropub.
+	async function sendPost( post, onProgress ) {
+		var photoUrls = [];
+		if ( post.type === 'photo' && post.files.length ) {
+			for ( var i = 0; i < post.files.length; i++ ) {
+				if ( onProgress ) { onProgress( 'Uploading ' + ( i + 1 ) + ' of ' + post.files.length + '…', ( i / post.files.length ) * 0.75 ); }
+				var up = await uploadPhoto( post.files[ i ].blob, post.files[ i ].name, post.files[ i ].type );
+				photoUrls.push( up.source_url );
+			}
+		}
+		if ( onProgress ) { onProgress( 'Posting…', 0.88 ); }
+		var response = await fetch( NOP.micropubUrl, {
+			method:  'POST',
+			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+			body:    JSON.stringify( buildPayload( post, photoUrls ) ),
+		} );
+		if ( response.status !== 201 ) {
+			var errBody = await response.json().catch( function () { return {}; } );
+			throw new Error( errBody.message || 'Posting failed (' + response.status + ')' );
+		}
+		return {
+			permalink: response.headers.get( 'Location' ) || '',
+			editUrl:   response.headers.get( 'X-Edit-URL' ) || '',
+			photoUrls: photoUrls,
+		};
+	}
+
+	function buildPayload( post, photoUrls ) {
+		var cfg   = TYPE_CONFIG[ post.type ];
 		var props = {};
 
-		props[ 'post-kind' ] = [ currentType ];
+		props[ 'post-kind' ] = [ post.type ];
 
-		var content = contentInput.value.trim();
-		if ( content && cfg.hasContent ) props.content = [ content ];
-
-		if ( cfg.urlProp ) {
-			var url = urlInput.value.trim();
-			if ( url ) props[ cfg.urlProp ] = [ url ];
-		}
+		if ( post.content && cfg.hasContent ) { props.content = [ post.content ]; }
 
 		// RSVP rides on in-reply-to (the event URL); the rsvp property is what makes
 		// the server resolve it as an RSVP rather than a plain reply.
-		if ( cfg.hasRsvp ) props.rsvp = [ currentRsvp ];
+		if ( cfg.urlProp && post.url ) { props[ cfg.urlProp ] = [ post.url ]; }
+		if ( cfg.hasRsvp ) { props.rsvp = [ post.rsvp ]; }
 
 		// Alt text rides along as the server's array photo shape ({primary, alt});
 		// sideload_photos copies it onto the attachment, where both the rendered
 		// post and the Mastodon/Bluesky syndicators read it.
 		if ( photoUrls && photoUrls.length ) {
-			props.photo = photoUrls.map( function (url, i) {
-				var alt = ( photoAlts[ i ] || '' ).trim();
+			props.photo = photoUrls.map( function ( url, i ) {
+				var alt = ( ( post.files[ i ] && post.files[ i ].alt ) || '' ).trim();
 				return alt ? { primary: url, alt: alt } : url;
 			} );
 		}
-		if ( cfg.hasTags && currentTags.length ) props.category = currentTags.slice();
+		if ( cfg.hasTags && post.tags.length ) { props.category = post.tags.slice(); }
 
 		// Always sent, even when empty — an explicitly empty selection means
 		// "this site only"; omitting the property would fall back to the
 		// server's default of syndicating to every enabled platform.
-		props[ 'syndicate-to' ] = Array.from(
-			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' )
-		).map( function (cb) { return cb.value; } );
+		props[ 'syndicate-to' ] = post.syndicateTo.slice();
 
 		return { type: [ 'h-entry' ], properties: props };
 	}
 
-	async function uploadPhoto( file ) {
+	async function uploadPhoto( blob, name, type ) {
 		var res = await fetch( NOP.mediaUrl, {
 			method:  'POST',
 			headers: {
-				'X-WP-Nonce':         NOP.nonce,
-				'Content-Disposition': 'attachment; filename="' + ( file.name || 'photo.jpg' ) + '"',
-				'Content-Type':        file.type || 'image/jpeg',
+				'X-WP-Nonce':          nonce,
+				'Content-Disposition': 'attachment; filename="' + ( name || 'photo.jpg' ) + '"',
+				'Content-Type':        type || 'image/jpeg',
 			},
-			body: file,
+			body: blob,
 		} );
 		if ( ! res.ok ) {
 			var err = await res.json().catch( function () { return {}; } );
@@ -2663,6 +2704,82 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		}
 		return res.json();
 	}
+
+	// ── Offline queue (IndexedDB) + replay ───────────────────────────────────────
+	// When offline, a post is stored whole (incl. photo blobs) and replayed when the
+	// app is next open and back online. iOS Safari has no Background Sync, so replay
+	// is page-driven: on the `online` event and on launch.
+	var DB_NAME = 'nop_post_queue', STORE = 'posts', replaying = false;
+
+	function qOpen() {
+		return new Promise( function ( resolve, reject ) {
+			var req = indexedDB.open( DB_NAME, 1 );
+			req.onupgradeneeded = function () { req.result.createObjectStore( STORE, { keyPath: 'id' } ); };
+			req.onsuccess = function () { resolve( req.result ); };
+			req.onerror   = function () { reject( req.error ); };
+		} );
+	}
+	function qAdd( post ) {
+		return qOpen().then( function ( db ) { return new Promise( function ( res, rej ) {
+			var tx = db.transaction( STORE, 'readwrite' ); tx.objectStore( STORE ).put( post );
+			tx.oncomplete = function () { res(); }; tx.onerror = function () { rej( tx.error ); };
+		} ); } );
+	}
+	function qAll() {
+		return qOpen().then( function ( db ) { return new Promise( function ( res, rej ) {
+			var out = [], cur = db.transaction( STORE, 'readonly' ).objectStore( STORE ).openCursor();
+			cur.onsuccess = function ( e ) { var c = e.target.result; if ( c ) { out.push( c.value ); c.continue(); } else { res( out ); } };
+			cur.onerror = function () { rej( cur.error ); };
+		} ); } );
+	}
+	function qDelete( id ) {
+		return qOpen().then( function ( db ) { return new Promise( function ( res ) {
+			var tx = db.transaction( STORE, 'readwrite' ); tx.objectStore( STORE ).delete( id );
+			tx.oncomplete = function () { res(); }; tx.onerror = function () { res(); };
+		} ); } );
+	}
+
+	function refreshNonce() {
+		return fetch( NOP.nonceUrl, { credentials: 'same-origin' } )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( d ) { if ( d && d.nonce ) { nonce = d.nonce; } } )
+			.catch( function () {} );
+	}
+
+	async function queueAndAck( post ) {
+		try { await qAdd( post ); }
+		catch ( e ) { showView( 'compose' ); showToast( "Couldn't save offline: " + e.message, 'error' ); return; }
+		recordKindUse( post.type );
+		showToast( 'Saved — will post when you’re back online.', 'info' );
+		resetForm();
+	}
+
+	async function replayQueue() {
+		if ( replaying || ! window.indexedDB || ! navigator.onLine ) { return; }
+		replaying = true;
+		try {
+			var items = await qAll();
+			if ( ! items.length ) { return; }
+			await refreshNonce();                       // the page nonce may have expired
+			for ( var i = 0; i < items.length; i++ ) {
+				try {
+					var result = await sendPost( items[ i ], null );
+					await qDelete( items[ i ].id );       // delete right after the 201 — minimise the double-post window
+					postsToday += 1;
+					lastPostTs   = Math.floor( Date.now() / 1000 );
+					renderTicker();
+					showToast( 'Queued post published.', 'info' );
+				} catch ( e ) {
+					if ( ! navigator.onLine || e instanceof TypeError ) { break; }  // still offline — keep the queue intact
+					showToast( 'A queued post failed: ' + e.message, 'error' );       // server error — stop, leave it for inspection
+					break;
+				}
+			}
+		} catch ( e ) {} finally { replaying = false; }
+	}
+
+	window.addEventListener( 'online', replayQueue );
+	replayQueue();   // flush anything stored from a previous, offline session
 
 	// ── Success ───────────────────────────────────────────────────────────────
 
