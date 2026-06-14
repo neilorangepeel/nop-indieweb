@@ -690,7 +690,8 @@ body::before {
 	width: 22px;
 	height: 22px;
 	color: var(--ink);
-	transform: translate(-50%, -50%);
+	/* Nudge down 1px so the glyph's optical centre lands on the line exactly. */
+	transform: translate(-50%, calc(-50% + 1px));
 	transition: left 0.6s ease;
 }
 .flightpath__body svg { display: block; width: 22px; height: 22px; }
