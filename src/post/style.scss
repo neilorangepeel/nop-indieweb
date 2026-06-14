@@ -607,8 +607,8 @@ body::before {
 	-webkit-tap-highlight-color: transparent;
 }
 /* The badge disc: an ink-ring circle, transparent so the fixed dot grid runs
-   straight through it. Only the active kind fills (solid --accent disc). It
-   carries the press/pop, not the button. */
+   straight through it. Only the active kind fills (solid --accent disc). The
+   pop scales the whole .type-btn so the disc + seal text move in proportion. */
 .type-btn__icon {
 	grid-area: 1 / 1;
 	width: 72px;
@@ -669,8 +669,9 @@ body::before {
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--line);
-	animation: type-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* The whole badge pops as one — disc + curved name + dots scale together. */
+.type-btn.is-active { animation: type-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes type-pop {
 	0%   { transform: scale(1); }
 	50%  { transform: scale(1.08); }
