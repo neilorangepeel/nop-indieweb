@@ -797,11 +797,10 @@ body::before {
 	border-radius: var(--radius);
 	background: var(--field);
 	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
-	font-family: var(--display);
+	font-family: var(--readout);
 	font-size: var(--fs-14);
-	font-weight: 800;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	font-weight: 600;
+	letter-spacing: 0;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
@@ -880,19 +879,16 @@ body::before {
 }
 
 .field-group { display: flex; flex-direction: column; }
-.field-group.is-conditional:not([hidden]) { animation: reveal 0.18s ease; }
-@keyframes reveal {
-	from { opacity: 0; transform: translateY(-6px); }
-	to   { opacity: 1; transform: translateY(0); }
-}
+/* Conditional fields (URL, photo picker, RSVP) appear instantly on a kind switch —
+   no transition, consistent with the live text inputs the browser can't fade. The
+   only motion on a kind switch is the badge pop. */
 
 .field-label {
 	display: block;
-	font-family: var(--display);
-	font-size: var(--fs-11);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-family: var(--readout);
+	font-size: var(--fs-13);
+	font-weight: 600;
+	letter-spacing: 0;
 	opacity: 0.7;
 	margin-bottom: 6px;
 }
@@ -955,29 +951,26 @@ body::before {
 	overflow: hidden;
 }
 
-/* Big expressive prompt overlay — fades out once there's content. Sits on the
-   first rule like the typed text: top is nudged so its baseline lands at 28px
-   (the content baseline / first rule), so placeholder and content share the
-   same line. Measured for Brandon Condensed 800 at 30px. */
+/* Friendly prompt overlay — fades out once there's content. Shares the field's
+   exact text metrics (face, size, line-height, left/top) so it sits on the ruled
+   lines precisely where the typed text will, reading as a warm placeholder. */
 .compose-prompt {
 	position: absolute;
-	top: 1.3px;
+	top: 6px;
 	left: 0;
 	right: 8px;
-	font-family: var(--display);
-	font-size: 30px;
-	font-weight: 800;
-	line-height: 1.05;
-	text-transform: uppercase;
-	letter-spacing: 0.01em;
+	font-family: inherit;
+	font-size: var(--fs-18);
+	font-weight: 500;
+	line-height: 30px;
+	letter-spacing: 0;
 	/* A solid faint tint — not translucent ink — so the ruled lines and the
 	   page grain don't bleed through the letters; they sit behind the opaque
 	   glyphs and resume either side, like a label printed on ruled paper. */
-	color: color-mix( in srgb, var(--ink) 26%, var(--paper) );
+	color: color-mix( in srgb, var(--ink) 42%, var(--paper) );
 	pointer-events: none;
-	transition: opacity 0.18s ease, transform 0.18s ease;
 }
-.compose-prompt.is-hidden { opacity: 0; transform: translateY(-6px); }
+.compose-prompt.is-hidden { opacity: 0; }
 
 /* Photo picker */
 .photo-picker {
@@ -993,7 +986,7 @@ body::before {
 .photo-picker.drag-over { border-style: solid; border-color: var(--accent); }
 .photo-picker input[type="file"] { display: none; }
 .photo-picker-icon { display: block; margin-bottom: 8px; }
-.photo-picker p { font-family: var(--display); font-size: 17px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 600; letter-spacing: 0; }
 .photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
 .thumbnails {
@@ -1103,12 +1096,11 @@ body::before {
 .url-specimen__glyph { display: flex; color: var(--ink); opacity: 0.12; }
 .url-specimen__glyph svg { display: block; width: 96px; height: 96px; }
 .url-specimen__hint {
-	font-family: var(--display);
+	font-family: var(--readout);
 	font-size: var(--fs-13);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	opacity: 0.4;
+	font-weight: 600;
+	letter-spacing: 0;
+	opacity: 0.5;
 }
 .url-specimen__host {
 	font-family: var(--display);
@@ -1118,7 +1110,6 @@ body::before {
 	text-transform: uppercase;
 	letter-spacing: 0.01em;
 	word-break: break-word;
-	animation: reveal 0.18s ease;
 }
 .url-specimen__path {
 	font-size: var(--fs-13);
@@ -1142,11 +1133,10 @@ body::before {
 	align-items: center;
 	justify-content: space-between;
 	padding: 12px 0;
-	font-family: var(--display);
-	font-size: var(--fs-13);
-	font-weight: 800;
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
+	font-family: var(--readout);
+	font-size: var(--fs-14);
+	font-weight: 600;
+	letter-spacing: 0;
 	cursor: pointer;
 	list-style: none;
 	-webkit-tap-highlight-color: transparent;
@@ -1322,7 +1312,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.progress-status { font-family: var(--display); font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.progress-status { font-family: var(--readout); font-size: 15px; font-weight: 600; letter-spacing: 0; }
 .progress-bar-track {
 	width: 200px; height: 6px;
 	border: var(--bw) solid var(--line);
@@ -1508,11 +1498,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 @media (prefers-reduced-motion: reduce) {
 	.type-btn.is-active,
-	.success-banner,
-	.url-specimen__host { animation: none; }
+	.success-banner { animation: none; }
 	.burst { display: none; }
-	.field-group.is-conditional:not([hidden]) { animation: none; }
-	.compose-prompt, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
+	.btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
 	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; }
 	.toast { transition: opacity 0.01ms; }
@@ -1844,8 +1832,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
 		if ( time !== lastTime ) {
 			if ( deviceTimeEl ) { deviceTimeEl.textContent = time; }
-			tkTime = time + ' · ' + date;   // the ticker's date+time item
+			tkTime = time;   // separate ticker items: date · time
+			tkDate = date;
 			setTk( 'tk-time', tkTime );
+			setTk( 'tk-date', tkDate );
 			lastTime = time;
 		}
 	}
@@ -1861,10 +1851,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var tickerTrack = document.getElementById( 'tickerTrack' );
 	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
 	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
-	var tkTime = '', tkPlace = '', tkTemp = '', tkSky = '';
+	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
 
 	function tkItems() {
 		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
+		if ( tkDate )  { out.push( { c: 'tk-date',  h: tkDate } ); }
 		if ( tkTime )  { out.push( { c: 'tk-time',  h: tkTime } ); }
 		if ( tkPlace ) { out.push( { c: 'tk-place', h: tkPlace } ); }
 		if ( tkTemp )  { out.push( { c: 'tk-temp',  h: tkTemp } ); }
@@ -1892,6 +1883,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var els = tickerTrack.getElementsByClassName( cls ), i;
 		for ( i = 0; i < els.length; i++ ) { els[ i ].textContent = text; }
 	}
+	lastTime = '';        // re-seed: populate tkTime/tkDate before the first build
+	updateClock();
 	renderTicker();
 
 	// ── Current-moment data (place · temp · sky) ─────────────────────────────────
@@ -2096,7 +2089,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var typeFadeRight = document.querySelector( '.type-fade-right' );
 	function updateTypeFades() {
 		if ( ! typeBar ) { return; }
-		var RAMP  = 40;
+		// Ramp the reveal over ~one badge of scroll (matching the longer gradient's
+		// reach) so the fade unfurls with the drag rather than snapping to full after
+		// a few pixels. Opacity is read straight off scrollLeft, so it tracks the
+		// finger (and momentum) 1:1.
+		var RAMP  = 96;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
 		if ( typeFadeLeft )  { typeFadeLeft.style.opacity  = Math.min( Math.max( left, 0 ) / RAMP, 1 ); }
