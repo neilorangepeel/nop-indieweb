@@ -670,7 +670,10 @@ body::before {
 	left: 0;
 	top: 0;
 	height: 0;
-	border-top: var(--bw) solid var(--ink);
+	/* Muted so the full-ink sun/moon reads as the marker on top of the line, rather
+	   than merging with it. Lighten the LINE not the glyph — a lighter glyph would
+	   let the darker line show through its gaps (between the sun's rays). */
+	border-top: var(--bw) solid var(--ink-50);
 }
 .flightpath__track { right: 0; border-top-style: dashed; }
 .flightpath__done {
