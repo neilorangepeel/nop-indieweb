@@ -116,6 +116,14 @@ class Posting_Page {
 			'background_color' => '#F4EFE6',
 			'theme_color'      => '#20713A',
 			'icons'            => $icons,
+			// Register as a share target (Android/desktop) — sharing a page/text opens
+			// /post?title=&text=&url=, which the client maps to a bookmark/note. iOS has
+			// no Web Share Target, but the same params drive an iOS Shortcut.
+			'share_target'     => [
+				'action' => $path,
+				'method' => 'GET',
+				'params' => [ 'title' => 'title', 'text' => 'text', 'url' => 'url' ],
+			],
 		] );
 	}
 
@@ -2500,6 +2508,42 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		setTimeout( nudgeStatusBar, 450 );
 	}
 
+	// ── Share-to-app ──────────────────────────────────────────────────────────
+	// Prefill from URL params, so a share (Android share_target → ?title/text/url)
+	// or an iOS Shortcut (?reply=/?bookmark=/?text= …) opens the right kind, filled.
+	function applyShareParams() {
+		var qs = new URLSearchParams( location.search );
+		var explicit = [ 'reply', 'like', 'repost', 'bookmark', 'rsvp' ];
+		var kind = '', url = '', text = '', i, v;
+		for ( i = 0; i < explicit.length; i++ ) {
+			v = qs.get( explicit[ i ] );
+			if ( v ) { kind = explicit[ i ]; url = v; break; }
+		}
+		if ( kind ) {
+			text = qs.get( 'text' ) || qs.get( 'note' ) || '';
+		} else {
+			var u = qs.get( 'url' ) || '';
+			text = qs.get( 'text' ) || qs.get( 'note' ) || qs.get( 'title' ) || '';
+			if ( u )        { kind = 'bookmark'; url = u; }   // a shared link → bookmark it
+			else if ( text ) { kind = 'note'; }                // shared text → a note
+		}
+		if ( ! kind ) { return false; }
+
+		clearDraft();
+		restoring = true;
+		switchType( kind );
+		var cfg = TYPE_CONFIG[ kind ];
+		urlInput.value     = cfg.urlProp   ? url  : '';
+		contentInput.value = cfg.hasContent ? text : '';
+		restoring = false;
+
+		updateSpecimen(); updatePostBtn(); updateCounter(); autoGrowContent(); syncPrompt();
+		saveDraft();
+		// Strip the params so a reload/relaunch doesn't re-prefill the same share.
+		if ( window.history && history.replaceState ) { history.replaceState( {}, '', location.pathname ); }
+		return true;
+	}
+
 	// ── Post button state ─────────────────────────────────────────────────────
 
 	function updatePostBtn() {
@@ -2754,6 +2798,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		queueCount = n;
 		if ( toggled ) { renderTicker(); }
 		else if ( n > 0 ) { setTk( 'tk-queue', n + ' to send' ); }
+		// Mirror the count on the home-screen app icon (iOS 16.4+, Android, desktop).
+		if ( 'setAppBadge' in navigator ) {
+			if ( n > 0 ) { navigator.setAppBadge( n ).catch( function () {} ); }
+			else if ( navigator.clearAppBadge ) { navigator.clearAppBadge().catch( function () {} ); }
+		}
 	}
 	function refreshQueueCount() {
 		if ( ! window.indexedDB ) { return Promise.resolve(); }
@@ -2800,6 +2849,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			}
 		} catch ( e ) {} finally { replaying = false; refreshQueueCount(); }
 	}
+
+	// Ask the browser not to evict the queue under storage pressure (best-effort).
+	if ( navigator.storage && navigator.storage.persist ) { navigator.storage.persist().catch( function () {} ); }
 
 	window.addEventListener( 'online', replayQueue );
 	replayQueue();           // flush anything stored from a previous, offline session
@@ -3038,6 +3090,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	try { hadDraft = !! localStorage.getItem( DRAFT_KEY ); } catch ( e ) {}
 	loadDraft();
 	if ( ! hadDraft ) { switchType( mruDefaultKind() ); }   // no draft → open on the last-used kind
+	applyShareParams();                                     // a share/Shortcut overrides the above
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();
