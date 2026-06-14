@@ -756,12 +756,20 @@ body::before {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	width: 56px;
+	width: 48px;
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
-	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* The row dissolves into a dithered PAPER edge rather than getting an ink
+	   stipple: a soft paper scrim (the depth) carrying a muted halftone screen (the
+	   style). Tuned softer than the vertical fades because this sits over solid
+	   tiles, not grainy paper — full-ink dots there read as noise, not shadow. The
+	   paper layer covers the tile toward the edge so it recedes; the muted dots keep
+	   it from being a flat patch. The mask ramps the whole thing to the edge. */
+	background-image:
+		radial-gradient(color-mix(in srgb, var(--ink) 36%, var(--paper)) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px)),
+		linear-gradient(var(--field), var(--field));
+	background-size: var(--grain-pitch) var(--grain-pitch), 100% 100%;
 }
 .type-fade-left {
 	left: 0;
