@@ -1539,6 +1539,23 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		themeColorEl.setAttribute( 'content', hex );
 	}
 
+	// iOS 26 samples the fixed band's background-color for the status-bar tint at
+	// render time only — a JS-driven --ink change (the OKLCH re-ink) doesn't
+	// re-trigger it, so on kind switch the bar keeps the stale sample or falls back
+	// to the body. In dark mode the body is near-black, so the bar goes black for
+	// every kind except the one sampled at load. Briefly dropping the band from the
+	// render forces iOS to re-sample the new accent when it's re-added. Gated to
+	// dark + real device: light mode already re-samples, and on the desktop mock the
+	// band is the visible faux chrome and must not flash.
+	var deviceChrome = document.querySelector( '.device-chrome' );
+	var isMockFrame  = window.matchMedia( '(min-width: 600px) and (min-height: 600px)' );
+	var prefersDark  = window.matchMedia( '(prefers-color-scheme: dark)' );
+	function nudgeStatusBar() {
+		if ( ! deviceChrome || isMockFrame.matches || ! prefersDark.matches ) { return; }
+		deviceChrome.style.display = 'none';
+		requestAnimationFrame( function () { deviceChrome.style.display = ''; } );
+	}
+
 	// ── Re-ink: a colour-picker-style hue rotation through OKLCH ──────────────────
 	// Drive --ink in JS so the kind switch sweeps through the hue wheel (teal →
 	// green → orange) rather than a flat RGB crossfade. Every element reads
@@ -1868,7 +1885,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		saveDraft();
 		updatePostBtn();
 		autoGrowContent();
-		setTimeout( updateThemeColor, 450 );
+		setTimeout( function () { updateThemeColor(); nudgeStatusBar(); }, 450 );
 	}
 
 	// ── Post button state ─────────────────────────────────────────────────────
