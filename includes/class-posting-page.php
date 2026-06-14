@@ -251,14 +251,15 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--pad-x: 20px;
 	--bw: 2px;                       /* the single border weight used throughout */
 
-	/* Grain / halftone — one shared grid. --grain-pitch is the dot gap (phase-locked
-	   in alignHalftone); --grain-dot / --ht-dot are the two dot radii (page speckle
-	   vs the bigger halftone stud). The gradient itself is written out per surface:
-	   a shared --grain-img token can't work here because its var(--grain-ink) would
-	   resolve at :root (undefined → empty) rather than at each surface. */
+	/* Grain / halftone — ONE shared, fixed dot grid (pitch). --grain-dot is the base
+	   page speckle; --ht-dot is the SAME grid's dot swollen for "shadow". A shadow
+	   isn't a second pattern — it's these dots, phase-locked (alignHalftone, x+y),
+	   rendered bigger + darker (var(--ink)) so they appear to swell in place. The
+	   gradient is written out per surface: a shared --grain-img token can't work
+	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
 	--grain-pitch: 3px;
 	--grain-dot:   0.8px;
-	--ht-dot:      0.8px;
+	--ht-dot:      1.5px;   /* the swollen dot — bigger than --grain-dot, same grid */
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -763,16 +764,12 @@ body::before {
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
-	/* The row dissolves into a dithered PAPER edge rather than getting an ink
-	   stipple: a soft paper scrim (the depth) carrying a muted halftone screen (the
-	   style). Tuned softer than the vertical fades because this sits over solid
-	   tiles, not grainy paper — full-ink dots there read as noise, not shadow. The
-	   paper layer covers the tile toward the edge so it recedes; the muted dots keep
-	   it from being a flat patch. The mask ramps the whole thing to the edge. */
-	background-image:
-		radial-gradient(color-mix(in srgb, var(--ink) 36%, var(--paper)) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px)),
-		linear-gradient(var(--field), var(--field));
-	background-size: var(--grain-pitch) var(--grain-pitch), 100% 100%;
+	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
+	   the base grid shows through the whole row, and these phase-locked bigger/darker
+	   dots (background-position set in alignHalftone) land concentric on it: the grid
+	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 .type-fade-left {
 	left: 0;
@@ -794,11 +791,12 @@ body::before {
 	justify-content: center;
 	gap: 5px;
 	padding: 6px 4px;
-	/* Inactive tiles sit back — muted border + ink — so the filled active kind
-	   and the compose area lead the eye, not the whole six-up grid. */
+	/* Inactive tiles are TRANSPARENT outlined boxes so the fixed dot grid runs
+	   straight through them — the swell-shadow then modulates the whole row as one
+	   continuous field. Only the active kind fills (solid --accent chip). */
 	border: var(--bw) solid var(--ink-30);
 	border-radius: var(--radius);
-	background: var(--field);
+	background: transparent;
 	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
 	font-size: var(--fs-10);
 	font-weight: 800;
@@ -2101,13 +2099,23 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		// each overlay's grid starts at its own (offset) box top, so cancel the
 		// difference mod the live pitch with background-position-y.
 		var pitch = parseFloat( getComputedStyle( root ).getPropertyValue( '--grain-pitch' ) ) || 4;
+		var cs = getComputedStyle( app );
 		var ar = app.getBoundingClientRect();
-		var grainTop = ar.top + ( parseFloat( getComputedStyle( app ).borderTopWidth ) || 0 );
+		var grainTop  = ar.top  + ( parseFloat( cs.borderTopWidth )  || 0 );
+		var grainLeft = ar.left + ( parseFloat( cs.borderLeftWidth ) || 0 );
 		var sr = composeScroll.getBoundingClientRect();
 		var h  = fadeBottom.offsetHeight || 120;
 		function modP( y ) { return ( ( y % pitch ) + pitch ) % pitch; }
 		fadeTop.style.setProperty( '--ht-top', ( -modP( sr.top - grainTop ) ).toFixed( 2 ) + 'px' );
 		fadeBottom.style.setProperty( '--ht-bottom', ( -modP( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
+		// The kind-row edge fades are narrow columns at arbitrary x, so lock BOTH axes
+		// to the app grain origin — the swell dots then sit concentric on the base
+		// grid showing through the transparent tiles (no second, drifting pattern).
+		[ typeFadeLeft, typeFadeRight ].forEach( function ( el ) {
+			if ( ! el ) { return; }
+			var r = el.getBoundingClientRect();
+			el.style.backgroundPosition = ( -modP( r.left - grainLeft ) ).toFixed( 2 ) + 'px ' + ( -modP( r.top - grainTop ) ).toFixed( 2 ) + 'px';
+		} );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 
