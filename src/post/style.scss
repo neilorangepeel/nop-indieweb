@@ -617,10 +617,6 @@ body::before {
 	place-items: center;
 	border: var(--bw) solid var(--ink);
 	border-radius: 50%;
-	/* Border + fill ride the --ink crossfade directly (in sync with the chrome).
-	   The glyph colour swaps to --on-accent on select, so ease it over the same
-	   400ms ≈ --fade window the ink sweep uses — otherwise it snaps in one frame. */
-	transition: color 0.4s ease-in-out;
 }
 .type-btn__icon svg {
 	/* Centred in the disc, with the name curving above and below it (a stamp).
@@ -654,24 +650,19 @@ body::before {
 	letter-spacing: 0.3px;
 	text-transform: uppercase;
 	fill: var(--ink);
-	/* Inactive fill rides the --ink crossfade; the active swap to --on-accent
-	   is a hard token change, so ease it over the same 400ms so it cross-fades
-	   with the chrome instead of flashing. */
-	transition: fill 0.4s ease-in-out;
 }
-/* Seal mid-dots at 3 and 9 o'clock, separating the top and bottom name arcs.
-   Inked + eased like the text so they ride the same colour swap. */
-.type-btn__seal {
-	fill: var(--ink);
-	transition: fill 0.4s ease-in-out;
-}
+/* Seal mid-dots at 3 and 9 o'clock, separating the top and bottom name arcs. */
+.type-btn__seal { fill: var(--ink); }
+/* Glyph, name and dots all swap to --on-accent on select; ease that one colour
+   change over the same 200ms as the pop + ink sweep so nothing flashes. */
+.type-btn__icon, .type-btn__arc text, .type-btn__seal { transition: color 0.2s, fill 0.2s; }
 .type-btn.is-active .type-btn__arc text,
 .type-btn.is-active .type-btn__seal { fill: var(--on-accent); }
 .type-btn.is-active .type-btn__icon {
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--line);
-	animation: type-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+	animation: type-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes type-pop {
 	0%   { transform: scale(1); }

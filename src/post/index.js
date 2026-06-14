@@ -95,7 +95,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var start = 0;
 		function step( now ) {
 			if ( ! start ) { start = now; }
-			var t = Math.min( ( now - start ) / 400, 1 );                       // ≈ --fade
+			var t = Math.min( ( now - start ) / 200, 1 );                       // matches the 200ms badge transitions
 			var e = t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2;     // easeInOut
 			var mix = 'color-mix(in oklch, ' + from + ', ' + to + ' ' + ( e * 100 ).toFixed( 2 ) + '%)';
 			app.style.setProperty( '--ink', mix );
