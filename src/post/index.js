@@ -4,6 +4,7 @@
  * this bundles the styles (and, next, the app script).
  */
 import './style.scss';
+import { ordinal, tkDur, parseShareParams } from './lib';
 
 ( function () {
 	'use strict';
@@ -155,10 +156,6 @@ import './style.scss';
 		if ( now < start )    { return 'Golden hour in ' + tkDur( start - now ); }
 		if ( now < tkSunset ) { return 'Golden hour now'; }
 		return 'Sunset ' + tkClock( tkSunset );
-	}
-	function tkDur( s ) {
-		var m = Math.round( s / 60 );
-		return m < 60 ? m + 'm' : Math.floor( m / 60 ) + 'h ' + ( m % 60 ) + 'm';
 	}
 	function tkClock( ts ) {
 		var d = new Date( ts * 1000 );
@@ -626,21 +623,8 @@ import './style.scss';
 	// Prefill from URL params, so a share (Android share_target → ?title/text/url)
 	// or an iOS Shortcut (?reply=/?bookmark=/?text= …) opens the right kind, filled.
 	function applyShareParams() {
-		var qs = new URLSearchParams( location.search );
-		var explicit = [ 'reply', 'like', 'repost', 'bookmark', 'rsvp' ];
-		var kind = '', url = '', text = '', i, v;
-		for ( i = 0; i < explicit.length; i++ ) {
-			v = qs.get( explicit[ i ] );
-			if ( v ) { kind = explicit[ i ]; url = v; break; }
-		}
-		if ( kind ) {
-			text = qs.get( 'text' ) || qs.get( 'note' ) || '';
-		} else {
-			var u = qs.get( 'url' ) || '';
-			text = qs.get( 'text' ) || qs.get( 'note' ) || qs.get( 'title' ) || '';
-			if ( u )        { kind = 'bookmark'; url = u; }   // a shared link → bookmark it
-			else if ( text ) { kind = 'note'; }                // shared text → a note
-		}
+		var s = parseShareParams( location.search );
+		var kind = s.kind, url = s.url, text = s.text;
 		if ( ! kind ) { return false; }
 
 		clearDraft();
@@ -1141,10 +1125,6 @@ import './style.scss';
 		} catch ( e ) { return 0; }
 	}
 
-	function ordinal( n ) {
-		var s = [ 'th', 'st', 'nd', 'rd' ], v = n % 100;
-		return n + ( s[ ( v - 20 ) % 10 ] || s[ v ] || s[ 0 ] );
-	}
 
 	// ── Toast ──────────────────────────────────────────────────────────────────
 
