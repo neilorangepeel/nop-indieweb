@@ -746,6 +746,33 @@ body::before {
 	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
+
+/* Horizontal twin of the vertical scroll-fades — the same ink-dot halftone screen
+   + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
+   screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
+   how far there is to scroll that way (updateTypeFades). */
+.type-grid-wrap { position: relative; flex-shrink: 0; }
+.type-fade {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 56px;
+	z-index: 3;
+	pointer-events: none;
+	opacity: 0;
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+}
+.type-fade-left {
+	left: 0;
+	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
+.type-fade-right {
+	right: 0;
+	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
 .type-btn {
 	flex: 0 0 72px;
 	aspect-ratio: 1;
@@ -1594,7 +1621,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			<div class="scroll-fade scroll-fade-top" aria-hidden="true"></div>
 			<p class="greeting" id="greeting"></p>
 
-			<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
+			<div class="type-grid-wrap">
+				<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
 				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
 					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,58.34l-32-32a8,8,0,0,0-11.32,0l-96,96A8,8,0,0,0,88,128v32a8,8,0,0,0,8,8h32a8,8,0,0,0,5.66-2.34l96-96A8,8,0,0,0,229.66,58.34ZM124.69,152H104V131.31l64-64L188.69,88ZM200,76.69,179.31,56,192,43.31,212.69,64ZM224,128v80a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32h80a8,8,0,0,1,0,16H48V208H208V128a8,8,0,0,1,16,0Z"/></svg></span>
 					<span><?php esc_html_e( 'Note', 'nop-indieweb' ); ?></span>
@@ -1623,7 +1651,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-29.66-85.66a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L124,164.69l42.34-42.35A8,8,0,0,1,178.34,122.34Z"/></svg></span>
 					<span><?php esc_html_e( 'RSVP', 'nop-indieweb' ); ?></span>
 				</button>
-			</div><!-- .type-grid -->
+				</div><!-- .type-grid -->
+				<div class="type-fade type-fade-left" aria-hidden="true"></div>
+				<div class="type-fade type-fade-right" aria-hidden="true"></div>
+			</div><!-- .type-grid-wrap -->
 
 			<div class="compose-fields">
 
@@ -2068,10 +2099,27 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		fadeBottom.style.setProperty( '--ht-bottom', ( -modP( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+
+	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
+	// vertical ones, so the left/right halftone edges fade in by how far there is
+	// left to scroll. The right one is visible on load (Repost/RSVP sit off-screen).
+	var typeBar       = document.getElementById( 'typeBar' );
+	var typeFadeLeft  = document.querySelector( '.type-fade-left' );
+	var typeFadeRight = document.querySelector( '.type-fade-right' );
+	function updateTypeFades() {
+		if ( ! typeBar ) { return; }
+		var RAMP  = 40;
+		var left  = typeBar.scrollLeft;
+		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
+		if ( typeFadeLeft )  { typeFadeLeft.style.opacity  = Math.min( Math.max( left, 0 ) / RAMP, 1 ); }
+		if ( typeFadeRight ) { typeFadeRight.style.opacity = Math.min( Math.max( right, 0 ) / RAMP, 1 ); }
+	}
+	typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
+
 	var resizeRAF;
 	window.addEventListener( 'resize', function () {
 		cancelAnimationFrame( resizeRAF );
-		resizeRAF = requestAnimationFrame( function () { updateScrollFades(); alignHalftone(); } );
+		resizeRAF = requestAnimationFrame( function () { updateScrollFades(); alignHalftone(); updateTypeFades(); } );
 	} );
 
 	var photoInput   = document.getElementById( 'photoInput' );
@@ -2679,6 +2727,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	alignHalftone();
 	requestAnimationFrame( alignHalftone );   // re-align once layout (safe-area) settles
 	if ( document.fonts && document.fonts.ready ) { document.fonts.ready.then( alignHalftone ); }  // and after the web font reflows the masthead
+	updateTypeFades();
+	requestAnimationFrame( updateTypeFades );  // after the MRU reorder + layout settles
 
 } )();
 </script>
