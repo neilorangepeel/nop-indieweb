@@ -227,11 +227,12 @@ html {
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 body {
-	/* Dynamic viewport units, NOT -webkit-fill-available — the old hack sized the
-	   page short in the standalone (Home Screen) app, leaving a grain-less strip
-	   at the bottom. 100dvh fills the real screen in both Safari and standalone. */
+	/* 100vh, NOT 100dvh: in the iOS standalone (Home Screen) app, dvh excludes the
+	   status bar — it reports 793 of an 852 screen — leaving a 59px grain-less
+	   strip at the bottom; 100vh reports the FULL screen and is correct from cold
+	   start (dvh also mis-initialises on iOS PWA launch). In a Safari tab 100vh is
+	   the large viewport, so content simply runs under the auto-hiding toolbar. */
 	height: 100vh;
-	height: 100dvh;
 	overflow: hidden;
 	background-color: var(--field);
 	/* Grain at the POSTER's 16% on phones: the app fills the screen there, so the
@@ -292,8 +293,7 @@ body::before {
 
 	display: flex;
 	flex-direction: column;
-	height: 100vh;
-	height: 100dvh;
+	height: 100vh;             /* full screen; 100dvh runs 59px short in the iOS standalone app */
 	overflow: hidden;
 	position: relative;
 	z-index: 1;                 /* above the fixed grain backstop (body::before) */
@@ -2274,49 +2274,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	requestAnimationFrame( alignHalftone );   // re-align once layout (safe-area) settles
 	if ( document.fonts && document.fonts.ready ) { document.fonts.ready.then( alignHalftone ); }  // and after the web font reflows the masthead
 
-} )();
-</script>
-
-<!-- TEMP DEBUG — remove after diagnosing the iOS bottom margin -->
-<div id="nopDbg" style="position:fixed;top:140px;left:8px;z-index:99999;background:rgba(0,0,0,0.85);color:#39ff14;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px 12px;white-space:pre;pointer-events:none;border-radius:6px;max-width:92vw"></div>
-<script>
-(function () {
-	var box = document.getElementById( 'nopDbg' );
-	function probe( unit ) {
-		var d = document.createElement( 'div' );
-		d.style.cssText = 'position:fixed;top:0;left:-9999px;width:1px;height:100' + unit;
-		document.body.appendChild( d );
-		var h = d.offsetHeight; d.parentNode.removeChild( d ); return h;
-	}
-	function cssVar( n ) { return getComputedStyle( document.documentElement ).getPropertyValue( n ).trim() || '0'; }
-	function read() {
-		var app = document.getElementById( 'app' );
-		var r = app ? app.getBoundingClientRect() : { height: 0, bottom: 0 };
-		function dm( m ) { return window.matchMedia( '(display-mode: ' + m + ')' ).matches; }
-		box.textContent = [
-			'nav.standalone: ' + ( window.navigator.standalone === true ),
-			'dm-standalone:  ' + dm( 'standalone' ),
-			'dm-fullscreen:  ' + dm( 'fullscreen' ),
-			'dm-browser:     ' + dm( 'browser' ),
-			'screen.h:   ' + screen.height,
-			'innerH:     ' + window.innerHeight,
-			'visualVP.h: ' + ( window.visualViewport ? Math.round( window.visualViewport.height ) : '-' ),
-			'docEl.cliH: ' + document.documentElement.clientHeight,
-			'100vh:      ' + probe( 'vh' ),
-			'100dvh:     ' + probe( 'dvh' ),
-			'100svh:     ' + probe( 'svh' ),
-			'100lvh:     ' + probe( 'lvh' ),
-			'safe-top:   ' + cssVar( '--safe-top' ),
-			'safe-bot:   ' + cssVar( '--safe-bottom' ),
-			'app.height: ' + Math.round( r.height ),
-			'app.bottom: ' + Math.round( r.bottom ),
-			'body.offH:  ' + document.body.offsetHeight
-		].join( '\n' );
-	}
-	read();
-	window.addEventListener( 'resize', read );
-	if ( window.visualViewport ) { window.visualViewport.addEventListener( 'resize', read ); }
-	setTimeout( read, 600 ); setTimeout( read, 1600 );
 } )();
 </script>
 </body>
