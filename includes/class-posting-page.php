@@ -111,6 +111,24 @@ class Posting_Page {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Branch the two iOS use cases BEFORE first layout (head script, runs early):
+   • Standalone (Home Screen app) — keep viewport-fit=cover for full-bleed; mark
+     <html class="standalone"> so CSS uses 100vh (the full screen; dvh is short
+     and mis-initialises in a PWA) and the real safe-area insets.
+   • Safari tab — DROP viewport-fit=cover so content stays inside the browser
+     chrome (no logo under the status bar, no Post button under the toolbar), and
+     CSS uses 100dvh (the visible viewport). navigator.standalone is the reliable
+     signal on iOS (display-mode:standalone reports false even in a real PWA). */
+( function () {
+	if ( window.navigator.standalone ) {
+		document.documentElement.classList.add( 'standalone' );
+	} else {
+		var v = document.querySelector( 'meta[name="viewport"]' );
+		if ( v ) { v.setAttribute( 'content', 'width=device-width, initial-scale=1' ); }
+	}
+} )();
+</script>
 <meta name="theme-color" id="themeColor" content="#00787F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -227,12 +245,11 @@ html {
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 body {
-	/* 100vh, NOT 100dvh: in the iOS standalone (Home Screen) app, dvh excludes the
-	   status bar — it reports 793 of an 852 screen — leaving a 59px grain-less
-	   strip at the bottom; 100vh reports the FULL screen and is correct from cold
-	   start (dvh also mis-initialises on iOS PWA launch). In a Safari tab 100vh is
-	   the large viewport, so content simply runs under the auto-hiding toolbar. */
-	height: 100vh;
+	/* Per-context height (see the head script). Default = Safari TAB: 100dvh, the
+	   visible viewport between the browser chrome, so nothing runs under the status
+	   bar / toolbar. .standalone (Home Screen app) overrides to 100vh — the full
+	   852 screen (dvh there is 59px short and mis-initialises on PWA launch). */
+	height: 100dvh;
 	overflow: hidden;
 	background-color: var(--field);
 	/* Grain at the POSTER's 16% on phones: the app fills the screen there, so the
@@ -246,6 +263,8 @@ body {
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
 }
+/* Standalone (Home Screen app): full screen via 100vh; tab keeps 100dvh above. */
+.standalone body, .standalone .app { height: 100vh; }
 /* Grain that reaches the iOS safe areas. iOS paints the root/body background
    COLOUR into the home-indicator / overscroll zones but NOT the background-image,
    so a grain-less strip survives there however we size body/.app. A real fixed
@@ -293,7 +312,7 @@ body::before {
 
 	display: flex;
 	flex-direction: column;
-	height: 100vh;             /* full screen; 100dvh runs 59px short in the iOS standalone app */
+	height: 100dvh;            /* tab: visible viewport; .standalone overrides to 100vh below */
 	overflow: hidden;
 	position: relative;
 	z-index: 1;                 /* above the fixed grain backstop (body::before) */
