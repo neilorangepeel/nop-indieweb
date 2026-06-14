@@ -259,9 +259,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
 	--grain-pitch: 3px;
 	--grain-dot:   0.8px;
-	--ht-dot:      1.0px;   /* shadow dot — the SAME accent dot as the grain, scaled up
-	                          a touch from its centre (concentric, stays on the grid) to
-	                          read as depth without filling to a dense block. Density knob. */
+	--ht-dot:      0.8px;   /* shadow dot — same size as --grain-dot, just full --ink:
+	                          the identical grid dot, darkened in place by the reveal
+	                          mask (no swell). Bump it for a swelled shadow if wanted. */
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -779,7 +779,7 @@ body::before {
 	   the base grid shows through the whole row, and these phase-locked bigger/darker
 	   dots (background-position set in alignHalftone) land concentric on it: the grid
 	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
-	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.5px));
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 /* The reveal mask (a solid region that grows from the edge + a soft trailing edge)
@@ -890,7 +890,7 @@ body::before {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.5px));
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
