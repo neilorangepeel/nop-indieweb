@@ -2292,8 +2292,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	function read() {
 		var app = document.getElementById( 'app' );
 		var r = app ? app.getBoundingClientRect() : { height: 0, bottom: 0 };
+		function dm( m ) { return window.matchMedia( '(display-mode: ' + m + ')' ).matches; }
 		box.textContent = [
-			'standalone: ' + ( window.navigator.standalone === true ),
+			'nav.standalone: ' + ( window.navigator.standalone === true ),
+			'dm-standalone:  ' + dm( 'standalone' ),
+			'dm-fullscreen:  ' + dm( 'fullscreen' ),
+			'dm-browser:     ' + dm( 'browser' ),
 			'screen.h:   ' + screen.height,
 			'innerH:     ' + window.innerHeight,
 			'visualVP.h: ' + ( window.visualViewport ? Math.round( window.visualViewport.height ) : '-' ),
