@@ -357,29 +357,30 @@ body::before {
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
-	/* Desktop mock: show the band, anchored inside the floating phone. */
-	.app .device-chrome { display: flex; position: absolute; }
+	/* Desktop mock: full height, anchored inside the floating phone. */
+	.app .device-chrome { height: var(--safe-top); position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
 
 /* ── iOS chrome band ───────────────────────────────────────────────────────
-   The accent band that fills the status-bar safe-area zone. Shown ONLY where it
-   sits BEHIND the real (or faux) status bar:
-   • Standalone app (.standalone) — viewport-fit=cover runs the app up under the
-     status bar, so the band fills that safe-top zone in the accent; iOS draws the
-     real clock/battery on top.
-   • Desktop mock — the faux time / island / icons.
-   In a Safari TAB the content sits BELOW the status bar (no cover), so the band
-   would render as a redundant on-page strip butting the logo — hidden there
-   (display:none default). The tab's status-bar tint comes from theme-color, which
-   still re-tints per kind. */
+   The accent band iOS Safari samples to tint the status bar (it reads the
+   background-color of a fixed element near the top edge; theme-color is ignored
+   in iOS 26, so this element is the ONLY way to colour the bar). Its HEIGHT
+   differs by context:
+   • Standalone app (.standalone) — full safe-top: viewport-fit=cover runs the app
+     under the status bar, so the band fills that zone behind the real clock.
+   • Desktop mock — full safe-top: the faux time / island / icons.
+   • Safari TAB (default) — content sits BELOW the status bar (no cover), so a
+     full band would be a tall on-page strip butting the logo. Shrink it to a thin
+     sampling SLIVER at the very top edge: still tall enough for iOS to read the
+     colour, but separated from the logo by the masthead's safe-top padding. */
 .device-chrome {
-	display: none;
+	display: flex;
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
-	height: var(--safe-top, 54px);
+	height: 5px;
 	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
@@ -403,8 +404,8 @@ body::before {
 		color: #f4f0e7;
 	}
 }
-/* Standalone Home Screen app: show the band (it fills behind the status bar). */
-.standalone .device-chrome { display: flex; }
+/* Standalone Home Screen app: full height — the band fills behind the status bar. */
+.standalone .device-chrome { height: var(--safe-top, 54px); }
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
