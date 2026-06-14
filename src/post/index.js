@@ -593,11 +593,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		app.dataset.type = type;
 		animateInk( prevInk, INK[ type ] );
 
+		var activeBtn = null;
 		document.querySelectorAll( '.type-btn' ).forEach( function (b) {
 			var active = b.dataset.type === type;
 			b.classList.toggle( 'is-active', active );
 			b.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
+			if ( active ) { activeBtn = b; }
 		} );
+		// Keep the whole active badge — including its caption, which can be wider
+		// than the disc — clear of the scroll edges (no-op when already visible).
+		if ( activeBtn && activeBtn.scrollIntoView ) {
+			activeBtn.scrollIntoView( { block: 'nearest', inline: 'nearest' } );
+		}
 
 		fieldUrl.hidden     = ! cfg.urlProp;
 		fieldRsvp.hidden    = ! cfg.hasRsvp;

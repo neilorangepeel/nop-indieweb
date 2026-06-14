@@ -540,22 +540,6 @@ body::before {
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
-/* Leading label for the kind strip — sits in the first slot (a badge's footprint),
-   a quiet caption naming the row. Scrolls with the badges. */
-.type-grid__label {
-	flex: 0 0 auto;
-	align-self: center;
-	scroll-snap-align: start;   /* the leftmost snap point, so the strip rests showing it */
-	width: 46px;
-	margin-right: 6px;
-	font-family: var(--readout);
-	font-size: var(--fs-12);
-	font-weight: 600;
-	line-height: 1.15;
-	color: var(--ink);
-	opacity: 0.55;
-}
-
 /* Horizontal twin of the vertical scroll-fades — the same ink-dot halftone screen
    + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
    screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
@@ -590,44 +574,75 @@ body::before {
 	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 }
+/* A kind is one 72px disc that holds the icon and the name in the same cell,
+   stacked. At rest the icon shows; on hover/active the icon dims back and the
+   name comes forward over it — so the label lives inside the badge, never
+   spilling the row or adding height. */
 .type-btn {
 	flex: 0 0 72px;
-	aspect-ratio: 1;
+	width: 72px;
+	height: 72px;
 	scroll-snap-align: start;
 	display: grid;
 	place-items: center;
-	/* Each kind is a scout-badge token: an ink-ring circle with the icon centred,
-	   transparent so the fixed dot grid runs straight through it. Only the active
-	   kind fills (solid --accent disc, icon knocked out). */
-	border: var(--bw) solid var(--ink);
-	border-radius: 50%;
+	padding: 0;
+	border: 0;
 	background: transparent;
 	color: var(--ink);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
+}
+/* The badge disc: an ink-ring circle, transparent so the fixed dot grid runs
+   straight through it. Only the active kind fills (solid --accent disc). It
+   carries the press/pop, not the button. */
+.type-btn__icon {
+	grid-area: 1 / 1;
+	width: 72px;
+	height: 72px;
+	display: grid;
+	place-items: center;
+	border: var(--bw) solid var(--ink);
+	border-radius: 50%;
 	/* No own colour transition: the badge ink rides the --ink crossfade directly
 	   (in sync with the chrome). Selection just snaps + pops. */
 }
-/* Icon-only — the kind name stays for assistive tech but is visually hidden. */
-.type-btn > span:not(.type-btn__icon) {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	overflow: hidden;
-	clip: rect(0 0 0 0);
-	white-space: nowrap;
-}
-.type-btn__icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	/* Scaled with the 72px circle to hold the icon:ring:whitespace balance. */
+.type-btn__icon svg {
+	/* Scaled within the 72px disc to hold the icon:ring:whitespace balance. */
 	width: 30px;
 	height: 30px;
+	transition: opacity 0.18s ease;
 }
-.type-btn__icon svg { width: 100%; height: 100%; }
+/* The name, overlaid in the same cell as the icon. Hidden until hover/active,
+   when it fades up as the icon dims behind it. Condensed (the masthead board's
+   label face) keeps even "Bookmark" inside the disc. */
+.type-btn__label {
+	grid-area: 1 / 1;
+	z-index: 1;
+	max-width: 66px;
+	font-family: var(--display);
+	font-size: var(--fs-12);
+	font-weight: 700;
+	line-height: 1.04;
+	letter-spacing: 0;
+	text-align: center;
+	color: var(--ink);
+	opacity: 0;
+	transition: opacity 0.18s ease;
+	pointer-events: none;
+}
 
-.type-btn.is-active {
+/* Hover preview (pointer devices only): name forward, icon dimmed back. */
+@media (hover: hover) {
+	.type-btn:hover .type-btn__icon svg { opacity: 0.15; }
+	.type-btn:hover .type-btn__label   { opacity: 1; }
+}
+
+.type-btn.is-active .type-btn__icon svg { opacity: 0.15; }
+.type-btn.is-active .type-btn__label {
+	opacity: 1;
+	color: var(--on-accent);
+}
+.type-btn.is-active .type-btn__icon {
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--line);
@@ -1353,7 +1368,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .toast--error { border-color: var(--red); color: var(--red); }
 
 @media (prefers-reduced-motion: reduce) {
-	.type-btn.is-active,
+	.type-btn.is-active .type-btn__icon,
 	.success-banner { animation: none; }
 	.burst { display: none; }
 	.btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
