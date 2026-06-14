@@ -600,10 +600,21 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			b.setAttribute( 'aria-pressed', active ? 'true' : 'false' );
 			if ( active ) { activeBtn = b; }
 		} );
-		// Keep the whole active badge — including its caption, which can be wider
-		// than the disc — clear of the scroll edges (no-op when already visible).
-		if ( activeBtn && activeBtn.scrollIntoView ) {
-			activeBtn.scrollIntoView( { block: 'nearest', inline: 'nearest' } );
+		// Only nudge the strip when the active badge is actually clipped at a scroll
+		// edge, and only by the minimum to clear it. scrollIntoView('nearest') with
+		// the 120px scroll-padding treated every near-edge (but fully visible) badge
+		// as off-screen and yanked the strip sideways on each pick — this keeps a
+		// visible badge put, so selecting no longer shifts the row.
+		if ( activeBtn ) {
+			var grid = activeBtn.parentElement;
+			var br = activeBtn.getBoundingClientRect();
+			var gr = grid.getBoundingClientRect();
+			var edge = 8;  // just clear the container edge; fades stay a soft hint
+			if ( br.left < gr.left + edge ) {
+				grid.scrollBy( { left: br.left - gr.left - edge, behavior: 'smooth' } );
+			} else if ( br.right > gr.right - edge ) {
+				grid.scrollBy( { left: br.right - gr.right + edge, behavior: 'smooth' } );
+			}
 		}
 
 		fieldUrl.hidden     = ! cfg.urlProp;

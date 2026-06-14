@@ -125,6 +125,10 @@ html {
 	   default-`visible` html still rubber-bands the whole page sideways — so lock
 	   the root too (this is the "html/body are overflow:hidden" the file assumes). */
 	overflow: hidden;
+	/* Belt to the braces: even clipped, iOS can rubber-band the root sideways from
+	   a touch that begins on an off-screen-clipped layer (the ticker marquee). Kill
+	   the horizontal overscroll outright. */
+	overscroll-behavior-x: none;
 	/* The ROOT carries the ACCENT, on purpose. In a Safari tab iOS 26 tints the
 	   status bar from the BODY background-color and falls back to HTML when body
 	   has none — so the transparent body below lets this accent become the bar
@@ -143,6 +147,7 @@ body {
 	   852 screen (dvh there is 59px short and mis-initialises on PWA launch). */
 	height: 100dvh;
 	overflow: hidden;
+	overscroll-behavior-x: none;
 	/* NO background-color on phones — transparent so iOS falls back to the html
 	   accent for the status bar (see html). The visible off-white page is the
 	   fixed ::before backstop (16% grain) + the app on top. The desktop frame
@@ -538,10 +543,11 @@ body::before {
 	/* Tiles settle to the gutter edge when the row is flicked — a native, camera-dial
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
-	/* Keep a freshly-activated badge clear of the 120px halftone scroll-fades
-	   when scrollIntoView pulls it toward an edge (else the active disc lands
-	   half-under the fade). */
-	scroll-padding-inline: 120px;
+	/* Snap settles a flicked badge to the gutter, matching the resting layout.
+	   (Selection scrolling is handled in JS — switchType only nudges a badge that's
+	   actually clipped, so picking a visible kind never shifts the row. A large
+	   scroll-padding here would fight that nudge by re-snapping the badge inward.) */
+	scroll-padding-inline: var(--pad-x);
 	/* Only a bottom rule here — the masthead draws the shared line above the strip,
 	   so the header's border and the strip's top sit as one line (not two). */
 	border-bottom: var(--bw) solid var(--line);
@@ -611,14 +617,16 @@ body::before {
 	place-items: center;
 	border: var(--bw) solid var(--ink);
 	border-radius: 50%;
-	/* No own colour transition: the badge ink rides the --ink crossfade directly
-	   (in sync with the chrome). Selection just snaps + pops. */
+	/* Border + fill ride the --ink crossfade directly (in sync with the chrome).
+	   The glyph colour swaps to --on-accent on select, so ease it over the same
+	   400ms ≈ --fade window the ink sweep uses — otherwise it snaps in one frame. */
+	transition: color 0.4s ease-in-out;
 }
 .type-btn__icon svg {
 	/* Centred in the disc, with the name curving above and below it (a stamp).
 	   Sized down so the two arcs of text clear it. */
-	width: 24px;
-	height: 24px;
+	width: 28px;
+	height: 28px;
 }
 /* Visually hidden — carries the accessible name + i18n; the visible name is the
    curved arc (.type-btn__arc), which is aria-hidden. */
@@ -646,8 +654,19 @@ body::before {
 	letter-spacing: 0.3px;
 	text-transform: uppercase;
 	fill: var(--ink);
+	/* Inactive fill rides the --ink crossfade; the active swap to --on-accent
+	   is a hard token change, so ease it over the same 400ms so it cross-fades
+	   with the chrome instead of flashing. */
+	transition: fill 0.4s ease-in-out;
 }
-.type-btn.is-active .type-btn__arc text { fill: var(--on-accent); }
+/* Seal mid-dots at 3 and 9 o'clock, separating the top and bottom name arcs.
+   Inked + eased like the text so they ride the same colour swap. */
+.type-btn__seal {
+	fill: var(--ink);
+	transition: fill 0.4s ease-in-out;
+}
+.type-btn.is-active .type-btn__arc text,
+.type-btn.is-active .type-btn__seal { fill: var(--on-accent); }
 .type-btn.is-active .type-btn__icon {
 	background: var(--accent);
 	color: var(--on-accent);
