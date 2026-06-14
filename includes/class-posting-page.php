@@ -259,9 +259,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
 	--grain-pitch: 3px;
 	--grain-dot:   0.8px;
-	--ht-dot:      1.3px;   /* shadow dot — the SAME accent dot as the grain, scaled up
-	                          from its centre (concentric, stays on the grid) to read as
-	                          depth. Tune this to set the shadow's density. */
+	--ht-dot:      1.0px;   /* shadow dot — the SAME accent dot as the grain, scaled up
+	                          a touch from its centre (concentric, stays on the grid) to
+	                          read as depth without filling to a dense block. Density knob. */
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -782,16 +782,11 @@ body::before {
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.5px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
-.type-fade-left {
-	left: 0;
-	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-}
-.type-fade-right {
-	right: 0;
-	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-}
+/* The reveal mask (a solid region that grows from the edge + a soft trailing edge)
+   is set in JS by scroll distance — so the opaque swell dots are uncovered in place
+   rather than cross-faded, which avoids the base dots haloing through. */
+.type-fade-left  { left: 0; }
+.type-fade-right { right: 0; }
 .type-btn {
 	flex: 0 0 72px;
 	aspect-ratio: 1;
@@ -903,19 +898,10 @@ body::before {
 	   overlay / iOS — so this matches size, not phase.) */
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
-.scroll-fade-top {
-	top: 0;
-	margin-bottom: -120px;
-	/* background-position is set in JS (alignHalftone) to the viewport master grid. */
-	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-}
-.scroll-fade-bottom {
-	bottom: 0;
-	margin-top: -120px;
-	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-}
+/* Mask + background-position both set in JS: the grid-locked swell dots are
+   uncovered in place by a growing mask (not opacity-faded), so no halo. */
+.scroll-fade-top    { top: 0;    margin-bottom: -120px; }
+.scroll-fade-bottom { bottom: 0; margin-top: -120px; }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. The
@@ -2090,15 +2076,24 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var composeScroll = document.querySelector( '.compose-scroll' );
 	var fadeTop       = document.querySelector( '.scroll-fade-top' );
 	var fadeBottom    = document.querySelector( '.scroll-fade-bottom' );
+	// Reveal a fade by GROWING a mask from its edge (not by fading opacity): a solid
+	// region (fully uncovers the opaque swell dots, which cover the base dots beneath
+	// → no halo) plus a soft trailing edge. frac 0 → fully masked (hidden).
+	function setFade( el, dir, frac ) {
+		if ( ! el ) { return; }
+		var r = Math.min( Math.max( frac, 0 ), 1 );
+		var m = 'linear-gradient(' + dir + ', #000 0%, #000 ' + ( r * 78 ).toFixed( 1 ) + '%, transparent ' + ( r * 100 ).toFixed( 1 ) + '%)';
+		el.style.opacity = '1';
+		el.style.webkitMaskImage = m;
+		el.style.maskImage = m;
+	}
 	function updateScrollFades() {
 		if ( ! composeScroll ) return;
-		// Opacity ramps with scroll distance (0 → 1 over RAMP px) so the halftone
-		// fades in by position rather than popping in at a threshold.
 		var RAMP  = 56;
 		var top   = composeScroll.scrollTop;
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
-		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
-		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
+		setFade( fadeTop, 'to bottom', top / RAMP );
+		setFade( fadeBottom, 'to top', below / RAMP );
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -2154,8 +2149,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var RAMP  = 40;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
-		if ( typeFadeLeft )  { typeFadeLeft.style.opacity  = Math.min( Math.max( left, 0 ) / RAMP, 1 ); }
-		if ( typeFadeRight ) { typeFadeRight.style.opacity = Math.min( Math.max( right, 0 ) / RAMP, 1 ); }
+		setFade( typeFadeLeft, 'to right', left / RAMP );
+		setFade( typeFadeRight, 'to left', right / RAMP );
 	}
 	typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
 
