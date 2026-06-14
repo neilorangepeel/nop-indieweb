@@ -414,10 +414,16 @@ body::before {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		/* The lighter off-white field the floating poster sits on (poster stays 16%).
-		   Restored here because body is transparent on phones (status-bar trick). */
+		/* The document's own dot field the floating phone sits on — post-hued (var(--ink)
+		   via :root) and part of the ONE master grid: body has no margin so its grain
+		   sits at the viewport origin (0,0), and every other dot layer (phone interior,
+		   shadows) is JS-anchored to that same origin (alignHalftone), so the surround
+		   dots register exactly with the phone's. Lighter than the 16% poster so the
+		   phone still reads as denser. Restored here because body is transparent on
+		   phones (status-bar trick). */
 		background-color: var(--field);
-		background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		background-size: var(--grain-pitch) var(--grain-pitch);
 	}
 	.app {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
@@ -448,6 +454,9 @@ body::before {
 		background-color: var(--field);
 		background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 		background-size: var(--grain-pitch) var(--grain-pitch);
+		/* Anchored to the viewport master grid (set in alignHalftone) so the card's
+		   dots register exactly with the surround dots and the shadows. */
+		background-position: var(--cardpos, 0 0);
 		border-top-left-radius: var(--screen-radius);
 		border-top-right-radius: var(--screen-radius);
 	}
@@ -895,16 +904,13 @@ body::before {
 .scroll-fade-top {
 	top: 0;
 	margin-bottom: -120px;
-	/* phase-locked to the page-grain grid in JS (alignHalftone) so the halftone
-	   studs land concentric on the grain dots — same grid, bigger dot. */
-	background-position: 0 var(--ht-top, 0);
+	/* background-position is set in JS (alignHalftone) to the viewport master grid. */
 	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
 .scroll-fade-bottom {
 	bottom: 0;
 	margin-top: -120px;
-	background-position: 0 var(--ht-bottom, 0);
 	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 }
@@ -2092,32 +2098,48 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
 		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
 	}
-	function alignHalftone() {
-		if ( ! composeScroll || ! fadeTop || ! fadeBottom ) { return; }
-		// Phase-lock the halftone's dot grid to the page-grain grid so the studs land
-		// concentric on the grain dots. The grain origin is .app's padding-box top;
-		// each overlay's grid starts at its own (offset) box top, so cancel the
-		// difference mod the live pitch with background-position-y.
-		var pitch = parseFloat( getComputedStyle( root ).getPropertyValue( '--grain-pitch' ) ) || 4;
-		var cs = getComputedStyle( app );
-		var ar = app.getBoundingClientRect();
-		var grainTop  = ar.top  + ( parseFloat( cs.borderTopWidth )  || 0 );
-		var grainLeft = ar.left + ( parseFloat( cs.borderLeftWidth ) || 0 );
-		var sr = composeScroll.getBoundingClientRect();
-		var h  = fadeBottom.offsetHeight || 120;
-		function modP( y ) { return ( ( y % pitch ) + pitch ) % pitch; }
-		fadeTop.style.setProperty( '--ht-top', ( -modP( sr.top - grainTop ) ).toFixed( 2 ) + 'px' );
-		fadeBottom.style.setProperty( '--ht-bottom', ( -modP( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
-		// The kind-row edge fades are narrow columns at arbitrary x, so lock BOTH axes
-		// to the app grain origin — the swell dots then sit concentric on the base
-		// grid showing through the transparent tiles (no second, drifting pattern).
-		[ typeFadeLeft, typeFadeRight ].forEach( function ( el ) {
-			if ( ! el ) { return; }
-			var r = el.getBoundingClientRect();
-			el.style.backgroundPosition = ( -modP( r.left - grainLeft ) ).toFixed( 2 ) + 'px ' + ( -modP( r.top - grainTop ) ).toFixed( 2 ) + 'px';
-		} );
+	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
+	// so the surround, the phone interior and the swell-shadows all share the same
+	// fixed grid and register exactly — the dots never move, scrolling just slides
+	// content over them and the masks/opacity reveal the shadow dots in place.
+	// background-position is per-box, so cancel each box's viewport offset mod pitch.
+	function gridPitch() { return parseFloat( getComputedStyle( root ).getPropertyValue( '--grain-pitch' ) ) || 4; }
+	function lockXY( left, top, pitch ) {
+		function m( v ) { return ( ( v % pitch ) + pitch ) % pitch; }
+		return ( -m( left ) ).toFixed( 2 ) + 'px ' + ( -m( top ) ).toFixed( 2 ) + 'px';
 	}
-	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+	function lockEl( el, pitch ) {
+		if ( ! el ) { return; }
+		var r = el.getBoundingClientRect();
+		el.style.backgroundPosition = lockXY( r.left, r.top, pitch );
+	}
+	// The kind-row edge fades scroll vertically with the strip, so re-anchor them on
+	// every compose scroll to keep their dots pinned to the fixed grid.
+	function lockTypeFades() {
+		var pitch = gridPitch();
+		lockEl( typeFadeLeft, pitch );
+		lockEl( typeFadeRight, pitch );
+	}
+	function alignHalftone() {
+		if ( ! composeScroll ) { return; }
+		var pitch = gridPitch();
+		// Phone interior grain — mobile: .app carries it; desktop: the .app::before
+		// card, fed a CSS var (a pseudo-element has no JS box of its own).
+		lockEl( app, pitch );
+		var ar = app.getBoundingClientRect();
+		var cs = getComputedStyle( app );
+		var bl = parseFloat( cs.borderLeftWidth ) || 0;
+		var bt = parseFloat( cs.borderTopWidth )  || 0;
+		var st = parseFloat( cs.getPropertyValue( '--safe-top' ) ) || 0;
+		app.style.setProperty( '--cardpos', lockXY( ar.left + bl, ar.top + bt + st, pitch ) );
+		// Vertical scroll-fades — lock to the composeScroll edges (stable while stuck).
+		var sr = composeScroll.getBoundingClientRect();
+		var h  = ( fadeBottom && fadeBottom.offsetHeight ) || 120;
+		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
+		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - h, pitch ); }
+		lockTypeFades();
+	}
+	composeScroll.addEventListener( 'scroll', function () { updateScrollFades(); lockTypeFades(); }, { passive: true } );
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
