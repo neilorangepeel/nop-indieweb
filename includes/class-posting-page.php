@@ -1051,7 +1051,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	right: 0;
 	bottom: 0;
 	z-index: 4;
-	padding: 14px 16px;
+	/* Side inset matches the iOS Liquid Glass toolbar so the button reads as a
+	   matching pill stacked above it in the browser; bottom padding lifts it clear
+	   of the home-indicator zone. */
+	padding: 14px 32px;
 	padding-bottom: calc(var(--safe-bottom) + 14px);
 	background: transparent;
 	pointer-events: none;
@@ -1081,12 +1084,17 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    shadow (the band that used to carry the section's depth is gone); it settles
    onto a tighter shadow on press. */
 .btn-primary {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
 	background: var(--accent);
 	color: var(--on-accent);
 	border-color: var(--accent);
 	box-shadow: 0 6px 16px rgba(0,0,0,0.18);
 	transition: transform 0.08s, box-shadow 0.18s ease, opacity 0.18s ease;
 }
+.btn-primary__icon { flex-shrink: 0; }
 .btn-primary:active {
 	transform: translate(0, 2px);
 	box-shadow: 0 3px 9px rgba(0,0,0,0.16);
@@ -1477,6 +1485,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 			<div class="bottom-bar">
 				<button class="btn btn-primary" id="postBtn" disabled type="button">
+					<svg class="btn-primary__icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/></svg>
 					<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
 				</button>
 			</div>
