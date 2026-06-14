@@ -375,6 +375,17 @@ body::before {
    it doesn't re-ink or pop into view. Removed on the next frame. */
 .app.no-anim, .app.no-anim * { transition: none !important; animation: none !important; }
 
+/* Progressive enhancement: where corner-shape is supported (Chromium today; Safari
+   once WebKit ships it — likely, given Apple's own squircle icons), upgrade the
+   rounded corners from circular arcs to Apple-style squircles (a superellipse), so
+   they match the device curve more truthfully. corner-shape only affects corners
+   that already have a radius, and is ignored where unsupported (falls back to the
+   border-radius above), so it's harmless on iOS Safari now — purely a future upgrade
+   that activates itself the day Safari adds it. */
+@supports (corner-shape: squircle) {
+	.app, body::before, .app::before { corner-shape: squircle; }
+}
+
 /* On phones the paper runs full-bleed — no side frame. Edge borders sit in
    the zone the rounded display corners and sub-pixel rounding clip, so they
    render ragged; the horizontal rules carry the structure instead. The full
