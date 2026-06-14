@@ -133,6 +133,22 @@ class Posting_Page {
 	 * page so the nonce stays fresh online; cache-first for the static fonts; the
 	 * Micropub/now REST routes are never cached.
 	 */
+	/**
+	 * Cache-busting version for the built /post assets. The webpack asset file
+	 * hashes only the JS entry, so a style-only rebuild leaves it unchanged —
+	 * fold in the extracted CSS so any rebuild busts the ?ver (and with it the
+	 * service-worker shell and the browser's HTTP cache).
+	 */
+	private function asset_version(): string {
+		$asset = file_exists( NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) ? ( include NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) : [];
+		$ver   = is_array( $asset ) && ! empty( $asset['version'] ) ? $asset['version'] : '1';
+		$css   = NOP_INDIEWEB_DIR . 'build/post/style-index.css';
+		if ( file_exists( $css ) ) {
+			$ver = substr( md5( $ver . md5_file( $css ) ), 0, 20 );
+		}
+		return $ver;
+	}
+
 	private function render_service_worker(): void {
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/javascript; charset=utf-8' );
@@ -141,8 +157,7 @@ class Posting_Page {
 		$font_dir = get_theme_file_uri( 'assets/fonts/brandon-text' );
 		$cond_dir = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
 		$page     = home_url( '/post' );
-		$sw_asset = file_exists( NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) ? ( include NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) : [];
-		$sw_ver   = is_array( $sw_asset ) && ! empty( $sw_asset['version'] ) ? $sw_asset['version'] : '1';
+		$sw_ver   = $this->asset_version();
 		$shell    = [
 			$page,
 			NOP_INDIEWEB_URL . 'build/post/style-index.css?ver=' . rawurlencode( $sw_ver ),
@@ -156,7 +171,7 @@ class Posting_Page {
 		];
 		?>
 'use strict';
-var CACHE = 'nop-post-v3';
+var CACHE = 'nop-post-v4';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -237,8 +252,7 @@ self.addEventListener( 'fetch', function ( e ) {
 
 		// Built app assets (CSS now, the app script next) — version-busted from the
 		// build's asset file so a new build invalidates the URL.
-		$post_asset   = file_exists( NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) ? ( include NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) : [];
-		$post_ver     = is_array( $post_asset ) && ! empty( $post_asset['version'] ) ? $post_asset['version'] : '1';
+		$post_ver     = $this->asset_version();
 		$post_css_url = NOP_INDIEWEB_URL . 'build/post/style-index.css?ver=' . rawurlencode( $post_ver );
 		$post_js_url  = NOP_INDIEWEB_URL . 'build/post/index.js?ver=' . rawurlencode( $post_ver );
 
