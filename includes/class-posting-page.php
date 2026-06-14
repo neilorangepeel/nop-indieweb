@@ -156,12 +156,11 @@ foreach ( [ '700', '800' ] as $weight ) {
 ?>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Browser chrome in the palette: text selection inverts (ink fill, paper text)
-   and the page scrollbar takes the kind ink too — --ink is mirrored onto :root in
-   JS, so html (outside .app) can read it. The compose scroller (below) matches. */
+/* Text selection inverts (ink fill, paper text). The page itself never scrolls
+   (html/body are overflow:hidden); only .compose-scroll does, and it sets its own
+   scrollbar-color below. */
 ::selection      { background: var(--ink); color: var(--paper); }
 ::-moz-selection { background: var(--ink); color: var(--paper); }
-html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transparent; }
 [hidden] { display: none !important; }
 
 /*
@@ -173,9 +172,10 @@ html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transpar
  * --accent / --on-accent on .app[data-type], retinting the type tile, focus
  * rings, tag chips, progress and the Post button together.
  */
-/* Registering --ink as a real <color> lets the .app transition interpolate it;
-   every derived token (surfaces, rules, grain, shadow) re-mixes per frame, so
-   one transition sweeps the whole poster through the colour change. */
+/* Register --ink as a real <color> so it has a valid type + an initial-value at
+   the root — html { background: var(--ink) } (the status-bar accent) needs a value
+   before JS runs and before any .app[data-type] rule applies. The per-kind sweep
+   itself is driven in JS (animateInk), not a CSS transition. */
 @property --ink {
 	syntax: '<color>';
 	inherits: true;
@@ -301,12 +301,9 @@ body::before {
 	--rule:     color-mix(in srgb, var(--ink) 36%, transparent);
 	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
 	--shadow:   4px 4px 0 var(--ink);
-	/* The kind ink a shade deeper — drives the device dressing (faux iOS chrome,
-	   frame border) and the browser theme-color (status-bar / notch tint). */
+	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
+	   on the desktop mock / standalone band. */
 	--device-ink: color-mix(in srgb, var(--ink) 80%, #000);
-	/* One rate for every colour change, so the whole UI re-inks as a single
-	   sweep instead of each element lagging at its own speed. */
-	--fade: 0.4s;
 
 	/* The kind-switch crossfade is driven in JS through OKLCH (a hue rotation,
 	   like a colour-picker), not a CSS transition — see animateInk(). Every
@@ -1325,7 +1322,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .toast--error { border-color: var(--red); color: var(--red); }
 
 @media (prefers-reduced-motion: reduce) {
-	.app { transition: none; }
 	.type-btn.is-active,
 	.success-banner,
 	.url-specimen__host { animation: none; }
@@ -1342,7 +1338,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 <body>
 <div class="app" id="app" data-type="note">
 
-	<span id="inkProbe" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
 	<span id="inkNow" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
 
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
@@ -1556,6 +1551,13 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var notePrompt   = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
 	var restoring    = false;
 
+	// Trailing debounce — coalesces high-frequency work (draft writes on keystroke)
+	// to one call after the user pauses, keeping the typing path off localStorage.
+	function debounce( fn, ms ) {
+		var t;
+		return function () { clearTimeout( t ); t = setTimeout( fn, ms ); };
+	}
+
 	var app = document.getElementById( 'app' );
 
 	// ── Clock + time-of-day device ──────────────────────────────────────────────
@@ -1566,41 +1568,13 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var clockTimeEl = document.getElementById( 'clockTime' );
 	var clockDateEl = document.getElementById( 'clockDate' );
 	var deviceTimeEl = document.getElementById( 'deviceTime' );
-	var themeColorEl = document.getElementById( 'themeColor' );
-	var inkProbe     = document.getElementById( 'inkProbe' );
-	function updateThemeColor() {
-		if ( ! themeColorEl || ! inkProbe ) { return; }
-		// getComputedStyle hands back color(srgb …) from color-mix in some engines
-		// and rgb(…) in others; normalise either to #hex, which theme-color parses
-		// everywhere.
-		var c = getComputedStyle( inkProbe ).color;
-		var r, g, b, m = c.match( /color\(\s*srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/ );
-		if ( m ) {
-			r = Math.round( m[1] * 255 ); g = Math.round( m[2] * 255 ); b = Math.round( m[3] * 255 );
-		} else {
-			m = c.match( /(\d+)\D+(\d+)\D+(\d+)/ );
-			if ( ! m ) { return; }
-			r = +m[1]; g = +m[2]; b = +m[3];
-		}
-		// In dark mode the bar must be the DEEP accent (see .device-chrome dark
-		// override) so white status-bar text stays legible — match it here too
-		// (×0.45 == color-mix(in srgb, --ink 45%, #000)) for the Safari-tab path,
-		// which can tint from theme-color rather than the band.
-		if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches ) {
-			r = Math.round( r * 0.45 ); g = Math.round( g * 0.45 ); b = Math.round( b * 0.45 );
-		}
-		var hex = '#' + [ r, g, b ].map( function ( x ) { return ( '0' + x.toString( 16 ) ).slice( -2 ); } ).join( '' );
-		themeColorEl.setAttribute( 'content', hex );
-	}
 
-	// iOS 26 samples the fixed band's background-color for the status-bar tint at
-	// render time only — a JS-driven --ink change (the OKLCH re-ink) doesn't
-	// re-trigger it, so on kind switch the bar keeps the stale sample or falls back
-	// to the body. In dark mode the body is near-black, so the bar goes black for
-	// every kind except the one sampled at load. Briefly dropping the band from the
-	// render forces iOS to re-sample the new accent when it's re-added. Gated to
-	// dark + real device: light mode already re-samples, and on the desktop mock the
-	// band is the visible faux chrome and must not flash.
+	// iOS 26 ignores theme-color and tints the status bar by SAMPLING the page (the
+	// html accent on the tab, the .device-chrome band on the standalone app). It
+	// samples at render time only, so a JS-driven --ink change (the OKLCH re-ink)
+	// doesn't re-trigger it — on the standalone app's band, briefly dropping the band
+	// from the render forces iOS to re-sample the new accent. Gated to standalone +
+	// dark + real device (light re-samples; the desktop mock band must not flash).
 	var deviceChrome = document.querySelector( '.device-chrome' );
 	var isMockFrame  = window.matchMedia( '(min-width: 600px) and (min-height: 600px)' );
 	var prefersDark  = window.matchMedia( '(prefers-color-scheme: dark)' );
@@ -1771,7 +1745,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		fadeBottom.style.setProperty( '--ht-bottom', ( -modP( ( sr.bottom - h ) - grainTop ) ).toFixed( 2 ) + 'px' );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
-	window.addEventListener( 'resize', function () { updateScrollFades(); alignHalftone(); } );
+	var resizeRAF;
+	window.addEventListener( 'resize', function () {
+		cancelAnimationFrame( resizeRAF );
+		resizeRAF = requestAnimationFrame( function () { updateScrollFades(); alignHalftone(); } );
+	} );
 
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
@@ -1941,7 +1919,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		saveDraft();
 		updatePostBtn();
 		autoGrowContent();
-		setTimeout( function () { updateThemeColor(); nudgeStatusBar(); }, 450 );
+		setTimeout( nudgeStatusBar, 450 );
 	}
 
 	// ── Post button state ─────────────────────────────────────────────────────
@@ -1959,8 +1937,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		postBtn.disabled = ! enabled;
 	}
 
-	urlInput.addEventListener( 'input', function () { updateSpecimen(); updatePostBtn(); saveDraft(); } );
-	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraft(); syncPrompt(); autoGrowContent(); } );
+	urlInput.addEventListener( 'input', function () { updateSpecimen(); updatePostBtn(); saveDraftSoon(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// ── Photo picker ──────────────────────────────────────────────────────────
@@ -2212,6 +2190,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			} ) );
 		} catch ( e ) {}
 	}
+	// Keystroke path uses the debounced save (discrete actions still call saveDraft).
+	var saveDraftSoon = debounce( saveDraft, 400 );
 
 	function loadDraft() {
 		var raw;
@@ -2340,7 +2320,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();
-	updateThemeColor();
 	app.offsetHeight;                         // flush, then re-enable transitions
 	app.classList.remove( 'no-anim' );
 	alignHalftone();
