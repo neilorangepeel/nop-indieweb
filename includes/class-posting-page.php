@@ -357,24 +357,24 @@ body::before {
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
-	/* Anchor the band inside the floating phone (not the browser viewport). */
-	.app .device-chrome { position: absolute; }
+	/* Desktop mock: show the band, anchored inside the floating phone. */
+	.app .device-chrome { display: flex; position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
 
 /* ── iOS chrome band ───────────────────────────────────────────────────────
-   The accent band that fills the status-bar safe area. It renders in BOTH
-   contexts so the bar always reads in the kind's accent:
-   • Real device — viewport-fit=cover lets the app run up under the status bar.
-     position:fixed (not absolute) + full width + pinned to the top edge is what
-     iOS 26 Safari samples to tint the status bar: it reads the background-color
-     of fixed/sticky elements within ~4px of the edge (theme-color is ignored as
-     of iOS 26), so the accent here drives the bar tint and re-tints per kind.
-     iOS draws the real clock/battery on top in auto black/white.
-   • Desktop mock — overridden back to absolute in the frame media query so the
-     band stays inside the floating phone; the faux time / island / icons show. */
+   The accent band that fills the status-bar safe-area zone. Shown ONLY where it
+   sits BEHIND the real (or faux) status bar:
+   • Standalone app (.standalone) — viewport-fit=cover runs the app up under the
+     status bar, so the band fills that safe-top zone in the accent; iOS draws the
+     real clock/battery on top.
+   • Desktop mock — the faux time / island / icons.
+   In a Safari TAB the content sits BELOW the status bar (no cover), so the band
+   would render as a redundant on-page strip butting the logo — hidden there
+   (display:none default). The tab's status-bar tint comes from theme-color, which
+   still re-tints per kind. */
 .device-chrome {
-	display: flex;
+	display: none;
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -403,6 +403,8 @@ body::before {
 		color: #f4f0e7;
 	}
 }
+/* Standalone Home Screen app: show the band (it fills behind the status bar). */
+.standalone .device-chrome { display: flex; }
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
@@ -1587,9 +1589,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var isMockFrame  = window.matchMedia( '(min-width: 600px) and (min-height: 600px)' );
 	var prefersDark  = window.matchMedia( '(prefers-color-scheme: dark)' );
 	function nudgeStatusBar() {
-		if ( ! deviceChrome || isMockFrame.matches || ! prefersDark.matches ) { return; }
+		// Standalone only: the band exists there (it's hidden in a Safari tab, where
+		// theme-color drives the bar and updates per kind on its own).
+		if ( ! deviceChrome || ! window.navigator.standalone || isMockFrame.matches || ! prefersDark.matches ) { return; }
 		deviceChrome.style.display = 'none';
-		requestAnimationFrame( function () { deviceChrome.style.display = ''; } );
+		requestAnimationFrame( function () { deviceChrome.style.display = 'flex'; } );
 	}
 
 	// ── Re-ink: a colour-picker-style hue rotation through OKLCH ──────────────────
