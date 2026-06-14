@@ -642,6 +642,12 @@ body::before {
 	width: 72px;
 	height: 72px;
 	pointer-events: none;
+	/* Pin the seal onto its own layer. animateInk mutates --ink on an ancestor every
+	   frame, and that per-frame invalidation makes the <textPath> name + <circle>
+	   dots drop out mid-sweep (a Blink/WebKit textPath repaint bug) — the plain path
+	   glyph survives it. Isolating the layer lets the seal rasterise once and just
+	   composite during the sweep, so it never blanks. */
+	transform: translateZ(0);
 }
 .type-btn__arc text {
 	font-family: var(--display);
