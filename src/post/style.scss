@@ -466,6 +466,10 @@ body::before {
 	position: absolute;
 	inset: 0;
 	overflow: hidden;
+	/* Draggable strip: own horizontal gestures (scrub/flick), let vertical page
+	   scroll pass through. JS drives the crawl; grab cursor hints it on desktop. */
+	touch-action: pan-y;
+	cursor: grab;
 	/* Fade the run into the logo on the left (the transparent lead clears the
 	   42px tile + its gap), soft-cut at the right gutter. */
 	-webkit-mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
@@ -494,6 +498,9 @@ body::before {
 	font-variant-numeric: tabular-nums;
 }
 .ticker__item.tk-queue { font-weight: 700; }   /* pending offline posts — a touch louder */
+/* The datum itself. Flex so the sky item's glyph sits beside its summary (the gap
+   used to come from the item; the icon now lives in here). */
+.ticker__val { display: inline-flex; align-items: center; gap: 5px; }
 .ticker__sep { padding: 0 6px; opacity: 0.35; }
 .ticker__icon { display: inline-flex; }
 .ticker__icon svg { display: block; width: 14px; height: 14px; }

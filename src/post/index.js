@@ -171,6 +171,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	function tkCadence() { return ordinal( postsToday + 1 ) + ' today'; }
 
+	// Order reads out of the logo as: serial → session status → the moment →
+	// where you are + the sky (golden hour closing the weather run). Values only —
+	// each datum's own form (a clock, a temperature, a place) tells you what it is.
 	function tkItems() {
 		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
 		if ( queueCount > 0 ) { out.push( { c: 'tk-queue', h: queueCount + ' to send' } ); }
@@ -178,15 +181,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( lastPostTs ) { out.push( { c: 'tk-last',   h: 'Last posted ' + tkAgo( lastPostTs ) } ); }
 		if ( tkDate )     { out.push( { c: 'tk-date',   h: tkDate } ); }
 		if ( tkTime )     { out.push( { c: 'tk-time',   h: tkTime } ); }
-		if ( tkSunset )   { out.push( { c: 'tk-golden', h: tkGolden() } ); }
 		if ( tkPlace )    { out.push( { c: 'tk-place',  h: tkPlace } ); }
 		if ( tkTemp )     { out.push( { c: 'tk-temp',   h: tkTemp } ); }
 		if ( tkSky )      { out.push( { c: 'tk-sky',    h: tkSky } ); }
+		if ( tkSunset )   { out.push( { c: 'tk-golden', h: tkGolden() } ); }
 		return out;
 	}
 	function tkSeqHTML() {
 		return tkItems().map( function ( it ) {
-			return '<span class="ticker__item ' + it.c + '">' + it.h + '</span>'
+			return '<span class="ticker__item ' + it.c + '">'
+				+ '<span class="ticker__val">' + it.h + '</span></span>'
 				+ '<span class="ticker__sep" aria-hidden="true">·</span>';
 		} ).join( '' );
 	}
@@ -195,15 +199,83 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var seq = tkSeqHTML();
 		tickerTrack.innerHTML = '<span class="ticker__seq">' + seq + '</span>'
 			+ '<span class="ticker__seq">' + seq + '</span>';
-		var w = tickerTrack.firstChild.getBoundingClientRect().width;
-		if ( w ) { tickerTrack.style.animationDuration = ( w / TK_SPEED ).toFixed( 1 ) + 's'; }
+		tkSeqW = tickerTrack.firstChild.getBoundingClientRect().width;   // one loop = one sequence
+		startTickerMotion();
 	}
 	// In-place text swap for a recurring item (time, id) — avoids rebuilding the
 	// track, which would restart the crawl.
 	function setTk( cls, text ) {
 		if ( ! tickerTrack ) { return; }
-		var els = tickerTrack.getElementsByClassName( cls ), i;
-		for ( i = 0; i < els.length; i++ ) { els[ i ].textContent = text; }
+		var els = tickerTrack.getElementsByClassName( cls ), i, val;
+		for ( i = 0; i < els.length; i++ ) {
+			val = els[ i ].getElementsByClassName( 'ticker__val' )[ 0 ];
+			if ( val ) { val.textContent = text; }
+		}
+	}
+
+	// ── Ticker motion ───────────────────────────────────────────────────────────
+	// The crawl is JS-driven (rAF), not the CSS animation, so a finger can scrub it:
+	// drag moves the track 1:1, a flick spins it up, then friction eases the speed
+	// back to the ambient crawl (TK_SPEED) — it never stops, it settles. Pure
+	// progressive enhancement: without JS the CSS @keyframes still crawls, and under
+	// prefers-reduced-motion we leave that CSS alone and don't attach any of this.
+	var tkSeqW    = 0;                 // px width of one sequence — the wrap point
+	var tkOffset  = 0;                 // px scrolled left out of view; wraps at tkSeqW
+	var tkVel     = TK_SPEED;          // current px/sec; eases toward TK_SPEED when idle
+	var TK_TAU    = 0.45;              // s — friction time constant (≈1.5s to settle)
+	var TK_VMAX   = 1800;              // px/sec flick clamp
+	var tkRAF     = 0, tkLastFrame = 0, tkDragging = false;
+	var tkDragX   = 0, tkDragOff = 0, tkMoveX = 0, tkMoveT = 0;
+	var tkReduce  = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+
+	function tkFrame( t ) {
+		var dt = tkLastFrame ? ( t - tkLastFrame ) / 1000 : 0;
+		tkLastFrame = t;
+		if ( dt > 0.05 ) { dt = 0.05; }                                 // clamp tab-switch gaps
+		if ( ! tkDragging ) {
+			tkVel = TK_SPEED + ( tkVel - TK_SPEED ) * Math.exp( -dt / TK_TAU );   // ease to ambient
+			tkOffset += tkVel * dt;
+		}
+		if ( tkSeqW > 0 ) {
+			tkOffset %= tkSeqW;
+			if ( tkOffset < 0 ) { tkOffset += tkSeqW; }
+		}
+		tickerTrack.style.transform = 'translateX(' + ( -tkOffset ).toFixed( 2 ) + 'px)';
+		tkRAF = requestAnimationFrame( tkFrame );
+	}
+	function startTickerMotion() {
+		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS handles reduced motion
+		tickerTrack.style.animation = 'none';                          // hand the crawl to rAF
+		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
+	}
+	function tkDown( x ) {
+		tkDragging = true;
+		tkDragX = x; tkDragOff = tkOffset;
+		tkMoveX = x; tkMoveT = Date.now();
+		tkVel = 0;
+	}
+	function tkMove( x ) {
+		if ( ! tkDragging ) { return; }
+		tkOffset = tkDragOff - ( x - tkDragX );                        // finger right → reveal earlier items
+		var now = Date.now(), dtt = ( now - tkMoveT ) / 1000;
+		if ( dtt > 0 ) {                                                // flick speed = opposite of the finger
+			tkVel = Math.max( -TK_VMAX, Math.min( TK_VMAX, -( x - tkMoveX ) / dtt ) );
+		}
+		tkMoveX = x; tkMoveT = now;
+	}
+	function tkUp() {
+		tkDragging = false;        // the loop now decays tkVel (the flick) back to TK_SPEED
+		tkLastFrame = 0;           // skip a dt spike on the first post-release frame
+	}
+	var tickerEl = tickerTrack && tickerTrack.parentNode;
+	if ( tickerEl && ! tkReduce ) {
+		tickerEl.addEventListener( 'pointerdown', function ( e ) {
+			if ( tickerEl.setPointerCapture ) { try { tickerEl.setPointerCapture( e.pointerId ); } catch ( err ) {} }
+			tkDown( e.clientX );
+		} );
+		tickerEl.addEventListener( 'pointermove',   function ( e ) { tkMove( e.clientX ); } );
+		tickerEl.addEventListener( 'pointerup',     tkUp );
+		tickerEl.addEventListener( 'pointercancel', tkUp );
 	}
 	lastTime = '';        // re-seed: populate tkTime/tkDate before the first build
 	updateClock();
