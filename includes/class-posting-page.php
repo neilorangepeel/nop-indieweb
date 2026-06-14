@@ -85,6 +85,12 @@ class Posting_Page {
 		$user      = wp_get_current_user();
 		$user_name = $user->first_name ?: $user->display_name;
 
+		// The serial shown in the masthead — the id the next post will most likely
+		// take (the table's high-water mark + 1). A decorative stamp: real gaps
+		// (deleted rows / concurrent inserts) mean it can differ from the assigned id.
+		global $wpdb;
+		$next_id = (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->posts}" ) + 1; // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
 		// Time-of-day greetings, translated here so the JS device stays i18n-safe.
 		$greetings = [
 			'morning'   => __( 'Good morning', 'nop-indieweb' ),
@@ -349,13 +355,14 @@ body::before {
 	--text:     var(--ink);
 	--accent:   var(--ink);
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
-	--rule:     color-mix(in srgb, var(--ink) 36%, transparent);
+	--rule:     color-mix(in srgb, var(--ink) 36%, var(--paper));
 	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
-	/* Ink tints at fixed alphas — the recurring muted strokes/fills. Named by
-	   their alpha so a glance tells you the weight; one place to retune each. */
-	--ink-30:   color-mix(in srgb, var(--ink) 30%, transparent);  /* tile borders */
-	--ink-38:   color-mix(in srgb, var(--ink) 38%, transparent);  /* field borders, scrollbars */
-	--ink-50:   color-mix(in srgb, var(--ink) 50%, transparent);  /* sky arc */
+	/* Muted ink strokes/fills, named by their tone. Mixed toward PAPER (opaque),
+	   NOT transparent — a transparent border lets the dot grid show through the
+	   stroke and reads as visual noise; an opaque tone renders the stroke solid. */
+	--ink-30:   color-mix(in srgb, var(--ink) 30%, var(--paper));  /* control borders */
+	--ink-38:   color-mix(in srgb, var(--ink) 38%, var(--paper));  /* field borders, scrollbars */
+	--ink-50:   color-mix(in srgb, var(--ink) 50%, var(--paper));
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
 	   on the desktop mock / standalone band. */
@@ -567,161 +574,92 @@ body::before {
 
 .masthead {
 	flex-shrink: 0;
-	/* No bottom padding/border: the flight-path divider that follows is the rule. */
-	padding: 0 var(--pad-x);
-	/* Clear the status bar, then drop the wordmark clear of the rounded top corners
-	   so the curve frames it rather than pinching it. The app/desktop add the
-	   safe-top zone (59px) on top; in a Safari tab safe-top is 0, so this is a clean
-	   16px gap below the default-height status bar — same visible clearance as the app. */
+	/* Bottom padding + a crisp full-bleed rule — the fixed header's clean bottom edge,
+	   balancing the top inset so the logo/ticker bar sits evenly framed. */
+	padding: 0 var(--pad-x) 16px;
+	/* Clear the status bar, then drop the bar clear of the rounded top corners so the
+	   curve frames it rather than pinching it. The app/desktop add the safe-top zone
+	   (59px) on top; in a Safari tab safe-top is 0, so this is a clean 16px gap below
+	   the default-height status bar — same visible clearance as the app. */
 	padding-top: calc(var(--safe-top) + 16px);
-}
-.masthead__top {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
-.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand__mark { display: flex; flex-shrink: 0; }
-.brand__mark svg,
-.brand__mark img { display: block; width: 34px; height: 34px; }
-/* Re-ink the logo with the type ink so it joins the two-tone (and stays
-   visible in dark mode); the source SVG ships with a hard-coded black fill. */
-.brand__mark svg path { fill: var(--ink); }
-.brand__word {
-	font-family: var(--display);
-	font-size: 32px;
-	font-weight: 800;
-	letter-spacing: 0.01em;
-	line-height: 0.9;
-	text-transform: uppercase;
-}
-/* The date stamp — top-right where the redundant clock used to be (iOS already
-   shows the time above). Mono, so it reads as printed ticket data. */
-.masthead__date {
-	flex-shrink: 0;
-	font-family: var(--readout);
-	font-size: var(--fs-13);
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	text-transform: uppercase;
-	white-space: nowrap;
-}
-
-/* ── Current-moment data grid ───────────────────────────────────────────────
-   A boarding-pass / field-notebook row of label→value cells (place · temp · sky)
-   filled from the device GPS via the /now endpoint. Each cell hides on its own
-   when its datum is missing; the whole grid collapses when nothing resolved
-   (permission denied / offline / no API keys). */
-.nowgrid {
-	display: flex;
-	margin-top: 14px;
-}
-.nowcell {
-	flex: 1 1 0;
-	min-width: 0;
-	padding: 0 12px;
-	border-left: 1px solid var(--rule);   /* hairline seam between fields */
-}
-.nowcell:first-child { padding-left: 0; border-left: 0; }
-.nowcell[hidden] { display: none; }
-.nowcell__label {
-	display: block;
-	margin: 0 0 2px;
-	font-family: var(--display);
-	font-size: var(--fs-10);
-	font-weight: 800;
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
-	opacity: 0.55;
-}
-.nowcell__value {
-	display: flex;
-	align-items: center;
-	gap: 5px;
-	margin: 0;
-	font-family: var(--readout);
-	font-size: var(--fs-13);
-	font-weight: 700;
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-.nowcell__value > span { overflow: hidden; text-overflow: ellipsis; }
-.nowcell__icon { display: inline-flex; flex-shrink: 0; }
-.nowcell__icon svg { display: block; width: 16px; height: 16px; }
-
-/* ── Flight-path divider ────────────────────────────────────────────────────
-   The day as a journey: a dashed rail spanning the gutter, a solid segment
-   filling the portion of the day already elapsed, and the sun (06–18h) / moon
-   glyph riding the join at the current time. Replaces the masthead rule AND the
-   old time-of-day arc — one element, two jobs. JS drives width/left on the
-   per-minute tick (positions are % of the rail, so no pixel math). */
-.flightpath {
-	flex-shrink: 0;
-	position: relative;
-	height: 44px;
-	margin-top: 10px;
-	/* The fixed header's clean bottom edge — a crisp full-bleed rule the drop shadow
-	   falls from as content scrolls beneath it (the flight-path reads as the day
-	   indicator above it). The height gives the day line a clear padding buffer above
-	   the rule. */
 	border-bottom: var(--bw) solid var(--line);
 }
-.flightpath__rail {
-	position: absolute;
-	left: var(--pad-x);
-	right: var(--pad-x);
-	top: 50%;
-	height: 0;                            /* zero-height coordinate line; the track and
-	                                         done lines draw their borders right here */
+.masthead__bar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	height: 46px;
 }
-/* Track (full-width, dashed = the whole day) and done (the elapsed segment, solid)
-   are siblings both pinned to the rail's line, so they sit EXACTLY on top of each
-   other — same ink, the solid just overlays the dashed up to the current time. */
-.flightpath__track,
-.flightpath__done {
-	position: absolute;
-	left: 0;
-	top: 0;
-	height: 0;
-	/* Muted so the full-ink sun/moon reads as the marker on top of the line, rather
-	   than merging with it. Lighten the LINE not the glyph — a lighter glyph would
-	   let the darker line show through its gaps (between the sun's rays). Mute toward
-	   PAPER, not transparent: an opaque tone so the solid done segment actually
-	   covers the dashed track beneath it (a transparent mute let the dashes show
-	   through the solid). */
-	border-top: var(--bw) solid color-mix(in srgb, var(--ink) 55%, var(--paper));
-}
-.flightpath__track { right: 0; border-top-style: dashed; }
-.flightpath__done {
-	width: 0;                              /* JS → elapsed-day fraction; sits on top */
-	transition: width 0.6s ease;
-}
-.flightpath__body {
-	position: absolute;
-	left: 0;                              /* JS → current-time position */
-	top: 0;
-	width: 22px;
-	height: 22px;
-	color: var(--ink);
-	/* Nudge down 1px so the glyph's optical centre lands on the line exactly. */
-	transform: translate(-50%, calc(-50% + 1px));
-	transition: left 0.6s ease;
-}
-.flightpath__body svg { display: block; width: 22px; height: 22px; }
-.flightpath__body .flightpath__moon { display: none; }
-.flightpath__body.is-moon .flightpath__sun { display: none; }
-.flightpath__body.is-moon .flightpath__moon { display: block; }
-
-.greeting {
+/* The logo framed as an app icon — an ink tile with the glyph knocked out in
+   paper. The tile carries the ink (and re-inks per kind), so the source SVG's
+   path flips to paper to read against it. Sits above the ticker, which crawls
+   its metadata out of sight beneath it. */
+.brand__mark {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	place-items: center;
 	flex-shrink: 0;
-	padding: 12px var(--pad-x) 8px;
-	font-size: var(--fs-14);
-	font-weight: 700;
-	letter-spacing: -0.01em;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: var(--ink);
 }
+.brand__mark svg,
+.brand__mark img { display: block; width: 26px; height: 26px; }
+.brand__mark svg path { fill: var(--paper); }
+
+/* ── Metadata ticker ─────────────────────────────────────────────────────────
+   The current moment (serial · date · place · temp · sky) on one crawling line
+   beside the logo, so the masthead is barely taller than the icon. The track
+   holds two identical sequences and animates -50% for a seamless loop; the left
+   edge is masked away so each item dissolves into the logo. JS (renderTicker)
+   fills the track from the clock + /now data and sets the duration for a
+   constant crawl speed; the time item updates in place on the minute tick. */
+.ticker {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	/* Fade the run into the logo on the left (the transparent lead clears the
+	   42px tile + its gap), soft-cut at the right gutter. */
+	-webkit-mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
+	        mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
+}
+.ticker__track {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	will-change: transform;
+	animation: ticker-crawl 24s linear infinite;
+}
+.ticker__seq { display: flex; align-items: center; }
+.ticker__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-family: var(--readout);
+	font-size: var(--fs-14);
+	font-weight: 500;
+	letter-spacing: 0;
+	font-variant-numeric: tabular-nums;
+}
+.ticker__sep { padding: 0 6px; opacity: 0.35; }
+.ticker__icon { display: inline-flex; }
+.ticker__icon svg { display: block; width: 14px; height: 14px; }
+@keyframes ticker-crawl {
+	from { transform: translateX(0); }
+	to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+	/* No crawl — freeze the run just clear of the logo so the lead items read. */
+	.ticker__track { animation: none; left: 56px; }
+}
+
+
 
 /* ── Views ──────────────────────────────────────────────────────────────── */
 
@@ -748,7 +686,7 @@ body::before {
 	display: flex;
 	gap: 6px;
 	flex-shrink: 0;
-	padding: 10px var(--pad-x);
+	padding: 18px var(--pad-x);
 	/* One row of square tiles that scrolls sideways if they don't all fit —
 	   saves the vertical height the old two-row grid took. */
 	overflow-x: auto;
@@ -759,10 +697,9 @@ body::before {
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
 	scroll-padding-left: var(--pad-x);
-	/* Top + bottom rules frame the kind selector as a contained "control strip" on
-	   the sheet — so the edge halftone fades terminate on a rule and read as
-	   intentional containment rather than a floating column with a hard cut-off. */
-	border-block: var(--bw) solid var(--line);
+	/* Only a bottom rule frames the kind selector now — the masthead's own bottom
+	   rule is the strip's top edge, so a top rule here would double it. */
+	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
@@ -775,7 +712,7 @@ body::before {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	width: 64px;
+	width: 120px;
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
@@ -792,49 +729,50 @@ body::before {
    no halo — so you never see the pixels move. */
 .type-fade-left {
 	left: 0;
-	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
-	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 }
 .type-fade-right {
 	right: 0;
-	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
-	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 }
 .type-btn {
 	flex: 0 0 72px;
 	aspect-ratio: 1;
 	scroll-snap-align: start;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 5px;
-	padding: 6px 4px;
-	/* Inactive tiles are TRANSPARENT outlined boxes so the fixed dot grid runs
-	   straight through them — the swell-shadow then modulates the whole row as one
-	   continuous field. Only the active kind fills (solid --accent chip). */
-	border: var(--bw) solid var(--ink-30);
-	border-radius: var(--radius);
+	display: grid;
+	place-items: center;
+	/* Each kind is a scout-badge token: an ink-ring circle with the icon centred,
+	   transparent so the fixed dot grid runs straight through it. Only the active
+	   kind fills (solid --accent disc, icon knocked out). */
+	border: var(--bw) solid var(--ink);
+	border-radius: 50%;
 	background: transparent;
-	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
-	font-size: var(--fs-10);
-	font-weight: 800;
-	font-family: var(--display);
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
+	color: var(--ink);
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
-	/* No own colour transition: the tile's ink rides the --ink crossfade directly
-	   (in sync with the chrome), instead of a transition that chases the moving
-	   value and lags. Selection just snaps + pops. */
+	/* No own colour transition: the badge ink rides the --ink crossfade directly
+	   (in sync with the chrome). Selection just snaps + pops. */
+}
+/* Icon-only — the kind name stays for assistive tech but is visually hidden. */
+.type-btn > span:not(.type-btn__icon) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
 .type-btn__icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 20px;
-	height: 20px;
+	/* Scaled with the 72px circle to hold the icon:ring:whitespace balance. */
+	width: 30px;
+	height: 30px;
 }
+.type-btn__icon svg { width: 100%; height: 100%; }
 
 .type-btn.is-active {
 	background: var(--accent);
@@ -1570,7 +1508,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.url-specimen__host { animation: none; }
 	.burst { display: none; }
 	.field-group.is-conditional:not([hidden]) { animation: none; }
-	.compose-prompt, .flightpath__body, .flightpath__done, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
+	.compose-prompt, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
 	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; }
 	.toast { transition: opacity 0.01ms; }
@@ -1596,56 +1534,27 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	<!-- Masthead -->
 	<header class="masthead">
-		<div class="masthead__top">
-			<div class="brand">
-				<span class="brand__mark" aria-hidden="true">
-					<svg viewBox="0 0 60 60" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 5.45455C16.4439 5.45455 5.45455 16.4439 5.45455 30V35.4545C5.45455 45.9982 14.0018 54.5455 24.5455 54.5455H30C43.5561 54.5455 54.5455 43.5561 54.5455 30C54.5455 16.4439 43.5561 5.45455 30 5.45455ZM0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30C60 46.5685 46.5685 60 30 60H24.5455C10.9893 60 0 49.0107 0 35.4545V30ZM30 16.3636C22.4688 16.3636 16.3636 22.4688 16.3636 30C16.3636 37.5312 22.4688 43.6364 30 43.6364C37.5312 43.6364 43.6364 37.5312 43.6364 30C43.6364 22.4688 37.5312 16.3636 30 16.3636ZM10.9091 30C10.9091 19.4564 19.4564 10.9091 30 10.9091C40.5436 10.9091 49.0909 19.4564 49.0909 30C49.0909 40.5436 40.5436 49.0909 30 49.0909C19.4564 49.0909 10.9091 40.5436 10.9091 30ZM30.0775 27.3502C28.5713 27.3502 27.3502 28.5713 27.3502 30.0775C27.3502 31.5837 26.1292 32.8048 24.623 32.8048C23.1167 32.8048 21.8957 31.5837 21.8957 30.0775C21.8957 25.5589 25.5589 21.8957 30.0775 21.8957C34.5963 21.8957 38.2593 25.5589 38.2593 30.0775C38.2593 31.5837 37.0383 32.8048 35.5321 32.8048C34.0258 32.8048 32.8048 31.5837 32.8048 30.0775C32.8048 28.5713 31.5837 27.3502 30.0775 27.3502Z"/></svg>
-				</span>
-				<span class="brand__word"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
-			</div>
-			<p class="masthead__date" id="clockDate" aria-hidden="true">Mon 1 Jan</p>
-		</div>
-		<!-- Current-moment data grid — filled from the device GPS via /now. Cells
-		     start hidden; JS reveals each one only when its datum resolves. -->
-		<dl class="nowgrid" id="nowGrid" aria-hidden="true">
-			<div class="nowcell" id="nowCellPlace" hidden>
-				<dt class="nowcell__label"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></dt>
-				<dd class="nowcell__value"><span id="nowPlace"></span></dd>
-			</div>
-			<div class="nowcell" id="nowCellTemp" hidden>
-				<dt class="nowcell__label"><?php esc_html_e( 'Temp', 'nop-indieweb' ); ?></dt>
-				<dd class="nowcell__value"><span id="nowTemp"></span></dd>
-			</div>
-			<div class="nowcell" id="nowCellSky" hidden>
-				<dt class="nowcell__label"><?php esc_html_e( 'Sky', 'nop-indieweb' ); ?></dt>
-				<dd class="nowcell__value"><span class="nowcell__icon" id="nowIcon" aria-hidden="true"></span><span id="nowSummary"></span></dd>
-			</div>
-		</dl>
-	</header>
-
-	<!-- Flight-path divider: the day's progress (solid = elapsed, dashed = ahead),
-	     with the sun/moon riding the join at the current time. -->
-	<div class="flightpath" aria-hidden="true">
-		<span class="flightpath__rail">
-			<span class="flightpath__track"></span>
-			<span class="flightpath__done" id="fpDone"></span>
-			<span class="flightpath__body is-sun" id="fpBody">
-				<svg class="flightpath__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
-				<svg class="flightpath__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+		<div class="masthead__bar">
+			<span class="brand__mark" aria-hidden="true">
+				<svg viewBox="0 0 60 60" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 5.45455C16.4439 5.45455 5.45455 16.4439 5.45455 30V35.4545C5.45455 45.9982 14.0018 54.5455 24.5455 54.5455H30C43.5561 54.5455 54.5455 43.5561 54.5455 30C54.5455 16.4439 43.5561 5.45455 30 5.45455ZM0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30C60 46.5685 46.5685 60 30 60H24.5455C10.9893 60 0 49.0107 0 35.4545V30ZM30 16.3636C22.4688 16.3636 16.3636 22.4688 16.3636 30C16.3636 37.5312 22.4688 43.6364 30 43.6364C37.5312 43.6364 43.6364 37.5312 43.6364 30C43.6364 22.4688 37.5312 16.3636 30 16.3636ZM10.9091 30C10.9091 19.4564 19.4564 10.9091 30 10.9091C40.5436 10.9091 49.0909 19.4564 49.0909 30C49.0909 40.5436 40.5436 49.0909 30 49.0909C19.4564 49.0909 10.9091 40.5436 10.9091 30ZM30.0775 27.3502C28.5713 27.3502 27.3502 28.5713 27.3502 30.0775C27.3502 31.5837 26.1292 32.8048 24.623 32.8048C23.1167 32.8048 21.8957 31.5837 21.8957 30.0775C21.8957 25.5589 25.5589 21.8957 30.0775 21.8957C34.5963 21.8957 38.2593 25.5589 38.2593 30.0775C38.2593 31.5837 37.0383 32.8048 35.5321 32.8048C34.0258 32.8048 32.8048 31.5837 32.8048 30.0775C32.8048 28.5713 31.5837 27.3502 30.0775 27.3502Z"/></svg>
 			</span>
-		</span>
-	</div>
+			<!-- Metadata ticker — serial · date · place · temp · sky on one crawling
+			     line, masked into the logo on the left. JS fills #tickerTrack. -->
+			<div class="ticker" aria-hidden="true">
+				<div class="ticker__track" id="tickerTrack"></div>
+			</div>
+		</div>
+	</header>
 
 	<!-- View container -->
 	<div class="view-container">
 
 		<!-- Compose view -->
 		<div id="view-compose">
-			<!-- Scroll region: greeting + type selector + fields scroll as one;
+			<!-- Scroll region: type selector + fields scroll as one;
 			     masthead and Post button stay pinned. -->
 			<div class="compose-scroll">
 			<div class="scroll-fade scroll-fade-top" aria-hidden="true"></div>
-			<p class="greeting" id="greeting"></p>
 
 			<div class="type-grid-wrap">
 				<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
@@ -1824,6 +1733,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		userName:    <?php echo wp_json_encode( $user_name ); ?>,
 		greetings:   <?php echo wp_json_encode( $greetings ); ?>,
+		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
 	};
 
 	var DRAFT_KEY    = 'nop_post_draft';
@@ -1846,8 +1756,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 	var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-	var clockDateEl = document.getElementById( 'clockDate' );
 	var deviceTimeEl = document.getElementById( 'deviceTime' );
+	// The masthead serial — shown in the ticker; bumped by one each time a post is
+	// sent so "post another" shows the next likely id.
+	var nextSerial   = NOP.nextId;
 
 	// iOS 26 ignores theme-color and tints the status bar by SAMPLING the page (the
 	// html accent on the tab, the .device-chrome band on the standalone app). It
@@ -1912,24 +1824,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		}
 		inkRAF = requestAnimationFrame( step );
 	}
-	var greetingEl  = document.getElementById( 'greeting' );
-	var fpBody      = document.getElementById( 'fpBody' );
-	var fpDone      = document.getElementById( 'fpDone' );
-	var lastTime = '', lastDate = '', lastGreeting = '';
-
-	// The day as a journey: the solid segment fills the elapsed fraction of the day
-	// and the sun (06–18h) / moon glyph rides its leading edge. Both are % of the
-	// inset rail, so no pixel math. Per-minute tick only (no per-second repaint).
-	function updateFlightpath( now ) {
-		var pct = ( ( now.getHours() + now.getMinutes() / 60 ) / 24 * 100 ).toFixed( 2 ) + '%';
-		if ( fpDone ) { fpDone.style.width = pct; }
-		if ( fpBody ) {
-			fpBody.style.left = pct;
-			var daytime = now.getHours() >= 6 && now.getHours() < 18;
-			fpBody.classList.toggle( 'is-sun', daytime );
-			fpBody.classList.toggle( 'is-moon', ! daytime );
-		}
-	}
+	var lastTime = '';
 
 	function greetingFor( hour ) {
 		if ( hour < 5 )  return NOP.greetings.night;
@@ -1945,35 +1840,65 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
 		if ( time !== lastTime ) {
 			if ( deviceTimeEl ) { deviceTimeEl.textContent = time; }
+			tkTime = time + ' · ' + date;   // the ticker's date+time item
+			setTk( 'tk-time', tkTime );
 			lastTime = time;
-			updateFlightpath( now );
-			var greet = greetingFor( now.getHours() );
-			var line  = NOP.userName ? greet + ', ' + NOP.userName : greet;
-			if ( line !== lastGreeting ) { greetingEl.textContent = line; lastGreeting = line; }
 		}
-		if ( date !== lastDate ) { clockDateEl.textContent = date; lastDate = date; }
 	}
 	updateClock();
 	setInterval( updateClock, 1000 );
 
-	// ── Current-moment data grid (place · temp · sky) ─────────────────────────────
+	// ── Metadata ticker ───────────────────────────────────────────────────────
+	// One crawling line of the current moment (serial · date · place · temp · sky)
+	// beside the logo. The track holds two identical sequences and animates -50%
+	// for a seamless loop. Items with no datum yet are simply omitted; the time
+	// updates in place each minute (setTk) so the crawl never restarts, while a
+	// resolved /now rebuilds once (renderTicker).
+	var tickerTrack = document.getElementById( 'tickerTrack' );
+	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
+	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
+	var tkTime = '', tkPlace = '', tkTemp = '', tkSky = '';
+
+	function tkItems() {
+		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
+		if ( tkTime )  { out.push( { c: 'tk-time',  h: tkTime } ); }
+		if ( tkPlace ) { out.push( { c: 'tk-place', h: tkPlace } ); }
+		if ( tkTemp )  { out.push( { c: 'tk-temp',  h: tkTemp } ); }
+		if ( tkSky )   { out.push( { c: 'tk-sky',   h: tkSky } ); }
+		return out;
+	}
+	function tkSeqHTML() {
+		return tkItems().map( function ( it ) {
+			return '<span class="ticker__item ' + it.c + '">' + it.h + '</span>'
+				+ '<span class="ticker__sep" aria-hidden="true">·</span>';
+		} ).join( '' );
+	}
+	function renderTicker() {
+		if ( ! tickerTrack ) { return; }
+		var seq = tkSeqHTML();
+		tickerTrack.innerHTML = '<span class="ticker__seq">' + seq + '</span>'
+			+ '<span class="ticker__seq">' + seq + '</span>';
+		var w = tickerTrack.firstChild.getBoundingClientRect().width;
+		if ( w ) { tickerTrack.style.animationDuration = ( w / TK_SPEED ).toFixed( 1 ) + 's'; }
+	}
+	// In-place text swap for a recurring item (time, id) — avoids rebuilding the
+	// track, which would restart the crawl.
+	function setTk( cls, text ) {
+		if ( ! tickerTrack ) { return; }
+		var els = tickerTrack.getElementsByClassName( cls ), i;
+		for ( i = 0; i < els.length; i++ ) { els[ i ].textContent = text; }
+	}
+	renderTicker();
+
+	// ── Current-moment data (place · temp · sky) ─────────────────────────────────
 	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current
 	// weather with the plugin's existing keys, so nothing leaks client-side). Both
 	// the coordinates and the resolved payload are cached in localStorage: coords for
-	// 6h so iOS isn't re-prompted every visit, the payload for 30 min so the grid
+	// 6h so iOS isn't re-prompted every visit, the payload for 30 min so the ticker
 	// paints instantly from cache then refreshes. Every failure path is silent — the
-	// cells just stay hidden (permission denied / offline / no API keys configured).
+	// item is simply omitted (permission denied / offline / no API keys configured).
 	var GEO_KEY = 'nop_post_geo', NOW_KEY = 'nop_post_now';
 	var GEO_TTL = 6 * 60 * 60 * 1000, NOW_TTL = 30 * 60 * 1000;
-
-	var nowGrid    = document.getElementById( 'nowGrid' );
-	var cellPlace  = document.getElementById( 'nowCellPlace' );
-	var cellTemp   = document.getElementById( 'nowCellTemp' );
-	var cellSky    = document.getElementById( 'nowCellSky' );
-	var nowPlace   = document.getElementById( 'nowPlace' );
-	var nowTemp    = document.getElementById( 'nowTemp' );
-	var nowIcon    = document.getElementById( 'nowIcon' );
-	var nowSummary = document.getElementById( 'nowSummary' );
 
 	// Pirate Weather icon keyword → riso glyph (sun/moon reuse the flight-path art).
 	var WX_SUN  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>';
@@ -1996,21 +1921,21 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	function renderNow( d ) {
 		if ( ! d ) { return; }
-		var place  = d.place ? ( d.country ? d.place + ', ' + d.country : d.place ) : '';
+		tkPlace = d.place ? ( d.country ? d.place + ', ' + d.country : d.place ) : '';
 		// Show both units — Belfast thinks in °C, but the °F is a free, useful glance.
 		// Derive °F from the rounded °C so the two never disagree at a rounding edge
 		// (a raw 11.7° would otherwise print "12°C / 53°F", which reads as a bug).
-		var temp = '';
+		tkTemp = '';
 		if ( d.temp_c != null && d.temp_c !== '' ) {
 			var c = Math.round( d.temp_c );
-			temp = c + '°C / ' + Math.round( c * 9 / 5 + 32 ) + '°F';
+			tkTemp = c + '°C / ' + Math.round( c * 9 / 5 + 32 ) + '°F';
 		}
-		var hasSky = !! ( d.summary || d.icon );
-		nowPlace.textContent = place;  cellPlace.hidden = ! place;
-		nowTemp.textContent  = temp;   cellTemp.hidden  = ! temp;
-		if ( hasSky ) { nowIcon.innerHTML = WX_ICON[ d.icon ] || ''; nowSummary.textContent = d.summary || ''; }
-		cellSky.hidden = ! hasSky;
-		nowGrid.hidden = ! ( place || temp || hasSky );
+		tkSky = '';
+		if ( d.summary || d.icon ) {
+			var icon = WX_ICON[ d.icon ] || '';
+			tkSky = ( icon ? '<span class="ticker__icon" aria-hidden="true">' + icon + '</span>' : '' ) + ( d.summary || '' );
+		}
+		renderTicker();   // rebuild once now that place/temp/sky have resolved
 	}
 
 	function fetchNow( lat, lon ) {
@@ -2091,6 +2016,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	// Big rotating prompt overlay — set its text, and fade it once typing starts.
 	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
+	// The note placeholder, led by the time-of-day greeting — the old standalone
+	// greeting line now lives here, in front of the rotating prompt.
+	function notePlaceholder() {
+		var greet = greetingFor( new Date().getHours() );
+		return ( NOP.userName ? greet + ', ' + NOP.userName : greet ) + ' — ' + notePrompt;
+	}
 	function autoGrowContent() {
 		contentInput.style.height = 'auto';
 		contentInput.style.height = contentInput.scrollHeight + 'px';
@@ -2352,7 +2283,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
 		if ( cfg.hasContent ) {
-			setPrompt( ( type === 'note' ) ? notePrompt : ( cfg.contentPlaceholder || 'Write…' ) );
+			setPrompt( ( type === 'note' ) ? notePlaceholder() : ( cfg.contentPlaceholder || 'Write…' ) );
 		}
 
 		updateSpecimen();
@@ -2594,6 +2525,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		renderTags();
 		clearDraft();
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
+		if ( nextSerial ) { setTk( 'tk-id', TK_ID_PRE + ( ++nextSerial ) ); }
 		switchType( 'note' );
 		updateCounter();
 		showView( 'compose' );
@@ -2767,7 +2699,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 	applyKindOrder();                         // tiles in most-recently-used order
 	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
-	setPrompt( notePrompt );
+	setPrompt( notePlaceholder() );
 	var hadDraft = false;
 	try { hadDraft = !! localStorage.getItem( DRAFT_KEY ); } catch ( e ) {}
 	loadDraft();
