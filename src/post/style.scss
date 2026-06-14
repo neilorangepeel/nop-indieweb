@@ -120,6 +120,11 @@
 
 html {
 	height: 100%;
+	/* The root must not scroll/pan: the app's scroll lives in .compose-scroll /
+	   .success-scroll. body is overflow:hidden, but on iOS a clipped body inside a
+	   default-`visible` html still rubber-bands the whole page sideways — so lock
+	   the root too (this is the "html/body are overflow:hidden" the file assumes). */
+	overflow: hidden;
 	/* The ROOT carries the ACCENT, on purpose. In a Safari tab iOS 26 tints the
 	   status bar from the BODY background-color and falls back to HTML when body
 	   has none — so the transparent body below lets this accent become the bar
@@ -533,7 +538,10 @@ body::before {
 	/* Tiles settle to the gutter edge when the row is flicked — a native, camera-dial
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
-	scroll-padding-left: var(--pad-x);
+	/* Keep a freshly-activated badge clear of the 120px halftone scroll-fades
+	   when scrollIntoView pulls it toward an edge (else the active disc lands
+	   half-under the fade). */
+	scroll-padding-inline: 120px;
 	/* Only a bottom rule here — the masthead draws the shared line above the strip,
 	   so the header's border and the strip's top sit as one line (not two). */
 	border-bottom: var(--bw) solid var(--line);
@@ -607,10 +615,10 @@ body::before {
 	   (in sync with the chrome). Selection just snaps + pops. */
 }
 .type-btn__icon svg {
-	/* Scaled within the 72px disc to hold the icon:ring:whitespace balance. */
-	width: 30px;
-	height: 30px;
-	transition: opacity 0.18s ease;
+	/* Centred in the disc, with the name curving above and below it (a stamp).
+	   Sized down so the two arcs of text clear it. */
+	width: 24px;
+	height: 24px;
 }
 /* Visually hidden — carries the accessible name + i18n; the visible name is the
    curved arc (.type-btn__arc), which is aria-hidden. */
@@ -622,31 +630,23 @@ body::before {
 	clip: rect(0 0 0 0);
 	white-space: nowrap;
 }
-/* The kind name bent along the disc's top arc, above the icon — revealed on
-   hover/active. Needs SVG textPath (CSS can't curve a text run). Condensed
-   display face, tracked + uppercased, so it reads as a stamped badge. */
+/* The kind name curves along both the top and bottom arcs of the disc, around
+   a centred icon — a stamped seal. Needs SVG textPath (CSS can't curve a text
+   run). Condensed display face, tracked + uppercased. */
 .type-btn__arc {
 	grid-area: 1 / 1;
 	width: 72px;
 	height: 72px;
 	pointer-events: none;
-	opacity: 0;
-	transition: opacity 0.18s ease;
 }
 .type-btn__arc text {
 	font-family: var(--display);
 	font-size: 9px;
 	font-weight: 700;
-	letter-spacing: 0.4px;
+	letter-spacing: 0.3px;
 	text-transform: uppercase;
 	fill: var(--ink);
 }
-
-/* Hover preview on pointer devices; always shown for the active kind. */
-@media (hover: hover) {
-	.type-btn:hover .type-btn__arc { opacity: 1; }
-}
-.type-btn.is-active .type-btn__arc { opacity: 1; }
 .type-btn.is-active .type-btn__arc text { fill: var(--on-accent); }
 .type-btn.is-active .type-btn__icon {
 	background: var(--accent);
