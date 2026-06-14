@@ -114,7 +114,7 @@ class Posting_Page {
 			'scope'            => $path,
 			'display'          => 'standalone',
 			'background_color' => '#F4EFE6',
-			'theme_color'      => '#00787F',
+			'theme_color'      => '#20713A',
 			'icons'            => $icons,
 		] );
 	}
@@ -731,11 +731,10 @@ body::before {
 	   matches the gap that makes the logo's rounded corner CONCENTRIC with the
 	   sheet's rounded top corner (--screen-radius 30 − the logo's own 10px radius
 	   = 20 = --pad-x), so the curve frames the logo evenly rather than pinching its
-	   top-left. The safe-top zone (status bar) is added on top. No bottom rule here —
-	   the kind strip below owns the divider (its top rule), so it reads as one framed
-	   control rather than doubling the masthead's edge against the strip's. */
+	   top-left. The safe-top zone (status bar) is added on top. */
 	padding: 0 var(--pad-x) var(--pad-x);
 	padding-top: calc(var(--safe-top) + var(--pad-x));
+	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__bar {
 	position: relative;
@@ -851,10 +850,9 @@ body::before {
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
 	scroll-padding-left: var(--pad-x);
-	/* Top + bottom rules frame the kind selector as one contained "control strip"
-	   — the top rule sits where the masthead's edge was (the masthead no longer
-	   draws its own), so the strip stays evenly framed and self-contained. */
-	border-block: var(--bw) solid var(--line);
+	/* Only a bottom rule here — the masthead draws the shared line above the strip,
+	   so the header's border and the strip's top sit as one line (not two). */
+	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
