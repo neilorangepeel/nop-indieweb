@@ -216,14 +216,28 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 
-	/* Grain / halftone geometry — one shared grid. --grain-pitch is the dot gap
-	   (drives the page grain AND the scroll-fade halftone, kept phase-locked in
-	   alignHalftone); --grain-dot / --ht-dot are the two dot radii (background
-	   speckle vs the bigger halftone "drop-shadow" stud). Live-tunable via the
-	   grain panel, persisted to localStorage. */
-	--grain-pitch: 3px;
-	--grain-dot:   0.8px;
-	--ht-dot:      0.8px;
+	/* ── Scale tokens — adjust the whole UI from here ──────────────────────── */
+	/* Type scale — the recurring body sizes (poster/display one-offs like 24/32/40
+	   stay literal). Value-named so the source reads true; change one to retune
+	   every label/field/caption printed at that size. */
+	--fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
+	--fs-14: 14px;  --fs-16: 16px;  --fs-18: 18px;
+	/* The page side gutter — the inset shared by the top-level sections (masthead,
+	   greeting, compose, success). The rest of the layout is bespoke poster
+	   geometry, kept literal so the shorthands stay readable. */
+	--pad-x: 16px;
+	--bw: 2px;                       /* the single border weight used throughout */
+
+	/* Grain / halftone — ONE shared grid + ONE gradient. Each grain surface sets
+	   --grain-ink (its dot colour); --grain-r / --grain-feather default to the page
+	   speckle and are overridden only by the bigger halftone stud (.scroll-fade).
+	   --grain-pitch is the dot gap, phase-locked in alignHalftone. */
+	--grain-pitch:   3px;
+	--grain-dot:     0.8px;
+	--ht-dot:        0.8px;
+	--grain-r:       var(--grain-dot);
+	--grain-feather: 0.3px;
+	--grain-img:     radial-gradient(var(--grain-ink) var(--grain-r), transparent calc(var(--grain-r) + var(--grain-feather)));
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -280,7 +294,8 @@ body::before {
 	inset: 0;
 	z-index: 0;
 	background-color: var(--field);
-	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	--grain-ink: color-mix(in srgb, var(--ink) 16%, transparent);
+	background-image: var(--grain-img);
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	pointer-events: none;
 }
@@ -300,6 +315,11 @@ body::before {
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
 	--rule:     color-mix(in srgb, var(--ink) 36%, transparent);
 	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
+	/* Ink tints at fixed alphas — the recurring muted strokes/fills. Named by
+	   their alpha so a glance tells you the weight; one place to retune each. */
+	--ink-30:   color-mix(in srgb, var(--ink) 30%, transparent);  /* tile borders */
+	--ink-38:   color-mix(in srgb, var(--ink) 38%, transparent);  /* field borders, scrollbars */
+	--ink-50:   color-mix(in srgb, var(--ink) 50%, transparent);  /* sky arc */
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
 	   on the desktop mock / standalone band. */
@@ -322,7 +342,8 @@ body::before {
 	   vs the body grain), so the background colour never changes, just the dots. */
 	background-color: var(--field);
 	/* Faint halftone grain — the organic "printed on paper" texture. */
-	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	--grain-ink: var(--grain);
+	background-image: var(--grain-img);
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 /* While JS sets the initial kind on load, suppress all transitions/animations so
@@ -342,7 +363,8 @@ body::before {
 		/* The lighter off-white field the floating poster sits on (poster stays 16%).
 		   Restored here because body is transparent on phones (status-bar trick). */
 		background-color: var(--field);
-		background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		--grain-ink: color-mix(in srgb, var(--ink) 8%, transparent);
+		background-image: var(--grain-img);
 	}
 	.app {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
@@ -355,7 +377,7 @@ body::before {
 		height: 844px;
 		--safe-top: 59px;
 		--safe-bottom: 34px;
-		border: 2px solid var(--device-ink);
+		border: var(--bw) solid var(--device-ink);
 		border-radius: 50px;
 	}
 	/* Desktop mock: show the band, full height, anchored inside the floating phone. */
@@ -412,7 +434,7 @@ body::before {
    where iOS renders the genuine chrome over the band. */
 .device-chrome > * { visibility: hidden; }
 .device-chrome__time {
-	font-size: 16px;
+	font-size: var(--fs-16);
 	font-weight: 600;
 	letter-spacing: 0.01em;
 	font-variant-numeric: tabular-nums;
@@ -460,12 +482,12 @@ body::before {
 
 .masthead {
 	flex-shrink: 0;
-	padding: 0 16px 14px;
+	padding: 0 var(--pad-x) 14px;
 	/* Clear the status bar by 12px. The app/desktop add the safe-top zone (59px)
 	   on top; in a Safari tab safe-top is 0, so this is a clean 12px gap below the
 	   default-height status bar — same visible clearance as the app. */
 	padding-top: calc(var(--safe-top) + 12px);
-	border-bottom: 2px solid var(--line);
+	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__top {
 	display: flex;
@@ -505,7 +527,7 @@ body::before {
 }
 .clock__date {
 	font-family: var(--display);
-	font-size: 12px;
+	font-size: var(--fs-12);
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
@@ -525,7 +547,7 @@ body::before {
 	inset: 0;
 	width: 100%;
 	height: 100%;
-	color: color-mix(in srgb, var(--ink) 50%, transparent);
+	color: var(--ink-50);
 }
 .sky__body {
 	position: absolute;
@@ -542,8 +564,8 @@ body::before {
 
 .greeting {
 	flex-shrink: 0;
-	padding: 12px 16px 8px;
-	font-size: 14px;
+	padding: 12px var(--pad-x) 8px;
+	font-size: var(--fs-14);
 	font-weight: 700;
 	letter-spacing: -0.01em;
 }
@@ -580,7 +602,7 @@ body::before {
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	border-bottom: 2px solid var(--line);
+	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 .type-btn {
@@ -594,11 +616,11 @@ body::before {
 	padding: 6px 4px;
 	/* Inactive tiles sit back — muted border + ink — so the filled active kind
 	   and the compose area lead the eye, not the whole six-up grid. */
-	border: 2px solid color-mix( in srgb, var(--ink) 30%, transparent );
+	border: var(--bw) solid var(--ink-30);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
-	font-size: 10px;
+	font-size: var(--fs-10);
 	font-weight: 800;
 	font-family: var(--display);
 	text-transform: uppercase;
@@ -644,7 +666,7 @@ body::before {
 	display: flex;
 	flex-direction: column;
 	scrollbar-width: thin;
-	scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transparent;
+	scrollbar-color: var(--ink-38) transparent;
 }
 /* Conditional depth as scroll shadows — but drawn as translucent ink washes
    OVER the continuous grain, with NO opaque paper covers (those revealed a
@@ -663,7 +685,10 @@ body::before {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient( color-mix( in srgb, var(--ink) 100%, transparent ) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px) );
+	--grain-ink: var(--ink);          /* solid ink dots (the page grain shows between) */
+	--grain-r: var(--ht-dot);         /* the bigger halftone "stud" */
+	--grain-feather: 0.7px;
+	background-image: var(--grain-img);
 	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
@@ -693,7 +718,7 @@ body::before {
 	   deep bottom padding clears the floating Post button so the last line can
 	   scroll above it. */
 	flex: 1 0 auto;
-	padding: 16px 16px calc(var(--safe-bottom) + 88px);
+	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
@@ -709,7 +734,7 @@ body::before {
 .field-label {
 	display: block;
 	font-family: var(--display);
-	font-size: 11px;
+	font-size: var(--fs-11);
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
@@ -731,10 +756,10 @@ body::before {
 .text-field {
 	width: 100%;
 	background: transparent;
-	border: 2px solid color-mix( in srgb, var(--ink) 38%, transparent );
+	border: var(--bw) solid var(--ink-38);
 	border-radius: var(--radius);
 	padding: 11px 12px;
-	font-size: 16px;
+	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -765,7 +790,7 @@ body::before {
 		transparent 29px, transparent 30px );
 	border: none;
 	padding: 6px 4px 4px 0;
-	font-size: 18px;
+	font-size: var(--fs-18);
 	line-height: 30px;
 	font-family: inherit;
 	font-weight: 500;
@@ -802,7 +827,7 @@ body::before {
 /* Photo picker */
 .photo-picker {
 	background: var(--field);
-	border: 2px dashed var(--line);
+	border: var(--bw) dashed var(--line);
 	border-radius: var(--radius);
 	padding: 26px 16px;
 	text-align: center;
@@ -814,7 +839,7 @@ body::before {
 .photo-picker input[type="file"] { display: none; }
 .photo-picker-icon { display: block; margin-bottom: 8px; }
 .photo-picker p { font-family: var(--display); font-size: 17px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-.photo-picker small { font-size: 12px; font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
+.photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
 .thumbnails {
 	display: grid;
@@ -824,14 +849,14 @@ body::before {
 }
 .thumbnails img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius); display: block;
 }
 .thumb { display: flex; flex-direction: column; }
 .alt-texts { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {
-	font-size: 10px;
+	font-size: var(--fs-10);
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
@@ -845,7 +870,7 @@ body::before {
 	border-bottom: 1.5px solid var(--line);
 	border-radius: 0;
 	padding: 6px 0;
-	font-size: 16px;
+	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -862,7 +887,7 @@ body::before {
 	align-items: center;
 	gap: 6px;
 	background: transparent;
-	border: 2px solid color-mix( in srgb, var(--ink) 38%, transparent );
+	border: var(--bw) solid var(--ink-38);
 	border-radius: var(--radius);
 	padding: 8px 10px;
 	min-height: 46px;
@@ -877,7 +902,7 @@ body::before {
 	color: var(--on-accent);
 	border-radius: var(--radius);
 	padding: 4px 4px 4px 9px;
-	font-size: 13px;
+	font-size: var(--fs-13);
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -890,14 +915,14 @@ body::before {
 	color: var(--accent);
 	border: none; padding: 0;
 	border-radius: 1px;
-	cursor: pointer; font-size: 13px; line-height: 1;
+	cursor: pointer; font-size: var(--fs-13); line-height: 1;
 	font-family: inherit; font-weight: 800;
 }
 .tag-input {
 	flex: 1;
 	min-width: 80px;
 	border: none; outline: none;
-	font-size: 16px;
+	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -924,7 +949,7 @@ body::before {
 .url-specimen__glyph svg { display: block; width: 96px; height: 96px; }
 .url-specimen__hint {
 	font-family: var(--display);
-	font-size: 13px;
+	font-size: var(--fs-13);
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
@@ -941,7 +966,7 @@ body::before {
 	animation: reveal 0.18s ease;
 }
 .url-specimen__path {
-	font-size: 13px;
+	font-size: var(--fs-13);
 	font-weight: 500;
 	opacity: 0.6;
 	word-break: break-all;
@@ -955,7 +980,7 @@ body::before {
 /* Syndicate-to */
 .syndicate-details {
 	border: none;
-	border-top: 2px solid var(--line);
+	border-top: var(--bw) solid var(--line);
 }
 .syndicate-summary {
 	display: flex;
@@ -963,7 +988,7 @@ body::before {
 	justify-content: space-between;
 	padding: 12px 0;
 	font-family: var(--display);
-	font-size: 13px;
+	font-size: var(--fs-13);
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.1em;
@@ -975,7 +1000,7 @@ body::before {
 .syndicate-summary::-webkit-details-marker { display: none; }
 .syndicate-summary::after {
 	content: '+';
-	font-size: 18px; font-weight: 800; line-height: 1;
+	font-size: var(--fs-18); font-weight: 800; line-height: 1;
 }
 details[open] .syndicate-summary::after { content: '\2212'; }
 /* Animated open — interpolate-size lets block-size transition to auto
@@ -997,7 +1022,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 14px;
+	font-size: var(--fs-14);
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
@@ -1010,7 +1035,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	justify-content: center;
 	width: 20px; height: 20px;
 	flex-shrink: 0;
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--on-accent);
@@ -1028,7 +1053,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 }
 .syndicator-item__limit {
 	margin-left: auto;
-	font-size: 11px;
+	font-size: var(--fs-11);
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	opacity: 0.55;
@@ -1064,9 +1089,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	display: block;
 	width: 100%;
 	padding: 15px;
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
-	font-size: 16px;
+	font-size: var(--fs-16);
 	font-weight: 800;
 	font-family: inherit;
 	text-transform: uppercase;
@@ -1140,7 +1165,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .progress-status { font-family: var(--display); font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .progress-bar-track {
 	width: 200px; height: 6px;
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: 1px;
 	overflow: hidden;
 }
@@ -1158,7 +1183,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	/* deep bottom padding clears the floating "Post another" button */
-	padding: 16px 16px calc(var(--safe-bottom) + 88px);
+	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
 }
 .success-hero {
 	position: relative;
@@ -1179,7 +1204,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	gap: 12px;
 	background: var(--accent);
 	color: var(--on-accent);
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
 	padding: 14px 26px;
 	box-shadow: var(--shadow);
@@ -1246,7 +1271,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 }
 .success-streak__label {
 	font-family: var(--display);
-	font-size: 12px;
+	font-size: var(--fs-12);
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
@@ -1260,11 +1285,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 }
 .success-photos img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
 }
 .success-permalink {
-	font-size: 13px;
+	font-size: var(--fs-13);
 	font-weight: 700;
 	color: var(--text);
 	text-decoration: underline;
@@ -1285,7 +1310,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	padding: 2px 9px;
 	border-radius: var(--nop-radius-pill);
 	background: var(--surface);
-	font-size: 11px;
+	font-size: var(--fs-11);
 	font-weight: 800;
 	color: var(--text);
 	font-variant-numeric: tabular-nums;
@@ -1306,11 +1331,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	max-width: 88%;
 	padding: 12px 16px;
 	background: var(--field);
-	border: 2px solid var(--line);
+	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
 	box-shadow: var(--shadow);
 	color: var(--text);
-	font-size: 14px;
+	font-size: var(--fs-14);
 	font-weight: 700;
 	opacity: 0;
 	transition: opacity 0.2s, transform 0.2s;
