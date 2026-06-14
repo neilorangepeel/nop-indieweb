@@ -152,7 +152,7 @@ class Posting_Page {
 		];
 		?>
 'use strict';
-var CACHE = 'nop-post-v1';
+var CACHE = 'nop-post-v2';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -195,15 +195,19 @@ self.addEventListener( 'fetch', function ( e ) {
 		return;
 	}
 
-	// Static assets (fonts, etc.): cache-first, fill on first online hit.
-	e.respondWith(
-		caches.match( req ).then( function ( m ) {
-			return m || fetch( req ).then( function ( res ) {
-				if ( res && res.ok ) { var copy = res.clone(); caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } ); }
-				return res;
-			} );
-		} ).catch( function () { return caches.match( req ); } )
-	);
+	// Fonts only: cache-first (immutable, filename-versioned). Everything else —
+	// the icons, the manifest, etc. — falls through to the network, so a changed
+	// asset isn't pinned by a stale cache entry (that's what froze the old icon).
+	if ( /\.woff2($|\?)/.test( url.pathname ) ) {
+		e.respondWith(
+			caches.match( req ).then( function ( m ) {
+				return m || fetch( req ).then( function ( res ) {
+					if ( res && res.ok ) { var copy = res.clone(); caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } ); }
+					return res;
+				} );
+			} ).catch( function () { return caches.match( req ); } )
+		);
+	}
 } );
 		<?php
 	}
