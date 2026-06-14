@@ -777,7 +777,7 @@ body::before {
 	   the base grid shows through the whole row, and these phase-locked bigger/darker
 	   dots (background-position set in alignHalftone) land concentric on it: the grid
 	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
-	background-image: radial-gradient(var(--ink) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-image: radial-gradient(var(--field) var(--grain-dot), var(--ink) calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 .type-fade-left {
@@ -893,7 +893,7 @@ body::before {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient(var(--ink) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-image: radial-gradient(var(--field) var(--grain-dot), var(--ink) calc(var(--grain-dot) + 0.3px));
 	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
