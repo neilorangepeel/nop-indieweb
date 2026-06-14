@@ -428,7 +428,11 @@ body::before {
 	}
 }
 /* Standalone Home Screen app: show the band, full height behind the status bar. */
-.standalone .device-chrome { display: flex; top: 0; height: var(--safe-top, 54px); }
+/* AUDIT TEST (2026-06-14): band hidden in standalone to see if the html accent
+   alone tints the bar. Revert this line to the commented one if the bar goes
+   wrong on the Home Screen app. */
+.standalone .device-chrome { display: none; }
+/* .standalone .device-chrome { display: flex; top: 0; height: var(--safe-top, 54px); } */
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
