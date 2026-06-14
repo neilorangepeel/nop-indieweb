@@ -743,7 +743,10 @@ body::before {
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
 	scroll-padding-left: var(--pad-x);
-	border-bottom: var(--bw) solid var(--line);
+	/* Top + bottom rules frame the kind selector as a contained "control strip" on
+	   the sheet — so the edge halftone fades terminate on a rule and read as
+	   intentional containment rather than a floating column with a hard cut-off. */
+	border-block: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
