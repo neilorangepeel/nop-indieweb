@@ -773,6 +773,10 @@ body::before {
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
+	/* Multiply so the accent ground reads as printed ink darkening the surface
+	   beneath (not a flat film on top); the off-white dots stay light and pop.
+	   Flips to screen in dark mode so it lightens instead of vanishing. */
+	mix-blend-mode: multiply;
 	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
 	   the base grid shows through the whole row, and these phase-locked bigger/darker
 	   dots (background-position set in alignHalftone) land concentric on it: the grid
@@ -789,6 +793,11 @@ body::before {
 	right: 0;
 	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
+/* Dark mode: multiply would darken the shadow into the dark backdrop until it
+   vanished — screen lightens instead, so the accent flood still reads. */
+@media (prefers-color-scheme: dark) {
+	.scroll-fade, .type-fade { mix-blend-mode: screen; }
 }
 .type-btn {
 	flex: 0 0 72px;
@@ -888,6 +897,7 @@ body::before {
 	height: 120px;
 	pointer-events: none;
 	opacity: 0;
+	mix-blend-mode: multiply;   /* ink-on-paper; screen in dark mode (see below) */
 	/* A single halftone screen in the ink hue on a transparent ground — the page
 	   grain shows between the dots. The mask shapes the darkness as a "hockey
 	   stick": a long, subtle tail reaching far into the content that ramps up
