@@ -280,6 +280,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	lastTime = '';        // re-seed: populate tkTime/tkDate before the first build
 	updateClock();
 	renderTicker();
+	// Brandon loads with font-display:swap, so the first measure can predate it.
+	// tkSeqW is the wrap point now (not just a speed), so a stale width shows as a
+	// seam gap — re-measure once the real font is in. (offset is preserved.)
+	if ( document.fonts && document.fonts.ready ) {
+		document.fonts.ready.then( renderTicker ).catch( function () {} );
+	}
 
 	// ── Current-moment data (place · temp · sky) ─────────────────────────────────
 	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current

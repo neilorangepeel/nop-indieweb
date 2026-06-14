@@ -470,6 +470,7 @@ body::before {
 	   scroll pass through. JS drives the crawl; grab cursor hints it on desktop. */
 	touch-action: pan-y;
 	cursor: grab;
+	&:active { cursor: grabbing; }
 	/* Fade the run into the logo on the left (the transparent lead clears the
 	   42px tile + its gap), soft-cut at the right gutter. */
 	-webkit-mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
