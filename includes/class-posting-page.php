@@ -658,14 +658,23 @@ body::before {
 	left: var(--pad-x);
 	right: var(--pad-x);
 	top: 50%;
-	border-top: var(--bw) dashed var(--ink-50);
+	height: 0;                            /* zero-height coordinate line; the track and
+	                                         done lines draw their borders right here */
 }
+/* Track (full-width, dashed = the whole day) and done (the elapsed segment, solid)
+   are siblings both pinned to the rail's line, so they sit EXACTLY on top of each
+   other — same ink, the solid just overlays the dashed up to the current time. */
+.flightpath__track,
 .flightpath__done {
 	position: absolute;
 	left: 0;
 	top: 0;
-	width: 0;                              /* JS → elapsed-day fraction */
+	height: 0;
 	border-top: var(--bw) solid var(--ink);
+}
+.flightpath__track { right: 0; border-top-style: dashed; }
+.flightpath__done {
+	width: 0;                              /* JS → elapsed-day fraction; sits on top */
 	transition: width 0.6s ease;
 }
 .flightpath__body {
@@ -1558,6 +1567,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	     with the sun/moon riding the join at the current time. -->
 	<div class="flightpath" aria-hidden="true">
 		<span class="flightpath__rail">
+			<span class="flightpath__track"></span>
 			<span class="flightpath__done" id="fpDone"></span>
 			<span class="flightpath__body is-sun" id="fpBody">
 				<svg class="flightpath__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
@@ -1971,6 +1981,16 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		withCoords( fetchNow );
 	}
 	loadNow();
+	// Retry when the tab becomes visible again. iOS Safari's site-settings panel
+	// (aA → Location → Allow) does NOT re-fire a load-time geolocation request, so
+	// without this the grid stays empty until a manual reload after granting. Also
+	// covers pull-to-refresh and bfcache restores. Cheap on repeat — loadNow() early
+	// -returns while the cached payload is fresh, and a denied permission no longer
+	// prompts, so this can't spam requests.
+	document.addEventListener( 'visibilitychange', function () {
+		if ( document.visibilityState === 'visible' ) { loadNow(); }
+	} );
+	window.addEventListener( 'pageshow', loadNow );
 
 	// ── Type configuration ────────────────────────────────────────────────────
 
