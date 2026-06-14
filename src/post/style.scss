@@ -1181,11 +1181,19 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .btn-secondary { background: var(--field); color: var(--text); }
 .btn-secondary:active { transform: translate(1px, 1px); }
 .btn-accent { background: var(--field); color: var(--text); margin-top: 0; }
-.btn-instagram {
-	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-	color: #fff;
+/* Clean, unbranded share button — same neutral surface as the editor button,
+   with the app mark in the kind accent for a friendly on-brand cue. */
+.btn-share {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	background: var(--field);
+	color: var(--text);
 	border-color: var(--line);
 }
+.btn-share:active { transform: translate(1px, 1px); }
+.btn-share__icon { flex-shrink: 0; display: flex; color: var(--accent); }
 
 /* ── Progress ───────────────────────────────────────────────────────────── */
 

@@ -1005,9 +1005,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var editBtn = document.getElementById( 'editBtn' );
 		editBtn.href = editUrl; editBtn.hidden = ! editUrl;
 
-		var igBtn = document.getElementById( 'instagramBtn' );
-		igBtn.hidden = ! ( currentType === 'photo' && selectedFiles.length );
-		igBtn.onclick = async function () {
+		var shareBtn = document.getElementById( 'shareBtn' );
+		shareBtn.hidden = ! ( currentType === 'photo' && selectedFiles.length );
+		shareBtn.onclick = async function () {
 			if ( navigator.canShare && navigator.canShare( { files: selectedFiles } ) ) {
 				try { await navigator.share( { files: selectedFiles } ); }
 				catch ( e ) { if ( e.name !== 'AbortError' ) showToast( 'Share from your Photos app instead.', 'error' ); }
