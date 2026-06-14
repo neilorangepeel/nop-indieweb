@@ -2293,6 +2293,32 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 } )();
 </script>
+
+<!-- TEMP DEBUG — status-bar source diagnosis; remove after -->
+<div id="nopDbg2" style="position:fixed;top:150px;left:8px;z-index:99999;background:rgba(0,0,0,0.9);color:#39ff14;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px 12px;white-space:pre;pointer-events:none;border-radius:6px;max-width:92vw"></div>
+<script>
+(function () {
+	var box = document.getElementById( 'nopDbg2' );
+	var band = document.querySelector( '.device-chrome' );
+	var tc   = document.getElementById( 'themeColor' );
+	var app  = document.getElementById( 'app' );
+	function read() {
+		var bs = band ? getComputedStyle( band ) : null;
+		box.textContent = [
+			'standalone: ' + ( navigator.standalone === true ),
+			'dark: ' + window.matchMedia( '(prefers-color-scheme: dark)' ).matches,
+			'kind: ' + ( app ? app.getAttribute( 'data-type' ) : '-' ),
+			'band.display: ' + ( bs ? bs.display : '-' ),
+			'band.bg: ' + ( bs ? bs.backgroundColor : '-' ),
+			'band.h: ' + ( band ? Math.round( band.getBoundingClientRect().height ) : '-' ),
+			'theme-color: ' + ( tc ? tc.getAttribute( 'content' ) : '-' ),
+			'body.bg: ' + getComputedStyle( document.body ).backgroundColor
+		].join( '\n' );
+	}
+	read();
+	setInterval( read, 400 );
+} )();
+</script>
 </body>
 </html>
 		<?php
