@@ -464,11 +464,10 @@ body::before {
 .masthead {
 	flex-shrink: 0;
 	padding: 0 16px 14px;
-	/* Clear the status bar. In the app/desktop the safe-top zone (59px) does it;
-	   in a Safari tab safe-top is 0, so the bare 12px let the logo butt the tinted
-	   status bar — max() floors it at 34px there for breathing room, while the app
-	   and desktop keep their larger safe-area value. */
-	padding-top: max( calc(var(--safe-top) + 12px), 34px );
+	/* Clear the status bar by 12px. The app/desktop add the safe-top zone (59px)
+	   on top; in a Safari tab safe-top is 0, so this is a clean 12px gap below the
+	   default-height status bar — same visible clearance as the app. */
+	padding-top: calc(var(--safe-top) + 12px);
 	border-bottom: 2px solid var(--line);
 }
 .masthead__top {
