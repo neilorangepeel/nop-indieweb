@@ -801,6 +801,7 @@ body::before {
 	letter-spacing: 0;
 	font-variant-numeric: tabular-nums;
 }
+.ticker__item.tk-queue { font-weight: 700; }   /* pending offline posts — a touch louder */
 .ticker__sep { padding: 0 6px; opacity: 0.35; }
 .ticker__icon { display: inline-flex; }
 .ticker__icon svg { display: block; width: 14px; height: 14px; }
@@ -2024,6 +2025,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
 	var postsToday = NOP.postsToday || 0;          // server count; bumped on each post
 	var lastPostTs = NOP.lastPostTs || 0;          // Unix of the last published post
+	var queueCount = 0;                            // offline posts waiting to send
 
 	// Golden hour ≈ the last hour before sunset: counts down to it, reads "now"
 	// during, then falls back to the sunset time once it's passed.
@@ -2054,6 +2056,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	function tkItems() {
 		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
+		if ( queueCount > 0 ) { out.push( { c: 'tk-queue', h: queueCount + ' to send' } ); }
 		out.push( { c: 'tk-cadence', h: tkCadence() } );
 		if ( lastPostTs ) { out.push( { c: 'tk-last',   h: 'Last posted ' + tkAgo( lastPostTs ) } ); }
 		if ( tkDate )     { out.push( { c: 'tk-date',   h: tkDate } ); }
@@ -2738,6 +2741,26 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			tx.oncomplete = function () { res(); }; tx.onerror = function () { res(); };
 		} ); } );
 	}
+	// Count without loading the stored blobs into memory.
+	function qCount() {
+		return qOpen().then( function ( db ) { return new Promise( function ( res ) {
+			var r = db.transaction( STORE, 'readonly' ).objectStore( STORE ).count();
+			r.onsuccess = function () { res( r.result ); }; r.onerror = function () { res( 0 ); };
+		} ); } );
+	}
+
+	// Reflect the pending count in the ticker's "N to send" item. Rebuild only when
+	// the item appears/disappears (0↔N); otherwise just swap the number in place.
+	function setQueueCount( n ) {
+		var toggled = ( n > 0 ) !== ( queueCount > 0 );
+		queueCount = n;
+		if ( toggled ) { renderTicker(); }
+		else if ( n > 0 ) { setTk( 'tk-queue', n + ' to send' ); }
+	}
+	function refreshQueueCount() {
+		if ( ! window.indexedDB ) { return Promise.resolve(); }
+		return qCount().then( setQueueCount ).catch( function () {} );
+	}
 
 	function refreshNonce() {
 		return fetch( NOP.nonceUrl, { credentials: 'same-origin' } )
@@ -2749,6 +2772,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	async function queueAndAck( post ) {
 		try { await qAdd( post ); }
 		catch ( e ) { showView( 'compose' ); showToast( "Couldn't save offline: " + e.message, 'error' ); return; }
+		setQueueCount( queueCount + 1 );        // show "N to send" in the ticker
 		recordKindUse( post.type );
 		showToast( 'Saved — will post when you’re back online.', 'info' );
 		resetForm();
@@ -2765,7 +2789,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				try {
 					var result = await sendPost( items[ i ], null );
 					await qDelete( items[ i ].id );       // delete right after the 201 — minimise the double-post window
-					postsToday += 1;
+					queueCount   = Math.max( 0, queueCount - 1 );
+					postsToday  += 1;
 					lastPostTs   = Math.floor( Date.now() / 1000 );
 					renderTicker();
 					showToast( 'Queued post published.', 'info' );
@@ -2775,11 +2800,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					break;
 				}
 			}
-		} catch ( e ) {} finally { replaying = false; }
+		} catch ( e ) {} finally { replaying = false; refreshQueueCount(); }
 	}
 
 	window.addEventListener( 'online', replayQueue );
-	replayQueue();   // flush anything stored from a previous, offline session
+	replayQueue();           // flush anything stored from a previous, offline session
+	refreshQueueCount();     // and surface the count if we're offline with posts waiting
 
 	// ── Success ───────────────────────────────────────────────────────────────
 
