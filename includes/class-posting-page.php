@@ -782,11 +782,20 @@ body::before {
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
-/* The reveal mask (a solid region that grows from the edge + a soft trailing edge)
-   is set in JS by scroll distance — so the opaque swell dots are uncovered in place
-   rather than cross-faded, which avoids the base dots haloing through. */
-.type-fade-left  { left: 0; }
-.type-fade-right { right: 0; }
+/* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
+   scroll distance). Because the shadow dot is the SAME size as the base dot, the
+   opacity fade just darkens each dot in place — no swelling, no sweeping mask edge,
+   no halo — so you never see the pixels move. */
+.type-fade-left {
+	left: 0;
+	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
+.type-fade-right {
+	right: 0;
+	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
 .type-btn {
 	flex: 0 0 72px;
 	aspect-ratio: 1;
@@ -898,10 +907,20 @@ body::before {
 	   overlay / iOS — so this matches size, not phase.) */
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
-/* Mask + background-position both set in JS: the grid-locked swell dots are
-   uncovered in place by a growing mask (not opacity-faded), so no halo. */
-.scroll-fade-top    { top: 0;    margin-bottom: -120px; }
-.scroll-fade-bottom { bottom: 0; margin-top: -120px; }
+/* Static soft mask; background-position set in JS (viewport master grid). The layer
+   fades by opacity — same-size dots, so they darken in place without moving. */
+.scroll-fade-top {
+	top: 0;
+	margin-bottom: -120px;
+	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
+.scroll-fade-bottom {
+	bottom: 0;
+	margin-top: -120px;
+	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+}
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. The
@@ -2076,24 +2095,16 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var composeScroll = document.querySelector( '.compose-scroll' );
 	var fadeTop       = document.querySelector( '.scroll-fade-top' );
 	var fadeBottom    = document.querySelector( '.scroll-fade-bottom' );
-	// Reveal a fade by GROWING a mask from its edge (not by fading opacity): a solid
-	// region (fully uncovers the opaque swell dots, which cover the base dots beneath
-	// → no halo) plus a soft trailing edge. frac 0 → fully masked (hidden).
-	function setFade( el, dir, frac ) {
-		if ( ! el ) { return; }
-		var r = Math.min( Math.max( frac, 0 ), 1 );
-		var m = 'linear-gradient(' + dir + ', #000 0%, #000 ' + ( r * 78 ).toFixed( 1 ) + '%, transparent ' + ( r * 100 ).toFixed( 1 ) + '%)';
-		el.style.opacity = '1';
-		el.style.webkitMaskImage = m;
-		el.style.maskImage = m;
-	}
+	// Reveal by opacity over the static mask. Safe from the old haloing because the
+	// shadow dot is the same size as the base dot (--ht-dot = --grain-dot): fading it
+	// in just darkens each dot in place — no ring, and the mask never moves.
 	function updateScrollFades() {
 		if ( ! composeScroll ) return;
 		var RAMP  = 56;
 		var top   = composeScroll.scrollTop;
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
-		setFade( fadeTop, 'to bottom', top / RAMP );
-		setFade( fadeBottom, 'to top', below / RAMP );
+		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
+		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -2149,8 +2160,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var RAMP  = 40;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
-		setFade( typeFadeLeft, 'to right', left / RAMP );
-		setFade( typeFadeRight, 'to left', right / RAMP );
+		if ( typeFadeLeft )  { typeFadeLeft.style.opacity  = Math.min( Math.max( left, 0 ) / RAMP, 1 ); }
+		if ( typeFadeRight ) { typeFadeRight.style.opacity = Math.min( Math.max( right, 0 ) / RAMP, 1 ); }
 	}
 	typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
 
