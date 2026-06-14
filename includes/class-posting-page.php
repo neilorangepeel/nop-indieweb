@@ -817,6 +817,10 @@ body::before {
 .compose-scroll {
 	flex: 1;
 	overflow-y: auto;
+	/* Vertical only — without this, overflow-x computes to auto and the kind row's
+	   width lets the whole compose area pan sideways (the badge slider stays its own
+	   horizontal scroll). */
+	overflow-x: hidden;
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
 	display: flex;
