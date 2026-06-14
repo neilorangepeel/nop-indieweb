@@ -364,15 +364,25 @@ body::before {
 	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
-	/* The status bar is the full accent in both schemes; --on-accent (the paper
-	   colour, which flips off-white↔near-black) is always the accent's opposite,
-	   so the faux text stays legible — light text on the darker light-mode accent,
-	   dark text on the brighter dark-mode accent — matching what iOS auto-picks. */
+	/* Light mode: the full accent (it's dark enough that iOS keeps it under the
+	   forced-white status-bar text). Dark mode override below. */
 	background: var(--ink);
 	color: var(--on-accent);
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
 	pointer-events: none;
 	z-index: 5;
+}
+/* Dark mode: the dark-scheme accents are too BRIGHT for the status bar. iOS
+   black-translucent forces WHITE bar text, so it only honours a background dark
+   enough for white to read — a bright accent gets rejected and the bar falls
+   back to the near-black body (only red was dark enough to survive). So in dark
+   mode use a DEEP accent (≈45% ink on black): dark enough that iOS keeps it,
+   still clearly the kind's hue, with light text. */
+@media (prefers-color-scheme: dark) {
+	.device-chrome {
+		background: color-mix( in srgb, var(--ink) 45%, #000 );
+		color: #f4f0e7;
+	}
 }
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
@@ -2291,32 +2301,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	requestAnimationFrame( alignHalftone );   // re-align once layout (safe-area) settles
 	if ( document.fonts && document.fonts.ready ) { document.fonts.ready.then( alignHalftone ); }  // and after the web font reflows the masthead
 
-} )();
-</script>
-
-<!-- TEMP DEBUG — status-bar source diagnosis; remove after -->
-<div id="nopDbg2" style="position:fixed;top:150px;left:8px;z-index:99999;background:rgba(0,0,0,0.9);color:#39ff14;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px 12px;white-space:pre;pointer-events:none;border-radius:6px;max-width:92vw"></div>
-<script>
-(function () {
-	var box = document.getElementById( 'nopDbg2' );
-	var band = document.querySelector( '.device-chrome' );
-	var tc   = document.getElementById( 'themeColor' );
-	var app  = document.getElementById( 'app' );
-	function read() {
-		var bs = band ? getComputedStyle( band ) : null;
-		box.textContent = [
-			'standalone: ' + ( navigator.standalone === true ),
-			'dark: ' + window.matchMedia( '(prefers-color-scheme: dark)' ).matches,
-			'kind: ' + ( app ? app.getAttribute( 'data-type' ) : '-' ),
-			'band.display: ' + ( bs ? bs.display : '-' ),
-			'band.bg: ' + ( bs ? bs.backgroundColor : '-' ),
-			'band.h: ' + ( band ? Math.round( band.getBoundingClientRect().height ) : '-' ),
-			'theme-color: ' + ( tc ? tc.getAttribute( 'content' ) : '-' ),
-			'body.bg: ' + getComputedStyle( document.body ).backgroundColor
-		].join( '\n' );
-	}
-	read();
-	setInterval( read, 400 );
 } )();
 </script>
 </body>
