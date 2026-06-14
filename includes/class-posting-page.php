@@ -220,10 +220,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   carries its own 50px device frame. */
 	--screen-radius: 30px;
 
-	/* POST button height, sized to match the iOS Safari address-bar pill (~36–40pt
-	   measured from-device) rather than the chunkier default — so the commit pill
-	   reads as the same class of control as the browser's own toolbar pill. */
-	--post-btn-h: 40px;
+	/* POST button sized to the iOS Safari address-bar pill (measured from-device:
+	   ~52pt tall, ~50% of screen width, centred — it's a floating pill, not a
+	   full-width bar). The button reads as the same class of control as Safari's
+	   own toolbar pill. Both tunable from here. */
+	--post-btn-h: 50px;
+	--post-btn-w: min(54%, 320px);
 
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -1132,10 +1134,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	right: 0;
 	bottom: 0;
 	z-index: 4;
-	/* Side inset matches the iOS Liquid Glass toolbar so the button reads as a
-	   matching pill stacked above it in the browser; bottom padding lifts it clear
-	   of the home-indicator zone. */
-	padding: 14px 32px;
+	/* Centre a narrow floating pill (not a full-width bar), matching the iOS Safari
+	   URL pill; the 16px gutter is just a safety margin so it never kisses the edge.
+	   Bottom padding lifts it clear of the home-indicator zone. */
+	display: flex;
+	justify-content: center;
+	padding: 14px 16px;
 	padding-bottom: calc(var(--safe-bottom) + 14px);
 	background: transparent;
 	pointer-events: none;
@@ -1145,7 +1149,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
    pinned to --post-btn-h (the iOS toolbar pill) instead of the default padding, so
    it reads as the same control class as Safari's own bottom pill. Border-box +
    flex-centred content means the min-height IS the total height. */
-.bottom-bar .btn { border-radius: var(--nop-radius-pill); min-height: var(--post-btn-h); padding-block: 0; }
+.bottom-bar .btn { border-radius: var(--nop-radius-pill); width: var(--post-btn-w); min-height: var(--post-btn-h); padding-block: 0; }
 
 .btn {
 	display: block;
