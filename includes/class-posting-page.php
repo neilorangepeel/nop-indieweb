@@ -2276,6 +2276,45 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 } )();
 </script>
+
+<!-- TEMP DEBUG — remove after diagnosing the iOS bottom margin -->
+<div id="nopDbg" style="position:fixed;top:140px;left:8px;z-index:99999;background:rgba(0,0,0,0.85);color:#39ff14;font:12px/1.5 ui-monospace,Menlo,monospace;padding:10px 12px;white-space:pre;pointer-events:none;border-radius:6px;max-width:92vw"></div>
+<script>
+(function () {
+	var box = document.getElementById( 'nopDbg' );
+	function probe( unit ) {
+		var d = document.createElement( 'div' );
+		d.style.cssText = 'position:fixed;top:0;left:-9999px;width:1px;height:100' + unit;
+		document.body.appendChild( d );
+		var h = d.offsetHeight; d.parentNode.removeChild( d ); return h;
+	}
+	function cssVar( n ) { return getComputedStyle( document.documentElement ).getPropertyValue( n ).trim() || '0'; }
+	function read() {
+		var app = document.getElementById( 'app' );
+		var r = app ? app.getBoundingClientRect() : { height: 0, bottom: 0 };
+		box.textContent = [
+			'standalone: ' + ( window.navigator.standalone === true ),
+			'screen.h:   ' + screen.height,
+			'innerH:     ' + window.innerHeight,
+			'visualVP.h: ' + ( window.visualViewport ? Math.round( window.visualViewport.height ) : '-' ),
+			'docEl.cliH: ' + document.documentElement.clientHeight,
+			'100vh:      ' + probe( 'vh' ),
+			'100dvh:     ' + probe( 'dvh' ),
+			'100svh:     ' + probe( 'svh' ),
+			'100lvh:     ' + probe( 'lvh' ),
+			'safe-top:   ' + cssVar( '--safe-top' ),
+			'safe-bot:   ' + cssVar( '--safe-bottom' ),
+			'app.height: ' + Math.round( r.height ),
+			'app.bottom: ' + Math.round( r.bottom ),
+			'body.offH:  ' + document.body.offsetHeight
+		].join( '\n' );
+	}
+	read();
+	window.addEventListener( 'resize', read );
+	if ( window.visualViewport ) { window.visualViewport.addEventListener( 'resize', read ); }
+	setTimeout( read, 600 ); setTimeout( read, 1600 );
+} )();
+</script>
 </body>
 </html>
 		<?php
