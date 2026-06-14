@@ -771,7 +771,7 @@ body::before {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	width: 48px;
+	width: 64px;
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
@@ -788,13 +788,13 @@ body::before {
    no halo — so you never see the pixels move. */
 .type-fade-left {
 	left: 0;
-	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
 .type-fade-right {
 	right: 0;
-	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
 .type-btn {
 	flex: 0 0 72px;
@@ -891,7 +891,7 @@ body::before {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 120px;
+	height: 160px;
 	pointer-events: none;
 	opacity: 0;
 	/* A single halftone screen in the ink hue on a transparent ground — the page
@@ -911,15 +911,15 @@ body::before {
    fades by opacity — same-size dots, so they darken in place without moving. */
 .scroll-fade-top {
 	top: 0;
-	margin-bottom: -120px;
-	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	margin-bottom: -160px;
+	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
 .scroll-fade-bottom {
 	bottom: 0;
-	margin-top: -120px;
-	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
+	margin-top: -160px;
+	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
