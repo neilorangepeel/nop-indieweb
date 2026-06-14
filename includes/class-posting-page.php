@@ -320,7 +320,7 @@ body {
    base rules (content already sits below the browser chrome). */
 .standalone .app        { margin-top: var(--safe-top); height: calc(100vh - var(--safe-top)); }
 .standalone body::before { top: var(--safe-top); }
-.standalone .masthead   { padding-top: 12px; }
+.standalone .masthead   { padding-top: var(--pad-x); }
 /* Grain that reaches the iOS safe areas. iOS paints the root/body background
    COLOUR into the home-indicator / overscroll zones but NOT the background-image,
    so a grain-less strip survives there however we size body/.app. A real fixed
@@ -574,14 +574,14 @@ body::before {
 
 .masthead {
 	flex-shrink: 0;
-	/* Bottom padding + a crisp full-bleed rule — the fixed header's clean bottom edge,
-	   balancing the top inset so the logo/ticker bar sits evenly framed. */
-	padding: 0 var(--pad-x) 16px;
-	/* Clear the status bar, then drop the bar clear of the rounded top corners so the
-	   curve frames it rather than pinching it. The app/desktop add the safe-top zone
-	   (59px) on top; in a Safari tab safe-top is 0, so this is a clean 16px gap below
-	   the default-height status bar — same visible clearance as the app. */
-	padding-top: calc(var(--safe-top) + 16px);
+	/* Even framing: top, side and bottom insets all = the gutter (--pad-x). That
+	   matches the gap that makes the logo's rounded corner CONCENTRIC with the
+	   sheet's rounded top corner (--screen-radius 30 − the logo's own 10px radius
+	   = 20 = --pad-x), so the curve frames the logo evenly rather than pinching its
+	   top-left. The safe-top zone (status bar) is added on top; a full-bleed rule
+	   closes the band. */
+	padding: 0 var(--pad-x) var(--pad-x);
+	padding-top: calc(var(--safe-top) + var(--pad-x));
 	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__bar {
