@@ -662,8 +662,12 @@ body::before {
 .flightpath {
 	flex-shrink: 0;
 	position: relative;
-	height: 26px;
+	height: 30px;
 	margin-top: 14px;
+	/* The fixed header's clean bottom edge — a crisp full-bleed rule the drop shadow
+	   falls from as content scrolls beneath it (the flight-path reads as the day
+	   indicator above it). The extra height clears the rule from the day line. */
+	border-bottom: var(--bw) solid var(--line);
 }
 .flightpath__rail {
 	position: absolute;
