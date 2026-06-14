@@ -239,10 +239,16 @@ html { scrollbar-color: color-mix(in srgb, var(--ink) 38%, transparent) transpar
 
 html {
 	height: 100%;
-	/* Field + grain on the ROOT so it propagates to the whole viewport canvas. */
-	background-color: var(--field);
-	background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* The ROOT carries the ACCENT, on purpose. In a Safari tab iOS 26 tints the
+	   status bar from the BODY background-color and falls back to HTML when body
+	   has none — so the transparent body below lets this accent become the bar
+	   tint with NO sampling band (so it's iOS's default height, like Amazon/etc).
+	   On-screen it's covered by the off-white app + ::before, so it only feeds the
+	   bar. Deep accent in dark mode so the forced-white bar text stays legible. */
+	background-color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+	html { background-color: color-mix( in srgb, var(--ink) 45%, #000 ); }
 }
 body {
 	/* Per-context height (see the head script). Default = Safari TAB: 100dvh, the
@@ -251,14 +257,10 @@ body {
 	   852 screen (dvh there is 59px short and mis-initialises on PWA launch). */
 	height: 100dvh;
 	overflow: hidden;
-	background-color: var(--field);
-	/* Grain at the POSTER's 16% on phones: the app fills the screen there, so the
-	   only place body shows is the transient toolbar / safe-area strip the app
-	   doesn't cover — matching 16% makes that strip seamless with the poster
-	   instead of a flat or lighter gap. Desktop drops to the field's 8% (below),
-	   where body is the lighter field the floating phone sits on. */
-	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* NO background-color on phones — transparent so iOS falls back to the html
+	   accent for the status bar (see html). The visible off-white page is the
+	   fixed ::before backstop (16% grain) + the app on top. The desktop frame
+	   media query restores the field on body for the floating-phone surround. */
 	color: var(--charcoal);
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -340,7 +342,9 @@ body::before {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		/* The lighter field the floating poster sits on (poster stays 16%). */
+		/* The lighter off-white field the floating poster sits on (poster stays 16%).
+		   Restored here because body is transparent on phones (status-bar trick). */
+		background-color: var(--field);
 		background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	}
 	.app {
@@ -357,8 +361,8 @@ body::before {
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
-	/* Desktop mock: full height at top:0, anchored inside the floating phone. */
-	.app .device-chrome { top: 0; height: var(--safe-top); position: absolute; }
+	/* Desktop mock: show the band, full height, anchored inside the floating phone. */
+	.app .device-chrome { display: flex; top: 0; height: var(--safe-top); position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
 
@@ -371,19 +375,16 @@ body::before {
      under the status bar, so the band fills that zone behind the real clock.
    • Desktop mock — full safe-top: the faux time / island / icons.
    • Safari TAB (default) — content sits BELOW the status bar (no cover), so a
-     full band would be a tall on-page strip butting the logo. Shrink it to a thin
-     sampling SLIVER at the very top edge: still tall enough for iOS to read the
-     colour, but separated from the logo by the masthead's safe-top padding. */
+     full band would be an on-page strip — and unnecessary, since the html accent
+     now tints the bar there. So it's HIDDEN in the tab (display:none) and shown
+     only in the standalone app + desktop mock. */
 .device-chrome {
-	display: flex;
+	display: none;
 	position: fixed;
-	top: -3px;            /* tab: tuck the sampling band above the viewport — iOS still
-	                         reads its colour, but only ~2px shows, so the bar matches
-	                         iOS's DEFAULT height (no extra band). .standalone/desktop
-	                         reset top:0 + full height to sit behind the status bar. */
+	top: 0;
 	left: 0;
 	right: 0;
-	height: 5px;
+	height: var(--safe-top, 54px);
 	padding: 16px 34px 0;
 	align-items: center;
 	justify-content: space-between;
@@ -407,8 +408,8 @@ body::before {
 		color: #f4f0e7;
 	}
 }
-/* Standalone Home Screen app: full height at top:0 — fills behind the status bar. */
-.standalone .device-chrome { top: 0; height: var(--safe-top, 54px); }
+/* Standalone Home Screen app: show the band, full height behind the status bar. */
+.standalone .device-chrome { display: flex; top: 0; height: var(--safe-top, 54px); }
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
