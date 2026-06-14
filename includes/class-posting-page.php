@@ -228,16 +228,14 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--pad-x: 16px;
 	--bw: 2px;                       /* the single border weight used throughout */
 
-	/* Grain / halftone — ONE shared grid + ONE gradient. Each grain surface sets
-	   --grain-ink (its dot colour); --grain-r / --grain-feather default to the page
-	   speckle and are overridden only by the bigger halftone stud (.scroll-fade).
-	   --grain-pitch is the dot gap, phase-locked in alignHalftone. */
-	--grain-pitch:   3px;
-	--grain-dot:     0.8px;
-	--ht-dot:        0.8px;
-	--grain-r:       var(--grain-dot);
-	--grain-feather: 0.3px;
-	--grain-img:     radial-gradient(var(--grain-ink) var(--grain-r), transparent calc(var(--grain-r) + var(--grain-feather)));
+	/* Grain / halftone — one shared grid. --grain-pitch is the dot gap (phase-locked
+	   in alignHalftone); --grain-dot / --ht-dot are the two dot radii (page speckle
+	   vs the bigger halftone stud). The gradient itself is written out per surface:
+	   a shared --grain-img token can't work here because its var(--grain-ink) would
+	   resolve at :root (undefined → empty) rather than at each surface. */
+	--grain-pitch: 3px;
+	--grain-dot:   0.8px;
+	--ht-dot:      0.8px;
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -294,8 +292,7 @@ body::before {
 	inset: 0;
 	z-index: 0;
 	background-color: var(--field);
-	--grain-ink: color-mix(in srgb, var(--ink) 16%, transparent);
-	background-image: var(--grain-img);
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	pointer-events: none;
 }
@@ -342,8 +339,7 @@ body::before {
 	   vs the body grain), so the background colour never changes, just the dots. */
 	background-color: var(--field);
 	/* Faint halftone grain — the organic "printed on paper" texture. */
-	--grain-ink: var(--grain);
-	background-image: var(--grain-img);
+	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 /* While JS sets the initial kind on load, suppress all transitions/animations so
@@ -363,8 +359,7 @@ body::before {
 		/* The lighter off-white field the floating poster sits on (poster stays 16%).
 		   Restored here because body is transparent on phones (status-bar trick). */
 		background-color: var(--field);
-		--grain-ink: color-mix(in srgb, var(--ink) 8%, transparent);
-		background-image: var(--grain-img);
+		background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	}
 	.app {
 		/* A fixed, phone-sized poster floating in the browser — iPhone point
@@ -689,10 +684,7 @@ body::before {
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	--grain-ink: var(--ink);          /* solid ink dots (the page grain shows between) */
-	--grain-r: var(--ht-dot);         /* the bigger halftone "stud" */
-	--grain-feather: 0.7px;
-	background-image: var(--grain-img);
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.7px));
 	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
