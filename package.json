@@ -3,9 +3,12 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "build": "wp-scripts build src/settings/index.js --output-path=build/settings",
+    "build": "wp-scripts build src/settings/index.js --output-path=build/settings && wp-scripts build src/post/index.js --output-path=build/post",
+    "build:settings": "wp-scripts build src/settings/index.js --output-path=build/settings",
+    "build:post": "wp-scripts build src/post/index.js --output-path=build/post",
     "start": "wp-scripts start src/settings/index.js --output-path=build/settings",
-    "lint:js": "wp-scripts lint-js src/settings"
+    "start:post": "wp-scripts start src/post/index.js --output-path=build/post",
+    "lint:js": "wp-scripts lint-js src/settings src/post"
   },
   "devDependencies": {
     "@wordpress/scripts": "^30.0.0"

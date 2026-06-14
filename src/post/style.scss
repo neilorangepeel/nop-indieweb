@@ -1,0 +1,1348 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Text selection inverts (ink fill, paper text). The page itself never scrolls
+   (html/body are overflow:hidden); only .compose-scroll does, and it sets its own
+   scrollbar-color below. */
+::selection      { background: var(--ink); color: var(--paper); }
+::-moz-selection { background: var(--ink); color: var(--paper); }
+[hidden] { display: none !important; }
+
+/*
+ * Bauhaus primaries. Three role tokens carry the light/dark flip:
+ *   --field  page field      --line   rules / borders / hard shadows
+ *   --text   body text
+ * The three primaries stay vivid in both themes — they pop on paper and
+ * punch even harder on ink (peak Rand / Bass). The active post type sets
+ * --accent / --on-accent on .app[data-type], retinting the type tile, focus
+ * rings, tag chips, progress and the Post button together.
+ */
+/* Register --ink as a real <color> so it has a valid type + an initial-value at
+   the root — html { background: var(--ink) } (the status-bar accent) needs a value
+   before JS runs and before any .app[data-type] rule applies. The per-kind sweep
+   itself is driven in JS (animateInk), not a CSS transition. */
+@property --ink {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: #D7331F;
+}
+
+:root {
+	/* Dark: paper becomes near-black and the inks lift to stay legible — the
+	   rest cascades, since every role token derives from --paper / --ink.
+	   Six risograph inks, one per post kind. */
+	color-scheme: light dark;
+	--paper:    light-dark(#F4EFE6, #15140F);
+	--red:      light-dark(#D7331F, #FF5A4D);
+	--blue:     light-dark(#1E4FD6, #6E90FF);
+	--teal:     light-dark(#00787F, #3CC1C9);
+	--green:    light-dark(#20713A, #5BCB84);
+	--violet:   light-dark(#6A4ACF, #A78FE8);
+	--orange:   light-dark(#B4500A, #FF9A3C);
+	--magenta:  light-dark(#C81E66, #FF6FA3);
+	--charcoal: light-dark(#1A1A1A, #F4EFE6);
+
+	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
+	   tokens live on .app (not here) so they re-resolve with the per-type --ink;
+	   defining them on :root would bake in the default ink and never re-tint. */
+	--field:     var(--paper);
+	--on-accent: var(--field);
+
+	--display: 'Brandon Text Condensed', 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
+	/* The data-readout face — date stamp + the current-moment grid (place/temp/sky).
+	   Brandon Text, so the ambient data sits with the rest of the type. */
+	--readout: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
+
+	/* Corner radius via the shared --nop-radius system, so /post matches the
+	   blocks. This page is a standalone document (no theme.json cascade), so it
+	   carries the brand value here rather than inheriting it — keep in sync with
+	   the theme's :root{--nop-radius} (currently 4px). --radius stays a local
+	   alias so the existing rules below are untouched. */
+	--nop-radius: 4px;
+	--nop-radius-pill: 9999px;
+	--radius: var( --nop-radius, 2px );
+
+	/* The content sheet's rounded TOP corners, echoing the phone's physical screen
+	   corners (CSS can't read the real device radius — this is a tuned approximation;
+	   modern Face-ID iPhones are ~47–55px). The accent html shows through the cut
+	   corners, so they re-tint per kind for free. Phones only — the desktop mock
+	   carries its own 50px device frame. */
+	--screen-radius: 30px;
+
+	/* POST button sized to the iOS Safari address-bar pill (measured from-device:
+	   ~52pt tall, ~50% of screen width, centred — it's a floating pill, not a
+	   full-width bar). The button reads as the same class of control as Safari's
+	   own toolbar pill. Both tunable from here. */
+	--post-btn-h: 50px;
+	--post-btn-w: min(54%, 320px);
+
+	--safe-top:    env(safe-area-inset-top, 0px);
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+
+	/* ── Scale tokens — adjust the whole UI from here ──────────────────────── */
+	/* Type scale — the recurring body sizes (poster/display one-offs like 24/32/40
+	   stay literal). Value-named so the source reads true; change one to retune
+	   every label/field/caption printed at that size. */
+	--fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
+	--fs-14: 14px;  --fs-16: 16px;  --fs-18: 18px;
+	/* The page side gutter — the inset shared by the top-level sections (masthead,
+	   greeting, compose, success). Sized to breathe inside the rounded top corners
+	   (--screen-radius): a gutter smaller than the radius lets the corner arc crowd
+	   the masthead, so it tracks a touch under the radius rather than the old flush
+	   16px. The rest of the layout is bespoke poster geometry, kept literal so the
+	   shorthands stay readable. */
+	--pad-x: 20px;
+	--bw: 2px;                       /* the single border weight used throughout */
+
+	/* Grain / halftone — ONE shared, fixed dot grid (pitch). --grain-dot is the base
+	   page speckle; --ht-dot is the SAME grid's dot swollen for "shadow". A shadow
+	   isn't a second pattern — it's these dots, phase-locked (alignHalftone, x+y),
+	   rendered bigger + darker (var(--ink)) so they appear to swell in place. The
+	   gradient is written out per surface: a shared --grain-img token can't work
+	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
+	--grain-pitch: 3px;
+	--grain-dot:   0.8px;
+	--ht-dot:      0.8px;   /* shadow dot — same size as --grain-dot, just full --ink:
+	                          the identical grid dot, darkened in place by the reveal
+	                          mask (no swell). Bump it for a swelled shadow if wanted. */
+}
+
+/* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
+   One ink per kind: heart = red, photo = blue, the default note screen =
+   teal, bookmark files away in green, reply talks in warm orange, repost
+   echoes in violet. */
+.app[data-type="note"]     { --ink: var(--teal); }
+.app[data-type="photo"]    { --ink: var(--blue); }
+.app[data-type="reply"]    { --ink: var(--orange); }
+.app[data-type="like"]     { --ink: var(--red); }
+.app[data-type="bookmark"] { --ink: var(--green); }
+.app[data-type="repost"]   { --ink: var(--violet); }
+.app[data-type="rsvp"]     { --ink: var(--magenta); }
+
+html {
+	height: 100%;
+	/* The ROOT carries the ACCENT, on purpose. In a Safari tab iOS 26 tints the
+	   status bar from the BODY background-color and falls back to HTML when body
+	   has none — so the transparent body below lets this accent become the bar
+	   tint with NO sampling band (so it's iOS's default height, like Amazon/etc).
+	   On-screen it's covered by the off-white app + ::before, so it only feeds the
+	   bar. Deep accent in dark mode so the forced-white bar text stays legible. */
+	background-color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+	html { background-color: color-mix( in srgb, var(--ink) 45%, #000 ); }
+}
+body {
+	/* Per-context height (see the head script). Default = Safari TAB: 100dvh, the
+	   visible viewport between the browser chrome, so nothing runs under the status
+	   bar / toolbar. .standalone (Home Screen app) overrides to 100vh — the full
+	   852 screen (dvh there is 59px short and mis-initialises on PWA launch). */
+	height: 100dvh;
+	overflow: hidden;
+	/* NO background-color on phones — transparent so iOS falls back to the html
+	   accent for the status bar (see html). The visible off-white page is the
+	   fixed ::before backstop (16% grain) + the app on top. The desktop frame
+	   media query restores the field on body for the floating-phone surround. */
+	color: var(--charcoal);
+	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+/* Standalone (Home Screen app): full screen via 100vh; tab keeps 100dvh above. */
+.standalone body, .standalone .app { height: 100vh; }
+/* Standalone runs full-bleed UNDER the status bar (viewport-fit=cover), so the
+   content's rounded top would hide up at y=0 beneath iOS's status-bar overlay.
+   Drop the card (.app + the ::before backstop) below --safe-top so its top
+   corners land just under the bar, with the accent html filling the bar zone
+   above and showing through the corner cuts. The masthead then only needs its
+   12px (it no longer clears the bar — the inset does). A Safari tab keeps the
+   base rules (content already sits below the browser chrome). */
+.standalone .app        { margin-top: var(--safe-top); height: calc(100vh - var(--safe-top)); }
+.standalone body::before { top: var(--safe-top); }
+.standalone .masthead   { padding-top: var(--pad-x); }
+/* Grain that reaches the iOS safe areas. iOS paints the root/body background
+   COLOUR into the home-indicator / overscroll zones but NOT the background-image,
+   so a grain-less strip survives there however we size body/.app. A real fixed
+   element whose box is the full layout viewport (inset:0 under viewport-fit=cover
+   spans the safe areas) DOES paint its grain there. Sits above the body bg but
+   below the app content (z-index 0 vs the app's 1). Poster's 16%, same top-origin
+   grid → seamless. Desktop uses the body field + floating phone instead. */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	background-color: var(--field);
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* Match the app's rounded top so the accent html shows in the cut corners. */
+	border-top-left-radius: var(--screen-radius);
+	border-top-right-radius: var(--screen-radius);
+	pointer-events: none;
+}
+@media (min-width: 600px) and (min-height: 600px) {
+	body::before { display: none; }
+}
+
+/* ── App shell ──────────────────────────────────────────────────────────── */
+
+.app {
+	/* Ink-derived tokens declared HERE so the per-type --ink (set on .app[data-type])
+	   re-resolves them per screen. --ink defaults to red; each type overrides it. */
+	--ink:      var(--red);
+	--line:     var(--ink);
+	--text:     var(--ink);
+	--accent:   var(--ink);
+	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
+	--rule:     color-mix(in srgb, var(--ink) 36%, var(--paper));
+	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
+	/* Muted ink strokes/fills, named by their tone. Mixed toward PAPER (opaque),
+	   NOT transparent — a transparent border lets the dot grid show through the
+	   stroke and reads as visual noise; an opaque tone renders the stroke solid. */
+	--ink-30:   color-mix(in srgb, var(--ink) 30%, var(--paper));  /* control borders */
+	--ink-38:   color-mix(in srgb, var(--ink) 38%, var(--paper));  /* field borders, scrollbars */
+	--ink-50:   color-mix(in srgb, var(--ink) 50%, var(--paper));
+	--shadow:   4px 4px 0 var(--ink);
+	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
+	   on the desktop mock / standalone band. */
+	--device-ink: color-mix(in srgb, var(--ink) 80%, #000);
+	/* The status-bar accent, light/dark-aware (full ink in light; a deep accent in
+	   dark so forced-white bar text stays legible) — the same value html and the
+	   band use. The desktop mock reveals it in the content card's rounded top cuts. */
+	--bar-accent: light-dark( var(--ink), color-mix(in srgb, var(--ink) 45%, #000) );
+
+	/* The kind-switch crossfade is driven in JS through OKLCH (a hue rotation,
+	   like a colour-picker), not a CSS transition — see animateInk(). Every
+	   element just reads var(--ink), so they all re-ink together in one sweep. */
+
+	display: flex;
+	flex-direction: column;
+	height: 100dvh;            /* tab: visible viewport; .standalone overrides to 100vh below */
+	overflow: hidden;
+	position: relative;
+	z-index: 1;                 /* above the fixed grain backstop (body::before) */
+	margin: 0 auto;
+	color: var(--text);
+	/* Same off-white as the html/body field — NO tint fill. The poster's depth
+	   comes only from its dots being a touch darker than the field's (see --grain
+	   vs the body grain), so the background colour never changes, just the dots. */
+	background-color: var(--field);
+	/* Faint halftone grain — the organic "printed on paper" texture. */
+	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* Rounded top corners that echo the phone's screen; overflow:hidden above keeps
+	   the content clipped to them. The accent html behind shows in the cut. The
+	   desktop frame (border-radius:50px) overrides this on ≥600px. */
+	border-top-left-radius: var(--screen-radius);
+	border-top-right-radius: var(--screen-radius);
+}
+/* While JS sets the initial kind on load, suppress all transitions/animations so
+   it doesn't re-ink or pop into view. Removed on the next frame. */
+.app.no-anim, .app.no-anim * { transition: none !important; animation: none !important; }
+
+/* Progressive enhancement: where corner-shape is supported (Chromium today; Safari
+   once WebKit ships it — likely, given Apple's own squircle icons), upgrade the
+   rounded corners from circular arcs to Apple-style squircles (a superellipse), so
+   they match the device curve more truthfully. corner-shape only affects corners
+   that already have a radius, and is ignored where unsupported (falls back to the
+   border-radius above), so it's harmless on iOS Safari now — purely a future upgrade
+   that activates itself the day Safari adds it. */
+@supports (corner-shape: squircle) {
+	.app, body::before, .app::before { corner-shape: squircle; }
+}
+
+/* On phones the paper runs full-bleed — no side frame. Edge borders sit in
+   the zone the rounded display corners and sub-pixel rounding clip, so they
+   render ragged; the horizontal rules carry the structure instead. The full
+   2px ink frame only appears when there's genuinely room to float the poster:
+   wide AND tall, so landscape phones stay full-bleed too. */
+@media (min-width: 600px) and (min-height: 600px) {
+	body {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		/* The document's own dot field the floating phone sits on — post-hued (var(--ink)
+		   via :root) and part of the ONE master grid: body has no margin so its grain
+		   sits at the viewport origin (0,0), and every other dot layer (phone interior,
+		   shadows) is JS-anchored to that same origin (alignHalftone), so the surround
+		   dots register exactly with the phone's. Lighter than the 16% poster so the
+		   phone still reads as denser. Restored here because body is transparent on
+		   phones (status-bar trick). */
+		background-color: var(--field);
+		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		background-size: var(--grain-pitch) var(--grain-pitch);
+	}
+	.app {
+		/* A fixed, phone-sized poster floating in the browser — iPhone point
+		   dimensions (390x844, 19.5:9) with the display corner radius. The faux
+		   safe-area insets reserve the real iOS status-bar / home-indicator zones
+		   so we design with the device chrome in mind. --device-ink (the kind ink
+		   a shade deeper) tones the faux chrome AND this outer border, so the
+		   device dressing reads as one hue. */
+		width: 390px;
+		height: 844px;
+		--safe-top: 59px;
+		--safe-bottom: 34px;
+		border: var(--bw) solid var(--device-ink);
+		border-radius: 50px;
+		/* Accent base: the field+grain becomes the ::before card below; the only
+		   place this shows is the band zone (under the band) and the card's rounded
+		   top-corner cuts — exactly like the html accent does in standalone. */
+		background: var(--bar-accent);
+	}
+	/* The content card: field+grain dropped below the faux status bar with rounded
+	   top corners, so the accent base shows through the cuts (z-index:-1 keeps it
+	   behind the content but above the accent base). Mirrors the standalone look. */
+	.app::before {
+		content: "";
+		position: absolute;
+		inset: var(--safe-top) 0 0 0;
+		z-index: -1;
+		background-color: var(--field);
+		background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		background-size: var(--grain-pitch) var(--grain-pitch);
+		/* Anchored to the viewport master grid (set in alignHalftone) so the card's
+		   dots register exactly with the surround dots and the shadows. */
+		background-position: var(--cardpos, 0 0);
+		border-top-left-radius: var(--screen-radius);
+		border-top-right-radius: var(--screen-radius);
+	}
+	/* Desktop mock: show the band, full height, anchored inside the floating phone. */
+	.app .device-chrome { display: flex; top: 0; height: var(--safe-top); position: absolute; }
+	.app .device-chrome > * { visibility: visible; }
+}
+
+/* ── iOS chrome band ───────────────────────────────────────────────────────
+   The accent band iOS Safari samples to tint the status bar (it reads the
+   background-color of a fixed element near the top edge; theme-color is ignored
+   in iOS 26, so this element is the ONLY way to colour the bar). Its HEIGHT
+   differs by context:
+   • Standalone app (.standalone) — full safe-top: viewport-fit=cover runs the app
+     under the status bar, so the band fills that zone behind the real clock.
+   • Desktop mock — full safe-top: the faux time / island / icons.
+   • Safari TAB (default) — content sits BELOW the status bar (no cover), so a
+     full band would be an on-page strip — and unnecessary, since the html accent
+     now tints the bar there. So it's HIDDEN in the tab (display:none) and shown
+     only in the standalone app + desktop mock. */
+.device-chrome {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: var(--safe-top, 54px);
+	padding: 16px 34px 0;
+	align-items: center;
+	justify-content: space-between;
+	/* Light mode: the full accent (it's dark enough that iOS keeps it under the
+	   forced-white status-bar text). Dark mode override below. */
+	background: var(--ink);
+	color: var(--on-accent);
+	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+	pointer-events: none;
+	z-index: 5;
+}
+/* Dark mode: the dark-scheme accents are too BRIGHT for the status bar. iOS
+   black-translucent forces WHITE bar text, so it only honours a background dark
+   enough for white to read — a bright accent gets rejected and the bar falls
+   back to the near-black body (only red was dark enough to survive). So in dark
+   mode use a DEEP accent (≈45% ink on black): dark enough that iOS keeps it,
+   still clearly the kind's hue, with light text. */
+@media (prefers-color-scheme: dark) {
+	.device-chrome {
+		background: color-mix( in srgb, var(--ink) 45%, #000 );
+		color: #f4f0e7;
+	}
+}
+/* Standalone Home Screen app: show the band, full height behind the status bar. */
+/* AUDIT TEST (2026-06-14): band hidden in standalone to see if the html accent
+   alone tints the bar. Revert this line to the commented one if the bar goes
+   wrong on the Home Screen app. */
+.standalone .device-chrome { display: none; }
+/* .standalone .device-chrome { display: flex; top: 0; height: var(--safe-top, 54px); } */
+/* Faux status-bar content is the desktop mock's stand-in for the real iOS
+   clock/battery — hidden on real devices (revealed in the frame media query),
+   where iOS renders the genuine chrome over the band. */
+.device-chrome > * { visibility: hidden; }
+.device-chrome__time {
+	font-size: var(--fs-16);
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	font-variant-numeric: tabular-nums;
+}
+.device-chrome__island {
+	position: absolute;
+	top: 11px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 122px;
+	height: 36px;
+	border-radius: 18px;
+	background: color-mix(in srgb, var(--device-ink) 45%, #000);
+}
+.device-chrome__icons { display: flex; align-items: center; gap: 7px; }
+.device-chrome__icons svg { display: block; }
+.device-chrome__battery {
+	position: relative;
+	width: 25px;
+	height: 12px;
+	border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+	border-radius: 3.5px;
+	padding: 1.5px;
+}
+.device-chrome__battery::after {
+	content: "";
+	position: absolute;
+	right: -3px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1.8px;
+	height: 4px;
+	border-radius: 0 1px 1px 0;
+	background: color-mix(in srgb, currentColor 38%, transparent);
+}
+.device-chrome__battery i {
+	display: block;
+	height: 100%;
+	width: 72%;
+	background: currentColor;
+	border-radius: 1.5px;
+}
+
+/* ── Masthead ───────────────────────────────────────────────────────────── */
+
+.masthead {
+	flex-shrink: 0;
+	/* Even framing: top, side and bottom insets all = the gutter (--pad-x). That
+	   matches the gap that makes the logo's rounded corner CONCENTRIC with the
+	   sheet's rounded top corner (--screen-radius 30 − the logo's own 10px radius
+	   = 20 = --pad-x), so the curve frames the logo evenly rather than pinching its
+	   top-left. The safe-top zone (status bar) is added on top. */
+	padding: 0 var(--pad-x) var(--pad-x);
+	padding-top: calc(var(--safe-top) + var(--pad-x));
+	border-bottom: var(--bw) solid var(--line);
+}
+.masthead__bar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	height: 46px;
+}
+/* The logo framed as an app icon — an ink tile with the glyph knocked out in
+   paper. The tile carries the ink (and re-inks per kind), so the source SVG's
+   path flips to paper to read against it. Sits above the ticker, which crawls
+   its metadata out of sight beneath it. */
+.brand__mark {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: var(--ink);
+}
+.brand__mark svg,
+.brand__mark img { display: block; width: 26px; height: 26px; }
+.brand__mark svg path { fill: var(--paper); }
+
+/* ── Metadata ticker ─────────────────────────────────────────────────────────
+   The current moment (serial · date · place · temp · sky) on one crawling line
+   beside the logo, so the masthead is barely taller than the icon. The track
+   holds two identical sequences and animates -50% for a seamless loop; the left
+   edge is masked away so each item dissolves into the logo. JS (renderTicker)
+   fills the track from the clock + /now data and sets the duration for a
+   constant crawl speed; the time item updates in place on the minute tick. */
+.ticker {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	/* Fade the run into the logo on the left (the transparent lead clears the
+	   42px tile + its gap), soft-cut at the right gutter. */
+	-webkit-mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
+	        mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
+}
+.ticker__track {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	will-change: transform;
+	animation: ticker-crawl 24s linear infinite;
+}
+.ticker__seq { display: flex; align-items: center; }
+.ticker__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-family: var(--readout);
+	font-size: var(--fs-14);
+	font-weight: 500;
+	letter-spacing: 0;
+	font-variant-numeric: tabular-nums;
+}
+.ticker__item.tk-queue { font-weight: 700; }   /* pending offline posts — a touch louder */
+.ticker__sep { padding: 0 6px; opacity: 0.35; }
+.ticker__icon { display: inline-flex; }
+.ticker__icon svg { display: block; width: 14px; height: 14px; }
+@keyframes ticker-crawl {
+	from { transform: translateX(0); }
+	to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+	/* No crawl — freeze the run just clear of the logo so the lead items read. */
+	.ticker__track { animation: none; left: 56px; }
+}
+
+
+
+/* ── Views ──────────────────────────────────────────────────────────────── */
+
+.view-container {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+#view-compose,
+#view-progress,
+#view-success {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	/* Anchors the floating .bottom-bar (absolute) to the view's bottom edge. */
+	position: relative;
+}
+
+/* ── Type selector ──────────────────────────────────────────────────────── */
+
+.type-grid {
+	display: flex;
+	gap: 6px;
+	flex-shrink: 0;
+	padding: 18px var(--pad-x);
+	/* One row of square tiles that scrolls sideways if they don't all fit —
+	   saves the vertical height the old two-row grid took. */
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	/* Tiles settle to the gutter edge when the row is flicked — a native, camera-dial
+	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
+	scroll-snap-type: x proximity;
+	scroll-padding-left: var(--pad-x);
+	/* Only a bottom rule here — the masthead draws the shared line above the strip,
+	   so the header's border and the strip's top sit as one line (not two). */
+	border-bottom: var(--bw) solid var(--line);
+}
+.type-grid::-webkit-scrollbar { display: none; }
+
+/* Horizontal twin of the vertical scroll-fades — the same ink-dot halftone screen
+   + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
+   screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
+   how far there is to scroll that way (updateTypeFades). */
+.type-grid-wrap { position: relative; flex-shrink: 0; }
+.type-fade {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 120px;
+	z-index: 3;
+	pointer-events: none;
+	opacity: 0;
+	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
+	   the base grid shows through the whole row, and these phase-locked bigger/darker
+	   dots (background-position set in alignHalftone) land concentric on it: the grid
+	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+}
+/* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
+   scroll distance). Because the shadow dot is the SAME size as the base dot, the
+   opacity fade just darkens each dot in place — no swelling, no sweeping mask edge,
+   no halo — so you never see the pixels move. */
+.type-fade-left {
+	left: 0;
+	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+}
+.type-fade-right {
+	right: 0;
+	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+}
+.type-btn {
+	flex: 0 0 72px;
+	aspect-ratio: 1;
+	scroll-snap-align: start;
+	display: grid;
+	place-items: center;
+	/* Each kind is a scout-badge token: an ink-ring circle with the icon centred,
+	   transparent so the fixed dot grid runs straight through it. Only the active
+	   kind fills (solid --accent disc, icon knocked out). */
+	border: var(--bw) solid var(--ink);
+	border-radius: 50%;
+	background: transparent;
+	color: var(--ink);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	/* No own colour transition: the badge ink rides the --ink crossfade directly
+	   (in sync with the chrome). Selection just snaps + pops. */
+}
+/* Icon-only — the kind name stays for assistive tech but is visually hidden. */
+.type-btn > span:not(.type-btn__icon) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+.type-btn__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* Scaled with the 72px circle to hold the icon:ring:whitespace balance. */
+	width: 30px;
+	height: 30px;
+}
+.type-btn__icon svg { width: 100%; height: 100%; }
+
+.type-btn.is-active {
+	background: var(--accent);
+	color: var(--on-accent);
+	border-color: var(--line);
+	animation: type-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes type-pop {
+	0%   { transform: scale(1); }
+	50%  { transform: scale(1.08); }
+	100% { transform: scale(1); }
+}
+.type-btn:active { transform: translate(1px, 1px); }
+
+/* RSVP response — a segmented yes/maybe/no control, sharing the tile's two-tone
+   active state so the choice reads in the kind ink. */
+.rsvp-toggle { display: flex; gap: 6px; }
+.rsvp-btn {
+	flex: 1 1 0;
+	padding: 11px 8px;
+	border: var(--bw) solid var(--ink-30);
+	border-radius: var(--radius);
+	background: var(--field);
+	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
+	font-family: var(--readout);
+	font-size: var(--fs-14);
+	font-weight: 600;
+	letter-spacing: 0;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
+.rsvp-btn:active { transform: translate(1px, 1px); }
+
+/* ── Compose ────────────────────────────────────────────────────────────── */
+
+/* The single scroll region: greeting + type selector + fields scroll together.
+   The masthead and the Post button (.bottom-bar) stay pinned outside it. Bare
+   flex column so the greeting/type-grid keep their full-bleed dividers; field
+   padding lives on .compose-fields below. */
+.compose-scroll {
+	flex: 1;
+	overflow-y: auto;
+	/* Vertical only — without this, overflow-x computes to auto and the kind row's
+	   width lets the whole compose area pan sideways (the badge slider stays its own
+	   horizontal scroll). */
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	display: flex;
+	flex-direction: column;
+	scrollbar-width: thin;
+	scrollbar-color: var(--ink-38) transparent;
+}
+/* Conditional depth as scroll shadows — but drawn as translucent ink washes
+   OVER the continuous grain, with NO opaque paper covers (those revealed a
+   dot-free off-white patch on the textured paper). Two sticky overlays ride the
+   top and bottom edges; a tiny scroll handler toggles .has-above / .has-below
+   to fade them in. Grain runs through them, uninterrupted. */
+.scroll-fade {
+	position: sticky;
+	z-index: 3;
+	flex-shrink: 0;
+	height: 160px;
+	pointer-events: none;
+	opacity: 0;
+	/* A single halftone screen in the ink hue on a transparent ground — the page
+	   grain shows between the dots. The mask shapes the darkness as a "hockey
+	   stick": a long, subtle tail reaching far into the content that ramps up
+	   sharply at the origin edge (the % stops hold the ratio at any height).
+	   Element opacity is driven by scroll position in JS so it fades by position. */
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
+	/* Same pitch as the page grain so the halftone shares its dot density and
+	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
+	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
+	   global grid via background-attachment: fixed, which breaks on this sticky
+	   overlay / iOS — so this matches size, not phase.) */
+	background-size: var(--grain-pitch) var(--grain-pitch);
+}
+/* Static soft mask; background-position set in JS (viewport master grid). The layer
+   fades by opacity — same-size dots, so they darken in place without moving. */
+.scroll-fade-top {
+	top: 0;
+	margin-bottom: -160px;
+	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+}
+.scroll-fade-bottom {
+	bottom: 0;
+	margin-top: -160px;
+	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+}
+.compose-fields {
+	/* grow to fill when content is short (textarea fills the frame), but never
+	   shrink below its content — so a tall form overflows into the scroll. The
+	   deep bottom padding clears the floating Post button so the last line can
+	   scroll above it. */
+	flex: 1 0 auto;
+	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.field-group { display: flex; flex-direction: column; }
+/* Conditional fields (URL, photo picker, RSVP) appear instantly on a kind switch —
+   no transition, consistent with the live text inputs the browser can't fade. The
+   only motion on a kind switch is the badge pop. */
+
+.field-label {
+	display: block;
+	font-family: var(--readout);
+	font-size: var(--fs-13);
+	font-weight: 600;
+	letter-spacing: 0;
+	opacity: 0.7;
+	margin-bottom: 6px;
+}
+.sr-only {
+	position: absolute;
+	width: 1px; height: 1px;
+	padding: 0; margin: -1px;
+	overflow: hidden;
+	clip: rect(0,0,0,0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Utility inputs are flat SOLID filled fields (figure-ground by value, no dots)
+   so the text on them stays easy to read. */
+.text-field {
+	width: 100%;
+	background: transparent;
+	border: var(--bw) solid var(--ink-38);
+	border-radius: var(--radius);
+	padding: 11px 12px;
+	font-size: var(--fs-16);
+	font-family: inherit;
+	font-weight: 500;
+	color: var(--text);
+	outline: none;
+}
+.text-field:focus { border-color: var(--accent); }
+.text-field::placeholder { color: var(--text); opacity: 0.4; }
+
+/* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
+   text to sit on, a bold red margin instead of a box, and a big rotating prompt
+   that recedes as you type. Grows to fill the space. */
+/* Let the ruled "page" resolve — a clear line's-worth of blank paper below the
+   last rule before the next field, so the content doesn't butt up against it.
+   (Adds to the 16px field gap for ~one rule-spacing of clearance.) */
+#fieldContent { display: flex; flex-direction: column; margin-bottom: 16px; }
+.compose-wrap { position: relative; }
+.compose-field {
+	display: block;
+	width: 100%;
+	min-height: 150px;
+	height: auto;
+	background-color: transparent;
+	/* Ruled legal-pad — faint hairlines sitting just under each baseline so text
+	   reads as written ON the line. The field auto-grows with its content (see
+	   the JS), so an empty note stays a short pad and the page grain runs on,
+	   uninterrupted, below — no paper veil, so no hard seam where the texture
+	   would otherwise stop. */
+	background-image: repeating-linear-gradient( to bottom,
+		transparent 0, transparent 28px,
+		var(--rule) 28px, var(--rule) 29px,
+		transparent 29px, transparent 30px );
+	border: none;
+	padding: 6px 4px 4px 0;
+	font-size: var(--fs-18);
+	line-height: 30px;
+	font-family: inherit;
+	font-weight: 500;
+	color: var(--text);
+	resize: none;
+	outline: none;
+	overflow: hidden;
+}
+
+/* Friendly prompt overlay — fades out once there's content. Shares the field's
+   exact text metrics (face, size, line-height, left/top) so it sits on the ruled
+   lines precisely where the typed text will, reading as a warm placeholder. */
+.compose-prompt {
+	position: absolute;
+	top: 6px;
+	left: 0;
+	right: 8px;
+	font-family: inherit;
+	font-size: var(--fs-18);
+	font-weight: 500;
+	line-height: 30px;
+	letter-spacing: 0;
+	/* A solid faint tint — not translucent ink — so the ruled lines and the
+	   page grain don't bleed through the letters; they sit behind the opaque
+	   glyphs and resume either side, like a label printed on ruled paper. */
+	color: color-mix( in srgb, var(--ink) 42%, var(--paper) );
+	pointer-events: none;
+}
+.compose-prompt.is-hidden { opacity: 0; }
+
+/* Photo picker */
+.photo-picker {
+	background: var(--field);
+	border: var(--bw) dashed var(--line);
+	border-radius: var(--radius);
+	padding: 26px 16px;
+	text-align: center;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.photo-picker:active,
+.photo-picker.drag-over { border-style: solid; border-color: var(--accent); }
+.photo-picker input[type="file"] { display: none; }
+.photo-picker-icon { display: block; margin-bottom: 8px; }
+.photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 600; letter-spacing: 0; }
+.photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
+
+.thumbnails {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+	gap: 8px;
+	margin-top: 10px;
+}
+.thumbnails img {
+	width: 100%; aspect-ratio: 1; object-fit: cover;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius); display: block;
+}
+.thumb { display: flex; flex-direction: column; }
+.alt-texts { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.alt-text-row { display: flex; flex-direction: column; gap: 4px; }
+.alt-text-label {
+	font-size: var(--fs-10);
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--text);
+	opacity: 0.5;
+}
+.thumb__alt {
+	width: 100%;
+	background: transparent;
+	border: none;
+	border-bottom: 1.5px solid var(--line);
+	border-radius: 0;
+	padding: 6px 0;
+	font-size: var(--fs-16);
+	font-family: inherit;
+	font-weight: 500;
+	color: var(--text);
+	outline: none;
+	min-height: 36px;
+}
+.thumb__alt:focus { border-bottom-color: var(--accent); }
+.thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
+
+/* Tags — solid accent chips, knockout text, square remove. */
+.tags-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	background: transparent;
+	border: var(--bw) solid var(--ink-38);
+	border-radius: var(--radius);
+	padding: 8px 10px;
+	min-height: 46px;
+	cursor: text;
+}
+.tags-field:focus-within { border-color: var(--accent); }
+.tag-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--accent);
+	color: var(--on-accent);
+	border-radius: var(--radius);
+	padding: 4px 4px 4px 9px;
+	font-size: var(--fs-13);
+	font-weight: 700;
+	white-space: nowrap;
+}
+.tag-chip__remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px; height: 18px;
+	background: var(--on-accent);
+	color: var(--accent);
+	border: none; padding: 0;
+	border-radius: 1px;
+	cursor: pointer; font-size: var(--fs-13); line-height: 1;
+	font-family: inherit; font-weight: 800;
+}
+.tag-input {
+	flex: 1;
+	min-width: 80px;
+	border: none; outline: none;
+	font-size: var(--fs-16);
+	font-family: inherit;
+	font-weight: 500;
+	color: var(--text);
+	background: transparent;
+	padding: 2px 0;
+}
+.tag-input::placeholder { color: var(--text); opacity: 0.45; }
+
+/* URL specimen — fills the void on URL-only kinds (like, repost). Empty: the
+   kind glyph as a printed watermark. Filled: the target's hostname set big in
+   condensed caps, confirming what you're acting on before you post. */
+.url-specimen {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 140px;
+	padding: 8px 12px 20px;
+	text-align: center;
+}
+.url-specimen__glyph { display: flex; color: var(--ink); opacity: 0.12; }
+.url-specimen__glyph svg { display: block; width: 96px; height: 96px; }
+.url-specimen__hint {
+	font-family: var(--readout);
+	font-size: var(--fs-13);
+	font-weight: 600;
+	letter-spacing: 0;
+	opacity: 0.5;
+}
+.url-specimen__host {
+	font-family: var(--display);
+	font-size: clamp(30px, 10vw, 44px);
+	font-weight: 800;
+	line-height: 0.95;
+	text-transform: uppercase;
+	letter-spacing: 0.01em;
+	word-break: break-word;
+}
+.url-specimen__path {
+	font-size: var(--fs-13);
+	font-weight: 500;
+	opacity: 0.6;
+	word-break: break-all;
+	max-width: 100%;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Syndicate-to */
+.syndicate-details {
+	border: none;
+	border-top: var(--bw) solid var(--line);
+}
+.syndicate-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 0;
+	font-family: var(--readout);
+	font-size: var(--fs-14);
+	font-weight: 600;
+	letter-spacing: 0;
+	cursor: pointer;
+	list-style: none;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+}
+.syndicate-summary::-webkit-details-marker { display: none; }
+.syndicate-summary::after {
+	content: '+';
+	font-size: var(--fs-18); font-weight: 800; line-height: 1;
+}
+details[open] .syndicate-summary::after { content: '\2212'; }
+/* Animated open — interpolate-size lets block-size transition to auto
+   (Chrome 131+ / Safari 18.2+; elsewhere it just opens instantly). */
+.syndicate-details::details-content {
+	block-size: 0;
+	overflow: hidden;
+	interpolate-size: allow-keywords;
+	transition: block-size 0.25s ease, content-visibility 0.25s allow-discrete;
+}
+.syndicate-details[open]::details-content { block-size: auto; }
+.syndicators {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px 0 4px;
+}
+.syndicator-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: var(--fs-14);
+	font-weight: 700;
+	cursor: pointer;
+	user-select: none;
+}
+/* Square ink toggle — same language as the type tiles; the real checkbox
+   stays in the tree (sr-only) for keyboard and screen readers. */
+.syndicator-box {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px; height: 20px;
+	flex-shrink: 0;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	background: var(--field);
+	color: var(--on-accent);
+}
+.syndicator-box svg {
+	display: block;
+	opacity: 0;
+	transform: scale(0.5);
+	transition: opacity 0.12s, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.syndicator-item input:checked + .syndicator-box { background: var(--accent); }
+.syndicator-item input:checked + .syndicator-box svg { opacity: 1; transform: scale(1); }
+.syndicator-item input:focus-visible + .syndicator-box {
+	box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent);
+}
+.syndicator-item__limit {
+	margin-left: auto;
+	font-size: var(--fs-11);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.55;
+}
+
+/* ── Bottom bar + buttons ───────────────────────────────────────────────── */
+
+/* The footer floats: no band, just the button over the continuous grain, which
+   now runs to the shell's bottom edge (clipped to the rounded corner by .app's
+   overflow:hidden). The bar is a transparent overlay pinned to the view bottom;
+   it ignores pointer events so a drag over it still scrolls the content beneath,
+   while the button itself stays tappable. Bottom padding lifts the button clear
+   of the iOS home-indicator zone (--safe-bottom, faked on the desktop mock). */
+.bottom-bar {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 4;
+	/* Centre a narrow floating pill (not a full-width bar), matching the iOS Safari
+	   URL pill; the 16px gutter is just a safety margin so it never kisses the edge.
+	   Bottom padding lifts it clear of the home-indicator zone. */
+	display: flex;
+	justify-content: center;
+	padding: 14px 16px;
+	padding-bottom: calc(var(--safe-bottom) + 14px);
+	background: transparent;
+	pointer-events: none;
+}
+.bottom-bar .btn { pointer-events: auto; }
+/* Free-floating stadium pill, no longer shaped to hug the shell corner. Height is
+   pinned to --post-btn-h (the iOS toolbar pill) instead of the default padding, so
+   it reads as the same control class as Safari's own bottom pill. Border-box +
+   flex-centred content means the min-height IS the total height. */
+.bottom-bar .btn { border-radius: var(--nop-radius-pill); width: var(--post-btn-w); min-height: var(--post-btn-h); padding-block: 0; }
+
+.btn {
+	display: block;
+	width: 100%;
+	padding: 15px;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	font-size: var(--fs-16);
+	font-weight: 800;
+	font-family: inherit;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	text-align: center;
+	text-decoration: none;
+}
+
+/* Post button — solid accent, knockout label. Floats over the grain on a soft
+   shadow (the band that used to carry the section's depth is gone); it settles
+   onto a tighter shadow on press. */
+.btn-primary {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	background: var(--accent);
+	color: var(--on-accent);
+	border-color: var(--accent);
+	box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+	transition: transform 0.08s, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+.btn-primary__icon { flex-shrink: 0; }
+.btn-primary:active {
+	transform: translate(0, 2px);
+	box-shadow: 0 3px 9px rgba(0,0,0,0.16);
+}
+/* Disabled stays a solid, muted primary — never a ghost outline — so the
+   commit target always reads as the primary action. When the form becomes valid
+   the fill saturates to full accent and the offset shadow grows: it "charges". */
+.btn-primary:disabled {
+	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
+	color: color-mix( in srgb, var(--on-accent) 38%, var(--device-ink) );
+	border-color: transparent;
+	opacity: 1;
+	cursor: default;
+	transform: none;
+	box-shadow: 0 3px 10px rgba(0,0,0,0.10);
+}
+.btn-secondary { background: var(--field); color: var(--text); }
+.btn-secondary:active { transform: translate(1px, 1px); }
+.btn-accent { background: var(--field); color: var(--text); margin-top: 0; }
+.btn-instagram {
+	background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+	color: #fff;
+	border-color: var(--line);
+}
+
+/* ── Progress ───────────────────────────────────────────────────────────── */
+
+.progress-view {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 22px;
+	text-align: center;
+	padding: 24px;
+}
+.progress-spinner {
+	width: 44px; height: 44px;
+	border: 4px solid var(--line);
+	border-top-color: var(--accent);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-status { font-family: var(--readout); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.progress-bar-track {
+	width: 200px; height: 6px;
+	border: var(--bw) solid var(--line);
+	border-radius: 1px;
+	overflow: hidden;
+}
+.progress-bar-fill {
+	height: 100%;
+	background: var(--accent);
+	width: 0%;
+	transition: width 0.3s;
+}
+
+/* ── Success — poster moment ────────────────────────────────────────────── */
+
+.success-scroll {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	/* deep bottom padding clears the floating "Post another" button */
+	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
+}
+.success-hero {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 36px 0 12px;
+	margin-bottom: 16px;
+}
+/* The rubber stamp — slams down (springy bezier overshoots the landing) with
+   a fixed -3° rotation; `rotate` is its own property so the keyframes only
+   need to scale. */
+.success-banner {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	background: var(--accent);
+	color: var(--on-accent);
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	padding: 14px 26px;
+	box-shadow: var(--shadow);
+	rotate: -3deg;
+	animation: stamp 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes stamp {
+	0%   { transform: scale(1.12); opacity: 0; }
+	100% { transform: scale(1); opacity: 1; }
+}
+.success-check { flex-shrink: 0; display: flex; }
+.success-banner h2 {
+	font-family: var(--display);
+	font-size: 40px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	text-transform: uppercase;
+	line-height: 1;
+}
+/* Bauhaus burst — the one deliberate break from two-tone: a single flash of
+   the full six-ink set radiating from the stamp's impact, then gone. */
+.burst {
+	position: absolute;
+	inset: 0;
+	display: block;
+	pointer-events: none;
+}
+.burst i {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	margin: -5px;
+	background: currentColor;
+	animation: burst-fly 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) 0.18s both;
+}
+.burst i:nth-child(6n)   { color: var(--red); }
+.burst i:nth-child(6n+1) { color: var(--blue); }
+.burst i:nth-child(6n+2) { color: var(--teal); }
+.burst i:nth-child(6n+3) { color: var(--green); }
+.burst i:nth-child(6n+4) { color: var(--violet); }
+.burst i:nth-child(6n+5) { color: var(--orange); }
+.burst i:nth-child(4n)   { border-radius: 50%; }
+.burst i:nth-child(4n+2) { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+@keyframes burst-fly {
+	0%   { transform: rotate(var(--a)) translateY(-20px) scale(0.3); opacity: 0; }
+	25%  { opacity: 1; }
+	100% { transform: rotate(var(--a)) translateY(-92px) scale(1); opacity: 0; }
+}
+/* Streak set as a type specimen — oversized ordinal, small caps label. */
+.success-streak {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	margin-top: 22px;
+}
+.success-streak__num {
+	font-family: var(--display);
+	font-size: 42px;
+	font-weight: 800;
+	line-height: 1;
+}
+.success-streak__label {
+	font-family: var(--display);
+	font-size: var(--fs-12);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	opacity: 0.6;
+}
+.success-photos {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+	gap: 6px;
+	margin-bottom: 16px;
+}
+.success-photos img {
+	width: 100%; aspect-ratio: 1; object-fit: cover;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+}
+.success-permalink {
+	font-size: var(--fs-13);
+	font-weight: 700;
+	color: var(--text);
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	display: block;
+	margin-bottom: 16px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.success-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* Character counter — a small countdown chip that only appears as you near a
+   syndication limit (see updateCounter), so it never floats as a stray number. */
+.char-count {
+	align-self: flex-end;
+	margin-top: 4px;
+	padding: 2px 9px;
+	border-radius: var(--nop-radius-pill);
+	background: var(--surface);
+	font-size: var(--fs-11);
+	font-weight: 800;
+	color: var(--text);
+	font-variant-numeric: tabular-nums;
+}
+/* Over-limit: a muted, palette-matched red on the same chip — a quiet warning,
+   not a loud red block. */
+.char-count.is-over {
+	background: color-mix( in srgb, var(--red) 10%, var(--surface) );
+	color: color-mix( in srgb, var(--red) 50%, var(--charcoal) );
+}
+
+/* Toast */
+.toast {
+	position: fixed;
+	left: 50%;
+	bottom: calc(var(--safe-bottom) + 20px);
+	transform: translate(-50%, 12px);
+	max-width: 88%;
+	padding: 12px 16px;
+	background: var(--field);
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	color: var(--text);
+	font-size: var(--fs-14);
+	font-weight: 700;
+	opacity: 0;
+	transition: opacity 0.2s, transform 0.2s;
+	z-index: 50;
+	pointer-events: none;
+	text-align: center;
+}
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.toast--error { border-color: var(--red); color: var(--red); }
+
+@media (prefers-reduced-motion: reduce) {
+	.type-btn.is-active,
+	.success-banner { animation: none; }
+	.burst { display: none; }
+	.btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
+	.syndicate-details::details-content { transition: none; }
+	.btn-primary:active { transform: none; }
+	.toast { transition: opacity 0.01ms; }
+}
+
