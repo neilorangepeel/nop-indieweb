@@ -259,9 +259,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
 	--grain-pitch: 3px;
 	--grain-dot:   0.8px;
-	--ht-dot:      1.1px;   /* the inverted shadow's light hole — bigger than --grain-dot
-	                          so the negative reads as a dot pattern (~40% open) and
-	                          doesn't fill to a solid colour block at full flood */
+	--ht-dot:      1.3px;   /* shadow dot — the SAME accent dot as the grain, scaled up
+	                          from its centre (concentric, stays on the grid) to read as
+	                          depth. Tune this to set the shadow's density. */
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
@@ -775,15 +775,11 @@ body::before {
 	z-index: 3;
 	pointer-events: none;
 	opacity: 0;
-	/* Multiply so the accent ground reads as printed ink darkening the surface
-	   beneath (not a flat film on top); the off-white dots stay light and pop.
-	   Flips to screen in dark mode so it lightens instead of vanishing. */
-	mix-blend-mode: multiply;
 	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
 	   the base grid shows through the whole row, and these phase-locked bigger/darker
 	   dots (background-position set in alignHalftone) land concentric on it: the grid
 	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
-	background-image: radial-gradient(var(--field) var(--ht-dot), var(--ink) calc(var(--ht-dot) + 0.3px));
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.5px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 }
 .type-fade-left {
@@ -795,11 +791,6 @@ body::before {
 	right: 0;
 	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
 	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.6) 7%, rgba(0,0,0,0.22) 24%, rgba(0,0,0,0.08) 54%, transparent 100% );
-}
-/* Dark mode: multiply would darken the shadow into the dark backdrop until it
-   vanished — screen lightens instead, so the accent flood still reads. */
-@media (prefers-color-scheme: dark) {
-	.scroll-fade, .type-fade { mix-blend-mode: screen; }
 }
 .type-btn {
 	flex: 0 0 72px;
@@ -899,13 +890,12 @@ body::before {
 	height: 120px;
 	pointer-events: none;
 	opacity: 0;
-	mix-blend-mode: multiply;   /* ink-on-paper; screen in dark mode (see below) */
 	/* A single halftone screen in the ink hue on a transparent ground — the page
 	   grain shows between the dots. The mask shapes the darkness as a "hockey
 	   stick": a long, subtle tail reaching far into the content that ramps up
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
-	background-image: radial-gradient(var(--field) var(--ht-dot), var(--ink) calc(var(--ht-dot) + 0.3px));
+	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.5px));
 	/* Same pitch as the page grain so the halftone shares its dot density and
 	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
 	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
