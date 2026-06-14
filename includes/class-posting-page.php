@@ -357,8 +357,8 @@ body::before {
 		border: 2px solid var(--device-ink);
 		border-radius: 50px;
 	}
-	/* Desktop mock: full height, anchored inside the floating phone. */
-	.app .device-chrome { height: var(--safe-top); position: absolute; }
+	/* Desktop mock: full height at top:0, anchored inside the floating phone. */
+	.app .device-chrome { top: 0; height: var(--safe-top); position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
 
@@ -377,7 +377,10 @@ body::before {
 .device-chrome {
 	display: flex;
 	position: fixed;
-	top: 0;
+	top: -3px;            /* tab: tuck the sampling band above the viewport — iOS still
+	                         reads its colour, but only ~2px shows, so the bar matches
+	                         iOS's DEFAULT height (no extra band). .standalone/desktop
+	                         reset top:0 + full height to sit behind the status bar. */
 	left: 0;
 	right: 0;
 	height: 5px;
@@ -404,8 +407,8 @@ body::before {
 		color: #f4f0e7;
 	}
 }
-/* Standalone Home Screen app: full height — the band fills behind the status bar. */
-.standalone .device-chrome { height: var(--safe-top, 54px); }
+/* Standalone Home Screen app: full height at top:0 — fills behind the status bar. */
+.standalone .device-chrome { top: 0; height: var(--safe-top, 54px); }
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
