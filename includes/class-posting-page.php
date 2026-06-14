@@ -732,11 +732,11 @@ body::before {
 	   matches the gap that makes the logo's rounded corner CONCENTRIC with the
 	   sheet's rounded top corner (--screen-radius 30 − the logo's own 10px radius
 	   = 20 = --pad-x), so the curve frames the logo evenly rather than pinching its
-	   top-left. The safe-top zone (status bar) is added on top; a full-bleed rule
-	   closes the band. */
+	   top-left. The safe-top zone (status bar) is added on top. No bottom rule here —
+	   the kind strip below owns the divider (its top rule), so it reads as one framed
+	   control rather than doubling the masthead's edge against the strip's. */
 	padding: 0 var(--pad-x) var(--pad-x);
 	padding-top: calc(var(--safe-top) + var(--pad-x));
-	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__bar {
 	position: relative;
@@ -852,9 +852,10 @@ body::before {
 	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
 	scroll-snap-type: x proximity;
 	scroll-padding-left: var(--pad-x);
-	/* Only a bottom rule frames the kind selector now — the masthead's own bottom
-	   rule is the strip's top edge, so a top rule here would double it. */
-	border-bottom: var(--bw) solid var(--line);
+	/* Top + bottom rules frame the kind selector as one contained "control strip"
+	   — the top rule sits where the masthead's edge was (the masthead no longer
+	   draws its own), so the strip stays evenly framed and self-contained. */
+	border-block: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
