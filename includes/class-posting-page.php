@@ -341,6 +341,10 @@ body::before {
 	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
 	   on the desktop mock / standalone band. */
 	--device-ink: color-mix(in srgb, var(--ink) 80%, #000);
+	/* The status-bar accent, light/dark-aware (full ink in light; a deep accent in
+	   dark so forced-white bar text stays legible) — the same value html and the
+	   band use. The desktop mock reveals it in the content card's rounded top cuts. */
+	--bar-accent: light-dark( var(--ink), color-mix(in srgb, var(--ink) 45%, #000) );
 
 	/* The kind-switch crossfade is driven in JS through OKLCH (a hue rotation,
 	   like a colour-picker), not a CSS transition — see animateInk(). Every
@@ -399,6 +403,24 @@ body::before {
 		--safe-bottom: 34px;
 		border: var(--bw) solid var(--device-ink);
 		border-radius: 50px;
+		/* Accent base: the field+grain becomes the ::before card below; the only
+		   place this shows is the band zone (under the band) and the card's rounded
+		   top-corner cuts — exactly like the html accent does in standalone. */
+		background: var(--bar-accent);
+	}
+	/* The content card: field+grain dropped below the faux status bar with rounded
+	   top corners, so the accent base shows through the cuts (z-index:-1 keeps it
+	   behind the content but above the accent base). Mirrors the standalone look. */
+	.app::before {
+		content: "";
+		position: absolute;
+		inset: var(--safe-top) 0 0 0;
+		z-index: -1;
+		background-color: var(--field);
+		background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		background-size: var(--grain-pitch) var(--grain-pitch);
+		border-top-left-radius: var(--screen-radius);
+		border-top-right-radius: var(--screen-radius);
 	}
 	/* Desktop mock: show the band, full height, anchored inside the floating phone. */
 	.app .device-chrome { display: flex; top: 0; height: var(--safe-top); position: absolute; }
