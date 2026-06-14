@@ -1545,6 +1545,13 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			if ( ! m ) { return; }
 			r = +m[1]; g = +m[2]; b = +m[3];
 		}
+		// In dark mode the bar must be the DEEP accent (see .device-chrome dark
+		// override) so white status-bar text stays legible — match it here too
+		// (×0.45 == color-mix(in srgb, --ink 45%, #000)) for the Safari-tab path,
+		// which can tint from theme-color rather than the band.
+		if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches ) {
+			r = Math.round( r * 0.45 ); g = Math.round( g * 0.45 ); b = Math.round( b * 0.45 );
+		}
 		var hex = '#' + [ r, g, b ].map( function ( x ) { return ( '0' + x.toString( 16 ) ).slice( -2 ); } ).join( '' );
 		themeColorEl.setAttribute( 'content', hex );
 	}
