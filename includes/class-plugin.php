@@ -219,6 +219,7 @@ class Plugin {
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
 		add_action( 'rest_api_init', [ $this, 'register_indieauth_metadata_route' ] );
 		add_action( 'rest_api_init', [ $this, 'register_lookup_route' ] );
+		add_action( 'rest_api_init', [ $this, 'register_now_route' ] );
 		add_action( 'rest_api_init', [ $this, 'register_foursquare_oauth_routes' ] );
 		( new Settings_API() )->register();
 		( new Posting_Page() )->register();
@@ -1112,6 +1113,48 @@ HTML,
 		}
 
 		return new \WP_REST_Response( [ 'results' => $results ], 200 );
+	}
+
+	/**
+	 * The /post masthead's "current moment" data. The client hands over the
+	 * device GPS lat/lon; we resolve a place name and current weather with the
+	 * plugin's existing providers (Geoapify + Pirate Weather) so the keys stay
+	 * server-side and the masthead matches the weather stamped on exercise/checkin
+	 * posts. Both providers cache internally (Geoapify 30 days, weather 30 min),
+	 * so this route needs no cache of its own.
+	 */
+	public function register_now_route(): void {
+		register_rest_route( 'nop-indieweb/v1', '/now', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'now_route_handler' ],
+			'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+			'args'                => [
+				'lat' => [ 'required' => true, 'type' => 'number' ],
+				'lon' => [ 'required' => true, 'type' => 'number' ],
+			],
+		] );
+	}
+
+	public function now_route_handler( \WP_REST_Request $request ): \WP_REST_Response {
+		$lat = (float) $request->get_param( 'lat' );
+		$lon = (float) $request->get_param( 'lon' );
+
+		// Out-of-range or null-island coordinates carry no signal — return an empty
+		// payload so the client simply hides the place/weather cells.
+		if ( $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180 || ( 0.0 === $lat && 0.0 === $lon ) ) {
+			return new \WP_REST_Response( [ 'place' => '', 'country' => '', 'temp_c' => null, 'icon' => '', 'summary' => '' ], 200 );
+		}
+
+		$geo     = \NOP\IndieWeb\Venue\Geoapify_Geocoder::reverse_geocode( $lat, $lon );
+		$weather = \NOP\IndieWeb\Weather\Weather_Fetcher::fetch_current( $lat, $lon );
+
+		return new \WP_REST_Response( [
+			'place'   => (string) ( $geo['locality'] ?? '' ),
+			'country' => (string) ( $geo['country'] ?? '' ),
+			'temp_c'  => $weather['temp_c'] ?? null,
+			'icon'    => (string) ( $weather['icon'] ?? '' ),
+			'summary' => (string) ( $weather['summary'] ?? '' ),
+		], 200 );
 	}
 
 	public function register_foursquare_oauth_routes(): void {

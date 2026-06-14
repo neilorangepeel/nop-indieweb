@@ -35,9 +35,68 @@ class Weather_Fetcher {
 			return false;
 		}
 
+		$data = self::fetch_at( $lat, $lng, $timestamp );
+		if ( ! $data ) {
+			return false;
+		}
+
+		if ( null !== $data['temp_c'] ) {
+			$temp_f = ( $data['temp_c'] * 9 / 5 ) + 32;
+			update_post_meta( $post_id, 'nop_indieweb_weather_temp_c', (string) round( $data['temp_c'], 1 ) );
+			update_post_meta( $post_id, 'nop_indieweb_weather_temp_f', (string) round( $temp_f, 1 ) );
+		}
+		if ( '' !== $data['icon'] ) {
+			update_post_meta( $post_id, 'nop_indieweb_weather_icon', $data['icon'] );
+		}
+		if ( '' !== $data['summary'] ) {
+			update_post_meta( $post_id, 'nop_indieweb_weather_summary', $data['summary'] );
+		}
+		update_post_meta( $post_id, 'nop_indieweb_weather_provider',  'pirate-weather' );
+		update_post_meta( $post_id, 'nop_indieweb_weather_fetched_at', gmdate( 'c' ) );
+
+		return true;
+	}
+
+	/**
+	 * Current-conditions weather for "right now" at a coordinate, with a short
+	 * transient cache. Powers the /post masthead's at-a-glance data grid (the
+	 * nop-indieweb/v1/now route is the only caller). Returns the same shape as
+	 * fetch_at() — ['temp_c'=>?float, 'icon'=>string, 'summary'=>string] — or []
+	 * when unavailable (no key, network error, nothing usable).
+	 */
+	public static function fetch_current( float $lat, float $lng ): array {
+		if ( 0.0 === $lat && 0.0 === $lng ) {
+			return [];
+		}
+
+		// Round to 3 d.p. (~110 m) so nearby readings share one entry — weather
+		// doesn't vary at street scale, and this keeps Pirate Weather calls rare.
+		$cache_key = 'nop_weather_now_' . md5( round( $lat, 3 ) . ',' . round( $lng, 3 ) );
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$data = self::fetch_at( $lat, $lng, time() );
+
+		// Cache even an empty result, but briefly, so a missing key or an outage
+		// can't hammer the API on every masthead load. Successes live the full window.
+		set_transient( $cache_key, $data, $data ? 30 * MINUTE_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
+
+		return $data;
+	}
+
+	/**
+	 * Fetches and parses Pirate Weather's `currently` block for a coordinate +
+	 * timestamp. Returns ['temp_c'=>?float, 'icon'=>string, 'summary'=>string],
+	 * or [] on any failure / when nothing usable came back. Never touches post
+	 * meta — the caller decides (enrich_post stamps meta; fetch_current returns
+	 * it to the client).
+	 */
+	private static function fetch_at( float $lat, float $lng, int $timestamp ): array {
 		$api_key = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'weather.pirate_weather_api_key', '' );
 		if ( '' === $api_key ) {
-			return false;
+			return [];
 		}
 
 		$url = sprintf(
@@ -56,50 +115,30 @@ class Weather_Fetcher {
 		] );
 
 		if ( is_wp_error( $response ) ) {
-			\NOP\IndieWeb\nop_indieweb_log( 'weather: fetch failed', [
-				'post_id' => $post_id,
-				'error'   => $response->get_error_message(),
-			] );
-			return false;
+			\NOP\IndieWeb\nop_indieweb_log( 'weather: fetch failed', [ 'error' => $response->get_error_message() ] );
+			return [];
 		}
 
 		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
-			\NOP\IndieWeb\nop_indieweb_log( 'weather: non-200 response', [
-				'post_id' => $post_id,
-				'code'    => wp_remote_retrieve_response_code( $response ),
-			] );
-			return false;
+			\NOP\IndieWeb\nop_indieweb_log( 'weather: non-200 response', [ 'code' => wp_remote_retrieve_response_code( $response ) ] );
+			return [];
 		}
 
-		$body = (array) json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$body    = (array) json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		$current = is_array( $body['currently'] ?? null ) ? $body['currently'] : null;
 		if ( ! $current ) {
-			return false;
+			return [];
 		}
 
 		// Pirate Weather returns temperature in Celsius when units=si.
-		$temp_c = isset( $current['temperature'] ) ? (float) $current['temperature'] : null;
-		$icon   = isset( $current['icon'] )    ? sanitize_key( (string) $current['icon'] )       : '';
-		$summary = isset( $current['summary'] ) ? sanitize_text_field( (string) $current['summary'] ) : '';
+		$temp_c  = isset( $current['temperature'] ) ? (float) $current['temperature'] : null;
+		$icon    = isset( $current['icon'] )        ? sanitize_key( (string) $current['icon'] )        : '';
+		$summary = isset( $current['summary'] )     ? sanitize_text_field( (string) $current['summary'] ) : '';
 
 		if ( null === $temp_c && '' === $icon && '' === $summary ) {
-			return false;
+			return [];
 		}
 
-		if ( null !== $temp_c ) {
-			$temp_f = ( $temp_c * 9 / 5 ) + 32;
-			update_post_meta( $post_id, 'nop_indieweb_weather_temp_c', (string) round( $temp_c, 1 ) );
-			update_post_meta( $post_id, 'nop_indieweb_weather_temp_f', (string) round( $temp_f, 1 ) );
-		}
-		if ( '' !== $icon ) {
-			update_post_meta( $post_id, 'nop_indieweb_weather_icon', $icon );
-		}
-		if ( '' !== $summary ) {
-			update_post_meta( $post_id, 'nop_indieweb_weather_summary', $summary );
-		}
-		update_post_meta( $post_id, 'nop_indieweb_weather_provider',  'pirate-weather' );
-		update_post_meta( $post_id, 'nop_indieweb_weather_fetched_at', gmdate( 'c' ) );
-
-		return true;
+		return [ 'temp_c' => $temp_c, 'icon' => $icon, 'summary' => $summary ];
 	}
 }

@@ -75,6 +75,7 @@ class Posting_Page {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
+		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
 		$icon_url     = get_site_icon_url( 192 );
@@ -194,6 +195,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--green:    light-dark(#20713A, #5BCB84);
 	--violet:   light-dark(#6A4ACF, #A78FE8);
 	--orange:   light-dark(#B4500A, #FF9A3C);
+	--magenta:  light-dark(#C81E66, #FF6FA3);
 	--charcoal: light-dark(#1A1A1A, #F4EFE6);
 
 	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
@@ -203,6 +205,10 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--on-accent: var(--field);
 
 	--display: 'Brandon Text Condensed', 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
+	/* The live "instrument readout" face — date stamp + the current-moment data
+	   grid (place/temp/sky). Monospace gives the printed-ticket / field-notebook /
+	   old-terminal feel, and separates ambient data from the Brandon chrome. */
+	--mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
 	/* Corner radius via the shared --nop-radius system, so /post matches the
 	   blocks. This page is a standalone document (no theme.json cascade), so it
@@ -265,6 +271,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 .app[data-type="like"]     { --ink: var(--red); }
 .app[data-type="bookmark"] { --ink: var(--green); }
 .app[data-type="repost"]   { --ink: var(--violet); }
+.app[data-type="rsvp"]     { --ink: var(--magenta); }
 
 html {
 	height: 100%;
@@ -549,13 +556,13 @@ body::before {
 
 .masthead {
 	flex-shrink: 0;
-	padding: 0 var(--pad-x) 14px;
+	/* No bottom padding/border: the flight-path divider that follows is the rule. */
+	padding: 0 var(--pad-x);
 	/* Clear the status bar, then drop the wordmark clear of the rounded top corners
 	   so the curve frames it rather than pinching it. The app/desktop add the
 	   safe-top zone (59px) on top; in a Safari tab safe-top is 0, so this is a clean
 	   16px gap below the default-height status bar — same visible clearance as the app. */
 	padding-top: calc(var(--safe-top) + 16px);
-	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__top {
 	display: flex;
@@ -578,57 +585,103 @@ body::before {
 	line-height: 0.9;
 	text-transform: uppercase;
 }
-.timeblock { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.clock {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 1px;
-}
-.clock__time {
-	font-size: 24px;
-	font-weight: 800;
-	letter-spacing: -0.02em;
-	line-height: 1;
-	font-variant-numeric: tabular-nums;
-	font-feature-settings: "tnum";
-}
-.clock__date {
-	font-family: var(--display);
-	font-size: var(--fs-12);
-	font-weight: 700;
+/* The date stamp — top-right where the redundant clock used to be (iOS already
+   shows the time above). Mono, so it reads as printed ticket data. */
+.masthead__date {
+	flex-shrink: 0;
+	font-family: var(--mono);
+	font-size: var(--fs-13);
+	font-weight: 600;
+	letter-spacing: 0.01em;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	opacity: 0.6;
+	white-space: nowrap;
 }
 
-/* Time-of-day arc — a slim solid arc with a distinct rayed sun (day) / crescent
-   moon (night) glyph riding it, positioned by the hour. JS sets the position
-   and swaps the glyph only on the per-minute tick (no per-second repaint). */
-.sky {
+/* ── Current-moment data grid ───────────────────────────────────────────────
+   A boarding-pass / field-notebook row of label→value cells (place · temp · sky)
+   filled from the device GPS via the /now endpoint. Each cell hides on its own
+   when its datum is missing; the whole grid collapses when nothing resolved
+   (permission denied / offline / no API keys). */
+.nowgrid {
+	display: flex;
+	margin-top: 14px;
+}
+.nowcell {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 0 12px;
+	border-left: 1px solid var(--rule);   /* hairline seam between fields */
+}
+.nowcell:first-child { padding-left: 0; border-left: 0; }
+.nowcell[hidden] { display: none; }
+.nowcell__label {
+	display: block;
+	margin: 0 0 2px;
+	font-family: var(--display);
+	font-size: var(--fs-10);
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	opacity: 0.55;
+}
+.nowcell__value {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin: 0;
+	font-family: var(--mono);
+	font-size: var(--fs-13);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.nowcell__value > span { overflow: hidden; text-overflow: ellipsis; }
+.nowcell__icon { display: inline-flex; flex-shrink: 0; }
+.nowcell__icon svg { display: block; width: 16px; height: 16px; }
+
+/* ── Flight-path divider ────────────────────────────────────────────────────
+   The day as a journey: a dashed rail spanning the gutter, a solid segment
+   filling the portion of the day already elapsed, and the sun (06–18h) / moon
+   glyph riding the join at the current time. Replaces the masthead rule AND the
+   old time-of-day arc — one element, two jobs. JS drives width/left on the
+   per-minute tick (positions are % of the rail, so no pixel math). */
+.flightpath {
+	flex-shrink: 0;
 	position: relative;
-	height: 28px;
-	margin-top: 12px;
-}
-.sky__arc {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	color: var(--ink-50);
-}
-.sky__body {
-	position: absolute;
-	width: 26px;
 	height: 26px;
+	margin-top: 14px;
+}
+.flightpath__rail {
+	position: absolute;
+	left: var(--pad-x);
+	right: var(--pad-x);
+	top: 50%;
+	border-top: var(--bw) dashed var(--ink-50);
+}
+.flightpath__done {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;                              /* JS → elapsed-day fraction */
+	border-top: var(--bw) solid var(--ink);
+	transition: width 0.6s ease;
+}
+.flightpath__body {
+	position: absolute;
+	left: 0;                              /* JS → current-time position */
+	top: 0;
+	width: 22px;
+	height: 22px;
 	color: var(--ink);
 	transform: translate(-50%, -50%);
-	transition: left 0.6s ease, top 0.6s ease;
+	transition: left 0.6s ease;
 }
-.sky__body svg { display: block; width: 26px; height: 26px; }
-.sky__body .sky__moon { display: none; }
-.sky__body.is-moon .sky__sun { display: none; }
-.sky__body.is-moon .sky__moon { display: block; }
+.flightpath__body svg { display: block; width: 22px; height: 22px; }
+.flightpath__body .flightpath__moon { display: none; }
+.flightpath__body.is-moon .flightpath__sun { display: none; }
+.flightpath__body.is-moon .flightpath__moon { display: block; }
 
 .greeting {
 	flex-shrink: 0;
@@ -670,12 +723,17 @@ body::before {
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
+	/* Tiles settle to the gutter edge when the row is flicked — a native, camera-dial
+	   feel — without fighting a mid-scroll stop (proximity, not mandatory). */
+	scroll-snap-type: x proximity;
+	scroll-padding-left: var(--pad-x);
 	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
 .type-btn {
 	flex: 0 0 72px;
 	aspect-ratio: 1;
+	scroll-snap-align: start;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -719,6 +777,27 @@ body::before {
 	100% { transform: scale(1); }
 }
 .type-btn:active { transform: translate(1px, 1px); }
+
+/* RSVP response — a segmented yes/maybe/no control, sharing the tile's two-tone
+   active state so the choice reads in the kind ink. */
+.rsvp-toggle { display: flex; gap: 6px; }
+.rsvp-btn {
+	flex: 1 1 0;
+	padding: 11px 8px;
+	border: var(--bw) solid var(--ink-30);
+	border-radius: var(--radius);
+	background: var(--field);
+	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
+	font-family: var(--display);
+	font-size: var(--fs-14);
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
+.rsvp-btn:active { transform: translate(1px, 1px); }
 
 /* ── Compose ────────────────────────────────────────────────────────────── */
 
@@ -1422,7 +1501,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	.url-specimen__host { animation: none; }
 	.burst { display: none; }
 	.field-group.is-conditional:not([hidden]) { animation: none; }
-	.compose-prompt, .sky__body, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
+	.compose-prompt, .flightpath__body, .flightpath__done, .btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
 	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; }
 	.toast { transition: opacity 0.01ms; }
@@ -1455,19 +1534,37 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				</span>
 				<span class="brand__word"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
 			</div>
-			<div class="clock" aria-hidden="true">
-				<p class="clock__time" id="clockTime">00:00</p>
-				<p class="clock__date" id="clockDate">Mon 1 Jan</p>
+			<p class="masthead__date" id="clockDate" aria-hidden="true">Mon 1 Jan</p>
+		</div>
+		<!-- Current-moment data grid — filled from the device GPS via /now. Cells
+		     start hidden; JS reveals each one only when its datum resolves. -->
+		<dl class="nowgrid" id="nowGrid" aria-hidden="true">
+			<div class="nowcell" id="nowCellPlace" hidden>
+				<dt class="nowcell__label"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></dt>
+				<dd class="nowcell__value"><span id="nowPlace"></span></dd>
 			</div>
-		</div>
-		<div class="sky" aria-hidden="true">
-			<svg class="sky__arc" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M3 16 Q50 4 97 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-			<span class="sky__body is-sun" id="skyBody">
-				<svg class="sky__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
-				<svg class="sky__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
-			</span>
-		</div>
+			<div class="nowcell" id="nowCellTemp" hidden>
+				<dt class="nowcell__label"><?php esc_html_e( 'Temp', 'nop-indieweb' ); ?></dt>
+				<dd class="nowcell__value"><span id="nowTemp"></span></dd>
+			</div>
+			<div class="nowcell" id="nowCellSky" hidden>
+				<dt class="nowcell__label"><?php esc_html_e( 'Sky', 'nop-indieweb' ); ?></dt>
+				<dd class="nowcell__value"><span class="nowcell__icon" id="nowIcon" aria-hidden="true"></span><span id="nowSummary"></span></dd>
+			</div>
+		</dl>
 	</header>
+
+	<!-- Flight-path divider: the day's progress (solid = elapsed, dashed = ahead),
+	     with the sun/moon riding the join at the current time. -->
+	<div class="flightpath" aria-hidden="true">
+		<span class="flightpath__rail">
+			<span class="flightpath__done" id="fpDone"></span>
+			<span class="flightpath__body is-sun" id="fpBody">
+				<svg class="flightpath__sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
+				<svg class="flightpath__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+			</span>
+		</span>
+	</div>
 
 	<!-- View container -->
 	<div class="view-container">
@@ -1505,14 +1602,28 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg></span>
 					<span><?php esc_html_e( 'Repost', 'nop-indieweb' ); ?></span>
 				</button>
+				<button class="type-btn" data-type="rsvp" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-29.66-85.66a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L124,164.69l42.34-42.35A8,8,0,0,1,178.34,122.34Z"/></svg></span>
+					<span><?php esc_html_e( 'RSVP', 'nop-indieweb' ); ?></span>
+				</button>
 			</div><!-- .type-grid -->
 
 			<div class="compose-fields">
 
-				<!-- URL field (reply, like, bookmark, repost) -->
+				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
 				<div class="field-group is-conditional" id="fieldUrl" hidden>
 					<label class="field-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
 					<input type="url" id="typeUrl" class="text-field" placeholder="https://…" autocomplete="off">
+				</div>
+
+				<!-- RSVP response (rsvp) -->
+				<div class="field-group is-conditional" id="fieldRsvp" hidden>
+					<span class="field-label"><?php esc_html_e( 'Going?', 'nop-indieweb' ); ?></span>
+					<div class="rsvp-toggle" id="rsvpToggle" role="group" aria-label="<?php esc_attr_e( 'RSVP response', 'nop-indieweb' ); ?>">
+						<button type="button" class="rsvp-btn is-active" data-rsvp="yes" aria-pressed="true"><?php esc_html_e( 'Yes', 'nop-indieweb' ); ?></button>
+						<button type="button" class="rsvp-btn" data-rsvp="maybe" aria-pressed="false"><?php esc_html_e( 'Maybe', 'nop-indieweb' ); ?></button>
+						<button type="button" class="rsvp-btn" data-rsvp="no" aria-pressed="false"><?php esc_html_e( 'No', 'nop-indieweb' ); ?></button>
+					</div>
 				</div>
 
 				<!-- URL specimen (like, repost) — watermark glyph when empty, big
@@ -1635,6 +1746,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		nonce:       <?php echo wp_json_encode( $nonce ); ?>,
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
+		nowUrl:      <?php echo wp_json_encode( $now_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		userName:    <?php echo wp_json_encode( $user_name ); ?>,
 		greetings:   <?php echo wp_json_encode( $greetings ); ?>,
@@ -1660,7 +1772,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 	var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-	var clockTimeEl = document.getElementById( 'clockTime' );
 	var clockDateEl = document.getElementById( 'clockDate' );
 	var deviceTimeEl = document.getElementById( 'deviceTime' );
 
@@ -1686,7 +1797,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	// green → orange) rather than a flat RGB crossfade. Every element reads
 	// var(--ink), so they all rotate together — one uniform sweep.
 	var inkNow    = document.getElementById( 'inkNow' );
-	var KIND_VAR  = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet' };
+	var KIND_VAR  = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet', rsvp: '--magenta' };
 	var INK       = {};
 	function buildInkMap() {
 		var probe = document.createElement( 'span' );
@@ -1728,24 +1839,22 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		inkRAF = requestAnimationFrame( step );
 	}
 	var greetingEl  = document.getElementById( 'greeting' );
-	var skyBody     = document.getElementById( 'skyBody' );
+	var fpBody      = document.getElementById( 'fpBody' );
+	var fpDone      = document.getElementById( 'fpDone' );
 	var lastTime = '', lastDate = '', lastGreeting = '';
 
-	// Rayed sun (06–18h) / crescent moon glyph riding the arc, positioned by the
-	// hour along the same quadratic the arc path draws. Per-minute tick only.
-	function positionSky( now ) {
-		var u  = ( now.getHours() + now.getMinutes() / 60 ) / 24;
-		var mu = 1 - u;
-		var x  = mu * mu * 3  + 2 * mu * u * 50 + u * u * 97;
-		var y  = mu * mu * 16 + 2 * mu * u * 4  + u * u * 16;
-		skyBody.style.left = x + '%';
-		skyBody.style.top  = ( y / 20 * 100 ) + '%';
-	}
-	function updateSky( now ) {
-		var daytime = now.getHours() >= 6 && now.getHours() < 18;
-		skyBody.classList.toggle( 'is-sun', daytime );
-		skyBody.classList.toggle( 'is-moon', ! daytime );
-		positionSky( now );
+	// The day as a journey: the solid segment fills the elapsed fraction of the day
+	// and the sun (06–18h) / moon glyph rides its leading edge. Both are % of the
+	// inset rail, so no pixel math. Per-minute tick only (no per-second repaint).
+	function updateFlightpath( now ) {
+		var pct = ( ( now.getHours() + now.getMinutes() / 60 ) / 24 * 100 ).toFixed( 2 ) + '%';
+		if ( fpDone ) { fpDone.style.width = pct; }
+		if ( fpBody ) {
+			fpBody.style.left = pct;
+			var daytime = now.getHours() >= 6 && now.getHours() < 18;
+			fpBody.classList.toggle( 'is-sun', daytime );
+			fpBody.classList.toggle( 'is-moon', ! daytime );
+		}
 	}
 
 	function greetingFor( hour ) {
@@ -1761,10 +1870,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		var time = String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
 		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
 		if ( time !== lastTime ) {
-			clockTimeEl.textContent = time;
 			if ( deviceTimeEl ) { deviceTimeEl.textContent = time; }
 			lastTime = time;
-			updateSky( now );
+			updateFlightpath( now );
 			var greet = greetingFor( now.getHours() );
 			var line  = NOP.userName ? greet + ', ' + NOP.userName : greet;
 			if ( line !== lastGreeting ) { greetingEl.textContent = line; lastGreeting = line; }
@@ -1773,6 +1881,96 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	}
 	updateClock();
 	setInterval( updateClock, 1000 );
+
+	// ── Current-moment data grid (place · temp · sky) ─────────────────────────────
+	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current
+	// weather with the plugin's existing keys, so nothing leaks client-side). Both
+	// the coordinates and the resolved payload are cached in localStorage: coords for
+	// 6h so iOS isn't re-prompted every visit, the payload for 30 min so the grid
+	// paints instantly from cache then refreshes. Every failure path is silent — the
+	// cells just stay hidden (permission denied / offline / no API keys configured).
+	var GEO_KEY = 'nop_post_geo', NOW_KEY = 'nop_post_now';
+	var GEO_TTL = 6 * 60 * 60 * 1000, NOW_TTL = 30 * 60 * 1000;
+
+	var nowGrid    = document.getElementById( 'nowGrid' );
+	var cellPlace  = document.getElementById( 'nowCellPlace' );
+	var cellTemp   = document.getElementById( 'nowCellTemp' );
+	var cellSky    = document.getElementById( 'nowCellSky' );
+	var nowPlace   = document.getElementById( 'nowPlace' );
+	var nowTemp    = document.getElementById( 'nowTemp' );
+	var nowIcon    = document.getElementById( 'nowIcon' );
+	var nowSummary = document.getElementById( 'nowSummary' );
+
+	// Pirate Weather icon keyword → riso glyph (sun/moon reuse the flight-path art).
+	var WX_SUN  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>';
+	var WX_MOON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>';
+	var WX_CLOUD = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 18a4.5 4.5 0 0 1-.5-8.97 6 6 0 0 1 11.64-1.2A4 4 0 0 1 17.5 18h-11Z"/></svg>';
+	var WX_RAIN  = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 15a4.5 4.5 0 0 1-.5-8.97 6 6 0 0 1 11.64-1.2A4 4 0 0 1 17.5 15h-11Z"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="18.5" x2="7" y2="21.5"/><line x1="12" y1="18.5" x2="11" y2="21.5"/><line x1="16" y1="18.5" x2="15" y2="21.5"/></g></svg>';
+	var WX_SNOW  = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 15a4.5 4.5 0 0 1-.5-8.97 6 6 0 0 1 11.64-1.2A4 4 0 0 1 17.5 15h-11Z"/><circle cx="8" cy="20" r="1"/><circle cx="12" cy="21.3" r="1"/><circle cx="16" cy="20" r="1"/></svg>';
+	var WX_FOG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="6" y1="16" x2="18" y2="16"/></svg>';
+	var WX_WIND  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 14h14a2.5 2.5 0 1 1-2.5 2.5"/></svg>';
+	var WX_PCD   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="7.5" r="3"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="8" y1="1.6" x2="8" y2="2.9"/><line x1="2.1" y1="7.5" x2="3.4" y2="7.5"/><line x1="3.4" y1="2.9" x2="4.4" y2="3.9"/><line x1="12.6" y1="2.9" x2="11.6" y2="3.9"/></g><path d="M9 19a4 4 0 0 1-.4-7.98 5.3 5.3 0 0 1 10.3-1A3.6 3.6 0 0 1 18.6 19H9Z"/></svg>';
+	var WX_PCN   = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 3.4A4.4 4.4 0 1 0 9 10.3 3.7 3.7 0 0 1 13.5 3.4Z"/><path d="M9 19a4 4 0 0 1-.4-7.98 5.3 5.3 0 0 1 10.3-1A3.6 3.6 0 0 1 18.6 19H9Z"/></svg>';
+	var WX_ICON = {
+		'clear-day': WX_SUN, 'clear-night': WX_MOON, 'cloudy': WX_CLOUD,
+		'partly-cloudy-day': WX_PCD, 'partly-cloudy-night': WX_PCN,
+		'rain': WX_RAIN, 'snow': WX_SNOW, 'sleet': WX_RAIN, 'wind': WX_WIND, 'fog': WX_FOG
+	};
+
+	function readJSON( k ) { try { return JSON.parse( localStorage.getItem( k ) ); } catch ( e ) { return null; } }
+	function writeJSON( k, v ) { try { localStorage.setItem( k, JSON.stringify( v ) ); } catch ( e ) {} }
+
+	function renderNow( d ) {
+		if ( ! d ) { return; }
+		var place  = d.place ? ( d.country ? d.place + ', ' + d.country : d.place ) : '';
+		// Show both units — Belfast thinks in °C, but the °F is a free, useful glance.
+		// Derive °F from the rounded °C so the two never disagree at a rounding edge
+		// (a raw 11.7° would otherwise print "12°C / 53°F", which reads as a bug).
+		var temp = '';
+		if ( d.temp_c != null && d.temp_c !== '' ) {
+			var c = Math.round( d.temp_c );
+			temp = c + '°C / ' + Math.round( c * 9 / 5 + 32 ) + '°F';
+		}
+		var hasSky = !! ( d.summary || d.icon );
+		nowPlace.textContent = place;  cellPlace.hidden = ! place;
+		nowTemp.textContent  = temp;   cellTemp.hidden  = ! temp;
+		if ( hasSky ) { nowIcon.innerHTML = WX_ICON[ d.icon ] || ''; nowSummary.textContent = d.summary || ''; }
+		cellSky.hidden = ! hasSky;
+		nowGrid.hidden = ! ( place || temp || hasSky );
+	}
+
+	function fetchNow( lat, lon ) {
+		var sep = NOP.nowUrl.indexOf( '?' ) >= 0 ? '&' : '?';
+		fetch( NOP.nowUrl + sep + 'lat=' + encodeURIComponent( lat ) + '&lon=' + encodeURIComponent( lon ), {
+			headers: { 'X-WP-Nonce': NOP.nonce }
+		} )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( d ) { if ( d ) { renderNow( d ); writeJSON( NOW_KEY, { data: d, ts: Date.now() } ); } } )
+			.catch( function () {} );
+	}
+
+	function withCoords( cb ) {
+		var g = readJSON( GEO_KEY );
+		if ( g && g.lat != null && ( Date.now() - g.ts ) < GEO_TTL ) { cb( g.lat, g.lon ); return; }
+		if ( ! navigator.geolocation ) { return; }
+		navigator.geolocation.getCurrentPosition(
+			function ( pos ) {
+				var lat = pos.coords.latitude, lon = pos.coords.longitude;
+				writeJSON( GEO_KEY, { lat: lat, lon: lon, ts: Date.now() } );
+				cb( lat, lon );
+			},
+			function () {},
+			{ enableHighAccuracy: false, timeout: 8000, maximumAge: GEO_TTL }
+		);
+	}
+
+	function loadNow() {
+		var cached = readJSON( NOW_KEY );
+		if ( cached && cached.data ) { renderNow( cached.data ); }        // paint instantly
+		if ( cached && ( Date.now() - cached.ts ) < NOW_TTL ) { return; }  // still fresh
+		withCoords( fetchNow );
+	}
+	loadNow();
 
 	// ── Type configuration ────────────────────────────────────────────────────
 
@@ -1783,17 +1981,20 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL', urlHint: "Paste the URL you're liking" },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL', urlHint: "Paste the URL you're reposting" },
+		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event URL', contentPlaceholder: 'Add a note (optional)…', hasRsvp: true },
 	};
 
 	var currentType   = 'note';
 	var selectedFiles = [];
 	var photoAlts     = [];
 	var currentTags   = [];
+	var currentRsvp   = 'yes';
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 
 	var postBtn      = document.getElementById( 'postBtn' );
 	var fieldUrl     = document.getElementById( 'fieldUrl' );
+	var fieldRsvp    = document.getElementById( 'fieldRsvp' );
 	var fieldPhoto   = document.getElementById( 'fieldPhoto' );
 	var fieldContent = document.getElementById( 'fieldContent' );
 	var fieldTags    = document.getElementById( 'fieldTags' );
@@ -1980,7 +2181,24 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 	document.getElementById( 'typeBar' ).addEventListener( 'click', function (e) {
 		var btn = e.target.closest( '.type-btn' );
-		if ( btn ) switchType( btn.dataset.type );
+		if ( ! btn ) { return; }
+		// A short tick on an actual kind change — best-effort (iOS Safari ignores it),
+		// the same nicety the Post button already gives on send.
+		if ( btn.dataset.type !== currentType && navigator.vibrate ) { navigator.vibrate( 8 ); }
+		switchType( btn.dataset.type );
+	} );
+
+	document.getElementById( 'rsvpToggle' ).addEventListener( 'click', function (e) {
+		var btn = e.target.closest( '.rsvp-btn' );
+		if ( ! btn || btn.dataset.rsvp === currentRsvp ) { return; }
+		currentRsvp = btn.dataset.rsvp;
+		if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
+		document.querySelectorAll( '.rsvp-btn' ).forEach( function (b) {
+			var on = b.dataset.rsvp === currentRsvp;
+			b.classList.toggle( 'is-active', on );
+			b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+		} );
+		saveDraft();
 	} );
 
 	function switchType( type ) {
@@ -1999,6 +2217,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		} );
 
 		fieldUrl.hidden     = ! cfg.urlProp;
+		fieldRsvp.hidden    = ! cfg.hasRsvp;
 		fieldPhoto.hidden   = type !== 'photo';
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
@@ -2156,6 +2375,10 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			if ( url ) props[ cfg.urlProp ] = [ url ];
 		}
 
+		// RSVP rides on in-reply-to (the event URL); the rsvp property is what makes
+		// the server resolve it as an RSVP rather than a plain reply.
+		if ( cfg.hasRsvp ) props.rsvp = [ currentRsvp ];
+
 		// Alt text rides along as the server's array photo shape ({primary, alt});
 		// sideload_photos copies it onto the attachment, where both the rendered
 		// post and the Mastodon/Bluesky syndicators read it.
@@ -2282,6 +2505,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 				content: contentInput.value,
 				url:     urlInput.value,
 				tags:    currentTags,
+				rsvp:    currentRsvp,
 			} ) );
 		} catch ( e ) {}
 	}
@@ -2300,6 +2524,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		if ( typeof d.content === 'string' ) contentInput.value = d.content;
 		if ( typeof d.url === 'string' ) urlInput.value = d.url;
 		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
+		if ( d.rsvp ) {
+			currentRsvp = d.rsvp;
+			document.querySelectorAll( '.rsvp-btn' ).forEach( function (b) {
+				var on = b.dataset.rsvp === currentRsvp;
+				b.classList.toggle( 'is-active', on );
+				b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+			} );
+		}
 		restoring = false;
 		updateSpecimen();
 		updateCounter();
