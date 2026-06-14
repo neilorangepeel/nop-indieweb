@@ -101,7 +101,8 @@ class Weather_Fetcher {
 
 		$url = sprintf(
 			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
-			'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,daily,alerts',
+			// Keep `daily` — it carries sunrise/sunset (the /post ticker's golden hour).
+			'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,alerts',
 			self::ENDPOINT,
 			rawurlencode( $api_key ),
 			rawurlencode( (string) $lat ),
@@ -139,6 +140,13 @@ class Weather_Fetcher {
 			return [];
 		}
 
-		return [ 'temp_c' => $temp_c, 'icon' => $icon, 'summary' => $summary ];
+		// Sun times (Unix) from the day's `daily` entry — the /post ticker derives the
+		// golden hour from sunset. Absent on the time-machine endpoint for some dates;
+		// callers that don't need them (enrich_post) simply ignore the extra keys.
+		$day     = is_array( $body['daily']['data'][0] ?? null ) ? $body['daily']['data'][0] : [];
+		$sunrise = isset( $day['sunriseTime'] ) ? (int) $day['sunriseTime'] : null;
+		$sunset  = isset( $day['sunsetTime'] )  ? (int) $day['sunsetTime']  : null;
+
+		return [ 'temp_c' => $temp_c, 'icon' => $icon, 'summary' => $summary, 'sunrise' => $sunrise, 'sunset' => $sunset ];
 	}
 }

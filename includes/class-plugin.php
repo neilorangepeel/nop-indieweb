@@ -1142,7 +1142,7 @@ HTML,
 		// Out-of-range or null-island coordinates carry no signal — return an empty
 		// payload so the client simply hides the place/weather cells.
 		if ( $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180 || ( 0.0 === $lat && 0.0 === $lon ) ) {
-			return new \WP_REST_Response( [ 'place' => '', 'country' => '', 'temp_c' => null, 'icon' => '', 'summary' => '' ], 200 );
+			return new \WP_REST_Response( [ 'place' => '', 'country' => '', 'temp_c' => null, 'icon' => '', 'summary' => '', 'sunrise' => null, 'sunset' => null ], 200 );
 		}
 
 		$geo     = \NOP\IndieWeb\Venue\Geoapify_Geocoder::reverse_geocode( $lat, $lon );
@@ -1154,6 +1154,8 @@ HTML,
 			'temp_c'  => $weather['temp_c'] ?? null,
 			'icon'    => (string) ( $weather['icon'] ?? '' ),
 			'summary' => (string) ( $weather['summary'] ?? '' ),
+			'sunrise' => $weather['sunrise'] ?? null,
+			'sunset'  => $weather['sunset'] ?? null,
 		], 200 );
 	}
 

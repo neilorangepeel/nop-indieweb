@@ -91,6 +91,23 @@ class Posting_Page {
 		global $wpdb;
 		$next_id = (int) $wpdb->get_var( "SELECT MAX(ID) FROM {$wpdb->posts}" ) + 1; // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
+		// Posting cadence for the ticker: how many posts the author has published
+		// today (local day) and when they last posted. Both are small, indexed
+		// queries; the client bumps them live as you post in the session.
+		$today_q = new \WP_Query( [
+			'author'         => $user->ID,
+			'post_status'    => 'publish',
+			'post_type'      => 'post',
+			'date_query'     => [ [ 'after' => current_time( 'Y-m-d' ) . ' 00:00:00', 'inclusive' => true ] ],
+			'fields'         => 'ids',
+			'posts_per_page' => 100,
+			'no_found_rows'  => true,
+		] );
+		$posts_today = count( $today_q->posts );
+
+		$last_ids     = get_posts( [ 'author' => $user->ID, 'post_status' => 'publish', 'post_type' => 'post', 'numberposts' => 1, 'orderby' => 'date', 'order' => 'DESC', 'fields' => 'ids' ] );
+		$last_post_ts = $last_ids ? (int) get_post_timestamp( $last_ids[0] ) : 0;
+
 		// Time-of-day greetings, translated here so the JS device stays i18n-safe.
 		$greetings = [
 			'morning'   => __( 'Good morning', 'nop-indieweb' ),
@@ -1729,6 +1746,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		userName:    <?php echo wp_json_encode( $user_name ); ?>,
 		greetings:   <?php echo wp_json_encode( $greetings ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
+		postsToday:  <?php echo wp_json_encode( $posts_today ); ?>,
+		lastPostTs:  <?php echo wp_json_encode( $last_post_ts ); ?>,
 	};
 
 	var DRAFT_KEY    = 'nop_post_draft';
@@ -1839,6 +1858,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			tkDate = date;
 			setTk( 'tk-time', tkTime );
 			setTk( 'tk-date', tkDate );
+			setTk( 'tk-golden', tkGolden() );                          // countdown ticks down
+			if ( lastPostTs ) { setTk( 'tk-last', 'Last posted ' + tkAgo( lastPostTs ) ); }
 			lastTime = time;
 		}
 	}
@@ -1855,14 +1876,47 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
 	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
 	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
+	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
+	var postsToday = NOP.postsToday || 0;          // server count; bumped on each post
+	var lastPostTs = NOP.lastPostTs || 0;          // Unix of the last published post
+
+	// Golden hour ≈ the last hour before sunset: counts down to it, reads "now"
+	// during, then falls back to the sunset time once it's passed.
+	function tkGolden() {
+		if ( ! tkSunset ) { return ''; }
+		var now = Math.floor( Date.now() / 1000 ), start = tkSunset - 3600;
+		if ( now < start )    { return 'Golden hour in ' + tkDur( start - now ); }
+		if ( now < tkSunset ) { return 'Golden hour now'; }
+		return 'Sunset ' + tkClock( tkSunset );
+	}
+	function tkDur( s ) {
+		var m = Math.round( s / 60 );
+		return m < 60 ? m + 'm' : Math.floor( m / 60 ) + 'h ' + ( m % 60 ) + 'm';
+	}
+	function tkClock( ts ) {
+		var d = new Date( ts * 1000 );
+		return String( d.getHours() ).padStart( 2, '0' ) + ':' + String( d.getMinutes() ).padStart( 2, '0' );
+	}
+	function tkAgo( ts ) {
+		var s = Math.floor( Date.now() / 1000 ) - ts;
+		if ( s < 90 ) { return 'just now'; }
+		var m = Math.round( s / 60 ); if ( m < 60 ) { return m + 'm ago'; }
+		var h = Math.round( m / 60 ); if ( h < 24 ) { return h + 'h ago'; }
+		var d = Math.round( h / 24 ); if ( d < 7 )  { return d + 'd ago'; }
+		return Math.round( d / 7 ) + 'w ago';
+	}
+	function tkCadence() { return ordinal( postsToday + 1 ) + ' today'; }
 
 	function tkItems() {
 		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
-		if ( tkDate )  { out.push( { c: 'tk-date',  h: tkDate } ); }
-		if ( tkTime )  { out.push( { c: 'tk-time',  h: tkTime } ); }
-		if ( tkPlace ) { out.push( { c: 'tk-place', h: tkPlace } ); }
-		if ( tkTemp )  { out.push( { c: 'tk-temp',  h: tkTemp } ); }
-		if ( tkSky )   { out.push( { c: 'tk-sky',   h: tkSky } ); }
+		out.push( { c: 'tk-cadence', h: tkCadence() } );
+		if ( lastPostTs ) { out.push( { c: 'tk-last',   h: 'Last posted ' + tkAgo( lastPostTs ) } ); }
+		if ( tkDate )     { out.push( { c: 'tk-date',   h: tkDate } ); }
+		if ( tkTime )     { out.push( { c: 'tk-time',   h: tkTime } ); }
+		if ( tkSunset )   { out.push( { c: 'tk-golden', h: tkGolden() } ); }
+		if ( tkPlace )    { out.push( { c: 'tk-place',  h: tkPlace } ); }
+		if ( tkTemp )     { out.push( { c: 'tk-temp',   h: tkTemp } ); }
+		if ( tkSky )      { out.push( { c: 'tk-sky',    h: tkSky } ); }
 		return out;
 	}
 	function tkSeqHTML() {
@@ -1935,7 +1989,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 			var icon = WX_ICON[ d.icon ] || '';
 			tkSky = ( icon ? '<span class="ticker__icon" aria-hidden="true">' + icon + '</span>' : '' ) + ( d.summary || '' );
 		}
-		renderTicker();   // rebuild once now that place/temp/sky have resolved
+		tkSunset = d.sunset ? Number( d.sunset ) : 0;   // golden hour derives from this
+		renderTicker();   // rebuild once now that place/temp/sky/sunset have resolved
 	}
 
 	function fetchNow( lat, lon ) {
@@ -2496,6 +2551,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 		} else {
 			streakEl.hidden = true;
 		}
+
+		// Keep the ticker's cadence + last-posted live as you post through the session.
+		postsToday  += 1;
+		lastPostTs   = Math.floor( Date.now() / 1000 );
+		renderTicker();
 
 		document.getElementById( 'successPhotos' ).innerHTML = photoUrls.map( function (url) {
 			return '<img src="' + escAttr( url ) + '" alt="">';
