@@ -653,9 +653,10 @@ body::before {
 }
 /* Seal mid-dots at 3 and 9 o'clock, separating the top and bottom name arcs. */
 .type-btn__seal { fill: var(--ink); }
-/* Glyph, name and dots all swap to --on-accent on select; ease that one colour
-   change over the same 200ms as the pop + ink sweep so nothing flashes. */
-.type-btn__icon, .type-btn__arc text, .type-btn__seal { transition: color 0.2s, fill 0.2s; }
+/* Glyph, name and dots invert to --on-accent the instant the disc fills, so paper
+   ink lands on the filled disc and stays readable. (Easing this washes the text
+   out: --ink IS the disc colour, so a fading text starts invisible.) The hue sweep
+   + pop carry the motion. */
 .type-btn.is-active .type-btn__arc text,
 .type-btn.is-active .type-btn__seal { fill: var(--on-accent); }
 .type-btn.is-active .type-btn__icon {
