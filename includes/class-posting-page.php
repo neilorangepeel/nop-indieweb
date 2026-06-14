@@ -220,6 +220,11 @@ foreach ( [ '700', '800' ] as $weight ) {
 	   carries its own 50px device frame. */
 	--screen-radius: 30px;
 
+	/* POST button height, sized to match the iOS Safari address-bar pill (~36–40pt
+	   measured from-device) rather than the chunkier default — so the commit pill
+	   reads as the same class of control as the browser's own toolbar pill. */
+	--post-btn-h: 40px;
+
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -1136,8 +1141,11 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	pointer-events: none;
 }
 .bottom-bar .btn { pointer-events: auto; }
-/* Free-floating stadium pill, no longer shaped to hug the shell corner. */
-.bottom-bar .btn { border-radius: var(--nop-radius-pill); }
+/* Free-floating stadium pill, no longer shaped to hug the shell corner. Height is
+   pinned to --post-btn-h (the iOS toolbar pill) instead of the default padding, so
+   it reads as the same control class as Safari's own bottom pill. Border-box +
+   flex-centred content means the min-height IS the total height. */
+.bottom-bar .btn { border-radius: var(--nop-radius-pill); min-height: var(--post-btn-h); padding-block: 0; }
 
 .btn {
 	display: block;
