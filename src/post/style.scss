@@ -612,36 +612,42 @@ body::before {
 	height: 30px;
 	transition: opacity 0.18s ease;
 }
-/* The name, overlaid in the same cell as the icon. Hidden until hover/active,
-   when it fades up as the icon dims behind it. Condensed (the masthead board's
-   label face) keeps even "Bookmark" inside the disc. */
+/* Visually hidden — carries the accessible name + i18n; the visible name is the
+   curved arc (.type-btn__arc), which is aria-hidden. */
 .type-btn__label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+/* The kind name bent along the disc's top arc, above the icon — revealed on
+   hover/active. Needs SVG textPath (CSS can't curve a text run). Condensed
+   display face, tracked + uppercased, so it reads as a stamped badge. */
+.type-btn__arc {
 	grid-area: 1 / 1;
-	z-index: 1;
-	max-width: 66px;
-	font-family: var(--display);
-	font-size: var(--fs-12);
-	font-weight: 700;
-	line-height: 1.04;
-	letter-spacing: 0;
-	text-align: center;
-	color: var(--ink);
+	width: 72px;
+	height: 72px;
+	pointer-events: none;
 	opacity: 0;
 	transition: opacity 0.18s ease;
-	pointer-events: none;
+}
+.type-btn__arc text {
+	font-family: var(--display);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	fill: var(--ink);
 }
 
-/* Hover preview (pointer devices only): name forward, icon dimmed back. */
+/* Hover preview on pointer devices; always shown for the active kind. */
 @media (hover: hover) {
-	.type-btn:hover .type-btn__icon svg { opacity: 0.15; }
-	.type-btn:hover .type-btn__label   { opacity: 1; }
+	.type-btn:hover .type-btn__arc { opacity: 1; }
 }
-
-.type-btn.is-active .type-btn__icon svg { opacity: 0.15; }
-.type-btn.is-active .type-btn__label {
-	opacity: 1;
-	color: var(--on-accent);
-}
+.type-btn.is-active .type-btn__arc { opacity: 1; }
+.type-btn.is-active .type-btn__arc text { fill: var(--on-accent); }
 .type-btn.is-active .type-btn__icon {
 	background: var(--accent);
 	color: var(--on-accent);
