@@ -213,6 +213,13 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--nop-radius-pill: 9999px;
 	--radius: var( --nop-radius, 2px );
 
+	/* The content sheet's rounded TOP corners, echoing the phone's physical screen
+	   corners (CSS can't read the real device radius — this is a tuned approximation;
+	   modern Face-ID iPhones are ~47–55px). The accent html shows through the cut
+	   corners, so they re-tint per kind for free. Phones only — the desktop mock
+	   carries its own 50px device frame. */
+	--screen-radius: 30px;
+
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -294,6 +301,9 @@ body::before {
 	background-color: var(--field);
 	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* Match the app's rounded top so the accent html shows in the cut corners. */
+	border-top-left-radius: var(--screen-radius);
+	border-top-right-radius: var(--screen-radius);
 	pointer-events: none;
 }
 @media (min-width: 600px) and (min-height: 600px) {
@@ -341,6 +351,11 @@ body::before {
 	/* Faint halftone grain — the organic "printed on paper" texture. */
 	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
+	/* Rounded top corners that echo the phone's screen; overflow:hidden above keeps
+	   the content clipped to them. The accent html behind shows in the cut. The
+	   desktop frame (border-radius:50px) overrides this on ≥600px. */
+	border-top-left-radius: var(--screen-radius);
+	border-top-right-radius: var(--screen-radius);
 }
 /* While JS sets the initial kind on load, suppress all transitions/animations so
    it doesn't re-ink or pop into view. Removed on the next frame. */
