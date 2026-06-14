@@ -922,7 +922,10 @@ body::before {
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
    text to sit on, a bold red margin instead of a box, and a big rotating prompt
    that recedes as you type. Grows to fill the space. */
-#fieldContent { display: flex; flex-direction: column; }
+/* Let the ruled "page" resolve — a clear line's-worth of blank paper below the
+   last rule before the next field, so the content doesn't butt up against it.
+   (Adds to the 16px field gap for ~one rule-spacing of clearance.) */
+#fieldContent { display: flex; flex-direction: column; margin-bottom: 16px; }
 .compose-wrap { position: relative; }
 .compose-field {
 	display: block;
