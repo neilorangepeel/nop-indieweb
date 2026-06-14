@@ -245,6 +245,26 @@ body {
 	font-family: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 	-webkit-font-smoothing: antialiased;
 }
+/* Grain that reaches the iOS safe areas. iOS paints the root/body background
+   COLOUR into the home-indicator / overscroll zones but NOT the background-image,
+   so a grain-less strip survives there however we size body/.app. A real fixed
+   element whose box is the full layout viewport (inset:0 under viewport-fit=cover
+   spans the safe areas) DOES paint its grain there. Sits above the body bg but
+   below the app content (z-index 0 vs the app's 1). Poster's 16%, same top-origin
+   grid → seamless. Desktop uses the body field + floating phone instead. */
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	background-color: var(--field);
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+	pointer-events: none;
+}
+@media (min-width: 600px) and (min-height: 600px) {
+	body::before { display: none; }
+}
 
 /* ── App shell ──────────────────────────────────────────────────────────── */
 
@@ -276,6 +296,7 @@ body {
 	height: 100dvh;
 	overflow: hidden;
 	position: relative;
+	z-index: 1;                 /* above the fixed grain backstop (body::before) */
 	margin: 0 auto;
 	color: var(--text);
 	/* Same off-white as the html/body field — NO tint fill. The poster's depth
