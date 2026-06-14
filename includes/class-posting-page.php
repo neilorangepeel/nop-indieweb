@@ -672,8 +672,11 @@ body::before {
 	height: 0;
 	/* Muted so the full-ink sun/moon reads as the marker on top of the line, rather
 	   than merging with it. Lighten the LINE not the glyph — a lighter glyph would
-	   let the darker line show through its gaps (between the sun's rays). */
-	border-top: var(--bw) solid var(--ink-50);
+	   let the darker line show through its gaps (between the sun's rays). Mute toward
+	   PAPER, not transparent: an opaque tone so the solid done segment actually
+	   covers the dashed track beneath it (a transparent mute let the dashes show
+	   through the solid). */
+	border-top: var(--bw) solid color-mix(in srgb, var(--ink) 55%, var(--paper));
 }
 .flightpath__track { right: 0; border-top-style: dashed; }
 .flightpath__done {
