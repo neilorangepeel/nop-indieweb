@@ -286,6 +286,16 @@ body {
 }
 /* Standalone (Home Screen app): full screen via 100vh; tab keeps 100dvh above. */
 .standalone body, .standalone .app { height: 100vh; }
+/* Standalone runs full-bleed UNDER the status bar (viewport-fit=cover), so the
+   content's rounded top would hide up at y=0 beneath iOS's status-bar overlay.
+   Drop the card (.app + the ::before backstop) below --safe-top so its top
+   corners land just under the bar, with the accent html filling the bar zone
+   above and showing through the corner cuts. The masthead then only needs its
+   12px (it no longer clears the bar — the inset does). A Safari tab keeps the
+   base rules (content already sits below the browser chrome). */
+.standalone .app        { margin-top: var(--safe-top); height: calc(100vh - var(--safe-top)); }
+.standalone body::before { top: var(--safe-top); }
+.standalone .masthead   { padding-top: 12px; }
 /* Grain that reaches the iOS safe areas. iOS paints the root/body background
    COLOUR into the home-indicator / overscroll zones but NOT the background-image,
    so a grain-less strip survives there however we size body/.app. A real fixed
