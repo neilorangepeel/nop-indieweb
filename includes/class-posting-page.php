@@ -99,11 +99,13 @@ class Posting_Page {
 			header( 'Content-Type: application/manifest+json; charset=utf-8' );
 		}
 		$path  = wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post';
-		$icons = [];
-		$i192  = get_site_icon_url( 192 );
-		$i512  = get_site_icon_url( 512 );
-		if ( $i192 ) { $icons[] = [ 'src' => $i192, 'sizes' => '192x192' ]; }
-		if ( $i512 ) { $icons[] = [ 'src' => $i512, 'sizes' => '512x512' ]; }
+		// Bundled app icon (the target mark on the ink tile) — a dedicated, consistent
+		// install icon rather than whatever the WordPress site icon happens to be. The
+		// full-bleed tile keeps the glyph inside the maskable safe zone.
+		$icons = [
+			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-512.png' ), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+		];
 
 		echo wp_json_encode( [
 			'name'             => get_bloginfo( 'name' ) . ' · Post',
@@ -214,7 +216,6 @@ self.addEventListener( 'fetch', function ( e ) {
 		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
-		$icon_url     = get_site_icon_url( 192 );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
 		$cond_dir     = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
 
@@ -293,9 +294,7 @@ self.addEventListener( 'fetch', function ( e ) {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
-<?php if ( $icon_url ) : ?>
-<link rel="apple-touch-icon" href="<?php echo esc_url( $icon_url ); ?>">
-<?php endif; ?>
+<link rel="apple-touch-icon" href="<?php echo esc_url( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ); ?>">
 <link rel="manifest" href="<?php echo esc_url( home_url( '/post?manifest=1' ) ); ?>">
 <link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
