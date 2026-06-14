@@ -205,10 +205,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--on-accent: var(--field);
 
 	--display: 'Brandon Text Condensed', 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
-	/* The live "instrument readout" face — date stamp + the current-moment data
-	   grid (place/temp/sky). Monospace gives the printed-ticket / field-notebook /
-	   old-terminal feel, and separates ambient data from the Brandon chrome. */
-	--mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+	/* The data-readout face — date stamp + the current-moment grid (place/temp/sky).
+	   Brandon Text, so the ambient data sits with the rest of the type. */
+	--readout: 'Brandon Text', -apple-system, BlinkMacSystemFont, sans-serif;
 
 	/* Corner radius via the shared --nop-radius system, so /post matches the
 	   blocks. This page is a standalone document (no theme.json cascade), so it
@@ -601,9 +600,9 @@ body::before {
    shows the time above). Mono, so it reads as printed ticket data. */
 .masthead__date {
 	flex-shrink: 0;
-	font-family: var(--mono);
+	font-family: var(--readout);
 	font-size: var(--fs-13);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0.01em;
 	text-transform: uppercase;
 	white-space: nowrap;
@@ -641,9 +640,9 @@ body::before {
 	align-items: center;
 	gap: 5px;
 	margin: 0;
-	font-family: var(--mono);
+	font-family: var(--readout);
 	font-size: var(--fs-13);
-	font-weight: 600;
+	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 	overflow: hidden;
