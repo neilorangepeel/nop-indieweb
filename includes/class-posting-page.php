@@ -237,9 +237,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 	--fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
 	--fs-14: 14px;  --fs-16: 16px;  --fs-18: 18px;
 	/* The page side gutter — the inset shared by the top-level sections (masthead,
-	   greeting, compose, success). The rest of the layout is bespoke poster
-	   geometry, kept literal so the shorthands stay readable. */
-	--pad-x: 16px;
+	   greeting, compose, success). Sized to breathe inside the rounded top corners
+	   (--screen-radius): a gutter smaller than the radius lets the corner arc crowd
+	   the masthead, so it tracks a touch under the radius rather than the old flush
+	   16px. The rest of the layout is bespoke poster geometry, kept literal so the
+	   shorthands stay readable. */
+	--pad-x: 20px;
 	--bw: 2px;                       /* the single border weight used throughout */
 
 	/* Grain / halftone — one shared grid. --grain-pitch is the dot gap (phase-locked
@@ -547,10 +550,11 @@ body::before {
 .masthead {
 	flex-shrink: 0;
 	padding: 0 var(--pad-x) 14px;
-	/* Clear the status bar by 12px. The app/desktop add the safe-top zone (59px)
-	   on top; in a Safari tab safe-top is 0, so this is a clean 12px gap below the
-	   default-height status bar — same visible clearance as the app. */
-	padding-top: calc(var(--safe-top) + 12px);
+	/* Clear the status bar, then drop the wordmark clear of the rounded top corners
+	   so the curve frames it rather than pinching it. The app/desktop add the
+	   safe-top zone (59px) on top; in a Safari tab safe-top is 0, so this is a clean
+	   16px gap below the default-height status bar — same visible clearance as the app. */
+	padding-top: calc(var(--safe-top) + 16px);
 	border-bottom: var(--bw) solid var(--line);
 }
 .masthead__top {
@@ -659,7 +663,7 @@ body::before {
 	display: flex;
 	gap: 6px;
 	flex-shrink: 0;
-	padding: 10px 12px;
+	padding: 10px var(--pad-x);
 	/* One row of square tiles that scrolls sideways if they don't all fit —
 	   saves the vertical height the old two-row grid took. */
 	overflow-x: auto;
