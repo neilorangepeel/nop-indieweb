@@ -681,9 +681,10 @@ body::before {
 }
 .type-btn__icon svg {
 	/* Centred in the disc, with the name curving above and below it (a stamp).
-	   Sized down so the two arcs of text clear it. */
-	width: 28px;
-	height: 28px;
+	   Proportioned to the 75px disc — large enough to read as the badge's mark,
+	   with ~8px clearance to the rim-hugging name arcs. */
+	width: 34px;
+	height: 34px;
 }
 /* Visually hidden — carries the accessible name + i18n; the visible name is the
    curved arc (.type-btn__arc), which is aria-hidden. */
@@ -706,9 +707,9 @@ body::before {
 }
 .type-btn__arc text {
 	font-family: var(--display);
-	font-size: 9px;
+	font-size: 12px;
 	font-weight: 700;
-	letter-spacing: 0.3px;
+	letter-spacing: 0.2px;
 	text-transform: uppercase;
 	fill: var(--ink);
 }
