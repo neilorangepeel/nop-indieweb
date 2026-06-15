@@ -542,6 +542,11 @@ body::before {
 	gap: 6px;
 	flex-shrink: 0;
 	padding: 18px var(--pad-x);
+	/* At rest the strip's border-top hides under compose-scroll's top clip and
+	   the masthead's border-bottom reads as the single seam line. Pull the
+	   compose down (iOS overscroll) and the strip rides with it — the gap
+	   opens, both rules emerge separated by paper. */
+	margin-top: calc(-1 * var(--bw));
 	/* One row of square tiles that scrolls sideways if they don't all fit —
 	   saves the vertical height the old two-row grid took. */
 	overflow-x: auto;
@@ -556,8 +561,7 @@ body::before {
 	   actually clipped, so picking a visible kind never shifts the row. A large
 	   scroll-padding here would fight that nudge by re-snapping the badge inward.) */
 	scroll-padding-inline: var(--pad-x);
-	/* Only a bottom rule here — the masthead draws the shared line above the strip,
-	   so the header's border and the strip's top sit as one line (not two). */
+	border-top:    var(--bw) solid var(--line);
 	border-bottom: var(--bw) solid var(--line);
 }
 .type-grid::-webkit-scrollbar { display: none; }
