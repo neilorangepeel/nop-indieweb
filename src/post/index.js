@@ -484,12 +484,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	var TYPE_CONFIG = {
 		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'Write a note…' },
-		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'Write a caption…' },
-		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
-		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL', urlHint: "Paste the URL you're liking" },
-		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
-		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Repost URL', urlHint: "Paste the URL you're reposting" },
-		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event URL', contentPlaceholder: 'Add a note (optional)…', hasRsvp: true },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'What are we looking at?' },
+		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…' },
+		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
+		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
+		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
+		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true },
 	};
 
 	var currentType   = 'note';
@@ -511,16 +511,29 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var contentInput  = document.getElementById( 'content' );
 	var composePrompt = document.getElementById( 'composePrompt' );
 	var picker       = document.getElementById( 'photoPicker' );
+	var docket       = document.getElementById( 'docket' );
+	var docketKind   = document.getElementById( 'docketKind' );
+	var docketSerial = document.getElementById( 'docketSerial' );
+	var docketDate   = document.getElementById( 'docketDate' );
+	var slipRef      = document.getElementById( 'slipRef' );
+	var slipHost     = document.getElementById( 'slipHost' );
+	var slipPath     = document.getElementById( 'slipPath' );
+
+	// The docket's printed filing line — kind · serial · date — re-stamped on each
+	// kind switch (and after a post, when the serial bumps).
+	function fillDocketHeader( type ) {
+		var lbl = document.querySelector( '.type-btn[data-type="' + type + '"] .type-btn__label' );
+		if ( docketKind )   { docketKind.textContent = lbl ? lbl.textContent : type; }
+		if ( docketSerial ) { docketSerial.textContent = TK_ID_PRE + nextSerial; }
+		if ( docketDate )   { var n = new Date(), p = function ( v ) { return ( v < 10 ? '0' : '' ) + v; }; docketDate.textContent = p( n.getDate() ) + '/' + p( n.getMonth() + 1 ) + '/' + n.getFullYear(); }
+	}
 
 	// Big rotating prompt overlay — set its text, and fade it once typing starts.
 	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
-	// The note placeholder, led by the time-of-day greeting — the old standalone
-	// greeting line now lives here, in front of the rotating prompt.
-	function notePlaceholder() {
-		var greet = greetingFor( new Date().getHours() );
-		return ( NOP.userName ? greet + ', ' + NOP.userName : greet ) + ' — ' + notePrompt;
-	}
+	// The note placeholder — one of a rotating set of openers (no greeting for now;
+	// greetingFor + NOP.greetings sit dormant in case it comes back).
+	function notePlaceholder() { return notePrompt; }
 	function autoGrowContent() {
 		contentInput.style.height = 'auto';
 		contentInput.style.height = contentInput.scrollHeight + 'px';
@@ -612,11 +625,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// URL specimen — on URL-only kinds the empty space below the field shows the
 	// kind glyph as a watermark; once the URL parses it becomes a type specimen
 	// of the target's hostname, confirming what you're about to act on.
+	// Parses the URL field and drives the two URL readouts: the big watermark
+	// specimen on URL-only kinds (like/repost), and the printed reference slip on
+	// kinds that also write (reply/bookmark/rsvp). Forward-compat: the slip's
+	// title/excerpt slots stay hidden until a future server fetch fills them.
 	function updateSpecimen() {
-		var cfg  = TYPE_CONFIG[ currentType ];
-		var show = !! cfg.urlProp && ! cfg.hasContent;
-		specimen.hidden = ! show;
-		if ( ! show ) return;
+		var cfg          = TYPE_CONFIG[ currentType ];
+		var specimenKind = !! cfg.urlProp && ! cfg.hasContent;   // like, repost
+		var slipKind     = !! cfg.urlProp && cfg.hasContent;     // reply, bookmark, rsvp
+
+		specimen.hidden = ! specimenKind;
+		if ( slipRef ) { slipRef.hidden = true; }
+		if ( ! cfg.urlProp ) { return; }                         // note/photo — neither
 
 		var parsed = null;
 		var raw    = urlInput.value.trim();
@@ -624,13 +644,27 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			try { parsed = new URL( raw ); } catch ( e ) {}
 		}
 		var filled = !! ( parsed && parsed.hostname );
+		var host   = filled ? parsed.hostname.replace( /^www\./, '' ) : '';
+		var path   = filled ? ( parsed.pathname + parsed.search ) : '';
 
+		// Reply / bookmark / rsvp — the printed reference line on the docket.
+		if ( slipKind ) {
+			if ( slipRef ) {
+				slipRef.hidden = ! filled;
+				if ( filled ) {
+					slipHost.textContent = host;
+					slipPath.textContent = ( path === '/' ) ? '' : path;
+				}
+			}
+			return;
+		}
+
+		// Like / repost — the big watermark specimen.
 		specimenGlyph.hidden = filled;
 		specimenHint.hidden  = filled;
 		specimenHost.hidden  = ! filled;
 		if ( filled ) {
-			specimenHost.textContent = parsed.hostname.replace( /^www\./, '' );
-			var path = parsed.pathname + parsed.search;
+			specimenHost.textContent = host;
 			specimenPath.textContent = path;
 			specimenPath.hidden = path === '/';
 		} else {
@@ -792,6 +826,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
 
+		// Note = a body-only card (the pure ruled writing page); every other kind
+		// carries a printed-fields region.
+		if ( docket ) { docket.classList.toggle( 'docket--body-only', ! cfg.urlProp && ! cfg.hasPhoto && ! cfg.hasRsvp ); }
+		fillDocketHeader( type );
+
 		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
 		if ( cfg.hasContent ) {
 			setPrompt( ( type === 'note' ) ? notePlaceholder() : ( cfg.contentPlaceholder || 'Write…' ) );
@@ -861,9 +900,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
 
-	function handleFiles( files ) {
-		selectedFiles     = files.slice( 0, 10 );
-		photoAlts         = [];
+	// Render the selected prints + their alt slips from selectedFiles/photoAlts.
+	// Split out so removePhoto() can re-render after dropping one (alt values kept).
+	function renderThumbs() {
 		thumbs.innerHTML  = '';
 		altTexts.innerHTML = '';
 		selectedFiles.forEach( function (file, i) {
@@ -873,6 +912,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
 			cell.appendChild( img );
+			var rm = document.createElement( 'button' );
+			rm.type          = 'button';
+			rm.className     = 'thumb__remove';
+			rm.dataset.index = i;
+			rm.textContent   = '×';
+			rm.setAttribute( 'aria-label', 'Remove photo ' + ( i + 1 ) );
+			cell.appendChild( rm );
 			thumbs.appendChild( cell );
 
 			var row   = document.createElement( 'div' );
@@ -880,13 +926,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var lbl   = document.createElement( 'span' );
 			lbl.className = 'alt-text-label';
 			lbl.textContent = selectedFiles.length > 1
-				? 'Photo ' + ( i + 1 ) + ' — alt text'
+				? 'Alt text ' + ( i + 1 )
 				: 'Alt text';
 			var alt           = document.createElement( 'input' );
 			alt.type          = 'text';
 			alt.className     = 'thumb__alt';
-			alt.placeholder   = 'Describe the photo…';
+			alt.placeholder   = 'Describe it…';
 			alt.autocomplete  = 'off';
+			alt.value         = photoAlts[ i ] || '';
 			alt.dataset.index = i;
 			alt.setAttribute( 'aria-label', 'Alt text for photo ' + ( i + 1 ) );
 			row.appendChild( lbl );
@@ -894,10 +941,25 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			altTexts.appendChild( row );
 		} );
 		picker.querySelector( 'p' ).textContent = selectedFiles.length
-			? selectedFiles.length + ' photo' + ( selectedFiles.length > 1 ? 's' : '' ) + ' selected'
+			? selectedFiles.length + ' selected'
 			: 'Add photos';
 		updatePostBtn();
 	}
+	function handleFiles( files ) {
+		selectedFiles = files.slice( 0, 10 );
+		photoAlts     = [];
+		renderThumbs();
+	}
+	// Pull one print off the card — drop it (and its alt) from the selection, re-index.
+	function removePhoto( i ) {
+		selectedFiles.splice( i, 1 );
+		photoAlts.splice( i, 1 );
+		renderThumbs();
+	}
+	thumbs.addEventListener( 'click', function ( e ) {
+		var btn = e.target.closest( '.thumb__remove' );
+		if ( btn ) { removePhoto( parseInt( btn.dataset.index, 10 ) ); }
+	} );
 
 	altTexts.addEventListener( 'input', function (e) {
 		if ( e.target.classList.contains( 'thumb__alt' ) ) {

@@ -284,10 +284,10 @@ self.addEventListener( 'fetch', function ( e ) {
 
 		// Time-of-day greetings, translated here so the JS device stays i18n-safe.
 		$greetings = [
-			'morning'   => __( 'Good morning', 'nop-indieweb' ),
-			'afternoon' => __( 'Good afternoon', 'nop-indieweb' ),
-			'evening'   => __( 'Good evening', 'nop-indieweb' ),
-			'night'     => __( 'Up late', 'nop-indieweb' ),
+			'morning'   => __( 'I’m up early', 'nop-indieweb' ),
+			'afternoon' => __( 'I’m caffeinated', 'nop-indieweb' ),
+			'evening'   => __( 'I’m winding down', 'nop-indieweb' ),
+			'night'     => __( 'I’m up late', 'nop-indieweb' ),
 		];
 
 		// Compute syndication targets here so the page can inline them — saves a
@@ -435,11 +435,29 @@ foreach ( [ '700', '800' ] as $weight ) {
 			</div><!-- .type-grid-wrap -->
 
 			<div class="compose-fields">
+				<div class="docket" id="docket">
+
+				<!-- Filing line — kind · serial · date (filled by switchType) -->
+				<div class="docket__header" id="docketHeader" aria-hidden="true">
+					<span class="docket__kind" id="docketKind"></span>
+					<span class="docket__serial" id="docketSerial"></span>
+					<span class="docket__date" id="docketDate"></span>
+				</div>
+
+				<!-- Printed catalog fields (per kind) -->
+				<div class="docket__fields" id="docketFields">
 
 				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
-				<div class="field-group is-conditional" id="fieldUrl" hidden>
-					<label class="field-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
-					<input type="url" id="typeUrl" class="text-field" placeholder="https://…" autocomplete="off">
+				<div class="field-group is-conditional docket-slip" id="fieldUrl" hidden>
+					<label class="slip-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
+					<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off">
+					<!-- Printed reference line: hostname/path now; title/excerpt slot in later (server fetch). -->
+					<div class="slip-ref" id="slipRef" hidden>
+						<span class="slip-ref__host" id="slipHost"></span>
+						<span class="slip-ref__path" id="slipPath"></span>
+						<span class="slip-ref__title" id="slipTitle" hidden></span>
+						<p class="slip-ref__excerpt" id="slipExcerpt" hidden></p>
+					</div>
 				</div>
 
 				<!-- RSVP response (rsvp) -->
@@ -467,11 +485,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<input type="file" id="photoInput" accept="image/*" multiple>
 						<span class="photo-picker-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
 						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
-						<small><?php esc_html_e( 'Tap to select · up to 10', 'nop-indieweb' ); ?></small>
+						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
 					</div>
 					<div class="thumbnails" id="thumbnails"></div>
 					<div class="alt-texts" id="altTexts"></div>
 				</div>
+
+				</div><!-- .docket__fields -->
+
+				<!-- Ruled writing area -->
+				<div class="docket__body" id="docketBody">
 
 				<!-- Content -->
 				<div class="field-group" id="fieldContent">
@@ -501,6 +524,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 						>
 					</div>
 				</div>
+
+				</div><!-- .docket__body -->
+				</div><!-- .docket -->
 
 				<!-- Syndicators -->
 				<details class="syndicate-details" id="syndicateDetails" hidden>

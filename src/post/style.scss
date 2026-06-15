@@ -747,6 +747,76 @@ body::before {
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
 .rsvp-btn:active { transform: translate(1px, 1px); }
 
+/* ── Docket / index card ─────────────────────────────────────────────────────
+   Each kind composes as a filing docket on the ruled paper: a printed header
+   (kind · serial · date), a printed-fields region (the catalog slips), and the
+   ruled writing body. Note is body-only — the pure writing page. Keeps the "rules
+   carry the structure" feel: a hairline head, the body open to the grain, no box. */
+.docket {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-4);
+}
+/* The filing line — small-caps, tracked, muted printed ink, under a hairline rule
+   like a catalog card's head. Serial + date file to the right. */
+.docket__header {
+	display: flex;
+	align-items: baseline;
+	gap: var(--sp-3);
+	padding-bottom: var(--sp-2);
+	border-bottom: 1px solid var(--rule);
+	font-family: var(--display);
+	font-size: var(--fs-12);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	font-variant-numeric: tabular-nums;
+}
+.docket__serial { margin-left: auto; }
+.docket__date   { letter-spacing: 0.06em; }
+
+.docket__fields,
+.docket__body { display: flex; flex-direction: column; gap: var(--sp-4); }
+/* Collapse the printed-fields region when nothing in it is shown (Note, or any kind
+   whose fields are all hidden) so the writing body sits straight under the header. */
+.docket--body-only .docket__fields,
+.docket__fields:not(:has(> :not([hidden]))) { display: none; }
+
+/* Printed catalog-field label — small-caps, tracked, muted (the .alt-text-label
+   treatment, shared so every printed slip reads the same). */
+.slip-label {
+	display: block;
+	font-family: var(--readout);
+	font-size: var(--fs-10);
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--text);
+	opacity: 0.5;
+	margin-bottom: var(--sp-2);
+}
+/* The reference line under a URL field — hostname/path now; the title/excerpt slots
+   stay styled-but-hidden until a future server fetch fills them. */
+.slip-ref {
+	margin-top: var(--sp-2);
+	font-family: var(--readout);
+	font-size: var(--fs-13);
+	line-height: 1.4;
+	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
+}
+.slip-ref__host { font-weight: 700; }
+.slip-ref__path { opacity: 0.6; word-break: break-all; }
+.slip-ref__title { display: block; font-weight: 700; font-size: var(--fs-14); }
+.slip-ref__excerpt { opacity: 0.7; font-size: var(--fs-12); margin-top: var(--sp-1); }
+
+/* Photo prints filed on the card — a printed rule frames the contact sheet once
+   any are selected (the bordered thumbnails + per-photo alt slips read as prints). */
+.thumbnails:not(:empty) {
+	padding-top: var(--sp-3);
+	border-top: 1px solid var(--rule);
+}
+
 /* ── Compose ────────────────────────────────────────────────────────────── */
 
 /* The single scroll region: greeting + type selector + fields scroll together.
@@ -934,11 +1004,14 @@ body::before {
 
 /* Photo picker */
 .photo-picker {
-	background: var(--field);
-	border: var(--bw) dashed var(--line);
+	/* Transparent so the page grain runs through it — the dropzone blends into the
+	   paper, reading as a quiet add-photos zone rather than a solid panel. */
+	background: transparent;
+	border: var(--bw) dashed var(--ink-30);
 	border-radius: var(--radius);
 	padding: var(--sp-6) var(--sp-4);
 	text-align: center;
+	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
@@ -960,7 +1033,30 @@ body::before {
 	border: var(--bw) solid var(--line);
 	border-radius: var(--radius); display: block;
 }
-.thumb { display: flex; flex-direction: column; }
+.thumb { position: relative; display: flex; flex-direction: column; }
+/* Remove a print — a small chip top-right of the thumbnail; ::after extends the tap
+   target (Apple HIG) without growing the mark. */
+.thumb__remove {
+	position: absolute;
+	top: var(--sp-1);
+	right: var(--sp-1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	background: var(--accent);
+	color: var(--on-accent);
+	border: var(--bw) solid var(--field);
+	border-radius: var(--nop-radius-pill);
+	font-size: var(--fs-16);
+	font-weight: 800;
+	line-height: 1;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.thumb__remove::after { content: ''; position: absolute; inset: -7px; }
 .alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {
