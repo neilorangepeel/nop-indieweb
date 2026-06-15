@@ -1199,8 +1199,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// The textarea's running word count — shown the moment you start typing and
 	// hidden again when the field is empty (or the kind has no content). Refreshed
 	// alongside the char counter, the other compose-meta readout.
-	var wordCountEl = document.getElementById( 'wordCount' );
 	function updateWordCount() {
+		// Looked up per-call: the first updateCounter() runs inside
+		// renderSyndicators() at module init, before any cached ref would resolve.
+		var wordCountEl = document.getElementById( 'wordCount' );
 		if ( ! TYPE_CONFIG[ currentType ].hasContent ) { wordCountEl.hidden = true; return; }
 		var text  = contentInput.value.trim();
 		var words = text ? text.split( /\s+/ ).length : 0;
