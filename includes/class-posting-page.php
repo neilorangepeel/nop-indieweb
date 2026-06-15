@@ -563,7 +563,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 	</main><!-- .view-container -->
 
-	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+	<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 </div><!-- .app -->
 

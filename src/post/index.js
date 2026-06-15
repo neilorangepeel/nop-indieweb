@@ -51,6 +51,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var deviceChrome = document.querySelector( '.device-chrome' );
 	var isMockFrame  = window.matchMedia( '(min-width: 600px) and (min-height: 600px)' );
 	var prefersDark  = window.matchMedia( '(prefers-color-scheme: dark)' );
+	var prefersReduce = window.matchMedia( '(prefers-reduced-motion: reduce)' );
 	function nudgeStatusBar() {
 		// Standalone only: the band exists there (it's hidden in a Safari tab, where
 		// theme-color drives the bar and updates per kind on its own).
@@ -231,9 +232,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function fetchNow( lat, lon ) {
 		var sep = NOP.nowUrl.indexOf( '?' ) >= 0 ? '&' : '?';
-		fetch( NOP.nowUrl + sep + 'lat=' + encodeURIComponent( lat ) + '&lon=' + encodeURIComponent( lon ), {
-			headers: { 'X-WP-Nonce': NOP.nonce }
-		} )
+		var opts = { headers: { 'X-WP-Nonce': NOP.nonce } };
+		// Bound the request — a hung network would otherwise leave the moment data
+		// pending forever; a timeout aborts into the same silent catch as any failure.
+		if ( AbortSignal.timeout ) { opts.signal = AbortSignal.timeout( 8000 ); }
+		fetch( NOP.nowUrl + sep + 'lat=' + encodeURIComponent( lat ) + '&lon=' + encodeURIComponent( lon ), opts )
 			.then( function ( r ) { return r.ok ? r.json() : null; } )
 			.then( function ( d ) { if ( d ) { renderNow( d ); writeJSON( NOW_KEY, { data: d, ts: Date.now() } ); } } )
 			.catch( function () {} );
@@ -746,7 +749,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			url:         urlInput.value.trim(),
 			rsvp:        currentRsvp,
 			tags:        currentTags.slice(),
-			syndicateTo: Array.prototype.map.call( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
+			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
 			files:       files,
 		};
 	}
@@ -835,38 +838,46 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var DB_NAME = 'nop_post_queue', STORE = 'posts', replaying = false;
 
 	function qOpen() {
-		return new Promise( function ( resolve, reject ) {
-			var req = indexedDB.open( DB_NAME, 1 );
-			req.onupgradeneeded = function () { req.result.createObjectStore( STORE, { keyPath: 'id' } ); };
-			req.onsuccess = function () { resolve( req.result ); };
-			req.onerror   = function () { reject( req.error ); };
-		} );
+		var d = Promise.withResolvers();
+		var req = indexedDB.open( DB_NAME, 1 );
+		req.onupgradeneeded = function () { req.result.createObjectStore( STORE, { keyPath: 'id' } ); };
+		req.onsuccess = function () { d.resolve( req.result ); };
+		req.onerror   = function () { d.reject( req.error ); };
+		return d.promise;
 	}
 	function qAdd( post ) {
-		return qOpen().then( function ( db ) { return new Promise( function ( res, rej ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
 			var tx = db.transaction( STORE, 'readwrite' ); tx.objectStore( STORE ).put( post );
-			tx.oncomplete = function () { res(); }; tx.onerror = function () { rej( tx.error ); };
-		} ); } );
+			tx.oncomplete = function () { d.resolve(); }; tx.onerror = function () { d.reject( tx.error ); };
+		}, d.reject );
+		return d.promise;
 	}
 	function qAll() {
-		return qOpen().then( function ( db ) { return new Promise( function ( res, rej ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
 			var out = [], cur = db.transaction( STORE, 'readonly' ).objectStore( STORE ).openCursor();
-			cur.onsuccess = function ( e ) { var c = e.target.result; if ( c ) { out.push( c.value ); c.continue(); } else { res( out ); } };
-			cur.onerror = function () { rej( cur.error ); };
-		} ); } );
+			cur.onsuccess = function ( e ) { var c = e.target.result; if ( c ) { out.push( c.value ); c.continue(); } else { d.resolve( out ); } };
+			cur.onerror = function () { d.reject( cur.error ); };
+		}, d.reject );
+		return d.promise;
 	}
 	function qDelete( id ) {
-		return qOpen().then( function ( db ) { return new Promise( function ( res ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
 			var tx = db.transaction( STORE, 'readwrite' ); tx.objectStore( STORE ).delete( id );
-			tx.oncomplete = function () { res(); }; tx.onerror = function () { res(); };
-		} ); } );
+			tx.oncomplete = function () { d.resolve(); }; tx.onerror = function () { d.resolve(); };
+		}, d.reject );
+		return d.promise;
 	}
 	// Count without loading the stored blobs into memory.
 	function qCount() {
-		return qOpen().then( function ( db ) { return new Promise( function ( res ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
 			var r = db.transaction( STORE, 'readonly' ).objectStore( STORE ).count();
-			r.onsuccess = function () { res( r.result ); }; r.onerror = function () { res( 0 ); };
-		} ); } );
+			r.onsuccess = function () { d.resolve( r.result ); }; r.onerror = function () { d.resolve( 0 ); };
+		}, d.reject );
+		return d.promise;
 	}
 
 	// Reflect the pending count in the ticker's "N to send" item. Rebuild only when
@@ -998,9 +1009,19 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	function showView( name ) {
-		document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
-		document.getElementById( 'view-progress' ).hidden = name !== 'progress';
-		document.getElementById( 'view-success'  ).hidden = name !== 'success';
+		function swap() {
+			document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
+			document.getElementById( 'view-progress' ).hidden = name !== 'progress';
+			document.getElementById( 'view-success'  ).hidden = name !== 'success';
+		}
+		// Cross-fade the swap where supported (Safari 18.2+); hard-swap otherwise, and
+		// when the visitor prefers reduced motion — skipping the transition is cleaner
+		// than overriding the UA's ::view-transition pseudo-elements.
+		if ( document.startViewTransition && ! prefersReduce.matches ) {
+			document.startViewTransition( swap );
+		} else {
+			swap();
+		}
 	}
 
 	function setProgress( message, fraction ) {
@@ -1069,13 +1090,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function currentLimit() {
 		var lim = 0;
-		Array.prototype.forEach.call(
-			document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ),
-			function ( cb ) {
-				var l = CHAR_LIMITS[ cb.value ];
-				if ( l ) lim = lim ? Math.min( lim, l ) : l;
-			}
-		);
+		document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ).forEach( function ( cb ) {
+			var l = CHAR_LIMITS[ cb.value ];
+			if ( l ) lim = lim ? Math.min( lim, l ) : l;
+		} );
 		return lim;
 	}
 
@@ -1128,14 +1146,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function showToast( message, kind ) {
 		var el = document.getElementById( 'toast' );
 		el.textContent = message;
-		el.className   = 'toast' + ( kind === 'error' ? ' toast--error' : '' );
-		el.hidden      = false;
-		void el.offsetWidth;
-		el.classList.add( 'is-visible' );
+		// display + @starting-style (CSS) drive the show/hide transition now — no
+		// forced reflow, no hidden-attribute toggling; just flip the class.
+		el.className   = 'toast is-visible' + ( kind === 'error' ? ' toast--error' : '' );
 		clearTimeout( toastTimer );
 		toastTimer = setTimeout( function () {
 			el.classList.remove( 'is-visible' );
-			setTimeout( function () { el.hidden = true; }, 250 );
 		}, 3500 );
 	}
 
@@ -1156,7 +1172,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var grid = document.getElementById( 'typeBar' );
 		var mru  = readKindMru();
 		if ( ! grid || ! mru.length ) { return; }
-		Array.prototype.slice.call( grid.querySelectorAll( '.type-btn' ) ).sort( function ( a, b ) {
+		Array.from( grid.querySelectorAll( '.type-btn' ) ).sort( function ( a, b ) {
 			var ia = mru.indexOf( a.dataset.type ); if ( ia < 0 ) { ia = 99; }
 			var ib = mru.indexOf( b.dataset.type ); if ( ib < 0 ) { ib = 99; }
 			return ia - ib;

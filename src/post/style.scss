@@ -26,6 +26,16 @@
 	initial-value: #D7331F;
 }
 
+/* --reveal (0..1) is the scroll-shadow depth, written per scroll tick by JS and —
+   where scroll-progress timelines exist (below) — driven declaratively off scroll
+   position. A custom property only interpolates inside @keyframes when it's
+   registered, so type it as a number. */
+@property --reveal {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 0;
+}
+
 :root {
 	/* Dark: paper becomes near-black and the inks lift to stay legible — the
 	   rest cascades, since every role token derives from --paper / --ink.
@@ -783,6 +793,50 @@ body::before {
 		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
 }
+
+/* ── Scroll-driven reveal (progressive enhancement) ───────────────────────────
+   Where the engine has scroll-progress timelines (Chromium today; WebKit when it
+   ships), the same --reveal the JS writes per scroll tick is driven declaratively
+   off scroll position instead — the vertical fades track the compose scroller, the
+   horizontal ones the kind strip. The JS path stays as the fallback (and the
+   authority where this is unsupported), so nothing regresses: a running animation
+   simply wins over the JS inline writes. A scroller with nothing to scroll has an
+   inactive timeline (no effect), so the base --reveal:0 shows through and a
+   non-scrolling view stays shadow-free.
+   Each edge maps its 240px ramp to the matching end of the scroll: top/left fade
+   IN over the first 240px, bottom/right fade OUT over the last 240px. */
+@supports (animation-timeline: scroll()) {
+	@keyframes nop-reveal-in  { from { --reveal: 0; } to { --reveal: 1; } }
+	@keyframes nop-reveal-out { from { --reveal: 1; } to { --reveal: 0; } }
+
+	.scroll-fade-top {
+		animation: nop-reveal-in linear both;
+		animation-timeline: scroll(nearest block);
+		animation-range: 0 240px;
+	}
+	.scroll-fade-bottom {
+		animation: nop-reveal-out linear both;
+		animation-timeline: scroll(nearest block);
+		animation-range: calc(100% - 240px) 100%;
+	}
+
+	/* The kind strip is a separate (horizontal) scroller and its fades sit OUTSIDE
+	   it (siblings in .type-grid-wrap), so an anonymous scroll() can't reach it —
+	   name the timeline on the scroller and scope it to the shared wrap. */
+	.type-grid-wrap { timeline-scope: --nop-type-x; }
+	#typeBar { scroll-timeline: --nop-type-x x; }
+	.type-fade-left {
+		animation: nop-reveal-in linear both;
+		animation-timeline: --nop-type-x;
+		animation-range: 0 240px;
+	}
+	.type-fade-right {
+		animation: nop-reveal-out linear both;
+		animation-timeline: --nop-type-x;
+		animation-range: calc(100% - 240px) 100%;
+	}
+}
+
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
 	   shrink below its content — so a tall form overflows into the scroll. The
@@ -1352,6 +1406,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	gap: 8px;
 	margin-top: 4px;
 }
+/* Both readouts hide independently; with neither shown, collapse the row entirely
+   so its margin doesn't leave a phantom gap under the textarea. */
+.compose-meta:not(:has(> :not([hidden]))) { display: none; }
 
 /* Word count — a quiet running tally of words in the textarea, shown as soon
    as you type (see updateWordCount). Muted so it reads as ambient, not a chip. */
@@ -1398,12 +1455,20 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	font-size: var(--fs-14);
 	font-weight: 700;
 	opacity: 0;
-	transition: opacity 0.2s, transform 0.2s;
+	/* display rides the transition (allow-discrete): it flips on at the start of the
+	   entry and off at the end of the exit — so JS only toggles .is-visible, with no
+	   reflow-flush and no hidden-attribute juggling. @starting-style is the pre-entry
+	   (off) state the element animates FROM the first time it's displayed. */
+	display: none;
+	transition: opacity 0.2s, transform 0.2s, display 0.2s allow-discrete;
 	z-index: 50;
 	pointer-events: none;
 	text-align: center;
 }
-.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.toast.is-visible { display: block; opacity: 1; transform: translate(-50%, 0); }
+@starting-style {
+	.toast.is-visible { opacity: 0; transform: translate(-50%, 12px); }
+}
 .toast--error { border-color: var(--red); color: var(--red); }
 
 @media (prefers-reduced-motion: reduce) {
