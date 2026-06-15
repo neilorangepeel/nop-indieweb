@@ -587,6 +587,7 @@ body::before {
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	background-attachment: fixed;
+	will-change: opacity;
 }
 /* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
    scroll distance). Because the shadow dot is the SAME size as the base dot, the
@@ -756,6 +757,11 @@ body::before {
 	   with the page grain — no JS-set background-position, no iOS-pause desync. */
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	background-attachment: fixed;
+	/* Hint iOS Safari to keep this on its own compositor layer so the
+	   background-attachment:fixed paint reliably re-rasterises after scroll
+	   reversals. Opacity-only (no transform), to avoid creating a containing
+	   block that would break attachment:fixed. */
+	will-change: opacity;
 }
 /* Static soft mask; phase-lock comes from background-attachment:fixed (the dot
    grid stays at viewport origin while the element rides the scroll edge). The
