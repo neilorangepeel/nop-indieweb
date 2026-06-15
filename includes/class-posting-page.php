@@ -481,7 +481,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<span class="compose-prompt" id="composePrompt" aria-hidden="true"></span>
 					</div>
 					<div class="compose-meta">
-						<span class="word-count" id="wordCount" aria-live="polite" hidden></span>
 						<span class="char-count" id="charCount" aria-live="polite" hidden></span>
 					</div>
 				</div>

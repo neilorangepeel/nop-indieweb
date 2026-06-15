@@ -26,16 +26,6 @@
 	initial-value: #D7331F;
 }
 
-/* --reveal (0..1) is the scroll-shadow depth, written per scroll tick by JS and —
-   where scroll-progress timelines exist (below) — driven declaratively off scroll
-   position. A custom property only interpolates inside @keyframes when it's
-   registered, so type it as a number. */
-@property --reveal {
-	syntax: '<number>';
-	inherits: false;
-	initial-value: 0;
-}
-
 :root {
 	/* Dark: paper becomes near-black and the inks lift to stay legible — the
 	   rest cascades, since every role token derives from --paper / --ink.
@@ -474,6 +464,11 @@ body::before {
 	position: absolute;
 	inset: 0;
 	overflow: hidden;
+	/* Draggable strip: own horizontal gestures (scrub/flick), let vertical page
+	   scroll pass through. JS drives the crawl; grab cursor hints it on desktop. */
+	touch-action: pan-y;
+	cursor: grab;
+	&:active { cursor: grabbing; }
 	/* Fade the run into the logo on the left (the transparent lead clears the
 	   42px tile + its gap), soft-cut at the right gutter. */
 	-webkit-mask-image: linear-gradient(to right, transparent 48px, #000 70px, #000 calc(100% - 20px), transparent);
@@ -790,49 +785,6 @@ body::before {
 		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
 		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
-}
-
-/* ── Scroll-driven reveal (progressive enhancement) ───────────────────────────
-   Where the engine has scroll-progress timelines (Chromium today; WebKit when it
-   ships), the same --reveal the JS writes per scroll tick is driven declaratively
-   off scroll position instead — the vertical fades track the compose scroller, the
-   horizontal ones the kind strip. The JS path stays as the fallback (and the
-   authority where this is unsupported), so nothing regresses: a running animation
-   simply wins over the JS inline writes. A scroller with nothing to scroll has an
-   inactive timeline (no effect), so the base --reveal:0 shows through and a
-   non-scrolling view stays shadow-free.
-   Each edge maps its 240px ramp to the matching end of the scroll: top/left fade
-   IN over the first 240px, bottom/right fade OUT over the last 240px. */
-@supports (animation-timeline: scroll()) {
-	@keyframes nop-reveal-in  { from { --reveal: 0; } to { --reveal: 1; } }
-	@keyframes nop-reveal-out { from { --reveal: 1; } to { --reveal: 0; } }
-
-	.scroll-fade-top {
-		animation: nop-reveal-in linear both;
-		animation-timeline: scroll(nearest block);
-		animation-range: 0 240px;
-	}
-	.scroll-fade-bottom {
-		animation: nop-reveal-out linear both;
-		animation-timeline: scroll(nearest block);
-		animation-range: calc(100% - 240px) 100%;
-	}
-
-	/* The kind strip is a separate (horizontal) scroller and its fades sit OUTSIDE
-	   it (siblings in .type-grid-wrap), so an anonymous scroll() can't reach it —
-	   name the timeline on the scroller and scope it to the shared wrap. */
-	.type-grid-wrap { timeline-scope: --nop-type-x; }
-	#typeBar { scroll-timeline: --nop-type-x x; }
-	.type-fade-left {
-		animation: nop-reveal-in linear both;
-		animation-timeline: --nop-type-x;
-		animation-range: 0 240px;
-	}
-	.type-fade-right {
-		animation: nop-reveal-out linear both;
-		animation-timeline: --nop-type-x;
-		animation-range: calc(100% - 240px) 100%;
-	}
 }
 
 .compose-fields {
@@ -1404,37 +1356,26 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	gap: 8px;
 	margin-top: 4px;
 }
-/* Both readouts hide independently; with neither shown, collapse the row entirely
-   so its margin doesn't leave a phantom gap under the textarea. */
+/* The readout hides when the field is empty; collapse the row entirely then so its
+   margin doesn't leave a phantom gap under the textarea. */
 .compose-meta:not(:has(> :not([hidden]))) { display: none; }
 
-/* Word count — a quiet running tally of words in the textarea, shown as soon
-   as you type (see updateWordCount). Muted so it reads as ambient, not a chip. */
-.word-count {
+/* Character count — a quiet running tally of characters in the textarea, shown as
+   soon as you type (see updateCounter). When syndicators are ticked it reads
+   "len / lowest-limit". Muted so it reads as ambient, not a chip. */
+.char-count {
+	margin-left: auto;
 	font-size: var(--fs-11);
 	font-weight: 700;
 	color: var(--text);
 	opacity: 0.5;
 	font-variant-numeric: tabular-nums;
 }
-
-/* Character counter — a small countdown chip that only appears as you near a
-   syndication limit (see updateCounter), so it never floats as a stray number. */
-.char-count {
-	margin-left: auto;
-	padding: 2px 9px;
-	border-radius: var(--nop-radius-pill);
-	background: var(--surface);
-	font-size: var(--fs-11);
-	font-weight: 800;
-	color: var(--text);
-	font-variant-numeric: tabular-nums;
-}
-/* Over-limit: a muted, palette-matched red on the same chip — a quiet warning,
-   not a loud red block. */
+/* Over the smallest connected network's limit — lift out of the muted state into a
+   quiet, palette-matched red. The colour shift IS the warning, not a loud block. */
 .char-count.is-over {
-	background: color-mix( in srgb, var(--red) 10%, var(--surface) );
-	color: color-mix( in srgb, var(--red) 50%, var(--charcoal) );
+	opacity: 1;
+	color: color-mix( in srgb, var(--red) 55%, var(--charcoal) );
 }
 
 /* Toast */

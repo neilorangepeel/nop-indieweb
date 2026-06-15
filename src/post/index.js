@@ -104,6 +104,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// updates in place each minute (setTk) so the crawl never restarts, while a
 	// resolved /now rebuilds once (renderTicker).
 	var tickerTrack = document.getElementById( 'tickerTrack' );
+	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
 	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
 	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
 	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
@@ -162,6 +163,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var seq = tkSeqHTML();
 		tickerTrack.innerHTML = '<span class="ticker__seq">' + seq + '</span>'
 			+ '<span class="ticker__seq">' + seq + '</span>';
+		tkSeqW = tickerTrack.firstChild.getBoundingClientRect().width;   // one loop = one sequence
+		startTickerMotion();
 	}
 	// In-place text swap for a recurring item (time, id) — avoids rebuilding the
 	// track, which would restart the crawl.
@@ -174,12 +177,79 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 	}
 
-	// The crawl itself is a pure CSS animation on .ticker__track (-50% loop); JS only
-	// fills the track and swaps the recurring items in place (setTk) so the crawl
-	// never restarts. Reduced motion freezes it in CSS.
+	// ── Ticker motion ───────────────────────────────────────────────────────────
+	// The crawl is JS-driven (rAF), not the CSS animation, so a finger can scrub it:
+	// drag moves the track 1:1, a flick spins it up, then friction eases the speed
+	// back to the ambient crawl (TK_SPEED) — it never stops, it settles. Pure
+	// progressive enhancement: without JS the CSS @keyframes still crawls, and under
+	// prefers-reduced-motion we leave that CSS alone and don't attach any of this.
+	var tkSeqW    = 0;                 // px width of one sequence — the wrap point
+	var tkOffset  = 0;                 // px scrolled left out of view; wraps at tkSeqW
+	var tkVel     = TK_SPEED;          // current px/sec; eases toward TK_SPEED when idle
+	var TK_TAU    = 0.45;              // s — friction time constant (≈1.5s to settle)
+	var TK_VMAX   = 1800;              // px/sec flick clamp
+	var tkRAF     = 0, tkLastFrame = 0, tkDragging = false;
+	var tkDragX   = 0, tkDragOff = 0, tkMoveX = 0, tkMoveT = 0;
+	var tkReduce  = prefersReduce.matches;
+
+	function tkFrame( t ) {
+		var dt = tkLastFrame ? ( t - tkLastFrame ) / 1000 : 0;
+		tkLastFrame = t;
+		if ( dt > 0.05 ) { dt = 0.05; }                                 // clamp tab-switch gaps
+		if ( ! tkDragging ) {
+			tkVel = TK_SPEED + ( tkVel - TK_SPEED ) * Math.exp( -dt / TK_TAU );   // ease to ambient
+			tkOffset += tkVel * dt;
+		}
+		if ( tkSeqW > 0 ) {
+			tkOffset %= tkSeqW;
+			if ( tkOffset < 0 ) { tkOffset += tkSeqW; }
+		}
+		tickerTrack.style.transform = 'translateX(' + ( -tkOffset ).toFixed( 2 ) + 'px)';
+		tkRAF = requestAnimationFrame( tkFrame );
+	}
+	function startTickerMotion() {
+		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS handles reduced motion
+		tickerTrack.style.animation = 'none';                          // hand the crawl to rAF
+		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
+	}
+	function tkDown( x ) {
+		tkDragging = true;
+		tkDragX = x; tkDragOff = tkOffset;
+		tkMoveX = x; tkMoveT = Date.now();
+		tkVel = 0;
+	}
+	function tkMove( x ) {
+		if ( ! tkDragging ) { return; }
+		tkOffset = tkDragOff - ( x - tkDragX );                        // finger right → reveal earlier items
+		var now = Date.now(), dtt = ( now - tkMoveT ) / 1000;
+		if ( dtt > 0 ) {                                                // flick speed = opposite of the finger
+			tkVel = Math.max( -TK_VMAX, Math.min( TK_VMAX, -( x - tkMoveX ) / dtt ) );
+		}
+		tkMoveX = x; tkMoveT = now;
+	}
+	function tkUp() {
+		tkDragging = false;        // the loop now decays tkVel (the flick) back to TK_SPEED
+		tkLastFrame = 0;           // skip a dt spike on the first post-release frame
+	}
+	var tickerEl = tickerTrack && tickerTrack.parentNode;
+	if ( tickerEl && ! tkReduce ) {
+		tickerEl.addEventListener( 'pointerdown', function ( e ) {
+			if ( tickerEl.setPointerCapture ) { try { tickerEl.setPointerCapture( e.pointerId ); } catch ( err ) {} }
+			tkDown( e.clientX );
+		} );
+		tickerEl.addEventListener( 'pointermove',   function ( e ) { tkMove( e.clientX ); } );
+		tickerEl.addEventListener( 'pointerup',     tkUp );
+		tickerEl.addEventListener( 'pointercancel', tkUp );
+	}
 	lastTime = '';        // re-seed: populate tkTime/tkDate before the first build
 	updateClock();
 	renderTicker();
+	// Brandon loads with font-display:swap, so the first measure can predate it.
+	// tkSeqW is the wrap point now (not just a speed), so a stale width shows as a
+	// seam gap — re-measure once the real font is in. (offset is preserved.)
+	if ( document.fonts && document.fonts.ready ) {
+		document.fonts.ready.then( renderTicker ).catch( function () {} );
+	}
 
 	// ── Current-moment data (place · temp · sky) ─────────────────────────────────
 	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current
@@ -1097,35 +1167,23 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return lim;
 	}
 
-	// The textarea's running word count — shown the moment you start typing and
-	// hidden again when the field is empty (or the kind has no content). Refreshed
-	// alongside the char counter, the other compose-meta readout.
-	function updateWordCount() {
-		// Looked up per-call: the first updateCounter() runs inside
-		// renderSyndicators() at module init, before any cached ref would resolve.
-		var wordCountEl = document.getElementById( 'wordCount' );
-		if ( ! TYPE_CONFIG[ currentType ].hasContent ) { wordCountEl.hidden = true; return; }
-		var text  = contentInput.value.trim();
-		var words = text ? text.split( /\s+/ ).length : 0;
-		if ( ! words ) { wordCountEl.hidden = true; return; }
-		wordCountEl.hidden  = false;
-		wordCountEl.textContent = words + ' ' + ( words === 1 ? 'word' : 'words' );
-	}
-
+	// A live character count under the textarea — shown the moment you start typing,
+	// hidden when the field is empty (or the kind has no content). When syndicators
+	// are ticked it reads "len / lowest-limit" and subtly warns (.is-over) once you
+	// pass the smallest connected network's limit; with no limit applying it just
+	// counts. Looked up per-call: the first updateCounter() runs inside
+	// renderSyndicators() at module init, before any cached ref would resolve.
 	function updateCounter() {
-		updateWordCount();
 		var el  = document.getElementById( 'charCount' );
 		var len = contentInput.value.length;
-		var lim = currentLimit();
-		// Only surface the counter when a syndication limit applies and you're
-		// within 50 of it (or over) — otherwise it's noise, so stay hidden.
-		if ( ! TYPE_CONFIG[ currentType ].hasContent || ! lim || ( lim - len ) > 50 ) {
+		if ( ! TYPE_CONFIG[ currentType ].hasContent || ! len ) {
 			el.hidden = true;
 			return;
 		}
+		var lim = currentLimit();   // smallest char limit among the ticked syndicators
 		el.hidden = false;
-		el.textContent = String( lim - len );
-		el.classList.toggle( 'is-over', len > lim );
+		el.textContent = lim ? ( len + ' / ' + lim ) : ( len + ( len === 1 ? ' character' : ' characters' ) );
+		el.classList.toggle( 'is-over', !! lim && len > lim );
 	}
 
 	// ── Streak ─────────────────────────────────────────────────────────────────
