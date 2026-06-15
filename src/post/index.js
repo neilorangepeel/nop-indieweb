@@ -454,23 +454,47 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var r = el.getBoundingClientRect();
 		el.style.backgroundPosition = lockXY( r.left, r.top, pitch );
 	}
-	// Page grain alignment. The shadow overlays (.scroll-fade, .type-fade) use
-	// background-attachment:fixed so their dot grids phase-lock with the viewport
-	// origin natively — no JS-set background-position, no iOS-pause desync.
+	// Layout-time alignment. Runs on resize / conditional-field changes — never
+	// per-scroll, so iOS momentum-scroll pauses can't desync the painted dots.
+	// • --cardpos: phone interior grain (.app::before) phase-lock with body grain.
+	// • --app-left / --app-right: phone-frame edges on desktop; lets the fixed
+	//   shadow overlays paint inside the phone instead of across the full window.
+	// • --cs-top / --cs-bottom: compose-scroll's viewport top/bottom — anchors the
+	//   scroll-fade overlays.
+	// • --shadow-bg-pos: one phase-offset for every shadow overlay (they all sit
+	//   at viewport-relative coords, so they share the same alignment string).
 	function alignHalftone() {
 		if ( ! composeScroll ) { return; }
 		var pitch = gridPitch();
-		// Phone interior grain — mobile: .app carries it; desktop: the .app::before
-		// card, fed a CSS var (a pseudo-element has no JS box of its own).
 		lockEl( app, pitch );
 		var ar = app.getBoundingClientRect();
 		var cs = getComputedStyle( app );
 		var bl = parseFloat( cs.borderLeftWidth ) || 0;
 		var bt = parseFloat( cs.borderTopWidth )  || 0;
 		var st = parseFloat( cs.getPropertyValue( '--safe-top' ) ) || 0;
-		app.style.setProperty( '--cardpos', lockXY( ar.left + bl, ar.top + bt + st, pitch ) );
+		app.style.setProperty( '--cardpos',  lockXY( ar.left + bl, ar.top + bt + st, pitch ) );
+
+		app.style.setProperty( '--app-left',  ar.left + 'px' );
+		app.style.setProperty( '--app-right', ( window.innerWidth - ar.right ) + 'px' );
+
+		var sr = composeScroll.getBoundingClientRect();
+		app.style.setProperty( '--cs-top',    sr.top + 'px' );
+		app.style.setProperty( '--cs-bottom', sr.bottom + 'px' );
+
+		app.style.setProperty( '--shadow-bg-pos', lockXY( ar.left, 0, pitch ) );
+
+		updateTypeBand();
 	}
-	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+	// The kind strip rides .compose-scroll's vertical scroll, so the type-fade
+	// overlays follow its viewport Y on every scroll frame — a single CSS-var
+	// write per tick. No bg-position math here, so iOS pauses don't desync.
+	function updateTypeBand() {
+		if ( ! typeBar ) { return; }
+		var tr = typeBar.getBoundingClientRect();
+		app.style.setProperty( '--type-top', tr.top + 'px' );
+		app.style.setProperty( '--type-h',   tr.height + 'px' );
+	}
+	composeScroll.addEventListener( 'scroll', function () { updateScrollFades(); updateTypeBand(); }, { passive: true } );
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is

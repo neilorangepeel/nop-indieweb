@@ -572,34 +572,33 @@ body::before {
    how far there is to scroll that way (updateTypeFades). */
 .type-grid-wrap { position: relative; flex-shrink: 0; }
 .type-fade {
-	position: absolute;
-	top: 0;
-	bottom: 0;
+	/* Fixed sibling of .view-container; JS sets --type-top / --type-h to the
+	   kind strip's viewport band, so the fade follows the strip down when the
+	   compose-scroll scrolls (the strip itself moves; this overlay tracks it
+	   via the JS-set vars on each scroll frame — a single property update,
+	   never the bg-position, so iOS pauses don't desync). */
+	position: fixed;
+	top: var(--type-top, 0);
+	height: var(--type-h, 0);
 	width: 120px;
-	z-index: 3;
+	z-index: 6;
 	pointer-events: none;
 	opacity: 0;
-	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
-	   the base grid shows through the whole row, and these phase-locked bigger/darker
-	   dots land concentric on it: the grid swells in place toward the edge. The mask
-	   ramps it in; opacity ramps by scroll. Phase-lock is structural via
-	   background-attachment:fixed (viewport-origin), not JS-set bg-position. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
-	background-attachment: fixed;
-	will-change: opacity;
+	background-position: var(--shadow-bg-pos, 0 0);
 }
 /* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
    scroll distance). Because the shadow dot is the SAME size as the base dot, the
    opacity fade just darkens each dot in place — no swelling, no sweeping mask edge,
    no halo — so you never see the pixels move. */
 .type-fade-left {
-	left: 0;
+	left: var(--app-left, 0);
 	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 }
 .type-fade-right {
-	right: 0;
+	right: var(--app-right, 0);
 	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
 }
@@ -740,41 +739,29 @@ body::before {
    top and bottom edges; a tiny scroll handler toggles .has-above / .has-below
    to fade them in. Grain runs through them, uninterrupted. */
 .scroll-fade {
-	position: sticky;
-	z-index: 3;
-	flex-shrink: 0;
+	/* Fixed sibling of .view-container (NOT a child of .compose-scroll) so the
+	   element never rides the scroll and the dot grid never sees an iOS overscroll
+	   bounce. JS sets --cs-top / --cs-bottom (compose-scroll edges in viewport
+	   coords) and --shadow-bg-pos (the phase offset so element-local dots register
+	   with body::before's viewport-origin grid). Opacity ramps by scroll position. */
+	position: fixed;
+	left: var(--app-left, 0);
+	right: var(--app-right, 0);
+	z-index: 6;
 	height: 160px;
 	pointer-events: none;
 	opacity: 0;
-	/* A single halftone screen in the ink hue on a transparent ground — the page
-	   grain shows between the dots. The mask shapes the darkness as a "hockey
-	   stick": a long, subtle tail reaching far into the content that ramps up
-	   sharply at the origin edge (the % stops hold the ratio at any height).
-	   Element opacity is driven by scroll position in JS so it fades by position. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
-	/* Same pitch as the page grain. background-attachment:fixed anchors the dot
-	   grid to the viewport (0,0), so this sticky overlay phase-locks structurally
-	   with the page grain — no JS-set background-position, no iOS-pause desync. */
 	background-size: var(--grain-pitch) var(--grain-pitch);
-	background-attachment: fixed;
-	/* Hint iOS Safari to keep this on its own compositor layer so the
-	   background-attachment:fixed paint reliably re-rasterises after scroll
-	   reversals. Opacity-only (no transform), to avoid creating a containing
-	   block that would break attachment:fixed. */
-	will-change: opacity;
+	background-position: var(--shadow-bg-pos, 0 0);
 }
-/* Static soft mask; phase-lock comes from background-attachment:fixed (the dot
-   grid stays at viewport origin while the element rides the scroll edge). The
-   layer fades by opacity — same-size dots, so they darken in place without moving. */
 .scroll-fade-top {
-	top: 0;
-	margin-bottom: -160px;
+	top: var(--cs-top, 0);
 	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
 .scroll-fade-bottom {
-	bottom: 0;
-	margin-top: -160px;
+	top: calc( var(--cs-bottom, 100dvh) - 160px );
 	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
 }
