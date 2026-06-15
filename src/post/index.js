@@ -570,9 +570,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var r = el.getBoundingClientRect();
 		el.style.backgroundPosition = lockXY( r.left, r.top, pitch );
 	}
-	// Page grain alignment. The shadow overlays (.scroll-fade, .type-fade) use
-	// background-attachment:fixed so their dot grids phase-lock with the viewport
-	// origin natively — no JS-set background-position, no iOS-pause desync.
+	// Page grain alignment — lock every dot layer's background-position to one
+	// viewport-origin grid (iOS Safari has no working background-attachment:fixed,
+	// so we phase-lock by JS). The scroll-fades are sticky — pinned to the scroller's
+	// edges — so their lock comes from those STABLE edges and never needs a per-scroll
+	// recompute (which is what desynced on iOS momentum scroll). The type-fades ride
+	// the strip; lock them where they sit.
 	function alignHalftone() {
 		if ( ! composeScroll ) { return; }
 		var pitch = gridPitch();
@@ -585,6 +588,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var bt = parseFloat( cs.borderTopWidth )  || 0;
 		var st = parseFloat( cs.getPropertyValue( '--safe-top' ) ) || 0;
 		app.style.setProperty( '--cardpos', lockXY( ar.left + bl, ar.top + bt + st, pitch ) );
+		// Shadow overlays — same grid (replaces background-attachment:fixed). The
+		// scroll-fades stick to the scroller's top/bottom, so lock from those edges.
+		var sr = composeScroll.getBoundingClientRect();
+		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
+		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - fadeBottom.offsetHeight, pitch ); }
+		lockEl( typeFadeLeft, pitch );
+		lockEl( typeFadeRight, pitch );
 	}
 	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 
