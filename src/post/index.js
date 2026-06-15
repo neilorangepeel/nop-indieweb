@@ -428,16 +428,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var composeScroll = document.querySelector( '.compose-scroll' );
 	var fadeTop       = document.querySelector( '.scroll-fade-top' );
 	var fadeBottom    = document.querySelector( '.scroll-fade-bottom' );
-	// Reveal by opacity over the static mask. Safe from the old haloing because the
-	// shadow dot is the same size as the base dot (--ht-dot = --grain-dot): fading it
-	// in just darkens each dot in place — no ring, and the mask never moves.
+	// --reveal (0..1) drives every mask stop's position AND alpha, so the shadow
+	// physically extends from the seam into the content as you scroll — the
+	// finger's distance from rest IS the shadow's depth. RAMP equals the shadow's
+	// visual height, so the mask reaches its full hockey-stick over the same
+	// distance as the shadow's pixel depth — proportional, tactile.
 	function updateScrollFades() {
 		if ( ! composeScroll ) return;
-		var RAMP  = 56;
+		var RAMP  = 160;
 		var top   = composeScroll.scrollTop;
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
-		if ( fadeTop )    fadeTop.style.opacity    = Math.min( Math.max( top, 0 ) / RAMP, 1 );
-		if ( fadeBottom ) fadeBottom.style.opacity = Math.min( Math.max( below, 0 ) / RAMP, 1 );
+		if ( fadeTop )    fadeTop.style.setProperty(    '--reveal', Math.min( Math.max( top,   0 ) / RAMP, 1 ) );
+		if ( fadeBottom ) fadeBottom.style.setProperty( '--reveal', Math.min( Math.max( below, 0 ) / RAMP, 1 ) );
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -480,15 +482,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var typeFadeRight = document.querySelector( '.type-fade-right' );
 	function updateTypeFades() {
 		if ( ! typeBar ) { return; }
-		// Ramp the reveal over ~one badge of scroll (matching the longer gradient's
-		// reach) so the fade unfurls with the drag rather than snapping to full after
-		// a few pixels. Opacity is read straight off scrollLeft, so it tracks the
-		// finger (and momentum) 1:1.
-		var RAMP  = 96;
+		// --reveal grows over ~one badge-and-a-bit of scroll, matching the fade's
+		// 120px reach — the mask's stops extend into the row 1:1 with the drag,
+		// and the alpha at each stop scales with the same value, so the shadow
+		// gains depth and density together as you pull the row.
+		var RAMP  = 120;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
-		if ( typeFadeLeft )  { typeFadeLeft.style.opacity  = Math.min( Math.max( left, 0 ) / RAMP, 1 ); }
-		if ( typeFadeRight ) { typeFadeRight.style.opacity = Math.min( Math.max( right, 0 ) / RAMP, 1 ); }
+		if ( typeFadeLeft )  { typeFadeLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }
+		if ( typeFadeRight ) { typeFadeRight.style.setProperty( '--reveal', Math.min( Math.max( right, 0 ) / RAMP, 1 ) ); }
 	}
 	typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
 

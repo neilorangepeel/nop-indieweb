@@ -578,30 +578,44 @@ body::before {
 	width: 120px;
 	z-index: 3;
 	pointer-events: none;
-	opacity: 0;
-	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
-	   the base grid shows through the whole row, and these phase-locked bigger/darker
-	   dots land concentric on it: the grid swells in place toward the edge. The mask
-	   ramps it in; opacity ramps by scroll. Phase-lock is structural via
-	   background-attachment:fixed (viewport-origin), not JS-set bg-position. */
+	/* Same swollen dot as the vertical shadow; mask stops scale by --reveal, so
+	   the shadow extends from the strip's edge into the row 1:1 with the
+	   horizontal drag, not just lit up in place. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	background-attachment: fixed;
 	will-change: opacity;
+	--reveal: 0;
 }
-/* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
-   scroll distance). Because the shadow dot is the SAME size as the base dot, the
-   opacity fade just darkens each dot in place — no swelling, no sweeping mask edge,
-   no halo — so you never see the pixels move. */
 .type-fade-left {
 	left: 0;
-	-webkit-mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
-	        mask-image: linear-gradient( to right, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to right,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.62))        calc(var(--reveal) * 16%),
+		rgba(0,0,0, calc(var(--reveal) * 0.32))        calc(var(--reveal) * 44%),
+		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
+		transparent                                    calc(var(--reveal) * 100%));
+	        mask-image: linear-gradient( to right,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.62))        calc(var(--reveal) * 16%),
+		rgba(0,0,0, calc(var(--reveal) * 0.32))        calc(var(--reveal) * 44%),
+		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
+		transparent                                    calc(var(--reveal) * 100%));
 }
 .type-fade-right {
 	right: 0;
-	-webkit-mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
-	        mask-image: linear-gradient( to left, #000 0%, rgba(0,0,0,0.62) 16%, rgba(0,0,0,0.32) 44%, rgba(0,0,0,0.12) 72%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to left,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.62))        calc(var(--reveal) * 16%),
+		rgba(0,0,0, calc(var(--reveal) * 0.32))        calc(var(--reveal) * 44%),
+		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
+		transparent                                    calc(var(--reveal) * 100%));
+	        mask-image: linear-gradient( to left,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.62))        calc(var(--reveal) * 16%),
+		rgba(0,0,0, calc(var(--reveal) * 0.32))        calc(var(--reveal) * 44%),
+		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
+		transparent                                    calc(var(--reveal) * 100%));
 }
 /* A kind is one 72px disc that holds the icon and the name in the same cell,
    stacked. At rest the icon shows; on hover/active the icon dims back and the
@@ -745,38 +759,48 @@ body::before {
 	flex-shrink: 0;
 	height: 160px;
 	pointer-events: none;
-	opacity: 0;
-	/* A single halftone screen in the ink hue on a transparent ground — the page
-	   grain shows between the dots. The mask shapes the darkness as a "hockey
-	   stick": a long, subtle tail reaching far into the content that ramps up
-	   sharply at the origin edge (the % stops hold the ratio at any height).
-	   Element opacity is driven by scroll position in JS so it fades by position. */
+	/* A halftone screen in the ink hue on a transparent ground; the mask's
+	   hockey-stick stops AND alphas are scaled by --reveal (0..1), so the
+	   shadow physically grows from the seam as you scroll — every gradient
+	   stop's position and darkness tracks the finger 1:1. JS writes --reveal
+	   from scroll distance; that's the only per-tick property update. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
-	/* Same pitch as the page grain. background-attachment:fixed anchors the dot
-	   grid to the viewport (0,0), so this sticky overlay phase-locks structurally
-	   with the page grain — no JS-set background-position, no iOS-pause desync. */
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	background-attachment: fixed;
-	/* Hint iOS Safari to keep this on its own compositor layer so the
-	   background-attachment:fixed paint reliably re-rasterises after scroll
-	   reversals. Opacity-only (no transform), to avoid creating a containing
-	   block that would break attachment:fixed. */
 	will-change: opacity;
+	--reveal: 0;
 }
-/* Static soft mask; phase-lock comes from background-attachment:fixed (the dot
-   grid stays at viewport origin while the element rides the scroll edge). The
-   layer fades by opacity — same-size dots, so they darken in place without moving. */
 .scroll-fade-top {
 	top: 0;
 	margin-bottom: -160px;
-	-webkit-mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
-	        mask-image: linear-gradient( to bottom, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to bottom,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		transparent                                    calc(var(--reveal) * 100%));
+	        mask-image: linear-gradient( to bottom,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		transparent                                    calc(var(--reveal) * 100%));
 }
 .scroll-fade-bottom {
 	bottom: 0;
 	margin-top: -160px;
-	-webkit-mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
-	        mask-image: linear-gradient( to top, #000 0%, rgba(0,0,0,0.5) 12%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.05) 68%, transparent 100% );
+	-webkit-mask-image: linear-gradient( to top,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		transparent                                    calc(var(--reveal) * 100%));
+	        mask-image: linear-gradient( to top,
+		rgba(0,0,0, var(--reveal))                     0,
+		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		transparent                                    calc(var(--reveal) * 100%));
 }
 .compose-fields {
 	/* grow to fill when content is short (textarea fills the frame), but never
