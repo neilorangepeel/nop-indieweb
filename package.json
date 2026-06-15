@@ -10,9 +10,12 @@
     "start:post": "wp-scripts start src/post/index.js --output-path=build/post",
     "lint:js": "wp-scripts lint-js src/settings src/post",
     "test:unit": "wp-scripts test-unit-js",
-    "test:smoke": "node tests/post-smoke.cjs"
+    "test:smoke": "node tests/post-smoke.cjs",
+    "test:lighthouse": "node tests/lighthouse-post.mjs"
   },
   "devDependencies": {
-    "@wordpress/scripts": "^30.0.0"
+    "@wordpress/scripts": "^30.0.0",
+    "lighthouse": "^13.4.0",
+    "puppeteer-core": "^23.11.1"
   }
 }
