@@ -220,7 +220,6 @@ body::before {
 	   stroke and reads as visual noise; an opaque tone renders the stroke solid. */
 	--ink-30:   color-mix(in srgb, var(--ink) 30%, var(--paper));  /* control borders */
 	--ink-38:   color-mix(in srgb, var(--ink) 38%, var(--paper));  /* field borders, scrollbars */
-	--ink-50:   color-mix(in srgb, var(--ink) 50%, var(--paper));
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
 	   on the desktop mock / standalone band. */
@@ -372,12 +371,10 @@ body::before {
 		color: #f4f0e7;
 	}
 }
-/* Standalone Home Screen app: show the band, full height behind the status bar. */
-/* AUDIT TEST (2026-06-14): band hidden in standalone to see if the html accent
-   alone tints the bar. Revert this line to the commented one if the bar goes
-   wrong on the Home Screen app. */
+/* Standalone Home Screen app: the band stays hidden. iOS 26 tints the status bar
+   from the html accent alone (see the html rule), so the standalone app needs no
+   sampling band — same as the Safari tab. */
 .standalone .device-chrome { display: none; }
-/* .standalone .device-chrome { display: flex; top: 0; height: var(--safe-top, 54px); } */
 /* Faux status-bar content is the desktop mock's stand-in for the real iOS
    clock/battery — hidden on real devices (revealed in the frame media query),
    where iOS renders the genuine chrome over the band. */
@@ -742,8 +739,9 @@ body::before {
 /* Conditional depth as scroll shadows — but drawn as translucent ink washes
    OVER the continuous grain, with NO opaque paper covers (those revealed a
    dot-free off-white patch on the textured paper). Two sticky overlays ride the
-   top and bottom edges; a tiny scroll handler toggles .has-above / .has-below
-   to fade them in. Grain runs through them, uninterrupted. */
+   top and bottom edges; each one's --reveal (0..1) is driven from scroll distance
+   — by JS, or by a scroll-progress timeline where supported — to fade it in. Grain
+   runs through them, uninterrupted. */
 .scroll-fade {
 	position: sticky;
 	z-index: 3;
