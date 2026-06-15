@@ -577,10 +577,12 @@ body::before {
 	opacity: 0;
 	/* The SAME swollen dot as the vertical shadow — now the tiles are transparent so
 	   the base grid shows through the whole row, and these phase-locked bigger/darker
-	   dots (background-position set in alignHalftone) land concentric on it: the grid
-	   swells in place toward the edge. The mask ramps it in; opacity ramps by scroll. */
+	   dots land concentric on it: the grid swells in place toward the edge. The mask
+	   ramps it in; opacity ramps by scroll. Phase-lock is structural via
+	   background-attachment:fixed (viewport-origin), not JS-set bg-position. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
+	background-attachment: fixed;
 }
 /* Static soft mask shapes the edge; the layer fades in/out by opacity (set in JS by
    scroll distance). Because the shadow dot is the SAME size as the base dot, the
@@ -745,15 +747,15 @@ body::before {
 	   sharply at the origin edge (the % stops hold the ratio at any height).
 	   Element opacity is driven by scroll position in JS so it fades by position. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
-	/* Same pitch as the page grain so the halftone shares its dot density and
-	   interleaves cleanly (a bigger stud per grain cell), rather than clashing at
-	   a different scale. (Pixel-perfect concentric phase-lock would need a shared
-	   global grid via background-attachment: fixed, which breaks on this sticky
-	   overlay / iOS — so this matches size, not phase.) */
+	/* Same pitch as the page grain. background-attachment:fixed anchors the dot
+	   grid to the viewport (0,0), so this sticky overlay phase-locks structurally
+	   with the page grain — no JS-set background-position, no iOS-pause desync. */
 	background-size: var(--grain-pitch) var(--grain-pitch);
+	background-attachment: fixed;
 }
-/* Static soft mask; background-position set in JS (viewport master grid). The layer
-   fades by opacity — same-size dots, so they darken in place without moving. */
+/* Static soft mask; phase-lock comes from background-attachment:fixed (the dot
+   grid stays at viewport origin while the element rides the scroll edge). The
+   layer fades by opacity — same-size dots, so they darken in place without moving. */
 .scroll-fade-top {
 	top: 0;
 	margin-bottom: -160px;

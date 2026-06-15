@@ -454,13 +454,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var r = el.getBoundingClientRect();
 		el.style.backgroundPosition = lockXY( r.left, r.top, pitch );
 	}
-	// The kind-row edge fades scroll vertically with the strip, so re-anchor them on
-	// every compose scroll to keep their dots pinned to the fixed grid.
-	function lockTypeFades() {
-		var pitch = gridPitch();
-		lockEl( typeFadeLeft, pitch );
-		lockEl( typeFadeRight, pitch );
-	}
+	// Page grain alignment. The shadow overlays (.scroll-fade, .type-fade) use
+	// background-attachment:fixed so their dot grids phase-lock with the viewport
+	// origin natively — no JS-set background-position, no iOS-pause desync.
 	function alignHalftone() {
 		if ( ! composeScroll ) { return; }
 		var pitch = gridPitch();
@@ -473,14 +469,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var bt = parseFloat( cs.borderTopWidth )  || 0;
 		var st = parseFloat( cs.getPropertyValue( '--safe-top' ) ) || 0;
 		app.style.setProperty( '--cardpos', lockXY( ar.left + bl, ar.top + bt + st, pitch ) );
-		// Vertical scroll-fades — lock to the composeScroll edges (stable while stuck).
-		var sr = composeScroll.getBoundingClientRect();
-		var h  = ( fadeBottom && fadeBottom.offsetHeight ) || 120;
-		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
-		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - h, pitch ); }
-		lockTypeFades();
 	}
-	composeScroll.addEventListener( 'scroll', function () { updateScrollFades(); lockTypeFades(); }, { passive: true } );
+	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
