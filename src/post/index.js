@@ -59,51 +59,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		requestAnimationFrame( function () { deviceChrome.style.display = 'flex'; } );
 	}
 
-	// ── Re-ink: a colour-picker-style hue rotation through OKLCH ──────────────────
-	// Drive --ink in JS so the kind switch sweeps through the hue wheel (teal →
-	// green → orange) rather than a flat RGB crossfade. Every element reads
-	// var(--ink), so they all rotate together — one uniform sweep.
-	var inkNow    = document.getElementById( 'inkNow' );
-	var KIND_VAR  = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet', rsvp: '--magenta' };
-	var INK       = {};
-	function buildInkMap() {
-		var probe = document.createElement( 'span' );
-		probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
-		app.appendChild( probe );
-		Object.keys( KIND_VAR ).forEach( function ( k ) {
-			probe.style.color = 'var(' + KIND_VAR[ k ] + ')';
-			INK[ k ] = getComputedStyle( probe ).color;
-		} );
-		app.removeChild( probe );
-	}
-	var OKLCH_OK = !! ( window.CSS && CSS.supports && CSS.supports( 'color', 'color-mix(in oklch, red, blue)' ) );
-	var inkRAF;
-	// The body's field tints from --ink too, but body sits outside .app, so mirror
-	// the ink onto :root — app keeps its own (its CSS rule beats the inherited value),
-	// while body finally has a hue to read. Driven here so both sweep in lockstep.
-	var root = document.documentElement;
-	function animateInk( from, to ) {
-		cancelAnimationFrame( inkRAF );
-		if ( ! to ) { return; }
-		// Initial load (no-anim), unsupported engine, or no change → settle to the
-		// scheme-aware CSS value instantly.
-		if ( ! OKLCH_OK || app.classList.contains( 'no-anim' ) || ! from || from === to ) {
-			app.style.removeProperty( '--ink' );
-			root.style.setProperty( '--ink', to );
-			return;
-		}
-		var start = 0;
-		function step( now ) {
-			if ( ! start ) { start = now; }
-			var t = Math.min( ( now - start ) / 200, 1 );                       // matches the 200ms badge transitions
-			var e = t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2;     // easeInOut
-			var mix = 'color-mix(in oklch, ' + from + ', ' + to + ' ' + ( e * 100 ).toFixed( 2 ) + '%)';
-			app.style.setProperty( '--ink', mix );
-			root.style.setProperty( '--ink', mix );
-			if ( t < 1 ) { inkRAF = requestAnimationFrame( step ); }
-			else { app.style.removeProperty( '--ink' ); root.style.setProperty( '--ink', to ); }  // app → CSS value; root holds the steady ink
-		}
-		inkRAF = requestAnimationFrame( step );
+	// ── Kind ink ──────────────────────────────────────────────────────────────
+	// Each kind owns a hue. .app[data-type] sets --ink on .app via CSS (instant);
+	// body + html sit outside .app, so mirror the kind's ink onto :root too — the
+	// status-bar accent and the desktop field read it there.
+	var KIND_VAR = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet', rsvp: '--magenta' };
+	var root     = document.documentElement;
+	function setInk( type ) {
+		root.style.setProperty( '--ink', 'var(' + ( KIND_VAR[ type ] || '--red' ) + ')' );
 	}
 	var lastTime = '';
 
@@ -140,7 +103,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// updates in place each minute (setTk) so the crawl never restarts, while a
 	// resolved /now rebuilds once (renderTicker).
 	var tickerTrack = document.getElementById( 'tickerTrack' );
-	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
 	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
 	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
 	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
@@ -199,8 +161,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var seq = tkSeqHTML();
 		tickerTrack.innerHTML = '<span class="ticker__seq">' + seq + '</span>'
 			+ '<span class="ticker__seq">' + seq + '</span>';
-		tkSeqW = tickerTrack.firstChild.getBoundingClientRect().width;   // one loop = one sequence
-		startTickerMotion();
 	}
 	// In-place text swap for a recurring item (time, id) — avoids rebuilding the
 	// track, which would restart the crawl.
@@ -213,79 +173,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 	}
 
-	// ── Ticker motion ───────────────────────────────────────────────────────────
-	// The crawl is JS-driven (rAF), not the CSS animation, so a finger can scrub it:
-	// drag moves the track 1:1, a flick spins it up, then friction eases the speed
-	// back to the ambient crawl (TK_SPEED) — it never stops, it settles. Pure
-	// progressive enhancement: without JS the CSS @keyframes still crawls, and under
-	// prefers-reduced-motion we leave that CSS alone and don't attach any of this.
-	var tkSeqW    = 0;                 // px width of one sequence — the wrap point
-	var tkOffset  = 0;                 // px scrolled left out of view; wraps at tkSeqW
-	var tkVel     = TK_SPEED;          // current px/sec; eases toward TK_SPEED when idle
-	var TK_TAU    = 0.45;              // s — friction time constant (≈1.5s to settle)
-	var TK_VMAX   = 1800;              // px/sec flick clamp
-	var tkRAF     = 0, tkLastFrame = 0, tkDragging = false;
-	var tkDragX   = 0, tkDragOff = 0, tkMoveX = 0, tkMoveT = 0;
-	var tkReduce  = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
-
-	function tkFrame( t ) {
-		var dt = tkLastFrame ? ( t - tkLastFrame ) / 1000 : 0;
-		tkLastFrame = t;
-		if ( dt > 0.05 ) { dt = 0.05; }                                 // clamp tab-switch gaps
-		if ( ! tkDragging ) {
-			tkVel = TK_SPEED + ( tkVel - TK_SPEED ) * Math.exp( -dt / TK_TAU );   // ease to ambient
-			tkOffset += tkVel * dt;
-		}
-		if ( tkSeqW > 0 ) {
-			tkOffset %= tkSeqW;
-			if ( tkOffset < 0 ) { tkOffset += tkSeqW; }
-		}
-		tickerTrack.style.transform = 'translateX(' + ( -tkOffset ).toFixed( 2 ) + 'px)';
-		tkRAF = requestAnimationFrame( tkFrame );
-	}
-	function startTickerMotion() {
-		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS handles reduced motion
-		tickerTrack.style.animation = 'none';                          // hand the crawl to rAF
-		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
-	}
-	function tkDown( x ) {
-		tkDragging = true;
-		tkDragX = x; tkDragOff = tkOffset;
-		tkMoveX = x; tkMoveT = Date.now();
-		tkVel = 0;
-	}
-	function tkMove( x ) {
-		if ( ! tkDragging ) { return; }
-		tkOffset = tkDragOff - ( x - tkDragX );                        // finger right → reveal earlier items
-		var now = Date.now(), dtt = ( now - tkMoveT ) / 1000;
-		if ( dtt > 0 ) {                                                // flick speed = opposite of the finger
-			tkVel = Math.max( -TK_VMAX, Math.min( TK_VMAX, -( x - tkMoveX ) / dtt ) );
-		}
-		tkMoveX = x; tkMoveT = now;
-	}
-	function tkUp() {
-		tkDragging = false;        // the loop now decays tkVel (the flick) back to TK_SPEED
-		tkLastFrame = 0;           // skip a dt spike on the first post-release frame
-	}
-	var tickerEl = tickerTrack && tickerTrack.parentNode;
-	if ( tickerEl && ! tkReduce ) {
-		tickerEl.addEventListener( 'pointerdown', function ( e ) {
-			if ( tickerEl.setPointerCapture ) { try { tickerEl.setPointerCapture( e.pointerId ); } catch ( err ) {} }
-			tkDown( e.clientX );
-		} );
-		tickerEl.addEventListener( 'pointermove',   function ( e ) { tkMove( e.clientX ); } );
-		tickerEl.addEventListener( 'pointerup',     tkUp );
-		tickerEl.addEventListener( 'pointercancel', tkUp );
-	}
+	// The crawl itself is a pure CSS animation on .ticker__track (-50% loop); JS only
+	// fills the track and swaps the recurring items in place (setTk) so the crawl
+	// never restarts. Reduced motion freezes it in CSS.
 	lastTime = '';        // re-seed: populate tkTime/tkDate before the first build
 	updateClock();
 	renderTicker();
-	// Brandon loads with font-display:swap, so the first measure can predate it.
-	// tkSeqW is the wrap point now (not just a speed), so a stale width shows as a
-	// seam gap — re-measure once the real font is in. (offset is preserved.)
-	if ( document.fonts && document.fonts.ready ) {
-		document.fonts.ready.then( renderTicker ).catch( function () {} );
-	}
 
 	// ── Current-moment data (place · temp · sky) ─────────────────────────────────
 	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current
@@ -658,9 +551,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		currentType = type;
 		var cfg = TYPE_CONFIG[ type ];
 
-		var prevInk = inkNow ? getComputedStyle( inkNow ).color : '';
 		app.dataset.type = type;
-		animateInk( prevInk, INK[ type ] );
+		setInk( type );
 
 		var activeBtn = null;
 		document.querySelectorAll( '.type-btn' ).forEach( function (b) {
@@ -1277,10 +1169,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Init ───────────────────────────────────────────────────────────────────
 
-	buildInkMap();                            // resolve each kind's ink for OKLCH tweening
-	if ( window.matchMedia ) {
-		try { window.matchMedia( '(prefers-color-scheme: dark)' ).addEventListener( 'change', buildInkMap ); } catch ( e ) {}
-	}
+	setInk( app.dataset.type );               // seed :root ink for the initial kind
 	applyKindOrder();                         // tiles in most-recently-used order
 	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
 	setPrompt( notePlaceholder() );

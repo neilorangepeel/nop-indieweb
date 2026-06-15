@@ -357,8 +357,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 <body>
 <div class="app" id="app" data-type="note">
 
-	<span id="inkNow" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;color:var(--ink)"></span>
-
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
 	<div class="device-chrome" aria-hidden="true">
 		<span class="device-chrome__time" id="deviceTime">19:07</span>
@@ -385,7 +383,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 	</header>
 
 	<!-- View container -->
-	<div class="view-container">
+	<main class="view-container">
 
 		<!-- Compose view -->
 		<div id="view-compose">
@@ -538,7 +536,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 		<div id="view-success" hidden>
 			<div class="success-scroll">
 				<div class="success-hero">
-					<span class="burst" aria-hidden="true"><i style="--a:0deg"></i><i style="--a:36deg"></i><i style="--a:72deg"></i><i style="--a:108deg"></i><i style="--a:144deg"></i><i style="--a:180deg"></i><i style="--a:216deg"></i><i style="--a:252deg"></i><i style="--a:288deg"></i><i style="--a:324deg"></i></span>
 					<div class="success-banner">
 						<span class="success-check" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></span>
 						<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
@@ -564,7 +561,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 			</div>
 		</div>
 
-	</div><!-- .view-container -->
+	</main><!-- .view-container -->
 
 	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
