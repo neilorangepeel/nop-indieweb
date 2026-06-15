@@ -435,7 +435,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// distance as the shadow's pixel depth — proportional, tactile.
 	function updateScrollFades() {
 		if ( ! composeScroll ) return;
-		var RAMP  = 160;
+		var RAMP  = 240;
 		var top   = composeScroll.scrollTop;
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
 		if ( fadeTop )    fadeTop.style.setProperty(    '--reveal', Math.min( Math.max( top,   0 ) / RAMP, 1 ) );
@@ -482,11 +482,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var typeFadeRight = document.querySelector( '.type-fade-right' );
 	function updateTypeFades() {
 		if ( ! typeBar ) { return; }
-		// --reveal grows over ~one badge-and-a-bit of scroll, matching the fade's
-		// 120px reach — the mask's stops extend into the row 1:1 with the drag,
-		// and the alpha at each stop scales with the same value, so the shadow
-		// gains depth and density together as you pull the row.
-		var RAMP  = 120;
+		// Matches the vertical fade's RAMP so growth-per-finger-pixel is the
+		// same on both axes — the shadow rate feels consistent whether you're
+		// scrolling the compose body or the kind strip.
+		var RAMP  = 240;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
 		if ( typeFadeLeft )  { typeFadeLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }

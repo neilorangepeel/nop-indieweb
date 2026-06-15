@@ -578,7 +578,7 @@ body::before {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	width: 120px;
+	width: 240px;
 	z-index: 3;
 	pointer-events: none;
 	/* Same swollen dot as the vertical shadow; mask stops scale by --reveal, so
@@ -764,7 +764,7 @@ body::before {
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
-	height: 160px;
+	height: 240px;
 	pointer-events: none;
 	/* A halftone screen in the ink hue on a transparent ground; the mask's
 	   hockey-stick stops AND alphas are scaled by --reveal (0..1), so the
@@ -779,7 +779,7 @@ body::before {
 }
 .scroll-fade-top {
 	top: 0;
-	margin-bottom: -160px;
+	margin-bottom: -240px;
 	-webkit-mask-image: linear-gradient( to bottom,
 		rgba(0,0,0, var(--reveal))                     0,
 		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
@@ -795,7 +795,7 @@ body::before {
 }
 .scroll-fade-bottom {
 	bottom: 0;
-	margin-top: -160px;
+	margin-top: -240px;
 	-webkit-mask-image: linear-gradient( to top,
 		rgba(0,0,0, var(--reveal))                     0,
 		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
