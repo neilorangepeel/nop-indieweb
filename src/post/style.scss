@@ -1363,11 +1363,31 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 }
 .success-actions { display: flex; flex-direction: column; gap: 10px; }
 
+/* Compose meta row — sits under the textarea, holding the word count (left)
+   and the syndication-limit chip (right). Each child hides independently; the
+   row collapses to nothing when both are hidden. */
+.compose-meta {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+/* Word count — a quiet running tally of words in the textarea, shown as soon
+   as you type (see updateWordCount). Muted so it reads as ambient, not a chip. */
+.word-count {
+	font-size: var(--fs-11);
+	font-weight: 700;
+	color: var(--text);
+	opacity: 0.5;
+	font-variant-numeric: tabular-nums;
+}
+
 /* Character counter — a small countdown chip that only appears as you near a
    syndication limit (see updateCounter), so it never floats as a stray number. */
 .char-count {
-	align-self: flex-end;
-	margin-top: 4px;
+	margin-left: auto;
 	padding: 2px 9px;
 	border-radius: var(--nop-radius-pill);
 	background: var(--surface);

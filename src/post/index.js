@@ -382,8 +382,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a note…' },
-		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  contentPlaceholder: 'Write a caption…' },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'Write a note…' },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'Write a caption…' },
 		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Reply to URL', contentPlaceholder: 'Your reply…' },
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Like URL', urlHint: "Paste the URL you're liking" },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmark URL', contentPlaceholder: 'Notes…' },
@@ -697,7 +697,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 		fieldUrl.hidden     = ! cfg.urlProp;
 		fieldRsvp.hidden    = ! cfg.hasRsvp;
-		fieldPhoto.hidden   = type !== 'photo';
+		fieldPhoto.hidden   = ! cfg.hasPhoto;
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
 
@@ -748,7 +748,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} else if ( cfg.urlProp ) {
 			enabled = urlInput.value.trim().length > 0;
 		} else {
-			enabled = contentInput.value.trim().length > 0;
+			// A note posts on text alone, or on an attached image alone.
+			enabled = contentInput.value.trim().length > 0 || ( cfg.hasPhoto && selectedFiles.length > 0 );
 		}
 		postBtn.disabled = ! enabled;
 	}
@@ -850,7 +851,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// blobs (structured-clone keeps them through IndexedDB).
 	function formToPost() {
 		var files = [];
-		if ( currentType === 'photo' ) {
+		if ( TYPE_CONFIG[ currentType ].hasPhoto ) {
 			for ( var i = 0; i < selectedFiles.length; i++ ) {
 				files.push( { blob: selectedFiles[ i ], name: selectedFiles[ i ].name || 'photo.jpg', type: selectedFiles[ i ].type || 'image/jpeg', alt: ( photoAlts[ i ] || '' ) } );
 			}
@@ -871,7 +872,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// queue replay. Uploads photos, then creates the post via Micropub.
 	async function sendPost( post, onProgress ) {
 		var photoUrls = [];
-		if ( post.type === 'photo' && post.files.length ) {
+		if ( post.files && post.files.length ) {
 			for ( var i = 0; i < post.files.length; i++ ) {
 				if ( onProgress ) { onProgress( 'Uploading ' + ( i + 1 ) + ' of ' + post.files.length + '…', ( i / post.files.length ) * 0.75 ); }
 				var up = await uploadPhoto( post.files[ i ].blob, post.files[ i ].name, post.files[ i ].type );
@@ -1195,7 +1196,21 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return lim;
 	}
 
+	// The textarea's running word count — shown the moment you start typing and
+	// hidden again when the field is empty (or the kind has no content). Refreshed
+	// alongside the char counter, the other compose-meta readout.
+	var wordCountEl = document.getElementById( 'wordCount' );
+	function updateWordCount() {
+		if ( ! TYPE_CONFIG[ currentType ].hasContent ) { wordCountEl.hidden = true; return; }
+		var text  = contentInput.value.trim();
+		var words = text ? text.split( /\s+/ ).length : 0;
+		if ( ! words ) { wordCountEl.hidden = true; return; }
+		wordCountEl.hidden  = false;
+		wordCountEl.textContent = words + ' ' + ( words === 1 ? 'word' : 'words' );
+	}
+
 	function updateCounter() {
+		updateWordCount();
 		var el  = document.getElementById( 'charCount' );
 		var len = contentInput.value.length;
 		var lim = currentLimit();
