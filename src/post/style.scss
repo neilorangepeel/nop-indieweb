@@ -572,9 +572,6 @@ body::before {
    how far there is to scroll that way (updateTypeFades). */
 .type-grid-wrap { position: relative; flex-shrink: 0; }
 .type-fade {
-	/* DEBUG — outline the element box. Remove when done testing. */
-	outline: 2px dashed cyan;
-	outline-offset: -2px;
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -757,10 +754,6 @@ body::before {
    top and bottom edges; a tiny scroll handler toggles .has-above / .has-below
    to fade them in. Grain runs through them, uninterrupted. */
 .scroll-fade {
-	/* DEBUG — outline the element box so the band's geometry is visible even
-	   where the mask is fully transparent. Remove when done testing. */
-	outline: 2px dashed magenta;
-	outline-offset: -2px;
 	position: sticky;
 	z-index: 3;
 	flex-shrink: 0;
