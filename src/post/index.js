@@ -89,7 +89,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			tkDate = date;
 			setTk( 'tk-time', tkTime );
 			setTk( 'tk-date', tkDate );
-			if ( lastPostTs ) { setTk( 'tk-last', 'last posted ' + tkAgo( lastPostTs ) ); }
+			if ( lastPostTs ) { setTk( 'tk-last', 'Last: ' + tkAgo( lastPostTs ) ); }
 			refreshLight();                                            // golden/daylight/blue tick; rebuild if the set changed
 			lastTime = time;
 		}
@@ -121,9 +121,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function tkGolden() {
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 ), start = tkSunset - 3600;
-		if ( now < start )    { return 'golden hour in ' + tkDur( start - now ); }
-		if ( now < tkSunset ) { return 'golden hour now'; }
-		return 'sunset ' + tkClock( tkSunset );
+		if ( now < start )    { return 'Golden: ' + tkDur( start - now ); }
+		if ( now < tkSunset ) { return 'Golden: now'; }
+		return 'Sunset: ' + tkClock( tkSunset );
 	}
 	// Daylight remaining by day; the next sunrise by night — the LIGHT group's
 	// anchor either side of dusk.
@@ -131,11 +131,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 );
 		if ( tkSunrise && now >= tkSunrise && now < tkSunset ) {
-			return tkDur( tkSunset - now ) + ' of light left';
+			return 'Daylight: ' + tkDur( tkSunset - now );
 		}
 		if ( tkSunrise ) {
 			var sr = now >= tkSunset ? tkSunrise + 86400 : tkSunrise;   // past sunset → ~tomorrow's
-			return 'sunrise ' + tkClock( sr );
+			return 'Sunrise: ' + tkClock( sr );
 		}
 		return '';
 	}
@@ -145,7 +145,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 ), start = tkSunset + 10 * 60, end = tkSunset + 35 * 60;
 		if ( now < tkSunset - 3600 || now >= end ) { return ''; }
-		return now >= start ? 'blue hour now' : 'blue hour ' + tkClock( start );
+		return now >= start ? 'Blue: now' : 'Blue: ' + tkClock( start );
 	}
 	// Pirate Weather moonPhase (0..1) → a plain phase name. Text, not a glyph:
 	// keeps the riso-icon count down and never doubles the sky item's night moon.
@@ -176,17 +176,27 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// only within a fortnight so it stays special. Approximate fixed dates.
 	function tkSeason() {
 		var now = new Date(), y = now.getFullYear();
-		var marks = [ [ 2, 20, 'spring equinox' ], [ 5, 21, 'summer solstice' ], [ 8, 22, 'autumn equinox' ], [ 11, 21, 'winter solstice' ] ];
+		var marks = [ [ 2, 20, 'Spr Equinox' ], [ 5, 21, 'Sum Solstice' ], [ 8, 22, 'Aut Equinox' ], [ 11, 21, 'Win Solstice' ] ];
 		var today = new Date( y, now.getMonth(), now.getDate() );
 		for ( var i = 0; i < marks.length; i++ ) {
 			var days = Math.round( ( new Date( y, marks[ i ][ 0 ], marks[ i ][ 1 ] ) - today ) / 86400000 );
-			if ( days >= 0 && days <= 14 ) { return days === 0 ? marks[ i ][ 2 ] + ' today' : days + 'd to ' + marks[ i ][ 2 ]; }
+			if ( days >= 0 && days <= 14 ) { return marks[ i ][ 2 ] + ': ' + ( days === 0 ? 'today' : days + 'd' ); }
 		}
 		return '';
 	}
+	// ISO week number + day-of-year — quiet calendar context in the NOW group.
+	function tkWeek() {
+		var d = new Date(), t = new Date( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) );
+		t.setUTCDate( t.getUTCDate() + 4 - ( t.getUTCDay() || 7 ) );   // shift to the ISO week's Thursday
+		return 'Wk ' + Math.ceil( ( ( t - new Date( Date.UTC( t.getUTCFullYear(), 0, 1 ) ) ) / 86400000 + 1 ) / 7 );
+	}
+	function tkDayOfYear() {
+		var d = new Date();
+		return 'Day ' + Math.round( ( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) - Date.UTC( d.getFullYear(), 0, 0 ) ) / 86400000 );
+	}
 	// Consecutive days with a post (the daily counters bumpStreak writes). Today
-	// not-yet-posted doesn't break a run standing on yesterday; shown from 2 up.
-	function tkStreak() {
+	// not-yet-posted doesn't break a run standing on yesterday.
+	function streakCount() {
 		var n = 0, d = new Date(), first = true, v;
 		for ( var i = 0; i < 366; i++ ) {
 			try { v = localStorage.getItem( 'nop_post_count_' + d.toISOString().slice( 0, 10 ) ); } catch ( e ) { break; }
@@ -195,7 +205,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			first = false;
 			d.setDate( d.getDate() - 1 );
 		}
-		return n >= 2 ? n + '-day streak' : '';
+		return n;
+	}
+	function tkStreak() { var n = streakCount(); return n >= 2 ? 'Streak: ' + n + 'd' : ''; }
+	// Longest run on record — persisted and reconciled with the current run so a new
+	// best is captured. Shown only when it beats the current streak (else it would
+	// just restate it).
+	function tkBest() {
+		var best = 0;
+		try { best = parseInt( localStorage.getItem( 'nop_best_streak' ) || '0', 10 ) || 0; } catch ( e ) {}
+		var cur = streakCount();
+		if ( cur > best ) { best = cur; try { localStorage.setItem( 'nop_best_streak', String( best ) ); } catch ( e ) {} }
+		return ( best >= 2 && best > cur ) ? 'Best: ' + best + 'd' : '';
 	}
 	// The LIGHT group adapts to the time of day: golden hour always (once /now has
 	// resolved), daylight-left by day or the next sunrise by night, blue hour around
@@ -209,7 +230,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var dl = tkDaylight();
 		if ( dl ) { out.push( { c: 'tk-daylight', h: dl } ); }
 		var isNight = ! ( tkSunrise && now >= tkSunrise && now < tkSunset );
-		if ( isNight && tkMoon ) { out.push( { c: 'tk-moon', h: tkMoon } ); }
+		if ( isNight && tkMoon ) { out.push( { c: 'tk-moon', h: 'Moon: ' + tkMoon } ); }
 		return out;
 	}
 	// Four labelled clusters reading out of the logo: NOW (the moment) · HERE
@@ -219,6 +240,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var nowG = [];
 		if ( tkTime ) { nowG.push( { c: 'tk-time', h: tkTime } ); }
 		if ( tkDate ) { nowG.push( { c: 'tk-date', h: tkDate } ); }
+		nowG.push( { c: 'tk-week', h: tkWeek() } );
+		nowG.push( { c: 'tk-doy', h: tkDayOfYear() } );
 		var season = tkSeason();
 		if ( season ) { nowG.push( { c: 'tk-season', h: season } ); }
 
@@ -227,12 +250,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( tkTemp )  { here.push( { c: 'tk-temp',  h: tkTemp } ); }
 		if ( tkSky )   { here.push( { c: 'tk-sky',   h: tkSky } ); }
 
-		var log = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
-		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: queueCount + ' to send' } ); }
+		var log = [];
+		if ( ! navigator.onLine ) { log.push( { c: 'tk-offline', h: 'Offline' } ); }
+		log.push( { c: 'tk-id', h: TK_ID_PRE + nextSerial } );
+		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: 'Queue: ' + queueCount } ); }
 		log.push( { c: 'tk-cadence', h: tkCadence() } );
-		if ( lastPostTs ) { log.push( { c: 'tk-last', h: 'last posted ' + tkAgo( lastPostTs ) } ); }
+		if ( lastPostTs ) { log.push( { c: 'tk-last', h: 'Last: ' + tkAgo( lastPostTs ) } ); }
 		var streak = tkStreak();
 		if ( streak ) { log.push( { c: 'tk-streak', h: streak } ); }
+		var best = tkBest();
+		if ( best ) { log.push( { c: 'tk-best', h: best } ); }
 
 		var groups = [];
 		if ( nowG.length ) { groups.push( { label: 'NOW',  items: nowG } ); }
@@ -1058,13 +1085,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return d.promise;
 	}
 
-	// Reflect the pending count in the ticker's "N to send" item. Rebuild only when
+	// Reflect the pending count in the ticker's "Queue: N" item. Rebuild only when
 	// the item appears/disappears (0↔N); otherwise just swap the number in place.
 	function setQueueCount( n ) {
 		var toggled = ( n > 0 ) !== ( queueCount > 0 );
 		queueCount = n;
 		if ( toggled ) { renderTicker(); }
-		else if ( n > 0 ) { setTk( 'tk-queue', n + ' to send' ); }
+		else if ( n > 0 ) { setTk( 'tk-queue', 'Queue: ' + n ); }
 		// Mirror the count on the home-screen app icon (iOS 16.4+, Android, desktop).
 		if ( 'setAppBadge' in navigator ) {
 			if ( n > 0 ) { navigator.setAppBadge( n ).catch( function () {} ); }
@@ -1086,7 +1113,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	async function queueAndAck( post ) {
 		try { await qAdd( post ); }
 		catch ( e ) { showView( 'compose' ); showToast( "Couldn't save offline: " + e.message, 'error' ); return; }
-		setQueueCount( queueCount + 1 );        // show "N to send" in the ticker
+		setQueueCount( queueCount + 1 );        // show "Queue: N" in the ticker
 		recordKindUse( post.type );
 		showToast( 'Saved — will post when you’re back online.', 'info' );
 		resetForm();
@@ -1121,6 +1148,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	if ( navigator.storage && navigator.storage.persist ) { navigator.storage.persist().catch( function () {} ); }
 
 	window.addEventListener( 'online', replayQueue );
+	// Raise/drop the LOG "Offline" chip the moment connectivity flips.
+	window.addEventListener( 'online',  renderTicker );
+	window.addEventListener( 'offline', renderTicker );
 	replayQueue();           // flush anything stored from a previous, offline session
 	refreshQueueCount();     // and surface the count if we're offline with posts waiting
 

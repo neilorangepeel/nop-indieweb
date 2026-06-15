@@ -74,6 +74,7 @@
 	   own toolbar pill. Both tunable from here. */
 	--post-btn-h: 50px;
 	--post-btn-w: min(54%, 320px);
+	--tile-size:  75px;              /* the post-kind disc — icon + curved seal name */
 
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -84,13 +85,22 @@
 	   every label/field/caption printed at that size. */
 	--fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
 	--fs-14: 14px;  --fs-16: 16px;  --fs-18: 18px;
-	/* The page side gutter — the inset shared by the top-level sections (masthead,
-	   greeting, compose, success). Sized to breathe inside the rounded top corners
+	/* ── Spacing scale — a 4pt grid (iOS's 8pt grid + a half-step). Layout gaps,
+	   padding and margins snap to these so the whole UI shares one rhythm:
+	     1 hairline · 2 label↔control & tile gaps · 3 control padding ·
+	     4 field-group rhythm · 5 page gutter · 6 section · 8 hero. */
+	--sp-1: 4px;
+	--sp-2: 8px;
+	--sp-3: 12px;
+	--sp-4: 16px;
+	--sp-5: 20px;
+	--sp-6: 24px;
+	--sp-8: 32px;
+	/* The page side gutter (= --sp-5) — the inset shared by every top-level section
+	   (masthead, compose, success). Sized to breathe inside the rounded top corners
 	   (--screen-radius): a gutter smaller than the radius lets the corner arc crowd
-	   the masthead, so it tracks a touch under the radius rather than the old flush
-	   16px. The rest of the layout is bespoke poster geometry, kept literal so the
-	   shorthands stay readable. */
-	--pad-x: 20px;
+	   the masthead, so it tracks a touch under the radius. */
+	--pad-x: var(--sp-5);
 	--bw: 2px;                       /* the single border weight used throughout */
 
 	/* Grain / halftone — ONE shared, fixed dot grid (pitch). --grain-dot is the base
@@ -492,20 +502,23 @@ body::before {
 .ticker__group {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	margin-right: 24px;
 }
-/* Group heading — a tiny tracked uppercase label in the condensed display face.
-   The face contrast against the readout-face data IS the structure (no icon); the
-   quiet opacity keeps it a divider, not a shout. */
+/* Group heading — SAME size and full ink colour as the data, set apart ONLY by the
+   condensed display face + caps (no dimming, no icon). The right margin holds it off
+   its first datum. */
 .ticker__head {
 	font-family: var(--display);
-	font-size: var(--fs-10);
-	font-weight: 800;
-	letter-spacing: 0.14em;
+	font-size: var(--fs-14);
+	font-weight: 700;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	opacity: 0.5;
+	/* The heading sits in its own pocket — equal space either side — so it reads as a
+	   distinct slot between the clusters, not attached to the data. */
+	margin: 0 22px;
 }
+/* Bracket the label — [ NOW ] — so each heading reads as a distinct marker. */
+.ticker__head::before { content: '['; margin-right: 0.45em; }
+.ticker__head::after  { content: ']'; margin-left: 0.45em; }
 .ticker__item {
 	display: inline-flex;
 	align-items: center;
@@ -516,11 +529,12 @@ body::before {
 	letter-spacing: 0;
 	font-variant-numeric: tabular-nums;
 }
-.ticker__item.tk-queue { font-weight: 700; }   /* pending offline posts — a touch louder */
+.ticker__item.tk-queue,
+.ticker__item.tk-offline { font-weight: 700; }   /* pending posts / offline state — a touch louder */
 /* The datum itself. Flex so the sky item's glyph sits beside its summary (the gap
    used to come from the item; the icon now lives in here). */
 .ticker__val { display: inline-flex; align-items: center; gap: 5px; }
-.ticker__sep { padding: 0 6px; opacity: 0.35; }
+.ticker__sep { padding: 0 14px; }   /* same ink colour as the data, more air between items */
 .ticker__icon { display: inline-flex; }
 .ticker__icon svg { display: block; width: 14px; height: 14px; }
 @keyframes ticker-crawl {
@@ -557,9 +571,9 @@ body::before {
 
 .type-grid {
 	display: flex;
-	gap: 6px;
+	gap: var(--sp-2);
 	flex-shrink: 0;
-	padding: 18px var(--pad-x);
+	padding: var(--sp-4) var(--pad-x);
 	/* At rest the strip's border-top hides under compose-scroll's top clip and
 	   the masthead's border-bottom reads as the single seam line. Pull the
 	   compose down (iOS overscroll) and the strip rides with it — the gap
@@ -635,14 +649,14 @@ body::before {
 		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
 		transparent                                    calc(var(--reveal) * 100%));
 }
-/* A kind is one 72px disc that holds the icon and the name in the same cell,
+/* A kind is one --tile-size disc that holds the icon and the name in the same cell,
    stacked. At rest the icon shows; on hover/active the icon dims back and the
    name comes forward over it — so the label lives inside the badge, never
    spilling the row or adding height. */
 .type-btn {
-	flex: 0 0 72px;
-	width: 72px;
-	height: 72px;
+	flex: 0 0 var(--tile-size);
+	width: var(--tile-size);
+	height: var(--tile-size);
 	scroll-snap-align: start;
 	display: grid;
 	place-items: center;
@@ -658,8 +672,8 @@ body::before {
    pop scales the whole .type-btn so the disc + seal text move in proportion. */
 .type-btn__icon {
 	grid-area: 1 / 1;
-	width: 72px;
-	height: 72px;
+	width: var(--tile-size);
+	height: var(--tile-size);
 	display: grid;
 	place-items: center;
 	border: var(--bw) solid var(--ink);
@@ -686,8 +700,8 @@ body::before {
    run). Condensed display face, tracked + uppercased. */
 .type-btn__arc {
 	grid-area: 1 / 1;
-	width: 72px;
-	height: 72px;
+	width: var(--tile-size);
+	height: var(--tile-size);
 	pointer-events: none;
 }
 .type-btn__arc text {
@@ -713,10 +727,10 @@ body::before {
 
 /* RSVP response — a segmented yes/maybe/no control, sharing the tile's two-tone
    active state so the choice reads in the kind ink. */
-.rsvp-toggle { display: flex; gap: 6px; }
+.rsvp-toggle { display: flex; gap: var(--sp-2); }
 .rsvp-btn {
 	flex: 1 1 0;
-	padding: 11px 8px;
+	padding: var(--sp-2);
 	border: var(--bw) solid var(--ink-30);
 	border-radius: var(--radius);
 	background: var(--field);
@@ -726,6 +740,7 @@ body::before {
 	font-weight: 600;
 	letter-spacing: 0;
 	cursor: pointer;
+	min-height: 44px;
 	-webkit-tap-highlight-color: transparent;
 }
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
@@ -813,10 +828,10 @@ body::before {
 	   deep bottom padding clears the floating Post button so the last line can
 	   scroll above it. */
 	flex: 1 0 auto;
-	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
+	padding: var(--sp-4) var(--pad-x) calc(var(--safe-bottom) + 88px);
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: var(--sp-4);
 }
 
 .field-group { display: flex; flex-direction: column; }
@@ -831,7 +846,7 @@ body::before {
 	font-weight: 600;
 	letter-spacing: 0;
 	opacity: 0.7;
-	margin-bottom: 6px;
+	margin-bottom: var(--sp-2);
 }
 .sr-only {
 	position: absolute;
@@ -850,7 +865,7 @@ body::before {
 	background: transparent;
 	border: var(--bw) solid var(--ink-38);
 	border-radius: var(--radius);
-	padding: 11px 12px;
+	padding: var(--sp-3);
 	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
@@ -866,7 +881,7 @@ body::before {
 /* Let the ruled "page" resolve — a clear line's-worth of blank paper below the
    last rule before the next field, so the content doesn't butt up against it.
    (Adds to the 16px field gap for ~one rule-spacing of clearance.) */
-#fieldContent { display: flex; flex-direction: column; margin-bottom: 16px; }
+#fieldContent { display: flex; flex-direction: column; margin-bottom: var(--sp-4); }
 .compose-wrap { position: relative; }
 .compose-field {
 	display: block;
@@ -921,7 +936,7 @@ body::before {
 	background: var(--field);
 	border: var(--bw) dashed var(--line);
 	border-radius: var(--radius);
-	padding: 26px 16px;
+	padding: var(--sp-6) var(--sp-4);
 	text-align: center;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
@@ -936,8 +951,8 @@ body::before {
 .thumbnails {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-	gap: 8px;
-	margin-top: 10px;
+	gap: var(--sp-2);
+	margin-top: var(--sp-2);
 }
 .thumbnails img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
@@ -945,7 +960,7 @@ body::before {
 	border-radius: var(--radius); display: block;
 }
 .thumb { display: flex; flex-direction: column; }
-.alt-texts { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {
 	font-size: var(--fs-10);
@@ -961,13 +976,13 @@ body::before {
 	border: none;
 	border-bottom: 1.5px solid var(--line);
 	border-radius: 0;
-	padding: 6px 0;
+	padding: var(--sp-2) 0;
 	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	outline: none;
-	min-height: 36px;
+	min-height: 44px;
 }
 .thumb__alt:focus { border-bottom-color: var(--accent); }
 .thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
@@ -977,11 +992,11 @@ body::before {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 6px;
+	gap: var(--sp-2);
 	background: transparent;
 	border: var(--bw) solid var(--ink-38);
 	border-radius: var(--radius);
-	padding: 8px 10px;
+	padding: var(--sp-2) var(--sp-3);
 	min-height: 46px;
 	cursor: text;
 }
@@ -999,6 +1014,7 @@ body::before {
 	white-space: nowrap;
 }
 .tag-chip__remove {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1010,6 +1026,9 @@ body::before {
 	cursor: pointer; font-size: var(--fs-13); line-height: 1;
 	font-family: inherit; font-weight: 800;
 }
+/* Keep the 18px mark but extend the tap target to ~32px (Apple HIG) — a transparent
+   overlay inside the button, so the visual square and the layout are unchanged. */
+.tag-chip__remove::after { content: ''; position: absolute; inset: -7px; }
 .tag-input {
 	flex: 1;
 	min-width: 80px;
@@ -1032,7 +1051,7 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 10px;
+	gap: var(--sp-2);
 	min-height: 140px;
 	padding: 8px 12px 20px;
 	text-align: center;
@@ -1076,7 +1095,8 @@ body::before {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12px 0;
+	padding: var(--sp-3) 0;
+	min-height: 44px;
 	font-family: var(--readout);
 	font-size: var(--fs-14);
 	font-weight: 600;
@@ -1104,13 +1124,14 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .syndicators {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
-	padding: 12px 0 4px;
+	gap: var(--sp-2);
+	padding: var(--sp-3) 0 var(--sp-1);
 }
 .syndicator-item {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: var(--sp-2);
+	min-height: 44px;
 	font-size: var(--fs-14);
 	font-weight: 700;
 	cursor: pointer;
@@ -1167,8 +1188,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	   Bottom padding lifts it clear of the home-indicator zone. */
 	display: flex;
 	justify-content: center;
-	padding: 14px 16px;
-	padding-bottom: calc(var(--safe-bottom) + 14px);
+	padding: var(--sp-4);
+	padding-bottom: calc(var(--safe-bottom) + var(--sp-4));
 	background: transparent;
 	pointer-events: none;
 }
@@ -1182,7 +1203,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .btn {
 	display: block;
 	width: 100%;
-	padding: 15px;
+	padding: var(--sp-4);
 	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
 	font-size: var(--fs-16);
@@ -1252,9 +1273,9 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 22px;
+	gap: var(--sp-6);
 	text-align: center;
-	padding: 24px;
+	padding: var(--sp-6);
 }
 .progress-spinner {
 	width: 44px; height: 44px;
@@ -1285,15 +1306,15 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	/* deep bottom padding clears the floating "Post another" button */
-	padding: 16px var(--pad-x) calc(var(--safe-bottom) + 88px);
+	padding: var(--sp-4) var(--pad-x) calc(var(--safe-bottom) + 88px);
 }
 .success-hero {
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 36px 0 12px;
-	margin-bottom: 16px;
+	padding: var(--sp-8) 0 var(--sp-3);
+	margin-bottom: var(--sp-4);
 }
 /* The confirmation stamp — a fixed -3° rotated block, static (no slam-in). */
 .success-banner {
@@ -1301,12 +1322,12 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	z-index: 1;
 	display: inline-flex;
 	align-items: center;
-	gap: 12px;
+	gap: var(--sp-3);
 	background: var(--accent);
 	color: var(--on-accent);
 	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
-	padding: 14px 26px;
+	padding: var(--sp-4) var(--sp-6);
 	box-shadow: var(--shadow);
 	rotate: -3deg;
 }
@@ -1325,7 +1346,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	margin-top: 22px;
+	margin-top: var(--sp-6);
 }
 .success-streak__num {
 	font-family: var(--display);
@@ -1344,8 +1365,8 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 .success-photos {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-	gap: 6px;
-	margin-bottom: 16px;
+	gap: var(--sp-2);
+	margin-bottom: var(--sp-4);
 }
 .success-photos img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
@@ -1359,7 +1380,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	text-decoration: underline;
 	text-decoration-thickness: 2px;
 	display: block;
-	margin-bottom: 16px;
+	margin-bottom: var(--sp-4);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
