@@ -486,6 +486,26 @@ body::before {
 	animation: ticker-crawl 24s linear infinite;
 }
 .ticker__seq { display: flex; align-items: center; }
+/* A labelled cluster (NOW / HERE / LIGHT / LOG). The trailing margin spaces it
+   from the next group — the heading is the only divider between groups — and on
+   the last group it also paces the seam between the two looped sequences. */
+.ticker__group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-right: 24px;
+}
+/* Group heading — a tiny tracked uppercase label in the condensed display face.
+   The face contrast against the readout-face data IS the structure (no icon); the
+   quiet opacity keeps it a divider, not a shout. */
+.ticker__head {
+	font-family: var(--display);
+	font-size: var(--fs-10);
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	opacity: 0.5;
+}
 .ticker__item {
 	display: inline-flex;
 	align-items: center;

@@ -89,8 +89,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			tkDate = date;
 			setTk( 'tk-time', tkTime );
 			setTk( 'tk-date', tkDate );
-			setTk( 'tk-golden', tkGolden() );                          // countdown ticks down
-			if ( lastPostTs ) { setTk( 'tk-last', 'Last posted ' + tkAgo( lastPostTs ) ); }
+			if ( lastPostTs ) { setTk( 'tk-last', 'last posted ' + tkAgo( lastPostTs ) ); }
+			refreshLight();                                            // golden/daylight/blue tick; rebuild if the set changed
 			lastTime = time;
 		}
 	}
@@ -105,21 +105,59 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// resolved /now rebuilds once (renderTicker).
 	var tickerTrack = document.getElementById( 'tickerTrack' );
 	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
-	var TK_ID_PRE   = 'Post No. ';            // spelled out — Brandon has no № glyph
+	var TK_ID_PRE   = 'No. ';                 // spelled out — Brandon has no № glyph
 	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
 	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
+	var tkSunrise  = 0;                            // Unix sunrise (from /now) → daylight / dawn
+	var tkMoon     = '';                           // moon-phase name (from /now), shown at night
+	var tkLightSig = '';                           // signature of the LIGHT group's item set
 	var postsToday = NOP.postsToday || 0;          // server count; bumped on each post
 	var lastPostTs = NOP.lastPostTs || 0;          // Unix of the last published post
 	var queueCount = 0;                            // offline posts waiting to send
 
 	// Golden hour ≈ the last hour before sunset: counts down to it, reads "now"
-	// during, then falls back to the sunset time once it's passed.
+	// during, then falls back to the sunset time once it's passed. (Lowercase —
+	// the LIGHT heading carries the caps; the values stay quiet and poetic.)
 	function tkGolden() {
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 ), start = tkSunset - 3600;
-		if ( now < start )    { return 'Golden hour in ' + tkDur( start - now ); }
-		if ( now < tkSunset ) { return 'Golden hour now'; }
-		return 'Sunset ' + tkClock( tkSunset );
+		if ( now < start )    { return 'golden hour in ' + tkDur( start - now ); }
+		if ( now < tkSunset ) { return 'golden hour now'; }
+		return 'sunset ' + tkClock( tkSunset );
+	}
+	// Daylight remaining by day; the next sunrise by night — the LIGHT group's
+	// anchor either side of dusk.
+	function tkDaylight() {
+		if ( ! tkSunset ) { return ''; }
+		var now = Math.floor( Date.now() / 1000 );
+		if ( tkSunrise && now >= tkSunrise && now < tkSunset ) {
+			return tkDur( tkSunset - now ) + ' of light left';
+		}
+		if ( tkSunrise ) {
+			var sr = now >= tkSunset ? tkSunrise + 86400 : tkSunrise;   // past sunset → ~tomorrow's
+			return 'sunrise ' + tkClock( sr );
+		}
+		return '';
+	}
+	// Blue hour ≈ the ~25min after sunset (sun 4–8° below). Surfaces from an hour
+	// before sunset as an upcoming time, then reads "now" through the window.
+	function tkBlue() {
+		if ( ! tkSunset ) { return ''; }
+		var now = Math.floor( Date.now() / 1000 ), start = tkSunset + 10 * 60, end = tkSunset + 35 * 60;
+		if ( now < tkSunset - 3600 || now >= end ) { return ''; }
+		return now >= start ? 'blue hour now' : 'blue hour ' + tkClock( start );
+	}
+	// Pirate Weather moonPhase (0..1) → a plain phase name. Text, not a glyph:
+	// keeps the riso-icon count down and never doubles the sky item's night moon.
+	function moonLabel( p ) {
+		if ( p <= 0.02 || p > 0.98 ) { return 'new moon'; }
+		if ( p < 0.24 )  { return 'waxing crescent'; }
+		if ( p <= 0.26 ) { return 'first quarter'; }
+		if ( p < 0.49 )  { return 'waxing gibbous'; }
+		if ( p <= 0.51 ) { return 'full moon'; }
+		if ( p < 0.74 )  { return 'waning gibbous'; }
+		if ( p <= 0.76 ) { return 'last quarter'; }
+		return 'waning crescent';
 	}
 	function tkClock( ts ) {
 		var d = new Date( ts * 1000 );
@@ -134,28 +172,86 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return Math.round( d / 7 ) + 'w ago';
 	}
 	function tkCadence() { return ordinal( postsToday + 1 ) + ' today'; }
-
-	// Order reads out of the logo as: serial → session status → the moment →
-	// where you are + the sky (golden hour closing the weather run). Values only —
-	// each datum's own form (a clock, a temperature, a place) tells you what it is.
-	function tkItems() {
-		var out = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
-		if ( queueCount > 0 ) { out.push( { c: 'tk-queue', h: queueCount + ' to send' } ); }
-		out.push( { c: 'tk-cadence', h: tkCadence() } );
-		if ( lastPostTs ) { out.push( { c: 'tk-last',   h: 'Last posted ' + tkAgo( lastPostTs ) } ); }
-		if ( tkDate )     { out.push( { c: 'tk-date',   h: tkDate } ); }
-		if ( tkTime )     { out.push( { c: 'tk-time',   h: tkTime } ); }
-		if ( tkPlace )    { out.push( { c: 'tk-place',  h: tkPlace } ); }
-		if ( tkTemp )     { out.push( { c: 'tk-temp',   h: tkTemp } ); }
-		if ( tkSky )      { out.push( { c: 'tk-sky',    h: tkSky } ); }
-		if ( tkSunset )   { out.push( { c: 'tk-golden', h: tkGolden() } ); }
+	// Days to the next solstice/equinox — an occasional seasonal note, surfaced
+	// only within a fortnight so it stays special. Approximate fixed dates.
+	function tkSeason() {
+		var now = new Date(), y = now.getFullYear();
+		var marks = [ [ 2, 20, 'spring equinox' ], [ 5, 21, 'summer solstice' ], [ 8, 22, 'autumn equinox' ], [ 11, 21, 'winter solstice' ] ];
+		var today = new Date( y, now.getMonth(), now.getDate() );
+		for ( var i = 0; i < marks.length; i++ ) {
+			var days = Math.round( ( new Date( y, marks[ i ][ 0 ], marks[ i ][ 1 ] ) - today ) / 86400000 );
+			if ( days >= 0 && days <= 14 ) { return days === 0 ? marks[ i ][ 2 ] + ' today' : days + 'd to ' + marks[ i ][ 2 ]; }
+		}
+		return '';
+	}
+	// Consecutive days with a post (the daily counters bumpStreak writes). Today
+	// not-yet-posted doesn't break a run standing on yesterday; shown from 2 up.
+	function tkStreak() {
+		var n = 0, d = new Date(), first = true, v;
+		for ( var i = 0; i < 366; i++ ) {
+			try { v = localStorage.getItem( 'nop_post_count_' + d.toISOString().slice( 0, 10 ) ); } catch ( e ) { break; }
+			if ( v && parseInt( v, 10 ) > 0 ) { n++; }
+			else if ( ! first ) { break; }
+			first = false;
+			d.setDate( d.getDate() - 1 );
+		}
+		return n >= 2 ? n + '-day streak' : '';
+	}
+	// The LIGHT group adapts to the time of day: golden hour always (once /now has
+	// resolved), daylight-left by day or the next sunrise by night, blue hour around
+	// dusk, and the moon phase after dark.
+	function tkLight() {
+		if ( ! tkSunset ) { return []; }
+		var now = Math.floor( Date.now() / 1000 );
+		var out = [ { c: 'tk-golden', h: tkGolden() } ];
+		var bh  = tkBlue();
+		if ( bh ) { out.push( { c: 'tk-blue', h: bh } ); }
+		var dl = tkDaylight();
+		if ( dl ) { out.push( { c: 'tk-daylight', h: dl } ); }
+		var isNight = ! ( tkSunrise && now >= tkSunrise && now < tkSunset );
+		if ( isNight && tkMoon ) { out.push( { c: 'tk-moon', h: tkMoon } ); }
 		return out;
 	}
+	// Four labelled clusters reading out of the logo: NOW (the moment) · HERE
+	// (place + conditions) · LIGHT (the photographer's light) · LOG (the posting
+	// record). Items with no datum yet drop out; an empty group is omitted whole.
+	function tkGroups() {
+		var nowG = [];
+		if ( tkTime ) { nowG.push( { c: 'tk-time', h: tkTime } ); }
+		if ( tkDate ) { nowG.push( { c: 'tk-date', h: tkDate } ); }
+		var season = tkSeason();
+		if ( season ) { nowG.push( { c: 'tk-season', h: season } ); }
+
+		var here = [];
+		if ( tkPlace ) { here.push( { c: 'tk-place', h: tkPlace } ); }
+		if ( tkTemp )  { here.push( { c: 'tk-temp',  h: tkTemp } ); }
+		if ( tkSky )   { here.push( { c: 'tk-sky',   h: tkSky } ); }
+
+		var log = [ { c: 'tk-id', h: TK_ID_PRE + nextSerial } ];
+		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: queueCount + ' to send' } ); }
+		log.push( { c: 'tk-cadence', h: tkCadence() } );
+		if ( lastPostTs ) { log.push( { c: 'tk-last', h: 'last posted ' + tkAgo( lastPostTs ) } ); }
+		var streak = tkStreak();
+		if ( streak ) { log.push( { c: 'tk-streak', h: streak } ); }
+
+		var groups = [];
+		if ( nowG.length ) { groups.push( { label: 'NOW',  items: nowG } ); }
+		if ( here.length ) { groups.push( { label: 'HERE', items: here } ); }
+		var light = tkLight();
+		if ( light.length ) { groups.push( { label: 'LIGHT', items: light } ); }
+		groups.push( { label: 'LOG', items: log } );
+		return groups;
+	}
+	// Each group renders as: a tracked uppercase heading (the divider — no icon),
+	// then its items joined by middle-dots. The face contrast (display heading vs
+	// readout data) and the dot/space hierarchy do the structural work.
 	function tkSeqHTML() {
-		return tkItems().map( function ( it ) {
-			return '<span class="ticker__item ' + it.c + '">'
-				+ '<span class="ticker__val">' + it.h + '</span></span>'
-				+ '<span class="ticker__sep" aria-hidden="true">·</span>';
+		return tkGroups().map( function ( g ) {
+			var items = g.items.map( function ( it, i ) {
+				return ( i ? '<span class="ticker__sep" aria-hidden="true">·</span>' : '' )
+					+ '<span class="ticker__item ' + it.c + '"><span class="ticker__val">' + it.h + '</span></span>';
+			} ).join( '' );
+			return '<span class="ticker__group"><span class="ticker__head">' + g.label + '</span>' + items + '</span>';
 		} ).join( '' );
 	}
 	function renderTicker() {
@@ -164,7 +260,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		tickerTrack.innerHTML = '<span class="ticker__seq">' + seq + '</span>'
 			+ '<span class="ticker__seq">' + seq + '</span>';
 		tkSeqW = tickerTrack.firstChild.getBoundingClientRect().width;   // one loop = one sequence
+		tkLightSig = tkLight().map( function ( it ) { return it.c; } ).join();   // baseline for refreshLight
 		startTickerMotion();
+	}
+	// Per-minute LIGHT upkeep: update the live readouts in place (golden countdown,
+	// daylight, blue hour) so the crawl never restarts; but when the set of items
+	// changes (day→dusk→night) rebuild the track once so items can come and go.
+	function refreshLight() {
+		if ( tkLight().map( function ( it ) { return it.c; } ).join() !== tkLightSig ) { renderTicker(); return; }
+		setTk( 'tk-golden', tkGolden() );
+		setTk( 'tk-daylight', tkDaylight() );
+		setTk( 'tk-blue', tkBlue() );
 	}
 	// In-place text swap for a recurring item (time, id) — avoids rebuilding the
 	// track, which would restart the crawl.
@@ -296,8 +402,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var icon = WX_ICON[ d.icon ] || '';
 			tkSky = ( icon ? '<span class="ticker__icon" aria-hidden="true">' + icon + '</span>' : '' ) + ( d.summary || '' );
 		}
-		tkSunset = d.sunset ? Number( d.sunset ) : 0;   // golden hour derives from this
-		renderTicker();   // rebuild once now that place/temp/sky/sunset have resolved
+		tkSunset  = d.sunset  ? Number( d.sunset )  : 0;   // golden hour / daylight derive from this
+		tkSunrise = d.sunrise ? Number( d.sunrise ) : 0;   // daylight-left + the dawn readout
+		tkMoon    = ( d.moonphase != null && d.moonphase !== '' ) ? moonLabel( Number( d.moonphase ) ) : '';
+		renderTicker();   // rebuild once now that place/temp/sky/sun/moon have resolved
 	}
 
 	function fetchNow( lat, lon ) {

@@ -146,7 +146,10 @@ class Weather_Fetcher {
 		$day     = is_array( $body['daily']['data'][0] ?? null ) ? $body['daily']['data'][0] : [];
 		$sunrise = isset( $day['sunriseTime'] ) ? (int) $day['sunriseTime'] : null;
 		$sunset  = isset( $day['sunsetTime'] )  ? (int) $day['sunsetTime']  : null;
+		// Moon phase (0..1: 0 new, .25 first quarter, .5 full, .75 last quarter) —
+		// the /post ticker names it at night. Absent on some time-machine dates.
+		$moon    = isset( $day['moonPhase'] ) ? (float) $day['moonPhase'] : null;
 
-		return [ 'temp_c' => $temp_c, 'icon' => $icon, 'summary' => $summary, 'sunrise' => $sunrise, 'sunset' => $sunset ];
+		return [ 'temp_c' => $temp_c, 'icon' => $icon, 'summary' => $summary, 'sunrise' => $sunrise, 'sunset' => $sunset, 'moonphase' => $moon ];
 	}
 }
