@@ -392,6 +392,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<!-- Scroll region: type selector + fields scroll as one;
 			     masthead and Post button stay pinned. -->
 			<div class="compose-scroll">
+			<div class="scroll-fade scroll-fade-top" aria-hidden="true"></div>
 
 			<div class="type-grid-wrap">
 				<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
@@ -431,6 +432,8 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<svg class="type-btn__arc" viewBox="0 0 72 72" aria-hidden="true"><path id="arc-rsvp-t" fill="none" d="M14,36 A22,22 0 0 1 58,36"/><path id="arc-rsvp-b" fill="none" d="M58,36 A22,22 0 0 1 14,36"/><circle class="type-btn__seal" cx="14" cy="36" r="1.5"/><circle class="type-btn__seal" cx="58" cy="36" r="1.5"/><text text-anchor="middle"><textPath href="#arc-rsvp-t" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-rsvp-b" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text></svg>
 				</button>
 				</div><!-- .type-grid -->
+				<div class="type-fade type-fade-left" aria-hidden="true"></div>
+				<div class="type-fade type-fade-right" aria-hidden="true"></div>
 			</div><!-- .type-grid-wrap -->
 
 			<div class="compose-fields">
@@ -509,6 +512,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				</details>
 
 				</div><!-- .compose-fields -->
+				<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>
 			</div><!-- .compose-scroll -->
 
 			<div class="bottom-bar">
@@ -561,15 +565,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 		</div>
 
 	</div><!-- .view-container -->
-
-	<!-- Halftone shadow overlays — position:fixed siblings, NOT children of the
-	     scrollable regions. Painted at viewport-relative coordinates set in JS
-	     so the dot grid stays phase-locked with the page grain without relying
-	     on background-attachment:fixed (which clipped during iOS overscroll). -->
-	<div class="scroll-fade scroll-fade-top"    aria-hidden="true"></div>
-	<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>
-	<div class="type-fade   type-fade-left"     aria-hidden="true"></div>
-	<div class="type-fade   type-fade-right"    aria-hidden="true"></div>
 
 	<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
