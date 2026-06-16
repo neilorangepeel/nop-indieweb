@@ -520,14 +520,17 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 					<div class="event-row event-row--when">
 						<span class="event-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
-						<!-- autocomplete="off" + explicit empty value defeat Chrome's
-						     heuristic autofill on labelled date/time inputs — without
-						     this, Chrome desktop pre-fills today's date and the current
-						     time on a fresh load (visible even in incognito), which
-						     looks like the field already has a value the author chose. -->
+						<!-- Plain text + inputmode="numeric" rather than <input type="date">
+						     / type="time": Safari (desktop + iOS) renders today's date and
+						     the current time as the apparent value of an empty native
+						     date/time input regardless of autocomplete="off", value="",
+						     and JS .value = '' — the form ends up looking like the author
+						     already chose a date they didn't. Pattern + placeholder give
+						     us the same data shape (YYYY-MM-DD / HH:MM) the parser emits,
+						     so joinEventDt/splitEventDt round-trip unchanged. -->
 						<div class="event-row__pair">
-							<input type="date" id="eventStartDate" class="text-field text-field--date" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
-							<input type="time" id="eventStartTime" class="text-field text-field--time" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
+							<input type="text" id="eventStartDate" class="text-field text-field--date" value="" autocomplete="off" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}" placeholder="<?php esc_attr_e( 'YYYY-MM-DD', 'nop-indieweb' ); ?>" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
+							<input type="text" id="eventStartTime" class="text-field text-field--time" value="" autocomplete="off" inputmode="numeric" pattern="\d{2}:\d{2}" placeholder="<?php esc_attr_e( 'HH:MM', 'nop-indieweb' ); ?>" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
 						</div>
 					</div>
 				</div>

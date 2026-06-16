@@ -458,24 +458,32 @@
 				__nextHasNoMarginBottom: true,
 			} ),
 
-			// autoComplete="off" defeats Chrome's heuristic autofill on labelled
-			// date/time inputs — without it, Chrome pre-fills today's date and
-			// the current time on a fresh load, which reads as the field having a
-			// real value the author chose.
+			// Plain text inputs (with format placeholders) rather than the native
+			// date/time pickers: Safari (desktop + iOS) renders today's date and
+			// the current time as the apparent value of an empty <input type="date">
+			// / type="time" regardless of autocomplete="off" + JS clears, which
+			// reads as the field already having a value. Same ISO data shape, so
+			// joinEventDt/splitEventDt round-trip unchanged.
 			el( 'div', { className: 'nop-rsvp-when' },
 				el( TextControl, {
 					label:                   __( 'When (date)', 'nop-indieweb' ),
-					type:                    'date',
+					type:                    'text',
 					value:                   startDate,
+					placeholder:             'YYYY-MM-DD',
 					autoComplete:            'off',
+					inputMode:               'numeric',
+					pattern:                 '\\d{4}-\\d{2}-\\d{2}',
 					onChange:                function ( v ) { setStart( v, startTime ); },
 					__nextHasNoMarginBottom: true,
 				} ),
 				el( TextControl, {
 					label:                   __( 'When (time)', 'nop-indieweb' ),
-					type:                    'time',
+					type:                    'text',
 					value:                   startTime,
+					placeholder:             'HH:MM',
 					autoComplete:            'off',
+					inputMode:               'numeric',
+					pattern:                 '\\d{2}:\\d{2}',
 					onChange:                function ( v ) { setStart( startDate, v ); },
 					__nextHasNoMarginBottom: true,
 				} )
