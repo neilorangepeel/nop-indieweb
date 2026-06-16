@@ -551,10 +551,24 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		);
 	}
 
+	// "Useful" = the payload has at least one of the three HERE fields populated.
+	// An all-empty response (Pirate Weather quota, Geoapify timeout, etc.) used to
+	// poison the cache for the full 30-min TTL — the early-return would pin no-data
+	// and never re-fetch, leaving no console breadcrumb. Treat empty as no-cache.
+	function isUsefulNow( d ) {
+		return !! ( d && ( d.place || d.temp_c != null || d.summary ) );
+	}
 	function loadNow() {
 		var cached = readJSON( NOW_KEY );
-		if ( cached && cached.data ) { renderNow( cached.data ); }        // paint instantly
-		if ( cached && ( Date.now() - cached.ts ) < NOW_TTL ) { return; }  // still fresh
+		var geo    = readJSON( GEO_KEY );
+		var useful = cached && isUsefulNow( cached.data );
+		console.info( '[nop /now] startup', {
+			nowAgeMin: cached ? Math.round( ( Date.now() - cached.ts ) / 60000 ) : 'no-cache',
+			nowUseful: useful,
+			geoAgeMin: geo ? Math.round( ( Date.now() - geo.ts ) / 60000 ) : 'no-cache',
+		} );
+		if ( useful ) { renderNow( cached.data ); }                                          // paint instantly
+		if ( useful && ( Date.now() - cached.ts ) < NOW_TTL ) { return; }                    // still fresh
 		withCoords( fetchNow );
 	}
 	loadNow();
