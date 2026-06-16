@@ -640,21 +640,17 @@ body::before {
    + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
    screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
    how far there is to scroll that way (updateTypeFades). */
-/* Pinned to the top of the scroll region (right under the masthead) so the kind
-   strip never moves on vertical scroll. That's what keeps its halftone shadow
-   (the type-fades below) grid-registered: a non-moving box needs only the one-time
-   alignHalftone lock — the same mechanism that makes the sticky scroll-fades solid.
-   An in-flow strip rode the scroll and its shadow desynced from the universal grid
-   on iOS momentum scroll. z-index:4 sits above the scrolling fields (they slide
-   UNDER it) and above the top seam-shadow (z-index:3), whose dark head tucks behind
-   the strip while its tail falls on the fields — the strip casting depth onto them.
-   Because the fields now pass behind the transparent badges, the wrap carries the
-   same grain-locked paper as .app (JS phase-locks its background-position to the
-   one viewport grid) so it reads as a continuous printed shelf, not an opaque cover. */
+/* The kind strip scrolls away with the fields (it is NOT pinned). Its halftone
+   shadow (the type-fades below) used to swim on iOS scroll: the fades were locked
+   to the fixed viewport grid but their box rode the scroll, so on momentum scroll
+   the stale lock left the shadow dots sliding against the page grain that showed
+   through the transparent strip. Fix: give the wrap its OWN opaque grain paper,
+   grid-locked at rest by alignHalftone. Now the shadow and the paper directly
+   behind it are one rigid unit — they scroll together, so the shadow never swims
+   relative to its paper. (.app's grain behind is simply hidden; at rest the wrap
+   grain matches it exactly, so there's no visible seam.) */
 .type-grid-wrap {
-	position: sticky;
-	top: 0;
-	z-index: 4;
+	position: relative;
 	flex-shrink: 0;
 	background-color: var(--field);
 	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));

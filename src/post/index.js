@@ -759,9 +759,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var sr = composeScroll.getBoundingClientRect();
 		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
 		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - fadeBottom.offsetHeight, pitch ); }
-		// The pinned kind strip carries the page grain too (the fields scroll behind
-		// its transparent badges); lock its dots to the same grid. It's sticky at the
-		// scroller top, so this one lock holds for every scroll — no per-frame work.
+		// The kind strip carries its own opaque grain paper so its halftone shadow
+		// (the type-fades) rides the strip as one rigid unit instead of swimming over
+		// the page grain on scroll. Lock that paper — and the fades — to the grid at
+		// rest; the strip + shadow then scroll together, registered to each other.
 		lockEl( typeGridWrap, pitch );
 		lockEl( typeFadeLeft, pitch );
 		lockEl( typeFadeRight, pitch );
