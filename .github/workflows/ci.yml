@@ -53,10 +53,9 @@ jobs:
   phpstan:
     name: PHPStan
     runs-on: ubuntu-latest
-    # Non-blocking until a baseline is committed. Seed it once with
-    # `composer install && composer phpstan:baseline`, commit the result,
-    # then drop this line to make type errors fail the build.
-    continue-on-error: true
+    # Blocking: pre-existing findings are absorbed by phpstan-baseline.neon, so
+    # this fails only on NEW type errors. Regenerate the baseline after fixing
+    # entries via the phpstan-baseline workflow (or `composer phpstan:baseline`).
     steps:
       - uses: actions/checkout@v4
       - name: Set up PHP

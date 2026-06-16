@@ -1,9 +1,371 @@
-# PHPStan baseline — pre-existing findings to fix over time, so new code is held
-# to a clean bar. Regenerate after a PHP toolchain is available with:
-#
-#   composer install
-#   composer phpstan:baseline
-#
-# Empty for now: the first `composer phpstan` run (locally or in CI) populates it.
+# PHPStan baseline — pre-existing findings, captured so new code is held to a
+# clean bar (the CI job fails on any NEW error). Fix entries over time and
+# regenerate with `composer phpstan:baseline` (or run the phpstan-baseline
+# workflow and commit the artifact). Do not hand-edit.
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Variable \$block might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: blocks/comment-form/render.php
+
+		-
+			message: '#^Variable \$block might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: blocks/replies/render.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/admin/class-settings-api.php
+
+		-
+			message: '#^Constant NOP\\IndieWeb\\Admin\\Settings_API\:\:SECRET_PATHS is unused\.$#'
+			identifier: classConstant.unused
+			count: 1
+			path: includes/admin/class-settings-api.php
+
+		-
+			message: '#^Action callback returns array but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: includes/class-health-check.php
+
+		-
+			message: '#^Instanceof between NOP\\IndieWeb\\Services\\Service_Base and NOP\\IndieWeb\\Services\\Service_Base will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/class-plugin.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-checkin-maps.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-checkin-maps.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-types.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-types.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-weather.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-weather.php
+
+		-
+			message: '#^Parameter \#2 \$field of function get_post_timestamp expects ''date''\|''modified'', ''date_gmt'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/cli/class-backfill-exercise-weather.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-venue-categories.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-venue-categories.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-venue-details.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-venue-details.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-weather.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-weather.php
+
+		-
+			message: '#^Parameter \#2 \$field of function get_post_timestamp expects ''date''\|''modified'', ''date_gmt'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/cli/class-backfill-weather.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/cli/class-fix-facebook-venues.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/cli/class-fix-facebook-venues.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-fix-swarm-timestamps.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-fix-swarm-timestamps.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/cli/class-import-facebook-checkins.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/cli/class-import-facebook-checkins.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with int\<1, max\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/cli/class-import-strava.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-import-swarm-checkins.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-import-swarm-checkins.php
+
+		-
+			message: '#^Variable \$items might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: includes/cli/class-import-swarm-checkins.php
+
+		-
+			message: '#^Variable \$page_num might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: includes/cli/class-import-swarm-checkins.php
+
+		-
+			message: '#^Variable \$page_start might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: includes/cli/class-import-swarm-checkins.php
+
+		-
+			message: '#^Parameter \#2 \$field of function get_post_timestamp expects ''date''\|''modified'', ''date_gmt'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/exercise/route.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/micropub/class-auth.php
+
+		-
+			message: '#^Offset ''user_id'' on array\{id\: int, token_hash\: string, client_id\: string, client_name\: string, scope\: string, user_id\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/micropub/class-endpoint.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with int\<0, max\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/micropub/class-media-endpoint.php
+
+		-
+			message: '#^Offset ''user_id'' on array\{id\: int, token_hash\: string, client_id\: string, client_name\: string, scope\: string, user_id\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/micropub/class-media-endpoint.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: includes/micropub/class-request.php
+
+		-
+			message: '#^Function Mf2\\parse not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: includes/rsvp/class-event-parser.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: includes/semantic/class-mf2-endpoint.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/services/class-service-base.php
+
+		-
+			message: '#^Parameter \#2 \$field of function get_post_timestamp expects ''date''\|''modified'', ''date_gmt'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/services/class-service-exercise.php
+
+		-
+			message: '#^Parameter \#2 \$field of function get_post_timestamp expects ''date''\|''modified'', ''date_gmt'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/services/class-service-swarm.php
+
+		-
+			message: '#^Property WP_Post\:\:\$post_title \(string\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: includes/syndication/class-syndicator-base.php
+
+		-
+			message: '#^Offset 1 on array\{string, int, int, bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: includes/syndication/class-syndicator-bluesky.php
+
+		-
+			message: '#^Offset 2 on array\{string, int, int, bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: includes/syndication/class-syndicator-bluesky.php
+
+		-
+			message: '#^Offset 1 on array\{string, int, int, bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/utils/block-content.php
+
+		-
+			message: '#^Offset 2 on array\{string, int, int, bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/utils/block-content.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/utils/functions.php
+
+		-
+			message: '#^Parameter \#1 \$comment_id of function get_comment_meta expects int, string given\.$#'
+			identifier: argument.type
+			count: 6
+			path: includes/webmention-render.php
+
+		-
+			message: '#^Filter callback return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: includes/webmention/class-comment-filter.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with int\<min, \-1\>\|int\<1, max\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/webmention/class-like-endpoint.php
+
+		-
+			message: '#^Method NOP\\IndieWeb\\Webmention\\MF2_Parser\:\:find_root\(\) should return DOMElement\|null but returns DOMNameSpaceNode\|DOMNode\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/webmention/class-mf2-parser.php
+
+		-
+			message: '#^Parameter \#3 \$context of method NOP\\IndieWeb\\Webmention\\MF2_Parser\:\:attr\(\) expects DOMElement, DOMNameSpaceNode\|DOMNode given\.$#'
+			identifier: argument.type
+			count: 2
+			path: includes/webmention/class-mf2-parser.php
+
+		-
+			message: '#^Parameter \#3 \$context of method NOP\\IndieWeb\\Webmention\\MF2_Parser\:\:text\(\) expects DOMElement, DOMNameSpaceNode\|DOMNode given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/webmention/class-mf2-parser.php
+
+		-
+			message: '#^Offset ''author_handle'' on array\{platform\: string, type\: string, platform_id\: string, source\: string, author\: string, author_url\: string, content\: string, date\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/webmention/class-social-backfeed.php
+
+		-
+			message: '#^Offset ''author_photo'' on array\{platform\: string, type\: string, platform_id\: string, source\: string, author\: string, author_url\: string, content\: string, date\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/webmention/class-social-backfeed.php
+
+		-
+			message: '#^Call to an undefined method DOMNameSpaceNode\|DOMNode\:\:getAttribute\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/webmention/class-webmention-endpoint.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with int\<min, \-1\>\|int\<1, max\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/webmention/class-webmention-endpoint.php
+
+		-
+			message: '#^Ternary operator condition is always false\.$#'
+			identifier: ternary.alwaysFalse
+			count: 1
+			path: includes/webmention/class-webmention-endpoint.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/webmention/class-webmention-sender.php

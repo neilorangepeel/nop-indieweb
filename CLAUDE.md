@@ -56,14 +56,16 @@ composer phpstan:baseline   # seed phpstan-baseline.neon from current findings
 Notes:
 - **No local PHP in Studio.** Studio runs WordPress through WASM, so there's no
   CLI `php`/`composer` here — these run in GitHub Actions (`.github/workflows/ci.yml`:
-  lint + PHPUnit blocking, PHPStan non-blocking until a baseline is committed).
-  To smoke-test PHP changes locally, use `studio wp eval` / `studio wp eval-file`
-  (a fatal/parse error breaks `studio wp eval 'echo "ok";'`).
+  lint, PHPUnit, and PHPStan are all **blocking**). To smoke-test PHP changes
+  locally, use `studio wp eval` / `studio wp eval-file` (a fatal/parse error breaks
+  `studio wp eval 'echo "ok";'`).
+- **PHPStan is baselined.** `phpstan-baseline.neon` absorbs pre-existing findings,
+  so CI fails only on NEW type errors. After fixing baseline entries, regenerate it
+  by running the `phpstan-baseline` workflow (Actions tab → Run workflow) and
+  committing the uploaded artifact, or `composer phpstan:baseline` where PHP exists.
 - **Unit tests are WP-free.** `tests/php/bootstrap.php` stubs the handful of WP
   functions the code under test calls; only side-effect-free classes (parsers,
   formatters) belong in this suite. Anything needing the DB/network is out of scope.
-- To make PHPStan blocking: run `composer phpstan:baseline`, commit the populated
-  `phpstan-baseline.neon`, and remove `continue-on-error` from the phpstan CI job.
 
 ## Server-side files not in git
 

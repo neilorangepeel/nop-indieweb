@@ -153,22 +153,22 @@ class Link_Discovery {
 		$urls = [];
 
 		// Custom profile URLs from Settings → General → Identity.
-		$custom = nop_indieweb_get_option( 'me_urls', '' );
+		$custom = \NOP\IndieWeb\nop_indieweb_get_option( 'me_urls', '' );
 		foreach ( array_filter( array_map( 'trim', explode( "\n", $custom ) ) ) as $url ) {
 			$urls[] = esc_url_raw( $url );
 		}
 
-		$mastodon_url = (string) nop_indieweb_get_option( 'syndicators.mastodon.profile_url', '' );
+		$mastodon_url = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.mastodon.profile_url', '' );
 		if ( $mastodon_url ) {
 			$urls[] = $mastodon_url;
 		}
 
-		$bluesky_handle = (string) nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
+		$bluesky_handle = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
 		if ( $bluesky_handle ) {
 			$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
 		}
 
-		$pixelfed_url = (string) nop_indieweb_get_option( 'syndicators.pixelfed.profile_url', '' );
+		$pixelfed_url = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.pixelfed.profile_url', '' );
 		if ( $pixelfed_url ) {
 			$urls[] = $pixelfed_url;
 		}
