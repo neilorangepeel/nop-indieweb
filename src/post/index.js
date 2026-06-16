@@ -723,16 +723,26 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	// Vertical clip of the kind-strip edge-shadows. The box is anchored at the strip's
 	// resting top and runs --strip-extra px past it; --vclip hides that tail from the
-	// bottom. One formula spans both directions: hidden = extra + scrollTop, clamped.
-	// At rest (0) it clips the whole tail → only the strip band shows; scrolling DOWN
-	// adds to it (the strip leaves under the masthead); an overscroll pull-down makes
-	// scrollTop negative → clips LESS → the tail's tiled dots fill the opening gap.
-	// Always-on (not gated by scroll-timeline support): overscroll is outside any
-	// timeline's range, and writing a clip — never background-position — can't swim.
+	// bottom. hidden = extra + scrollTop (clamped): at rest it clips the whole tail (only
+	// the strip band shows); scrolling DOWN adds to it (the strip leaves under the
+	// masthead); an overscroll pull-down makes scrollTop negative → clips LESS → the
+	// tail's tiled dots fill the opening gap.
+	// Where there's a scroll-timeline, the DOWNWARD half is native (lag-proof, so the
+	// tail can't flash over the docket), and JS owns ONLY the overscroll half (st<0,
+	// before the timeline's range) — there it reveals into an empty gap, where lag is
+	// unseen. At st>=0 the timeline owns --vclip, so we clear the inline value. Without
+	// a timeline (Firefox), JS drives both directions. Clip writes never touch
+	// background-position, so none of this can swim.
 	var stripExtra = 600, stripH = 0;
 	function updateTypeClip() {
 		if ( ! composeScroll || ( ! typeShadowLeft && ! typeShadowRight ) ) { return; }
-		var hidden = Math.max( 0, Math.min( stripExtra + composeScroll.scrollTop, stripH + stripExtra ) );
+		var st = composeScroll.scrollTop;
+		if ( hasScrollTimeline && st >= 0 ) {
+			if ( typeShadowLeft )  { typeShadowLeft.style.removeProperty(  '--vclip' ); }
+			if ( typeShadowRight ) { typeShadowRight.style.removeProperty( '--vclip' ); }
+			return;
+		}
+		var hidden = Math.max( 0, Math.min( stripExtra + st, stripH + stripExtra ) );
 		var v = hidden.toFixed( 2 ) + 'px';
 		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--vclip', v ); }
 		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--vclip', v ); }
