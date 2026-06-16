@@ -520,18 +520,17 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 					<div class="event-row event-row--when">
 						<span class="event-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
-						<!-- Native <input type="date"> / type="time" for the picker UI, each
-						     wrapped in a .dt-input that overlays a YYYY-MM-DD / HH:MM
-						     placeholder via ::before and masks Safari's "today's date"
-						     empty-state render. JS toggles [data-empty] on the wrapper as
-						     the input's value changes (see syncDtEmpty in /post). -->
+						<!-- Plain native <input type="date"> and <input type="time">.
+						     Empty-state rendering is browser-dependent (Chrome shows the
+						     dd/mm/yyyy pattern, Safari shows today's date as a hint) —
+						     that's a platform inconsistency the HTML spec leaves to UA
+						     discretion, not something we override. input.value is "" when
+						     the user hasn't picked, which is what every consumer (form
+						     validation, draft persistence, Micropub payload, the Clear
+						     button visibility check) reads. -->
 						<div class="event-row__pair">
-							<span class="dt-input" data-placeholder="YYYY-MM-DD" data-empty>
-								<input type="date" id="eventStartDate" class="text-field text-field--date" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
-							</span>
-							<span class="dt-input" data-placeholder="HH:MM" data-empty>
-								<input type="time" id="eventStartTime" class="text-field text-field--time" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
-							</span>
+							<input type="date" id="eventStartDate" class="text-field text-field--date" autocomplete="off" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
+							<input type="time" id="eventStartTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
 						</div>
 					</div>
 				</div>

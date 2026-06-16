@@ -840,46 +840,6 @@ body::before {
 .event-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
 .event-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
 
-/* Native date/time picker with a YYYY-MM-DD / HH:MM placeholder overlay.
-   The browsers don't expose placeholder text on date/time inputs (Chrome
-   shows "dd/mm/yyyy" format hint, Safari shows today's date), so we
-   layer our own — and mask the native empty-state text by making the
-   datetime-edit pseudo transparent while [data-empty]. JS toggles
-   [data-empty] on the wrapper as the input's value changes. */
-.dt-input {
-	position: relative;
-	display: block;
-	flex: 1 1 0;
-	min-width: 0;
-}
-.dt-input:nth-of-type(1) { flex: 2 1 0; }
-.dt-input input { width: 100%; }
-.dt-input::before {
-	content: attr(data-placeholder);
-	position: absolute;
-	left: var(--sp-3);
-	top: 50%;
-	transform: translateY(-50%);
-	color: var(--text);
-	opacity: 0.4;
-	pointer-events: none;
-	font-family: inherit;
-	font-size: var(--fs-16);
-	font-weight: 500;
-	letter-spacing: 0.01em;
-}
-/* Overlay is only visible when the wrapper is marked empty AND the input
-   isn't focused — once the user focuses, the native picker fields take
-   over. */
-.dt-input:not([data-empty])::before,
-.dt-input:focus-within::before { opacity: 0; }
-
-/* Mask the native empty-state text (Chrome's "dd/mm/yyyy" pattern, Safari's
-   pre-rendered today's date) so it doesn't compete with our placeholder.
-   Restored on focus so the user sees what they're typing into. */
-.dt-input[data-empty] input::-webkit-datetime-edit { color: transparent; }
-.dt-input[data-empty] input:focus::-webkit-datetime-edit { color: var(--text); }
-
 /* ── Docket / index card ─────────────────────────────────────────────────────
    Each kind composes as a filing docket on the ruled paper: a printed header
    (kind · serial · date), a printed-fields region (the catalog slips), and the

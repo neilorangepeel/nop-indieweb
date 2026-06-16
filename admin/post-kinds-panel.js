@@ -458,32 +458,25 @@
 				__nextHasNoMarginBottom: true,
 			} ),
 
-			// Plain text inputs (with format placeholders) rather than the native
-			// date/time pickers: Safari (desktop + iOS) renders today's date and
-			// the current time as the apparent value of an empty <input type="date">
-			// / type="time" regardless of autocomplete="off" + JS clears, which
-			// reads as the field already having a value. Same ISO data shape, so
-			// joinEventDt/splitEventDt round-trip unchanged.
+			// Native date/time pickers. The empty-state rendering is per-browser
+			// (Chrome shows the dd/mm/yyyy pattern, Safari shows today's date as
+			// a hint) — that's a platform inconsistency the HTML spec leaves to
+			// UA discretion. The value-side state (which is what every consumer
+			// reads) is empty until the editor actually picks.
 			el( 'div', { className: 'nop-rsvp-when' },
 				el( TextControl, {
 					label:                   __( 'When (date)', 'nop-indieweb' ),
-					type:                    'text',
+					type:                    'date',
 					value:                   startDate,
-					placeholder:             'YYYY-MM-DD',
 					autoComplete:            'off',
-					inputMode:               'numeric',
-					pattern:                 '\\d{4}-\\d{2}-\\d{2}',
 					onChange:                function ( v ) { setStart( v, startTime ); },
 					__nextHasNoMarginBottom: true,
 				} ),
 				el( TextControl, {
 					label:                   __( 'When (time)', 'nop-indieweb' ),
-					type:                    'text',
+					type:                    'time',
 					value:                   startTime,
-					placeholder:             'HH:MM',
 					autoComplete:            'off',
-					inputMode:               'numeric',
-					pattern:                 '\\d{2}:\\d{2}',
 					onChange:                function ( v ) { setStart( startDate, v ); },
 					__nextHasNoMarginBottom: true,
 				} )
