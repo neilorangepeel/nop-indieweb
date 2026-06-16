@@ -669,15 +669,12 @@ body::before {
 	   viewport grid. #view-compose doesn't scroll, so that lock is permanent. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
-	/* --vclip (a length) hides the box from the bottom: at rest it clips off the
+	/* --vclip (px, JS-driven) hides the box from the bottom: at rest it clips off the
 	   --strip-extra tail so only the strip band shows; scrolling the body DOWN clips
 	   further (the strip leaves under the masthead); an overscroll pull-down clips LESS,
-	   revealing the tail down into the opening gap. The DOWNWARD direction is driven by
-	   a scroll-timeline (compositor, lag-proof) so the tail can't flash over the docket;
-	   the overscroll direction is JS (it reveals into an empty gap, where lag is unseen).
-	   Default = the rest value, in case neither has run yet. */
-	--vclip: var(--strip-extra, 600px);
-	clip-path: inset(0 0 var(--vclip) 0);
+	   revealing the tail down into the opening gap. JS, not a scroll-timeline, because
+	   overscroll falls outside any timeline's range — and a lagging clip can't swim. */
+	clip-path: inset(0 0 var(--vclip, var(--strip-extra, 600px)) 0);
 	--reveal: 0;
 }
 .type-shadow-left {
@@ -711,30 +708,15 @@ body::before {
 		transparent                                    calc(var(--reveal) * 100%));
 }
 
-/* Register --vclip as a <length> so the downward-clip scroll-timeline can interpolate
-   it (un-registered custom props animate discretely). The .type-shadow rule sets the
-   working default, so this initial value only matters before any rule/animation runs. */
-@property --vclip {
-	syntax: '<length>';
-	inherits: false;
-	initial-value: 0px;
-}
-
-/* Scroll-driven --reveal / --vclip — Chrome 115+, Safari 26+ (Firefox pending).
-   --reveal (horizontal) ramps off the #typeBar strip (--type-strip). The DOWNWARD
-   clip ramps --vclip off the compose body's vertical scroll (--compose-y), ON THE
-   COMPOSITOR, so it can't lag and flash the tail over the docket as the strip tucks
-   under the masthead. fill:forwards means the timeline does NOT apply before its
-   range — so an overscroll pull-down (negative scroll, before the range) is left to
-   the JS handler, which reveals the tail into the empty gap (nothing to flash over
-   there). Both named timelines are scoped on #view-compose. The JS path is the
-   @supports-not fallback for --reveal, and drives --vclip in both directions. */
+/* Scroll-driven --reveal — Chrome 115+, Safari 26+ (Firefox pending). Drops the
+   per-scroll JS for the horizontal reveal. The vertical scroll-fades anchor to
+   .compose-scroll; the kind-strip edge-shadows ramp --reveal off the #typeBar strip
+   (named --type-strip, exposed to the .type-shadow layer via timeline-scope on their
+   common ancestor #view-compose). The JS path stays as the @supports-not fallback.
+   (--vclip is JS-driven for everyone — see the .type-shadow note — because overscroll
+   falls outside a scroll-timeline's range.) */
 @keyframes nop-reveal-in  { from { --reveal: 0; } to { --reveal: 1; } }
 @keyframes nop-reveal-out { from { --reveal: 1; } to { --reveal: 0; } }
-@keyframes nop-vclip-down {
-	from { --vclip: var(--strip-extra); }
-	to   { --vclip: calc(var(--strip-extra) + var(--strip-h)); }
-}
 @supports (animation-timeline: scroll()) {
 	/* Vertical fades — nearest scrollable ancestor is .compose-scroll. */
 	.scroll-fade-top {
@@ -749,20 +731,19 @@ body::before {
 		animation-timeline: scroll(nearest block);
 		animation-range: calc(100% - 240px) 100%;
 	}
-	/* The strip and the scroller are descendants of #view-compose; the edge-shadows
-	   are direct children — so both named timelines are scoped there. */
-	#view-compose   { timeline-scope: --type-strip, --compose-y; }
-	.type-grid      { scroll-timeline: --type-strip x; }
-	.compose-scroll { scroll-timeline: --compose-y y; }
+	/* The strip is a descendant of #view-compose; the edge-shadows are direct
+	   children — so the named horizontal timeline is scoped there for both. */
+	#view-compose { timeline-scope: --type-strip; }
+	.type-grid    { scroll-timeline: --type-strip x; }
 	.type-shadow-left {
-		animation: nop-reveal-in linear forwards, nop-vclip-down linear forwards;
-		animation-timeline: --type-strip, --compose-y;
-		animation-range: 0 240px, 0 110px;
+		animation: nop-reveal-in linear forwards;
+		animation-timeline: --type-strip;
+		animation-range: 0 240px;
 	}
 	.type-shadow-right {
-		animation: nop-reveal-out linear both, nop-vclip-down linear forwards;
-		animation-timeline: --type-strip, --compose-y;
-		animation-range: calc(100% - 240px) 100%, 0 110px;
+		animation: nop-reveal-out linear both;
+		animation-timeline: --type-strip;
+		animation-range: calc(100% - 240px) 100%;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
