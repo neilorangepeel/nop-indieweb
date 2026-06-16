@@ -13,3 +13,10 @@
 # Node
 node_modules/
 build/**/*.map
+
+# PHP / Composer — dev-only tooling. The production server deploys via `git pull`
+# with no composer step, so vendor/ must never be required at runtime.
+/vendor/
+.phpunit.cache/
+.phpunit.result.cache
+.phpstan.cache/

@@ -1,0 +1,71 @@
+name: CI
+
+# Quality gate for the PHP side of the plugin. Runs on every push and PR.
+# Deployment is handled separately by deploy.yml (push to main only); this
+# workflow never deploys — it only lints, type-checks, and tests.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: PHP syntax lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.0', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      # Catches parse/syntax errors across the whole plugin (vendor excluded).
+      - name: php -l every source file
+        run: |
+          find . -type f -name '*.php' \
+            -not -path './vendor/*' -not -path './node_modules/*' \
+            -print0 | xargs -0 -n1 -P4 php -l
+
+  test:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.0', '8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Run unit tests
+        run: composer test
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    # Non-blocking until a baseline is committed. Seed it once with
+    # `composer install && composer phpstan:baseline`, commit the result,
+    # then drop this line to make type errors fail the build.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Static analysis
+        run: composer phpstan

@@ -1,0 +1,14 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+	- phpstan-baseline.neon
+
+parameters:
+	level: 5
+	paths:
+		- nop-indieweb.php
+		- includes
+		- blocks
+	bootstrapFiles:
+		- tests/php/phpstan-bootstrap.php
+	# WordPress symbols come from szepeviktor/phpstan-wordpress (php-stubs/wordpress-stubs).
+	# The /post and /settings React apps are JS — analysed by `npm run lint:js`, not here.

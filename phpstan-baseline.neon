@@ -1,0 +1,9 @@
+# PHPStan baseline — pre-existing findings to fix over time, so new code is held
+# to a clean bar. Regenerate after a PHP toolchain is available with:
+#
+#   composer install
+#   composer phpstan:baseline
+#
+# Empty for now: the first `composer phpstan` run (locally or in CI) populates it.
+parameters:
+	ignoreErrors: []

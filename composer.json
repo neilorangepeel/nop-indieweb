@@ -1,0 +1,24 @@
+{
+	"name": "neilorangepeel/nop-indieweb",
+	"description": "POSSE/IndieWeb integration for WordPress — Micropub endpoint, IndieAuth server, post meta, and syndication.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=8.0"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.6",
+		"phpstan/phpstan": "^2.0",
+		"szepeviktor/phpstan-wordpress": "^2.0"
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit=512M",
+		"phpstan:baseline": "phpstan analyse --memory-limit=512M --generate-baseline=phpstan-baseline.neon",
+		"test": "phpunit"
+	},
+	"config": {
+		"allow-plugins": {
+			"phpstan/extension-installer": true
+		}
+	}
+}

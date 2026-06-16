@@ -39,6 +39,32 @@ npm run build       # one-off production build
 npm start           # watch mode during development
 ```
 
+## PHP quality tooling (dev-only)
+
+`composer.json` declares **dev-only** dependencies — PHPUnit, PHPStan, and
+`szepeviktor/phpstan-wordpress` (WordPress stubs). `vendor/` is gitignored and is
+**never** present on the production server; deployment is `git pull` with no
+composer step, so nothing here can reach runtime.
+
+```bash
+composer install            # once, to pull the dev toolchain
+composer test               # PHPUnit — pure-logic unit tests in tests/php/
+composer phpstan            # static analysis (level 5, WP stubs)
+composer phpstan:baseline   # seed phpstan-baseline.neon from current findings
+```
+
+Notes:
+- **No local PHP in Studio.** Studio runs WordPress through WASM, so there's no
+  CLI `php`/`composer` here — these run in GitHub Actions (`.github/workflows/ci.yml`:
+  lint + PHPUnit blocking, PHPStan non-blocking until a baseline is committed).
+  To smoke-test PHP changes locally, use `studio wp eval` / `studio wp eval-file`
+  (a fatal/parse error breaks `studio wp eval 'echo "ok";'`).
+- **Unit tests are WP-free.** `tests/php/bootstrap.php` stubs the handful of WP
+  functions the code under test calls; only side-effect-free classes (parsers,
+  formatters) belong in this suite. Anything needing the DB/network is out of scope.
+- To make PHPStan blocking: run `composer phpstan:baseline`, commit the populated
+  `phpstan-baseline.neon`, and remove `continue-on-error` from the phpstan CI job.
+
 ## Server-side files not in git
 
 The following files exist on the production server but are intentionally outside this repo. Recreate them manually after a fresh server provision.
