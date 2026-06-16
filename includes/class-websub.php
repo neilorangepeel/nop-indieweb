@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * WebSub hub advertising and publisher pings.
  *
  * Advertises a configured hub via <link rel="hub"> and HTTP Link headers
- * (wired up in Plugin::output_link_tags / output_link_headers), and pings
+ * (wired up in Link_Discovery::output_link_tags / output_link_headers), and pings
  * the hub when a new post is published so subscribers get notified immediately.
  *
  * Spec: https://www.w3.org/TR/websub/

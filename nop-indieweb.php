@@ -86,6 +86,15 @@ require_once NOP_INDIEWEB_DIR . 'includes/ai-policy/class-ai-policy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-websub.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-posting-page.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-health-check.php';
+require_once NOP_INDIEWEB_DIR . 'includes/class-map-cleanup.php';
+require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-comment-filter.php';
+require_once NOP_INDIEWEB_DIR . 'includes/discovery/class-link-discovery.php';
+require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-oauth.php';
+require_once NOP_INDIEWEB_DIR . 'includes/venue/class-venue-visit-counter.php';
+require_once NOP_INDIEWEB_DIR . 'includes/rest/class-authoring-routes.php';
+require_once NOP_INDIEWEB_DIR . 'includes/registrars/class-block-registrar.php';
+require_once NOP_INDIEWEB_DIR . 'includes/registrars/class-pattern-registrar.php';
+require_once NOP_INDIEWEB_DIR . 'includes/registrars/class-template-registrar.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

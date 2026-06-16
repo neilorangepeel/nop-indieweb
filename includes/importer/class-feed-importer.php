@@ -117,7 +117,7 @@ class Feed_Importer {
 			return;
 		}
 
-		// Cache the canonical profile URL so Plugin::get_me_urls() can emit it as rel="me".
+		// Cache the canonical profile URL so Link_Discovery::get_me_urls() can emit it as rel="me".
 		if ( ! empty( $me['url'] ) ) {
 			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.profile_url", esc_url_raw( $me['url'] ) );
 		}
