@@ -566,8 +566,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function splitEventDt( dateEl, timeEl, value ) {
 		value = ( value || '' ).trim();
 		var m = value.match( /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/ );
-		if ( dateEl ) { dateEl.value = m ? m[1] : ''; }
-		if ( timeEl ) { timeEl.value = ( m && m[2] ) ? m[2] : ''; }
+		if ( dateEl ) { dateEl.value = m ? m[1] : ''; syncDtEmpty( dateEl ); }
+		if ( timeEl ) { timeEl.value = ( m && m[2] ) ? m[2] : ''; syncDtEmpty( timeEl ); }
+	}
+
+	// Toggle the parent .dt-input's [data-empty] attribute against the input's
+	// current value. CSS keys the YYYY-MM-DD / HH:MM placeholder overlay AND
+	// the masking of the native empty-state text off this attribute.
+	function syncDtEmpty( el ) {
+		if ( ! el || ! el.parentElement ) { return; }
+		var wrap = el.parentElement;
+		if ( ! wrap.classList.contains( 'dt-input' ) ) { return; }
+		if ( el.value ) {
+			wrap.removeAttribute( 'data-empty' );
+		} else {
+			wrap.setAttribute( 'data-empty', '' );
+		}
 	}
 	// The event URL the detail fetch last ran against — so an unchanged URL
 	// (re-blur, keystroke after the value settled) doesn't re-hit the endpoint.
@@ -1090,8 +1104,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// also persists a draft on settle so a refresh mid-edit doesn't lose it.
 	[ eventName, eventStartDate, eventStartTime, eventLocation ].forEach( function ( el ) {
 		if ( ! el ) { return; }
-		el.addEventListener( 'input',  function () { updatePostBtn(); saveDraftSoon(); } );
-		el.addEventListener( 'change', function () { updatePostBtn(); saveDraft(); } );
+		el.addEventListener( 'input',  function () { syncDtEmpty( el ); updatePostBtn(); saveDraftSoon(); } );
+		el.addEventListener( 'change', function () { syncDtEmpty( el ); updatePostBtn(); saveDraft(); } );
 	} );
 
 	if ( clearBtn ) {
@@ -1500,8 +1514,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
 		if ( eventName )      { eventName.value      = ''; }
-		if ( eventStartDate ) { eventStartDate.value = ''; }
-		if ( eventStartTime ) { eventStartTime.value = ''; }
+		if ( eventStartDate ) { eventStartDate.value = ''; syncDtEmpty( eventStartDate ); }
+		if ( eventStartTime ) { eventStartTime.value = ''; syncDtEmpty( eventStartTime ); }
 		if ( eventLocation )  { eventLocation.value  = ''; }
 		setEventPoster( '' );
 		fetchedEventUrl = '';
@@ -1721,11 +1735,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	setPrompt( notePlaceholder() );
 	// Safari (desktop + iOS) renders today's date and the current time as the
 	// apparent value of an empty <input type="date"> / <input type="time">,
-	// ignoring autocomplete="off" and value="". Force-clear on init so an
-	// untouched form reads as empty. loadDraft below overrides this when a
-	// real draft value is present.
-	if ( eventStartDate ) { eventStartDate.value = ''; }
-	if ( eventStartTime ) { eventStartTime.value = ''; }
+	// ignoring autocomplete="off" and value="". Force-clear on init AND mark the
+	// wrapper [data-empty] so the placeholder overlay shows + the native empty-
+	// state text is masked. loadDraft below overrides this when a real draft
+	// value is present.
+	if ( eventStartDate ) { eventStartDate.value = ''; syncDtEmpty( eventStartDate ); }
+	if ( eventStartTime ) { eventStartTime.value = ''; syncDtEmpty( eventStartTime ); }
 	var hadDraft = false;
 	try { hadDraft = !! localStorage.getItem( DRAFT_KEY ); } catch ( e ) {}
 	loadDraft();
