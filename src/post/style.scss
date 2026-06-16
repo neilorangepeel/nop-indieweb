@@ -1075,15 +1075,15 @@ body::before {
 	margin-bottom: -240px;
 	-webkit-mask-image: linear-gradient( to bottom,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
 	        mask-image: linear-gradient( to bottom,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
 }
 .scroll-fade-bottom {
@@ -1091,15 +1091,15 @@ body::before {
 	margin-top: -240px;
 	-webkit-mask-image: linear-gradient( to top,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
 	        mask-image: linear-gradient( to top,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.5))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.18))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.05))        calc(var(--reveal) * 68%),
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
+		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
 		transparent                                    calc(var(--reveal) * 100%));
 }
 
