@@ -211,6 +211,33 @@
 	line-height: 1.4;
 }
 
+/* ── RSVP panel — event fetch status ───────────────────────────────────────── */
+
+.nop-rsvp-fetch {
+	display:     flex;
+	align-items: center;
+	gap:         6px;
+	font-size:   12px;
+	margin:      0;
+	line-height: 1.4;
+}
+
+.nop-rsvp-fetch--loading {
+	color: #757575;
+}
+
+.nop-rsvp-fetch--loading .components-spinner {
+	margin: 0;
+}
+
+.nop-rsvp-fetch--found {
+	color: #007017;
+}
+
+.nop-rsvp-fetch--empty {
+	color: #757575;
+}
+
 /* "Apply layout" offer card — shown after a kind change when the editor isn't empty */
 .nop-layout-offer {
 	margin-top: 8px;

@@ -20,12 +20,14 @@
 	var useRef        = element.useRef;
 	var useSelect     = data.useSelect;
 	var useDispatch   = data.useDispatch;
-	var Panel         = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
-	var SelectControl = components.SelectControl;
-	var TextControl   = components.TextControl;
-	var Button        = components.Button;
-	var ExternalLink  = components.ExternalLink;
-	var __            = i18n.__;
+	var Panel           = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
+	var SelectControl   = components.SelectControl;
+	var TextControl     = components.TextControl;
+	var TextareaControl = components.TextareaControl;
+	var Button          = components.Button;
+	var Spinner         = components.Spinner;
+	var ExternalLink    = components.ExternalLink;
+	var __              = i18n.__;
 
 	// ── Config from PHP ─────────────────────────────────────────────────────────
 
@@ -289,6 +291,164 @@
 		);
 	}
 
+	// ── RSVP sub-panel ────────────────────────────────────────────────────────
+
+	var RSVP_RESPONSES = [
+		{ value: 'yes',        label: __( 'Yes',        'nop-indieweb' ) },
+		{ value: 'no',         label: __( 'No',         'nop-indieweb' ) },
+		{ value: 'maybe',      label: __( 'Maybe',      'nop-indieweb' ) },
+		{ value: 'interested', label: __( 'Interested', 'nop-indieweb' ) },
+	];
+
+	function RsvpSubPanel( props ) {
+		var meta       = props.meta;
+		var editPostFn = props.editPost;
+		var title      = props.title;
+
+		// 'idle' | 'loading' | 'found' | 'empty' | 'error'
+		var statusState = useState( 'idle' );
+		var status      = statusState[0], setStatus = statusState[1];
+
+		// The URL the last fetch ran against — so blur after paste doesn't re-fetch
+		// the same value, and an unchanged blur is a no-op.
+		var fetchedRef = useRef( '' );
+
+		var eventUrl  = meta['nop_indieweb_in_reply_to']        || '';
+		var rsvpValue = meta['nop_indieweb_rsvp']               || 'yes';
+		var eventName = meta['nop_indieweb_rsvp_event_name']     || '';
+		var eventStart= meta['nop_indieweb_rsvp_event_start']    || '';
+		var eventEnd  = meta['nop_indieweb_rsvp_event_end']      || '';
+		var eventLoc  = meta['nop_indieweb_rsvp_event_location'] || '';
+		var note      = meta['nop_indieweb_rsvp_note']           || '';
+
+		function setMeta( key, value ) {
+			var update = { meta: {} };
+			update.meta[ key ] = value;
+			editPostFn( update );
+		}
+
+		function fetchEvent( url ) {
+			url = ( url || '' ).trim();
+			if ( ! url || ! isValidUrl( url ) || url === fetchedRef.current ) {
+				return;
+			}
+			fetchedRef.current = url;
+			setStatus( 'loading' );
+
+			window.wp.apiFetch( {
+				path:   '/nop-indieweb/v1/fetch-event',
+				method: 'POST',
+				data:   { url: url },
+			} ).then( function ( data ) {
+				if ( ! data || ! data.source ) {
+					setStatus( 'empty' );
+					return;
+				}
+
+				// Pre-fill from the fetch, leaving anything it couldn't find untouched
+				// so the author can fill it in by hand. All fields stay editable.
+				var update = { meta: {} };
+				if ( data.name )     { update.meta['nop_indieweb_rsvp_event_name']     = data.name; }
+				if ( data.start )    { update.meta['nop_indieweb_rsvp_event_start']    = data.start; }
+				if ( data.end )      { update.meta['nop_indieweb_rsvp_event_end']      = data.end; }
+				if ( data.location ) { update.meta['nop_indieweb_rsvp_event_location'] = data.location; }
+				if ( data.note )     { update.meta['nop_indieweb_rsvp_note']           = data.note; }
+
+				// Fill an empty post title with the event name, matching the
+				// title_from_url behaviour of the other URL-response kinds.
+				if ( ! title && data.name ) {
+					update.title = data.name;
+				}
+
+				editPostFn( update );
+				setStatus( 'found' );
+			} ).catch( function () {
+				setStatus( 'error' );
+			} );
+		}
+
+		var statusEl = null;
+		if ( status === 'loading' ) {
+			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--loading' },
+				el( Spinner, {} ),
+				el( 'span', {}, __( 'Fetching event details…', 'nop-indieweb' ) )
+			);
+		} else if ( status === 'found' ) {
+			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--found' },
+				__( 'Data fetched from event page.', 'nop-indieweb' )
+			);
+		} else if ( status === 'empty' || status === 'error' ) {
+			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--empty' },
+				__( 'Couldn’t find event data — please fill in manually.', 'nop-indieweb' )
+			);
+		}
+
+		return el( 'div', { className: 'nop-panel-fields nop-rsvp-panel' },
+
+			el( TextControl, {
+				label:                   __( 'Event URL', 'nop-indieweb' ),
+				type:                    'url',
+				value:                   eventUrl,
+				placeholder:             'https://',
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_in_reply_to', v ); },
+				onBlur:                  function () { fetchEvent( eventUrl ); },
+				onPaste:                 function ( e ) {
+					var pasted = ( e.clipboardData || window.clipboardData ).getData( 'text' );
+					if ( pasted ) { setTimeout( function () { fetchEvent( pasted ); }, 0 ); }
+				},
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			statusEl,
+
+			el( SelectControl, {
+				label:                   __( 'Response', 'nop-indieweb' ),
+				value:                   rsvpValue,
+				options:                 RSVP_RESPONSES,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp', v ); },
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			el( TextControl, {
+				label:                   __( 'Event name', 'nop-indieweb' ),
+				value:                   eventName,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_name', v ); },
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			el( TextControl, {
+				label:                   __( 'Starts', 'nop-indieweb' ),
+				type:                    'datetime-local',
+				value:                   eventStart,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_start', v ); },
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			el( TextControl, {
+				label:                   __( 'Ends (optional)', 'nop-indieweb' ),
+				type:                    'datetime-local',
+				value:                   eventEnd,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_end', v ); },
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			el( TextControl, {
+				label:                   __( 'Location (optional)', 'nop-indieweb' ),
+				value:                   eventLoc,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_location', v ); },
+				__nextHasNoMarginBottom: true,
+			} ),
+
+			el( TextareaControl, {
+				label:                   __( 'Note (optional)', 'nop-indieweb' ),
+				value:                   note,
+				rows:                    3,
+				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_note', v ); },
+				__nextHasNoMarginBottom: true,
+			} )
+		);
+	}
+
 	// ── Panel component ─────────────────────────────────────────────────────────
 
 	function PostKindsPanel() {
@@ -420,6 +580,13 @@
 				key:      'venue-sub-panel',
 				meta:     meta,
 				editPost: editorDispatch.editPost,
+			} ) );
+		} else if ( subPanel === 'rsvp' ) {
+			children.push( el( RsvpSubPanel, {
+				key:      'rsvp-sub-panel',
+				meta:     meta,
+				editPost: editorDispatch.editPost,
+				title:    title,
 			} ) );
 		} else if ( subPanel && subPanel.indexOf( 'lookup:' ) === 0 ) {
 			var provider = subPanel.slice( 7 );

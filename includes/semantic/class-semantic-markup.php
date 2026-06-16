@@ -107,10 +107,16 @@ class Semantic_Markup {
 		$post_id = get_queried_object_id();
 		$kind    = get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
 
+		// RSVP carries a richer h-event in-reply-to (name/start/end/location) plus
+		// the p-rsvp value and an optional note — handled separately below.
+		if ( 'rsvp' === $kind ) {
+			$this->output_rsvp_links( $post_id );
+			return;
+		}
+
 		$url_kinds = [
 			'bookmark' => [ 'nop_indieweb_bookmark_of', 'u-bookmark-of' ],
 			'reply'    => [ 'nop_indieweb_in_reply_to', 'u-in-reply-to' ],
-			'rsvp'     => [ 'nop_indieweb_in_reply_to', 'u-in-reply-to' ],
 			'like'     => [ 'nop_indieweb_like_of',     'u-like-of'     ],
 			'repost'   => [ 'nop_indieweb_repost_of',   'u-repost-of'   ],
 			'quote'    => [ 'nop_indieweb_quote_of',    'u-quotation-of' ],
@@ -123,12 +129,57 @@ class Semantic_Markup {
 				$this->output_kind_url( $rel, (string) $url, $post_id );
 			}
 		}
+	}
 
-		if ( 'rsvp' === $kind ) {
-			$rsvp = get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
-			if ( $rsvp ) {
-				printf( "<data class=\"p-rsvp\" value=\"%s\" hidden></data>\n", esc_attr( $rsvp ) );
+	/**
+	 * Emits the hidden machine-readable microformats for an RSVP post:
+	 * the in-reply-to event as an h-cite (p-name, u-url, dt-start, dt-end,
+	 * p-location), the p-rsvp value, and an optional note as e-content/p-summary.
+	 *
+	 * Optional event fields are only emitted when present. When no structured
+	 * event detail was captured, falls back to the shared cite output so the
+	 * post still advertises u-in-reply-to.
+	 */
+	private function output_rsvp_links( int $post_id ): void {
+		$url      = (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true );
+		$name     = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_name', true );
+		$start    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true );
+		$end      = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', true );
+		$location = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+
+		$has_event = ( '' !== $name || '' !== $start || '' !== $end || '' !== $location );
+
+		if ( $url && $has_event ) {
+			echo '<div class="h-cite u-in-reply-to" hidden>';
+			if ( '' !== $name ) {
+				printf( '<a class="p-name u-url" href="%s">%s</a>', esc_url( $url ), esc_html( $name ) );
+			} else {
+				printf( '<a class="u-url" href="%s"></a>', esc_url( $url ) );
 			}
+			if ( '' !== $start ) {
+				printf( '<time class="dt-start" datetime="%s">%s</time>', esc_attr( $start ), esc_html( $start ) );
+			}
+			if ( '' !== $end ) {
+				printf( '<time class="dt-end" datetime="%s">%s</time>', esc_attr( $end ), esc_html( $end ) );
+			}
+			if ( '' !== $location ) {
+				printf( '<span class="p-location">%s</span>', esc_html( $location ) );
+			}
+			echo "</div>\n";
+		} elseif ( $url ) {
+			// No structured event detail — fall back to the shared cite output
+			// (uses any captured cite_* meta, else a bare hidden anchor).
+			$this->output_kind_url( 'u-in-reply-to', $url, $post_id );
+		}
+
+		$rsvp = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
+		if ( '' !== $rsvp ) {
+			printf( "<data class=\"p-rsvp\" value=\"%s\" hidden></data>\n", esc_attr( $rsvp ) );
+		}
+
+		$note = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_note', true );
+		if ( '' !== $note ) {
+			printf( "<div class=\"e-content p-summary\" hidden>%s</div>\n", esc_html( $note ) );
 		}
 	}
 

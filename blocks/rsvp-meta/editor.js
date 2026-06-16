@@ -72,6 +72,13 @@
 
 			var rsvpValue = String( meta.nop_indieweb_rsvp || 'yes' );
 			var eventUrl  = String( meta.nop_indieweb_in_reply_to || '' );
+			var eventName = String( meta.nop_indieweb_rsvp_event_name || '' );
+			var eventStart= String( meta.nop_indieweb_rsvp_event_start || '' );
+			var eventEnd  = String( meta.nop_indieweb_rsvp_event_end || '' );
+			var eventLoc  = String( meta.nop_indieweb_rsvp_event_location || '' );
+			var eventNote = String( meta.nop_indieweb_rsvp_note || '' );
+			var eventLabel= eventName || eventUrl;
+			var when      = eventStart && eventEnd ? ( eventStart + ' – ' + eventEnd ) : eventStart;
 
 			function handleChange( newValue ) {
 				var updated = {};
@@ -91,13 +98,16 @@
 						style: { '--rsvp-color': currentOption.color },
 					}, currentOption.label )
 				),
-				eventUrl && el( 'p', { className: 'nop-rsvp-meta__event' },
+				eventLabel && el( 'p', { className: 'nop-rsvp-meta__event' },
 					'Event: ',
 					el( 'a', {
 						href:    '#',
 						onClick: function ( e ) { e.preventDefault(); },
-					}, eventUrl )
-				)
+					}, eventLabel )
+				),
+				when && el( 'p', { className: 'nop-rsvp-meta__when' }, when ),
+				eventLoc && el( 'p', { className: 'nop-rsvp-meta__location' }, eventLoc ),
+				eventNote && el( 'p', { className: 'nop-rsvp-meta__note' }, eventNote )
 			);
 		},
 

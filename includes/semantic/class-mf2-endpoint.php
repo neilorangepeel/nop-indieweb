@@ -125,6 +125,13 @@ class MF2_Endpoint {
 		$rsvp = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
 		if ( $rsvp ) {
 			$props['rsvp'] = [ $rsvp ];
+
+			// Upgrade the in-reply-to to a full h-event when event detail was
+			// captured, so RSVP consumers get name/start/end/location, not a link.
+			$event = $this->build_rsvp_event( $post_id );
+			if ( null !== $event ) {
+				$props['in-reply-to'] = [ $event ];
+			}
 		}
 
 		$photos = $this->collect_photo_urls( $post_id );
@@ -204,6 +211,34 @@ class MF2_Endpoint {
 		}
 
 		return [ 'type' => [ 'h-cite' ], 'properties' => $cite_props ];
+	}
+
+	/**
+	 * Builds the h-event h-cite for an RSVP's in-reply-to from the event meta.
+	 * Returns null when no event detail was captured, so the caller keeps the
+	 * generic cite/bare-URL value instead.
+	 *
+	 * @return array|null  An h-event array, or null.
+	 */
+	private function build_rsvp_event( int $post_id ): ?array {
+		$url      = (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true );
+		$name     = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_name', true );
+		$start    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true );
+		$end      = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', true );
+		$location = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+
+		if ( '' === $name && '' === $start && '' === $end && '' === $location ) {
+			return null;
+		}
+
+		$props = [];
+		if ( '' !== $name )     $props['name']     = [ $name ];
+		if ( '' !== $url )      $props['url']      = [ $url ];
+		if ( '' !== $start )    $props['start']    = [ $start ];
+		if ( '' !== $end )      $props['end']      = [ $end ];
+		if ( '' !== $location ) $props['location'] = [ $location ];
+
+		return [ 'type' => [ 'h-event' ], 'properties' => $props ];
 	}
 
 	/**

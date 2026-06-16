@@ -45,8 +45,24 @@ if ( ! $post_id ) {
 
 $rsvp_value = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp',        true );
 $event_url  = (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true );
+$event_name = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_name', true );
+$event_start= (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true );
+$event_end  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', true );
+$event_loc  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+$rsvp_note  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_note', true );
 
-if ( ! $rsvp_value && ! $event_url ) {
+// Format a stored datetime (Y-m-d\TH:i or ISO) for display, falling back to the
+// raw value when it can't be parsed.
+$fmt_dt = static function ( string $value ): string {
+	$value = trim( $value );
+	if ( '' === $value ) {
+		return '';
+	}
+	$ts = strtotime( $value );
+	return false === $ts ? $value : date_i18n( 'j M Y · H:i', $ts );
+};
+
+if ( ! $rsvp_value && ! $event_url && ! $event_name ) {
 	// In the block editor (REST render request), show a placeholder so the block
 	// doesn't trigger a "block rendered as empty" error before data is entered.
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -61,7 +77,17 @@ if ( ! $rsvp_value && ! $event_url ) {
 $rsvp_label = $rsvp_labels[ $rsvp_value ] ?? ucfirst( $rsvp_value );
 $rsvp_color = $rsvp_colors[ $rsvp_value ] ?? '#6b7280';
 
-$event_host = $event_url ? ( wp_parse_url( $event_url, PHP_URL_HOST ) ?? $event_url ) : '';
+$event_host  = $event_url ? ( wp_parse_url( $event_url, PHP_URL_HOST ) ?? $event_url ) : '';
+$event_label = '' !== $event_name ? $event_name : $event_host;
+
+$start_disp = $fmt_dt( $event_start );
+$end_disp   = $fmt_dt( $event_end );
+if ( '' !== $start_disp && '' !== $end_disp ) {
+	/* translators: 1: event start datetime, 2: event end datetime. */
+	$when = sprintf( __( '%1$s – %2$s', 'nop-indieweb' ), $start_disp, $end_disp );
+} else {
+	$when = $start_disp;
+}
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 ?>
@@ -75,15 +101,31 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 	</p>
 	<?php endif; ?>
 
-	<?php if ( $event_url ) : ?>
+	<?php if ( '' !== $event_label ) : ?>
 	<p class="nop-rsvp-meta__event">
 		<?php esc_html_e( 'Event:', 'nop-indieweb' ); ?>
+		<?php if ( $event_url ) : ?>
 		<a href="<?php echo esc_url( $event_url ); ?>"
 		   target="_blank"
 		   rel="noopener noreferrer">
-			<?php echo esc_html( $event_host ); ?>
+			<?php echo esc_html( $event_label ); ?>
 		</a>
+		<?php else : ?>
+		<?php echo esc_html( $event_label ); ?>
+		<?php endif; ?>
 	</p>
+	<?php endif; ?>
+
+	<?php if ( '' !== $when ) : ?>
+	<p class="nop-rsvp-meta__when"><?php echo esc_html( $when ); ?></p>
+	<?php endif; ?>
+
+	<?php if ( '' !== $event_loc ) : ?>
+	<p class="nop-rsvp-meta__location"><?php echo esc_html( $event_loc ); ?></p>
+	<?php endif; ?>
+
+	<?php if ( '' !== $rsvp_note ) : ?>
+	<p class="nop-rsvp-meta__note"><?php echo esc_html( $rsvp_note ); ?></p>
 	<?php endif; ?>
 
 </div>

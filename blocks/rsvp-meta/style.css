@@ -18,6 +18,17 @@
 	word-break: break-all;
 }
 
+.nop-rsvp-meta__when,
+.nop-rsvp-meta__location {
+	font-size: 0.875em;
+	color:     var(--wp--preset--color--contrast-2, #6b7280);
+	margin:    0.25em 0 0;
+}
+
+.nop-rsvp-meta__note {
+	margin: 0.5em 0 0;
+}
+
 /* ── Badge ───────────────────────────────────────────────────────────────── */
 
 .nop-rsvp-badge {

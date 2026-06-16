@@ -53,6 +53,8 @@ require_once NOP_INDIEWEB_DIR . 'includes/kind/class-venue-category-taxonomy.php
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-exercise-type-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
+require_once NOP_INDIEWEB_DIR . 'includes/rsvp/class-event-parser.php';
+require_once NOP_INDIEWEB_DIR . 'includes/rsvp/class-event-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-open-graph.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-mf2-endpoint.php';

@@ -237,6 +237,33 @@ class Registry {
 				'description' => 'URL this post is quoting (u-quotation-of).',
 			] ),
 
+			// ── RSVP event details (h-event) ─────────────────────────────────────────
+			// The event being responded to. The event URL and the RSVP value reuse the
+			// existing nop_indieweb_in_reply_to + nop_indieweb_rsvp fields above (so the
+			// webmention sender and the response microformats keep working unchanged).
+			// These fields carry the rest of the cited h-event, pre-filled by the
+			// fetch-event endpoint but always editable in the RSVP sidebar panel.
+			'nop_indieweb_rsvp_event_name'     => array_merge( $string, [
+				'label'       => __( 'Event Name', 'nop-indieweb' ),
+				'description' => 'Title of the event being responded to (h-event p-name).',
+			] ),
+			'nop_indieweb_rsvp_event_start'    => array_merge( $string, [
+				'label'       => __( 'Event Start', 'nop-indieweb' ),
+				'description' => 'Event start datetime, ISO8601 / local (h-event dt-start).',
+			] ),
+			'nop_indieweb_rsvp_event_end'      => array_merge( $string, [
+				'label'       => __( 'Event End', 'nop-indieweb' ),
+				'description' => 'Optional event end datetime, ISO8601 / local (h-event dt-end).',
+			] ),
+			'nop_indieweb_rsvp_event_location' => array_merge( $string, [
+				'label'       => __( 'Event Location', 'nop-indieweb' ),
+				'description' => 'Optional event location (h-event p-location).',
+			] ),
+			'nop_indieweb_rsvp_note'           => array_merge( $string, [
+				'label'       => __( 'RSVP Note', 'nop-indieweb' ),
+				'description' => 'Optional free-text note shown with the response (p-content / p-summary).',
+			] ),
+
 			// ── Cited target context (h-cite) ────────────────────────────────────────
 			// Captured once at save time from the like/bookmark/repost/reply target so
 			// the post carries real context instead of a bare link. See Cite_Extractor.

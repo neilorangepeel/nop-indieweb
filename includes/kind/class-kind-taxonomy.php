@@ -348,22 +348,13 @@ class Kind_Taxonomy {
 			],
 			'rsvp' => [
 				'label'          => __( 'RSVP', 'nop-indieweb' ),
-				'fields'         => [
-					[ 'key' => 'nop_indieweb_in_reply_to', 'label' => __( 'Event URL', 'nop-indieweb' ) ],
-					[
-						'key'     => 'nop_indieweb_rsvp',
-						'label'   => __( 'Response', 'nop-indieweb' ),
-						'type'    => 'select',
-						'options' => [
-							[ 'value' => 'yes',        'label' => __( 'Yes',        'nop-indieweb' ) ],
-							[ 'value' => 'no',         'label' => __( 'No',         'nop-indieweb' ) ],
-							[ 'value' => 'maybe',      'label' => __( 'Maybe',      'nop-indieweb' ) ],
-							[ 'value' => 'interested', 'label' => __( 'Interested', 'nop-indieweb' ) ],
-						],
-					],
-				],
+				// The event URL, response, and the editable event fields all live in
+				// the dedicated RSVP sub-panel (post-kinds-panel.js), which adds the
+				// fetch-from-event-page behaviour on top of the meta inputs.
+				'fields'         => [],
 				'layout'         => '<!-- wp:nop-indieweb/rsvp-meta /--><!-- wp:paragraph /-->',
 				'title_from_url' => true,
+				'sub_panel'      => 'rsvp',
 			],
 			'photo' => [
 				'label'          => __( 'Photo', 'nop-indieweb' ),
