@@ -22,11 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Weather_Fetcher {
 
-	// Time-machine subdomain handles past, present, and recent-future
-	// timestamps — one path covers both live Swarm webhooks and historical
-	// backfill. The api.pirateweather.net/forecast endpoint refuses past
-	// timestamps with a 400 "Please Use Timemachine".
-	private const ENDPOINT  = 'https://timemachine.pirateweather.net/forecast';
+	// Two endpoints, picked by recency. Pirate Weather's Apiable migration moved
+	// /timemachine onto a paid tier, so a legacy direct-registered (32-char) free
+	// key 400s there even for "now" timestamps. /forecast still works for current
+	// conditions on every tier. Historical lookups (Swarm backfills > 1h old) keep
+	// using /timemachine — that's still what /forecast can't serve.
+	private const ENDPOINT_CURRENT     = 'https://api.pirateweather.net/forecast';
+	private const ENDPOINT_TIMEMACHINE = 'https://timemachine.pirateweather.net/forecast';
 	private const TIMEOUT   = 6;
 	private const MAX_BYTES = 256 * 1024;
 
@@ -104,16 +106,30 @@ class Weather_Fetcher {
 			return [];
 		}
 
-		$url = sprintf(
-			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
-			// Keep `daily` — it carries sunrise/sunset (the /post ticker's golden hour).
-			'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,alerts',
-			self::ENDPOINT,
-			rawurlencode( $api_key ),
-			rawurlencode( (string) $lat ),
-			rawurlencode( (string) $lng ),
-			$timestamp
-		);
+		// Pick the endpoint by recency. Within the last hour, /forecast gives current
+		// conditions (and works on the free Apiable tier); older than that, fall
+		// back to /timemachine for genuine historical data. The daily block — needed
+		// for sunrise/sunset (the /post ticker's golden hour) — comes back from both.
+		$now        = time();
+		$is_current = ( $timestamp <= $now ) && ( ( $now - $timestamp ) < HOUR_IN_SECONDS );
+		$url        = $is_current
+			? sprintf(
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
+				'%s/%s/%s,%s?units=si&exclude=minutely,hourly,alerts',
+				self::ENDPOINT_CURRENT,
+				rawurlencode( $api_key ),
+				rawurlencode( (string) $lat ),
+				rawurlencode( (string) $lng )
+			)
+			: sprintf(
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- small, bounded exclusion set
+				'%s/%s/%s,%s,%d?units=si&exclude=minutely,hourly,alerts',
+				self::ENDPOINT_TIMEMACHINE,
+				rawurlencode( $api_key ),
+				rawurlencode( (string) $lat ),
+				rawurlencode( (string) $lng ),
+				$timestamp
+			);
 
 		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
 			'timeout'             => self::TIMEOUT,
