@@ -119,10 +119,13 @@ class Posting_Page {
 			// Register as a share target (Android/desktop) — sharing a page/text opens
 			// /post?title=&text=&url=, which the client maps to a bookmark/note. iOS has
 			// no Web Share Target, but the same params drive an iOS Shortcut.
+			// enctype is required when method is POST and silently warned-about by
+			// Chrome on GET shares too — set it explicitly so DevTools stays quiet.
 			'share_target'     => [
-				'action' => $path,
-				'method' => 'GET',
-				'params' => [ 'title' => 'title', 'text' => 'text', 'url' => 'url' ],
+				'action'  => $path,
+				'method'  => 'GET',
+				'enctype' => 'application/x-www-form-urlencoded',
+				'params'  => [ 'title' => 'title', 'text' => 'text', 'url' => 'url' ],
 			],
 		] );
 	}
@@ -390,6 +393,7 @@ function matchAnyVersion( url ) {
 } )();
 </script>
 <meta name="theme-color" id="themeColor" content="#00787F">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
