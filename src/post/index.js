@@ -350,24 +350,31 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			return off;
 		} catch ( e ) { return 0; }
 	}
-	// Snapshot the live offset off the CSS animation, pause it, hand control to rAF.
+	// Snapshot the live offset off the CSS animation, then KILL the animation so
+	// JS-written transform actually takes effect. CSS animations live in their own
+	// cascade origin ABOVE inline styles — pausing isn't enough (the paused frame
+	// still owns the property). Setting animation-name: none releases it, while
+	// leaving animation-delay / --ticker-dur set inline for the hand-back.
 	function takeOverFromCSS() {
 		if ( ! tickerTrack ) { return; }
 		tkOffset = tkReadCssOffset();
-		tickerTrack.style.animationPlayState = 'paused';
+		// Preempt the next paint with the same offset, so the kill+rAF gap can't flash.
+		tickerTrack.style.transform     = 'translateX(' + ( -tkOffset ).toFixed( 2 ) + 'px)';
+		tickerTrack.style.animationName = 'none';
 		tkCssDriven = false;
 		tkLastFrame = 0;
 		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
 	}
 	// Hand the crawl back: seek the CSS animation to the current pixel offset via
-	// a negative animation-delay, resume, clear the inline transform, stop rAF.
-	// Because --ticker-dur = tkSeqW / TK_SPEED, delay = -tkOffset/TK_SPEED lands
-	// the CSS phase exactly on tkOffset — no visual jump.
+	// a negative animation-delay, then clear the inline animation-name so the CSS
+	// rule's `ticker-crawl` re-asserts and takes over. Because
+	// --ticker-dur = tkSeqW / TK_SPEED, delay = -tkOffset / TK_SPEED lands the CSS
+	// phase exactly on tkOffset — no visual jump.
 	function handBackToCSS() {
 		if ( ! tickerTrack || tkSeqW <= 0 ) { return; }
-		tickerTrack.style.transform           = '';
-		tickerTrack.style.animationDelay      = ( -( tkOffset / TK_SPEED ) ) + 's';
-		tickerTrack.style.animationPlayState  = 'running';
+		tickerTrack.style.animationDelay = ( -( tkOffset / TK_SPEED ) ) + 's';
+		tickerTrack.style.animationName  = '';      // clear inline → CSS rule's name applies
+		tickerTrack.style.transform      = '';      // CSS animation now owns transform
 		tkCssDriven = true;
 		cancelAnimationFrame( tkRAF );
 		tkRAF = 0;
@@ -397,14 +404,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	function startTickerMotion() {
 		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS rule disables animation
-		// Pause first so subsequent --ticker-dur + animation-delay updates take effect
-		// without a brief paint at the old phase.
-		tickerTrack.style.animationPlayState = 'paused';
 		if ( tkSeqW > 0 ) {
 			tickerTrack.style.setProperty( '--ticker-dur', ( tkSeqW / TK_SPEED ) + 's' );
 		}
-		// Mid-scrub or mid-flick: keep rAF in control. Otherwise hand to CSS.
+		// Mid-scrub or mid-flick: keep rAF in control by killing the CSS animation
+		// outright (animation-name: none releases the cascade so JS transform wins).
 		if ( tkDragging || ( tkRAF && Math.abs( tkVel - TK_SPEED ) >= TK_EPS ) ) {
+			tickerTrack.style.animationName = 'none';
 			tkCssDriven = false;
 			if ( ! tkRAF ) { tkLastFrame = 0; tkRAF = requestAnimationFrame( tkFrame ); }
 		} else {
