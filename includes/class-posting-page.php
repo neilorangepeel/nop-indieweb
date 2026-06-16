@@ -170,7 +170,7 @@ class Posting_Page {
 		];
 		?>
 'use strict';
-var CACHE = 'nop-post-v5';
+var CACHE = 'nop-post-v6';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -216,17 +216,64 @@ self.addEventListener( 'fetch', function ( e ) {
 	// Cache-first only for content-stable assets: the fonts (filename-versioned)
 	// and the built app CSS/JS (?ver-busted, so a new build is a new URL). Icons,
 	// the manifest, etc. fall through to the network so they're never pinned stale.
+	//
+	// Resilient to transient 5xx on the built app: if the new build URL comes
+	// back as 503/504 (SiteGround WAF or edge cache hiccup), retry once after a
+	// short pause, then fall back to ANY previously-cached version of the same
+	// path. Better to run a slightly older build than to ship a broken page.
 	if ( /\.woff2($|\?)/.test( url.pathname ) || url.pathname.indexOf( '/build/post/' ) !== -1 ) {
 		e.respondWith(
-			caches.match( req ).then( function ( m ) {
-				return m || fetch( req ).then( function ( res ) {
-					if ( res && res.ok ) { var copy = res.clone(); caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } ); }
-					return res;
+			caches.match( req ).then( function ( hit ) {
+				if ( hit ) { return hit; }
+				return fetchResilient( req ).then( function ( res ) {
+					if ( res && res.ok ) {
+						var copy = res.clone();
+						caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } );
+						return res;
+					}
+					// Non-OK response — try the previous build's cached asset.
+					return matchAnyVersion( url ).then( function ( fb ) { return fb || res; } );
+				} ).catch( function () {
+					return matchAnyVersion( url ).then( function ( fb ) {
+						return fb || new Response( '', { status: 504, statusText: 'No cached fallback' } );
+					} );
 				} );
-			} ).catch( function () { return caches.match( req ); } )
+			} )
 		);
 	}
 } );
+
+// One retry after 400ms on a 5xx — covers SiteGround's brief unavailability
+// windows during deploy / WAF rate-limit blips without making the page wait
+// forever on a genuinely-down origin.
+function fetchResilient( req ) {
+	return fetch( req.clone() ).then( function ( res ) {
+		if ( ! res || res.status < 500 ) { return res; }
+		return new Promise( function ( r ) { setTimeout( r, 400 ); } )
+			.then( function () { return fetch( req.clone() ); } );
+	} );
+}
+
+// Search the cache for any entry whose pathname matches — same asset, any
+// `?ver=` value — so a 503 on a freshly-deployed URL falls back to the
+// previously-cached version of the same asset.
+function matchAnyVersion( url ) {
+	return caches.open( CACHE ).then( function ( c ) {
+		return c.keys().then( function ( keys ) {
+			for ( var i = 0; i < keys.length; i++ ) {
+				try {
+					var k = new URL( keys[ i ].url );
+					if ( k.pathname === url.pathname ) {
+						return c.match( keys[ i ] );
+					}
+				} catch ( e ) {}
+			}
+			return null;
+		} );
+	} );
+}
+
+// End of service worker.
 		<?php
 	}
 
