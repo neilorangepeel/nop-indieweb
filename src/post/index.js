@@ -516,22 +516,37 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// pending forever; a timeout aborts into the same silent catch as any failure.
 		if ( AbortSignal.timeout ) { opts.signal = AbortSignal.timeout( 8000 ); }
 		fetch( NOP.nowUrl + sep + 'lat=' + encodeURIComponent( lat ) + '&lon=' + encodeURIComponent( lon ), opts )
-			.then( function ( r ) { return r.ok ? r.json() : null; } )
-			.then( function ( d ) { if ( d ) { renderNow( d ); writeJSON( NOW_KEY, { data: d, ts: Date.now() } ); } } )
-			.catch( function () {} );
+			.then( function ( r ) {
+				if ( ! r.ok ) { console.warn( '[nop /now] HTTP', r.status, r.statusText ); return null; }
+				return r.json();
+			} )
+			.then( function ( d ) {
+				if ( ! d ) { return; }
+				// Surface "endpoint OK but no useful data" — usually a server-side key
+				// (Pirate Weather / Geoapify) or a transient provider failure.
+				if ( ! d.place && d.temp_c == null && ! d.summary ) {
+					console.warn( '[nop /now] response was empty', d );
+				}
+				renderNow( d );
+				writeJSON( NOW_KEY, { data: d, ts: Date.now() } );
+			} )
+			.catch( function ( e ) { console.warn( '[nop /now] network error', e ); } );
 	}
 
 	function withCoords( cb ) {
 		var g = readJSON( GEO_KEY );
 		if ( g && g.lat != null && ( Date.now() - g.ts ) < GEO_TTL ) { cb( g.lat, g.lon ); return; }
-		if ( ! navigator.geolocation ) { return; }
+		if ( ! navigator.geolocation ) { console.warn( '[nop /now] no Geolocation API' ); return; }
 		navigator.geolocation.getCurrentPosition(
 			function ( pos ) {
 				var lat = pos.coords.latitude, lon = pos.coords.longitude;
 				writeJSON( GEO_KEY, { lat: lat, lon: lon, ts: Date.now() } );
 				cb( lat, lon );
 			},
-			function () {},
+			function ( err ) {
+				// PERMISSION_DENIED=1 / POSITION_UNAVAILABLE=2 / TIMEOUT=3.
+				console.warn( '[nop /now] geolocation error', err && err.code, err && err.message );
+			},
 			{ enableHighAccuracy: false, timeout: 8000, maximumAge: GEO_TTL }
 		);
 	}
