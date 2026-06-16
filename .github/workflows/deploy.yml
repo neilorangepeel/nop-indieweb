@@ -1,8 +1,15 @@
 name: Deploy to SiteGround
 
+# Gate: deploy only after the CI workflow succeeds on main. workflow_run fires
+# when CI completes; the job's `if` filters to successful runs on the main
+# branch, so a red build (failing lint / PHPUnit / PHPStan) never reaches
+# production. Manual redeploys are still possible via workflow_dispatch.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 # Serialise deploys against SiteGround. Without this, rapid back-to-back
 # pushes fan out into N concurrent SSH sessions all resetting PHP-FPM's
@@ -18,6 +25,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # workflow_dispatch has no workflow_run payload, so allow it through;
+    # otherwise require the upstream CI run to have concluded successfully.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Deploy via SSH
