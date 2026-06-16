@@ -28,6 +28,7 @@
 	var Spinner         = components.Spinner;
 	var ExternalLink    = components.ExternalLink;
 	var __              = i18n.__;
+	var sprintf         = i18n.sprintf;
 
 	// ── Config from PHP ─────────────────────────────────────────────────────────
 
@@ -305,9 +306,11 @@
 		var editPostFn = props.editPost;
 		var title      = props.title;
 
-		// 'idle' | 'loading' | 'found' | 'empty' | 'error'
+		// 'idle' | 'loading' | 'found' | 'thin' | 'empty' | 'error'
 		var statusState = useState( 'idle' );
 		var status      = statusState[0], setStatus = statusState[1];
+		var sourceState = useState( '' );
+		var source      = sourceState[0], setSource = sourceState[1];
 
 		// The URL the last fetch ran against — so blur after paste doesn't re-fetch
 		// the same value, and an unchanged blur is a no-op.
@@ -317,14 +320,28 @@
 		var rsvpValue = meta['nop_indieweb_rsvp']               || 'yes';
 		var eventName = meta['nop_indieweb_rsvp_event_name']     || '';
 		var eventStart= meta['nop_indieweb_rsvp_event_start']    || '';
-		var eventEnd  = meta['nop_indieweb_rsvp_event_end']      || '';
 		var eventLoc  = meta['nop_indieweb_rsvp_event_location'] || '';
 		var note      = meta['nop_indieweb_rsvp_note']           || '';
+
+		// Split start into date + time controls so a date-only source (a
+		// theatrical run quoted as "Sat 13 Jun 2026") fills the date and leaves
+		// the time blank, rather than being silently dropped by a `datetime-local`
+		// input that rejects date-only values. Joined back to "YYYY-MM-DD" or
+		// "YYYY-MM-DDTHH:MM" when written to meta.
+		var startMatch  = ( eventStart || '' ).match( /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/ );
+		var startDate   = startMatch ? startMatch[1] : '';
+		var startTime   = ( startMatch && startMatch[2] ) ? startMatch[2] : '';
 
 		function setMeta( key, value ) {
 			var update = { meta: {} };
 			update.meta[ key ] = value;
 			editPostFn( update );
+		}
+
+		function setStart( date, time ) {
+			var iso = '';
+			if ( date ) { iso = time ? date + 'T' + time : date; }
+			setMeta( 'nop_indieweb_rsvp_event_start', iso );
 		}
 
 		function fetchEvent( url ) {
@@ -342,15 +359,17 @@
 			} ).then( function ( data ) {
 				if ( ! data || ! data.source ) {
 					setStatus( 'empty' );
+					setSource( '' );
 					return;
 				}
 
 				// Pre-fill from the fetch, leaving anything it couldn't find untouched
 				// so the author can fill it in by hand. All fields stay editable.
+				// dt-end is intentionally not captured — an RSVP records the single
+				// day the author is attending, not the event's full run.
 				var update = { meta: {} };
 				if ( data.name )     { update.meta['nop_indieweb_rsvp_event_name']     = data.name; }
 				if ( data.start )    { update.meta['nop_indieweb_rsvp_event_start']    = data.start; }
-				if ( data.end )      { update.meta['nop_indieweb_rsvp_event_end']      = data.end; }
 				if ( data.location ) { update.meta['nop_indieweb_rsvp_event_location'] = data.location; }
 				if ( data.note )     { update.meta['nop_indieweb_rsvp_note']           = data.note; }
 
@@ -361,11 +380,23 @@
 				}
 
 				editPostFn( update );
-				setStatus( 'found' );
+				// Thin = only a name came back. Usually a page-title fallback or a
+				// venue/listings page that exposes an og:title but nothing else.
+				var thin = ! data.start && ! data.location;
+				setSource( data.source );
+				setStatus( thin ? 'thin' : 'found' );
 			} ).catch( function () {
 				setStatus( 'error' );
+				setSource( '' );
 			} );
 		}
+
+		var SOURCE_LABELS = {
+			mf2:       __( 'microformats h-event', 'nop-indieweb' ),
+			jsonld:    __( 'schema.org/Event', 'nop-indieweb' ),
+			opengraph: __( 'Open Graph', 'nop-indieweb' ),
+			title:     __( 'page title', 'nop-indieweb' ),
+		};
 
 		var statusEl = null;
 		if ( status === 'loading' ) {
@@ -374,8 +405,15 @@
 				el( 'span', {}, __( 'Fetching event details…', 'nop-indieweb' ) )
 			);
 		} else if ( status === 'found' ) {
+			var label = SOURCE_LABELS[ source ];
 			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--found' },
-				__( 'Data fetched from event page.', 'nop-indieweb' )
+				label
+					? sprintf( __( 'Found via %s.', 'nop-indieweb' ), label )
+					: __( 'Found event details.', 'nop-indieweb' )
+			);
+		} else if ( status === 'thin' ) {
+			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--thin' },
+				__( 'Only the page title was readable — please fill in the details.', 'nop-indieweb' )
 			);
 		} else if ( status === 'empty' || status === 'error' ) {
 			statusEl = el( 'p', { className: 'nop-rsvp-fetch nop-rsvp-fetch--empty' },
@@ -416,21 +454,22 @@
 				__nextHasNoMarginBottom: true,
 			} ),
 
-			el( TextControl, {
-				label:                   __( 'Starts', 'nop-indieweb' ),
-				type:                    'datetime-local',
-				value:                   eventStart,
-				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_start', v ); },
-				__nextHasNoMarginBottom: true,
-			} ),
-
-			el( TextControl, {
-				label:                   __( 'Ends (optional)', 'nop-indieweb' ),
-				type:                    'datetime-local',
-				value:                   eventEnd,
-				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_end', v ); },
-				__nextHasNoMarginBottom: true,
-			} ),
+			el( 'div', { className: 'nop-rsvp-when' },
+				el( TextControl, {
+					label:                   __( 'When (date)', 'nop-indieweb' ),
+					type:                    'date',
+					value:                   startDate,
+					onChange:                function ( v ) { setStart( v, startTime ); },
+					__nextHasNoMarginBottom: true,
+				} ),
+				el( TextControl, {
+					label:                   __( 'When (time)', 'nop-indieweb' ),
+					type:                    'time',
+					value:                   startTime,
+					onChange:                function ( v ) { setStart( startDate, v ); },
+					__nextHasNoMarginBottom: true,
+				} )
+			),
 
 			el( TextControl, {
 				label:                   __( 'Location (optional)', 'nop-indieweb' ),

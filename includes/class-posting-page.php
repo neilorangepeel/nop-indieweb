@@ -485,9 +485,11 @@ foreach ( [ '700', '800' ] as $weight ) {
 				</div>
 
 				<!-- RSVP event details (rsvp) — a labelled cover sheet, pre-filled from
-				     the pasted event URL, every field hand-editable. Start/end are split
-				     into date + time so a date-only source (a theatrical run quoted as
-				     "Sat 13 Jun 2026") fills the date and leaves the time blank rather
+				     the pasted event URL, every field hand-editable. Records the single
+				     date+time the author is attending: maps to h-event's dt-start, with
+				     dt-end intentionally omitted (an RSVP is "I'm going on this day",
+				     not "the show runs Jun 13–Jul 10"). Date and time are split so a
+				     date-only source fills the date and leaves the time blank rather
 				     than inventing midnight. -->
 				<div class="field-group is-conditional event-fields" id="fieldEvent" hidden>
 					<p class="event-status" id="eventStatus" aria-live="polite" hidden></p>
@@ -500,17 +502,10 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<input type="text" id="eventLocation" class="text-field" placeholder="<?php esc_attr_e( 'Location (optional)', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event location', 'nop-indieweb' ); ?>">
 					</div>
 					<div class="event-row event-row--when">
-						<span class="event-row__label"><?php esc_html_e( 'Starts', 'nop-indieweb' ); ?></span>
+						<span class="event-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
 						<div class="event-row__pair">
-							<input type="date" id="eventStartDate" class="text-field text-field--date" aria-label="<?php esc_attr_e( 'Event start date', 'nop-indieweb' ); ?>">
-							<input type="time" id="eventStartTime" class="text-field text-field--time" aria-label="<?php esc_attr_e( 'Event start time', 'nop-indieweb' ); ?>">
-						</div>
-					</div>
-					<div class="event-row event-row--when">
-						<span class="event-row__label"><?php esc_html_e( 'Ends', 'nop-indieweb' ); ?></span>
-						<div class="event-row__pair">
-							<input type="date" id="eventEndDate" class="text-field text-field--date" aria-label="<?php esc_attr_e( 'Event end date', 'nop-indieweb' ); ?>">
-							<input type="time" id="eventEndTime" class="text-field text-field--time" aria-label="<?php esc_attr_e( 'Event end time', 'nop-indieweb' ); ?>">
+							<input type="date" id="eventStartDate" class="text-field text-field--date" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
+							<input type="time" id="eventStartTime" class="text-field text-field--time" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
 						</div>
 					</div>
 				</div>

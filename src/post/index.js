@@ -521,16 +521,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var eventName       = document.getElementById( 'eventName' );
 	var eventStartDate  = document.getElementById( 'eventStartDate' );
 	var eventStartTime  = document.getElementById( 'eventStartTime' );
-	var eventEndDate    = document.getElementById( 'eventEndDate' );
-	var eventEndTime    = document.getElementById( 'eventEndTime' );
 	var eventLocation   = document.getElementById( 'eventLocation' );
 	var eventStatus     = document.getElementById( 'eventStatus' );
 
-	// Start/end ride as a single ISO string (date-only "YYYY-MM-DD" when the source
-	// page had no time component, full "YYYY-MM-DDTHH:MM" when it did, blank when
-	// unknown). These helpers join/split that string against the two inputs so the
-	// draft + payload shapes stay simple while the form represents date-only
-	// honestly.
+	// The event start rides as a single ISO string ("YYYY-MM-DD" when only the
+	// date is known, "YYYY-MM-DDTHH:MM" when a time was set, blank when unknown).
+	// These helpers join/split that string against the two inputs so the draft
+	// and Micropub payload shapes stay simple while the form represents
+	// date-only honestly. Only dt-start is captured — an RSVP records the single
+	// day the author is attending, not the event's full run.
 	function joinEventDt( dateEl, timeEl ) {
 		var d = dateEl ? dateEl.value.trim() : '';
 		var t = timeEl ? timeEl.value.trim() : '';
@@ -774,12 +773,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			// that case, rather than inventing midnight.
 			if ( d.name )     { eventName.value     = d.name; }
 			if ( d.start )    { splitEventDt( eventStartDate, eventStartTime, d.start ); }
-			if ( d.end )      { splitEventDt( eventEndDate,   eventEndTime,   d.end ); }
 			if ( d.location ) { eventLocation.value = d.location; }
 			// "Thin" = only a name came back (no date and no location). Usually a
 			// page-title fallback or a venue/listings page that exposes an og:title
 			// but nothing else useful. Flag it so the author knows to step in.
-			var thin = ! d.start && ! d.end && ! d.location;
+			var thin = ! d.start && ! d.location;
 			setEventStatus( thin ? 'thin' : 'found', d.source );
 			saveDraft();
 		} ).catch( function () {
@@ -1167,7 +1165,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			event:       {
 				name:     eventName ? eventName.value.trim() : '',
 				start:    joinEventDt( eventStartDate, eventStartTime ),
-				end:      joinEventDt( eventEndDate,   eventEndTime ),
 				location: eventLocation ? eventLocation.value.trim() : '',
 			},
 			tags:        currentTags.slice(),
@@ -1222,7 +1219,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var ev = post.event || {};
 			if ( ev.name )     { props[ 'event-name' ]     = [ ev.name ]; }
 			if ( ev.start )    { props[ 'event-start' ]    = [ ev.start ]; }
-			if ( ev.end )      { props[ 'event-end' ]      = [ ev.end ]; }
 			if ( ev.location ) { props[ 'event-location' ] = [ ev.location ]; }
 		}
 
@@ -1432,8 +1428,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( eventName )      { eventName.value      = ''; }
 		if ( eventStartDate ) { eventStartDate.value = ''; }
 		if ( eventStartTime ) { eventStartTime.value = ''; }
-		if ( eventEndDate )   { eventEndDate.value   = ''; }
-		if ( eventEndTime )   { eventEndTime.value   = ''; }
 		if ( eventLocation )  { eventLocation.value  = ''; }
 		fetchedEventUrl = '';
 		setEventStatus( '' );
@@ -1496,7 +1490,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				event:   {
 					name:     eventName ? eventName.value : '',
 					start:    joinEventDt( eventStartDate, eventStartTime ),
-					end:      joinEventDt( eventEndDate,   eventEndTime ),
 					location: eventLocation ? eventLocation.value : '',
 				},
 			} ) );
@@ -1528,7 +1521,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( d.event ) {
 			if ( eventName )     { eventName.value     = d.event.name     || ''; }
 			splitEventDt( eventStartDate, eventStartTime, d.event.start );
-			splitEventDt( eventEndDate,   eventEndTime,   d.event.end );
 			if ( eventLocation ) { eventLocation.value = d.event.location || ''; }
 			// Treat a restored URL as already fetched so reopening a draft doesn't
 			// re-hit the endpoint and clobber restored edits.

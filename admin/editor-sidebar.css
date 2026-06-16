@@ -234,8 +234,23 @@
 	color: #007017;
 }
 
+/* Thin = only a page title came back. Soft caveat, not a green ✓. */
+.nop-rsvp-fetch--thin {
+	color:      #757575;
+	font-style: italic;
+}
+
 .nop-rsvp-fetch--empty {
 	color: #757575;
+}
+
+/* Date + time pair for the "When" control — side by side, equal width, so
+   a date-only source can fill the date and leave the time blank rather
+   than being silently rejected by a `datetime-local` input. */
+.nop-rsvp-when {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	gap: 8px;
 }
 
 /* "Apply layout" offer card — shown after a kind change when the editor isn't empty */
