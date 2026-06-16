@@ -1,0 +1,33 @@
+name: PHPStan baseline
+
+# One-shot helper: regenerates phpstan-baseline.neon and uploads it as an
+# artifact, so the baseline can be seeded without a local PHP toolchain.
+# Run from the Actions tab (or `gh workflow run phpstan-baseline.yml`), then
+# download the artifact and commit it.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Generate baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Generate baseline
+        run: composer phpstan:baseline
+      - name: Upload baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpstan-baseline
+          path: phpstan-baseline.neon
