@@ -448,8 +448,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
 				<div class="field-group is-conditional docket-slip" id="fieldUrl" hidden>
-					<label class="slip-label" id="urlLabel" for="typeUrl"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
-					<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off">
+					<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'URL', 'nop-indieweb' ); ?>">
 					<!-- Printed reference line: hostname/path now; title/excerpt slot in later (server fetch). -->
 					<div class="slip-ref" id="slipRef" hidden>
 						<span class="slip-ref__host" id="slipHost"></span>

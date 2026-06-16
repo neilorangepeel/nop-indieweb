@@ -793,19 +793,6 @@ body::before {
 .docket--body-only .docket__fields,
 .docket__fields:not(:has(> :not([hidden]))) { display: none; }
 
-/* Printed catalog-field label — small-caps, tracked, muted (the .alt-text-label
-   treatment, shared so every printed slip reads the same). */
-.slip-label {
-	display: block;
-	font-family: var(--readout);
-	font-size: var(--fs-10);
-	font-weight: 700;
-	letter-spacing: 0.07em;
-	text-transform: uppercase;
-	color: var(--text);
-	opacity: 0.5;
-	margin-bottom: var(--sp-2);
-}
 /* The reference line under a URL field — hostname/path now; the title/excerpt slots
    stay styled-but-hidden until a future server fetch fills them. */
 .slip-ref {
@@ -1059,11 +1046,9 @@ body::before {
 	color: var(--on-accent);
 	border: var(--bw) solid var(--field);
 	border-radius: var(--nop-radius-pill);
-	font-size: var(--fs-16);
-	font-weight: 800;
-	line-height: 1;
 	cursor: pointer;}
-.thumb__remove::after { content: ''; position: absolute; inset: -7px; }
+.thumb__remove svg { display: block; }
+.thumb__remove::after { content: ''; position: absolute; inset: -9px; }
 .alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {

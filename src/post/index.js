@@ -507,7 +507,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var fieldContent = document.getElementById( 'fieldContent' );
 	var fieldTags    = document.getElementById( 'fieldTags' );
 	var urlInput     = document.getElementById( 'typeUrl' );
-	var urlLabel     = document.getElementById( 'urlLabel' );
 	var contentInput  = document.getElementById( 'content' );
 	var composePrompt = document.getElementById( 'composePrompt' );
 	var picker       = document.getElementById( 'photoPicker' );
@@ -841,7 +840,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( docket ) { docket.classList.toggle( 'docket--body-only', ! cfg.urlProp && ! cfg.hasPhoto && ! cfg.hasRsvp ); }
 		fillDocketHeader( type );
 
-		if ( cfg.urlProp ) urlLabel.textContent = cfg.urlLabel || 'URL';
+		if ( cfg.urlProp ) urlInput.setAttribute( 'aria-label', cfg.urlLabel || 'URL' );
 		if ( cfg.hasContent ) {
 			setPrompt( ( type === 'note' ) ? notePlaceholder() : ( cfg.contentPlaceholder || 'Write…' ) );
 		}
@@ -926,7 +925,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			rm.type          = 'button';
 			rm.className     = 'thumb__remove';
 			rm.dataset.index = i;
-			rm.textContent   = '×';
+			rm.innerHTML     = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
 			rm.setAttribute( 'aria-label', 'Remove photo ' + ( i + 1 ) );
 			cell.appendChild( rm );
 			thumbs.appendChild( cell );
