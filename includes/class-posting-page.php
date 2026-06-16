@@ -683,7 +683,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 			<div class="bottom-bar">
 				<button class="btn btn-primary" id="postBtn" disabled type="button">
-					<svg class="btn-primary__icon" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M223.83,42.34a16,16,0,0,0-15.31-4L41.84,86.31a16,16,0,0,0-2.42,29.84l71,33.36,33.36,71a15.89,15.89,0,0,0,14.41,9.19q.69,0,1.38-.06a15.88,15.88,0,0,0,14-11.51l47.94-166.66A16,16,0,0,0,223.83,42.34Zm-15,1.49L72.84,167.74,52.93,121.94l145-50.6Zm-49.6,168.3-.05.05L113.39,170.84l67.85-67.83Z"/></svg>
+					<svg class="btn-primary__icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/></svg>
 					<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
 				</button>
 			</div>
