@@ -727,8 +727,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// At rest (0) it clips the whole tail → only the strip band shows; scrolling DOWN
 	// adds to it (the strip leaves under the masthead); an overscroll pull-down makes
 	// scrollTop negative → clips LESS → the tail's tiled dots fill the opening gap.
-	// Always-on (not gated by scroll-timeline support): overscroll is outside any
-	// timeline's range, and writing a clip — never background-position — can't swim.
+	// Writing a clip — never background-position — can't swim.
 	var stripExtra = 600, stripH = 0;
 	function updateTypeClip() {
 		if ( ! composeScroll || ( ! typeShadowLeft && ! typeShadowRight ) ) { return; }
@@ -736,6 +735,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var v = hidden.toFixed( 2 ) + 'px';
 		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--vclip', v ); }
 		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--vclip', v ); }
+	}
+	// Coalesce scroll events into one paint-aligned write: the rAF callback reads
+	// scrollTop at paint time, so the clip uses the freshest position the frame can
+	// have — closing the lag that flashed the tail over the docket on a hard fling,
+	// without a scroll-timeline. Init/resize call updateTypeClip() directly.
+	var clipRAF = 0;
+	function scheduleTypeClip() {
+		if ( clipRAF ) { return; }
+		clipRAF = requestAnimationFrame( function () { clipRAF = 0; updateTypeClip(); } );
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -798,7 +806,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	// --vclip is JS-driven for everyone (overscroll is outside any scroll-timeline),
 	// so this listener is always on — unlike updateScrollFades, which is the fallback.
-	composeScroll.addEventListener( 'scroll', updateTypeClip, { passive: true } );
+	// rAF-coalesced so the write lands in step with paint.
+	composeScroll.addEventListener( 'scroll', scheduleTypeClip, { passive: true } );
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
