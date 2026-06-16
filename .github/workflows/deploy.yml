@@ -4,6 +4,17 @@ on:
   push:
     branches: [main]
 
+# Serialise deploys against SiteGround. Without this, rapid back-to-back
+# pushes fan out into N concurrent SSH sessions all resetting PHP-FPM's
+# opcache at overlapping times, which SiteGround responds to with 503s
+# (overloaded workers + WAF rate limits). cancel-in-progress=false lets
+# the running deploy finish cleanly, but only one new push is queued at
+# a time — if more arrive, the latest wins and the intermediate ones are
+# skipped, so a fast burst of 5 commits becomes 2 deploys not 5.
+concurrency:
+  group: deploy-siteground
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
