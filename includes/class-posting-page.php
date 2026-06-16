@@ -519,8 +519,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-rsvp-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-rsvp-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-rsvp-t" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-rsvp-b" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text></svg>
 				</button>
 				</div><!-- .type-grid -->
-				<div class="type-fade type-fade-left" aria-hidden="true"></div>
-				<div class="type-fade type-fade-right" aria-hidden="true"></div>
 			</div><!-- .type-grid-wrap -->
 
 			<div class="compose-fields">
@@ -683,6 +681,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 				</div><!-- .compose-fields -->
 				<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>
 			</div><!-- .compose-scroll -->
+
+			<!-- Kind-strip edge-shadows live OUTSIDE the scroller (in #view-compose,
+			     which never moves) so their halftone dots stay grid-locked and never
+			     swim; only their reveal/clip follows the strip. See .type-shadow CSS. -->
+			<div class="type-shadow type-shadow-left" aria-hidden="true"></div>
+			<div class="type-shadow type-shadow-right" aria-hidden="true"></div>
 
 			<div class="bottom-bar">
 				<button class="btn btn-primary" id="postBtn" disabled type="button">

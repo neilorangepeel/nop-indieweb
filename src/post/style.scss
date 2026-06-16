@@ -636,44 +636,45 @@ body::before {
 }
 .type-grid::-webkit-scrollbar { display: none; }
 
-/* Horizontal twin of the vertical scroll-fades — the same ink-dot halftone screen
-   + hockey-stick mask, turned 90° onto the kind row's left/right edges, so off-
-   screen kinds (Repost, RSVP) announce themselves. JS ramps each one's opacity by
-   how far there is to scroll that way (updateTypeFades). */
-/* The kind strip scrolls away with the fields (it is NOT pinned). Its halftone
-   shadow (the type-fades below) used to swim on iOS scroll: the fades were locked
-   to the fixed viewport grid but their box rode the scroll, so on momentum scroll
-   the stale lock left the shadow dots sliding against the page grain that showed
-   through the transparent strip. Fix: give the wrap its OWN opaque grain paper,
-   grid-locked at rest by alignHalftone. Now the shadow and the paper directly
-   behind it are one rigid unit — they scroll together, so the shadow never swims
-   relative to its paper. (.app's grain behind is simply hidden; at rest the wrap
-   grain matches it exactly, so there's no visible seam.) */
-.type-grid-wrap {
-	position: relative;
-	flex-shrink: 0;
-	background-color: var(--field);
-	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
-}
-.type-fade {
+/* The kind strip's halftone edge-shadows — the horizontal twin of the vertical
+   scroll-fades: the same swollen ink-dot screen + hockey-stick mask, turned 90° onto
+   the row's left/right edges so off-screen kinds (Repost, RSVP) announce themselves,
+   ramping by how far there is to scroll that way.
+
+   Crucially they live in #view-compose, NOT inside the scrolling strip. The strip
+   scrolls away with the compose body; if the shadow rode it the dots would swim — the
+   strip moves but the page grain under it is viewport-fixed, and iOS Safari has no
+   working background-attachment:fixed to re-anchor them on momentum scroll. So the
+   shadow is lifted into #view-compose, which never scrolls (only .compose-scroll
+   inside it does). An absolute child there has a background-position that locks ONCE
+   (alignHalftone) and stays correct forever — the dots ARE the universal grid and can
+   never move. The strip scrolls underneath; only the shadow's reveal (horizontal) and
+   clip (vertical) follow it, and a lagging clip edge is invisible where a lagging dot
+   grid would swim. */
+.type-grid-wrap { position: relative; flex-shrink: 0; }
+
+.type-shadow {
 	position: absolute;
-	top: 0;
-	bottom: 0;
+	/* Pinned over the strip's resting band; #view-compose carries --strip-top/-h,
+	   measured from the strip rect once on layout/resize (never per scroll). */
+	top: var(--strip-top, 0);
+	height: var(--strip-h, 0);
 	width: 240px;
-	z-index: 3;
+	z-index: 4;                /* above the strip badges (0) and seam-shadow (3), below masthead (5) */
 	pointer-events: none;
-	/* Same swollen dot as the vertical shadow; mask stops scale by --reveal, so
-	   the shadow extends from the strip's edge into the row 1:1 with the
-	   horizontal drag, not just lit up in place. */
+	/* The swollen full-ink grid dot; background-position is JS-locked to the one
+	   viewport grid. #view-compose doesn't scroll, so that lock is permanent. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
-	/* No background-attachment:fixed — iOS Safari doesn't honour it (the dots scroll
-	   with the content). JS (alignHalftone) phase-locks background-position instead. */
+	/* The strip's visible top is pinned at the scroller's top clip, so only its
+	   bottom rises as you scroll the body. --vclip hides the shadow from the bottom in
+	   step, so it stays on the strip's shrinking visible band and is gone once the
+	   strip tucks under the masthead. */
+	clip-path: inset(0 0 var(--vclip, 0%) 0);
 	will-change: opacity;
 	--reveal: 0;
 }
-.type-fade-left {
+.type-shadow-left {
 	left: 0;
 	-webkit-mask-image: linear-gradient( to right,
 		rgba(0,0,0, var(--reveal))                     0,
@@ -688,7 +689,7 @@ body::before {
 		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
 		transparent                                    calc(var(--reveal) * 100%));
 }
-.type-fade-right {
+.type-shadow-right {
 	right: 0;
 	-webkit-mask-image: linear-gradient( to left,
 		rgba(0,0,0, var(--reveal))                     0,
@@ -704,13 +705,23 @@ body::before {
 		transparent                                    calc(var(--reveal) * 100%));
 }
 
-/* Scroll-driven --reveal — Chrome 115+, Safari 26+ (Firefox pending). Drops the
-   per-scroll JS that wrote --reveal each frame. Both the vertical scroll-fades
-   (anchored to .compose-scroll) and the horizontal type-fades (anchored to the
-   #typeBar strip via a named timeline) ramp through the same 240px hockey-stick.
-   The JS path stays as the @supports-not fallback for Firefox. */
+/* Register --vclip as a length-percentage so the scroll-timeline can interpolate it
+   (un-registered custom props animate discretely — see the --reveal note above). */
+@property --vclip {
+	syntax: '<length-percentage>';
+	inherits: false;
+	initial-value: 0%;
+}
+
+/* Scroll-driven --reveal / --vclip — Chrome 115+, Safari 26+ (Firefox pending). Drops
+   the per-scroll JS. The vertical scroll-fades anchor to .compose-scroll; the kind-strip
+   edge-shadows ramp --reveal off the #typeBar strip (named --type-strip) and clip --vclip
+   off the compose body's vertical scroll (named --compose-y). Both named timelines are
+   exposed to the .type-shadow layer via timeline-scope on #view-compose, their common
+   ancestor. The JS path stays as the @supports-not fallback for Firefox. */
 @keyframes nop-reveal-in  { from { --reveal: 0; } to { --reveal: 1; } }
 @keyframes nop-reveal-out { from { --reveal: 1; } to { --reveal: 0; } }
+@keyframes nop-vclip      { from { --vclip: 0%; } to { --vclip: 100%; } }
 @supports (animation-timeline: scroll()) {
 	/* Vertical fades — nearest scrollable ancestor is .compose-scroll. */
 	.scroll-fade-top {
@@ -725,25 +736,26 @@ body::before {
 		animation-timeline: scroll(nearest block);
 		animation-range: calc(100% - 240px) 100%;
 	}
-	/* Horizontal type-strip fades — the scroller is a sibling of the fades, so use
-	   a named timeline made visible to both via timeline-scope on the common parent. */
-	.type-grid-wrap { timeline-scope: --type-strip; }
+	/* The scroller and the strip are descendants of #view-compose; the edge-shadows
+	   are direct children — so the two named timelines are scoped there for all. */
+	#view-compose   { timeline-scope: --type-strip, --compose-y; }
 	.type-grid      { scroll-timeline: --type-strip x; }
-	.type-fade-left {
-		animation: nop-reveal-in linear forwards;
-		animation-timeline: --type-strip;
-		animation-range: 0 240px;
+	.compose-scroll { scroll-timeline: --compose-y y; }
+	.type-shadow-left {
+		animation: nop-reveal-in linear forwards, nop-vclip linear both;
+		animation-timeline: --type-strip, --compose-y;
+		animation-range: 0 240px, 0 110px;
 	}
-	.type-fade-right {
-		animation: nop-reveal-out linear both;
-		animation-timeline: --type-strip;
-		animation-range: calc(100% - 240px) 100%;
+	.type-shadow-right {
+		animation: nop-reveal-out linear both, nop-vclip linear both;
+		animation-timeline: --type-strip, --compose-y;
+		animation-range: calc(100% - 240px) 100%, 0 110px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {
-	/* No fade reveal animation under reduced-motion — defer to the static base state. */
+	/* No reveal/clip animation under reduced-motion — defer to the static base state. */
 	.scroll-fade-top, .scroll-fade-bottom,
-	.type-fade-left, .type-fade-right { animation: none; }
+	.type-shadow-left, .type-shadow-right { animation: none; }
 }
 /* A kind is one --tile-size disc that holds the icon and the name in the same cell,
    stacked. At rest the icon shows; on hover/active the icon dims back and the

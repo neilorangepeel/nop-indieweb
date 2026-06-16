@@ -720,6 +720,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
 		if ( fadeTop )    fadeTop.style.setProperty(    '--reveal', Math.min( Math.max( top,   0 ) / RAMP, 1 ) );
 		if ( fadeBottom ) fadeBottom.style.setProperty( '--reveal', Math.min( Math.max( below, 0 ) / RAMP, 1 ) );
+		// Clip the kind-strip edge-shadows from the bottom as the body scrolls, so they
+		// track the strip's shrinking visible band (its top stays pinned at the scroller
+		// clip; only the bottom rises). ~110px ≈ the strip height — gone when it tucks up.
+		var vclip = Math.min( Math.max( top, 0 ) / 110, 1 ) * 100 + '%';
+		if ( typeShadowLeft )  typeShadowLeft.style.setProperty(  '--vclip', vclip );
+		if ( typeShadowRight ) typeShadowRight.style.setProperty( '--vclip', vclip );
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -740,8 +746,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// viewport-origin grid (iOS Safari has no working background-attachment:fixed,
 	// so we phase-lock by JS). The scroll-fades are sticky — pinned to the scroller's
 	// edges — so their lock comes from those STABLE edges and never needs a per-scroll
-	// recompute (which is what desynced on iOS momentum scroll). The type-fades ride
-	// the strip; lock them where they sit.
+	// recompute (which is what desynced on iOS momentum scroll). The kind-strip
+	// edge-shadows now live in #view-compose (which never scrolls), so they lock the
+	// same way — once, from a box that never moves.
 	function alignHalftone() {
 		if ( ! composeScroll ) { return; }
 		var pitch = gridPitch();
@@ -759,13 +766,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var sr = composeScroll.getBoundingClientRect();
 		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
 		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - fadeBottom.offsetHeight, pitch ); }
-		// The kind strip carries its own opaque grain paper so its halftone shadow
-		// (the type-fades) rides the strip as one rigid unit instead of swimming over
-		// the page grain on scroll. Lock that paper — and the fades — to the grid at
-		// rest; the strip + shadow then scroll together, registered to each other.
-		lockEl( typeGridWrap, pitch );
-		lockEl( typeFadeLeft, pitch );
-		lockEl( typeFadeRight, pitch );
+		// The kind-strip edge-shadows live in #view-compose (which never scrolls), not
+		// in the strip, so their dots lock to the universal grid ONCE and never swim.
+		// Measure the strip's resting band so they sit exactly over it, then phase-lock
+		// their dots — both stay valid for every scroll, with no per-frame work.
+		if ( viewCompose && typeGridWrap ) {
+			var vr = viewCompose.getBoundingClientRect();
+			var wr = typeGridWrap.getBoundingClientRect();
+			viewCompose.style.setProperty( '--strip-top', ( wr.top - vr.top ).toFixed( 2 ) + 'px' );
+			viewCompose.style.setProperty( '--strip-h',   wr.height.toFixed( 2 ) + 'px' );
+		}
+		lockEl( typeShadowLeft, pitch );
+		lockEl( typeShadowRight, pitch );
 	}
 	if ( ! hasScrollTimeline ) {
 		composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
@@ -774,10 +786,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
 	// left to scroll. The right one is visible on load (Repost/RSVP sit off-screen).
-	var typeBar       = document.getElementById( 'typeBar' );
-	var typeGridWrap  = document.querySelector( '.type-grid-wrap' );
-	var typeFadeLeft  = document.querySelector( '.type-fade-left' );
-	var typeFadeRight = document.querySelector( '.type-fade-right' );
+	var typeBar         = document.getElementById( 'typeBar' );
+	var typeGridWrap    = document.querySelector( '.type-grid-wrap' );
+	var viewCompose     = document.getElementById( 'view-compose' );
+	var typeShadowLeft  = document.querySelector( '.type-shadow-left' );
+	var typeShadowRight = document.querySelector( '.type-shadow-right' );
 	function updateTypeFades() {
 		if ( hasScrollTimeline || ! typeBar ) { return; }
 		// Matches the vertical fade's RAMP so growth-per-finger-pixel is the
@@ -786,8 +799,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var RAMP  = 240;
 		var left  = typeBar.scrollLeft;
 		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
-		if ( typeFadeLeft )  { typeFadeLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }
-		if ( typeFadeRight ) { typeFadeRight.style.setProperty( '--reveal', Math.min( Math.max( right, 0 ) / RAMP, 1 ) ); }
+		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }
+		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--reveal', Math.min( Math.max( right, 0 ) / RAMP, 1 ) ); }
 	}
 	if ( ! hasScrollTimeline ) {
 		typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
