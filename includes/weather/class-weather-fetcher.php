@@ -79,9 +79,14 @@ class Weather_Fetcher {
 
 		$data = self::fetch_at( $lat, $lng, time() );
 
-		// Cache even an empty result, but briefly, so a missing key or an outage
-		// can't hammer the API on every masthead load. Successes live the full window.
-		set_transient( $cache_key, $data, $data ? 30 * MINUTE_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
+		// Only cache SUCCESSES. Caching empty results "briefly" used to pin a bad
+		// state — when the API key was wrong, each /now call refreshed the 5-min
+		// empty transient instead of retrying, hiding the failure for hours. Worth
+		// the handful of extra retries per day: a Pirate Weather free key is 10k
+		// requests/day and a single /post user can't approach that.
+		if ( $data ) {
+			set_transient( $cache_key, $data, 30 * MINUTE_IN_SECONDS );
+		}
 
 		return $data;
 	}
