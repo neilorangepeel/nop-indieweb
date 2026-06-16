@@ -759,6 +759,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var sr = composeScroll.getBoundingClientRect();
 		if ( fadeTop )    { fadeTop.style.backgroundPosition    = lockXY( sr.left, sr.top, pitch ); }
 		if ( fadeBottom ) { fadeBottom.style.backgroundPosition = lockXY( sr.left, sr.bottom - fadeBottom.offsetHeight, pitch ); }
+		// The pinned kind strip carries the page grain too (the fields scroll behind
+		// its transparent badges); lock its dots to the same grid. It's sticky at the
+		// scroller top, so this one lock holds for every scroll — no per-frame work.
+		lockEl( typeGridWrap, pitch );
 		lockEl( typeFadeLeft, pitch );
 		lockEl( typeFadeRight, pitch );
 	}
@@ -770,6 +774,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// vertical ones, so the left/right halftone edges fade in by how far there is
 	// left to scroll. The right one is visible on load (Repost/RSVP sit off-screen).
 	var typeBar       = document.getElementById( 'typeBar' );
+	var typeGridWrap  = document.querySelector( '.type-grid-wrap' );
 	var typeFadeLeft  = document.querySelector( '.type-fade-left' );
 	var typeFadeRight = document.querySelector( '.type-fade-right' );
 	function updateTypeFades() {
