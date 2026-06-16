@@ -665,6 +665,9 @@ body::before {
 	width: 240px;
 	z-index: 4;                /* above the strip badges (0) and seam-shadow (3), below masthead (5) */
 	pointer-events: none;
+	/* Paint is confined to the box, so the browser can skip the clipped-away tail and
+	   the whole layer when it's scrolled off — cheap, and no overflow to clip visually. */
+	contain: paint;
 	/* The swollen full-ink grid dot; background-position is JS-locked to the one
 	   viewport grid. #view-compose doesn't scroll, so that lock is permanent. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));

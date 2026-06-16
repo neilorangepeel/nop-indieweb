@@ -728,11 +728,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// adds to it (the strip leaves under the masthead); an overscroll pull-down makes
 	// scrollTop negative → clips LESS → the tail's tiled dots fill the opening gap.
 	// Writing a clip — never background-position — can't swim.
-	var stripExtra = 600, stripH = 0;
+	var stripExtra = 600, stripH = 0, lastVclip = '';
 	function updateTypeClip() {
 		if ( ! composeScroll || ( ! typeShadowLeft && ! typeShadowRight ) ) { return; }
 		var hidden = Math.max( 0, Math.min( stripExtra + composeScroll.scrollTop, stripH + stripExtra ) );
 		var v = hidden.toFixed( 2 ) + 'px';
+		// Skip the write when the clip hasn't moved. The strip is ~one band tall, so
+		// past it --vclip sits clamped at its max for the rest of a long scroll — this
+		// drops every one of those redundant style writes (the bulk of the scroll).
+		if ( v === lastVclip ) { return; }
+		lastVclip = v;
 		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--vclip', v ); }
 		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--vclip', v ); }
 	}
