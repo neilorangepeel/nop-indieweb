@@ -720,12 +720,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
 		if ( fadeTop )    fadeTop.style.setProperty(    '--reveal', Math.min( Math.max( top,   0 ) / RAMP, 1 ) );
 		if ( fadeBottom ) fadeBottom.style.setProperty( '--reveal', Math.min( Math.max( below, 0 ) / RAMP, 1 ) );
-		// Clip the kind-strip edge-shadows from the bottom as the body scrolls, so they
-		// track the strip's shrinking visible band (its top stays pinned at the scroller
-		// clip; only the bottom rises). ~110px ≈ the strip height — gone when it tucks up.
-		var vclip = Math.min( Math.max( top, 0 ) / 110, 1 ) * 100 + '%';
-		if ( typeShadowLeft )  typeShadowLeft.style.setProperty(  '--vclip', vclip );
-		if ( typeShadowRight ) typeShadowRight.style.setProperty( '--vclip', vclip );
+	}
+	// Vertical clip of the kind-strip edge-shadows. The box is anchored at the strip's
+	// resting top and runs --strip-extra px past it; --vclip hides that tail from the
+	// bottom. One formula spans both directions: hidden = extra + scrollTop, clamped.
+	// At rest (0) it clips the whole tail → only the strip band shows; scrolling DOWN
+	// adds to it (the strip leaves under the masthead); an overscroll pull-down makes
+	// scrollTop negative → clips LESS → the tail's tiled dots fill the opening gap.
+	// Always-on (not gated by scroll-timeline support): overscroll is outside any
+	// timeline's range, and writing a clip — never background-position — can't swim.
+	var stripExtra = 600, stripH = 0;
+	function updateTypeClip() {
+		if ( ! composeScroll || ( ! typeShadowLeft && ! typeShadowRight ) ) { return; }
+		var hidden = Math.max( 0, Math.min( stripExtra + composeScroll.scrollTop, stripH + stripExtra ) );
+		var v = hidden.toFixed( 2 ) + 'px';
+		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--vclip', v ); }
+		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--vclip', v ); }
 	}
 	// ONE master dot grid: every dot layer is anchored to the VIEWPORT origin (0,0),
 	// so the surround, the phone interior and the swell-shadows all share the same
@@ -773,8 +783,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( viewCompose && typeGridWrap ) {
 			var vr = viewCompose.getBoundingClientRect();
 			var wr = typeGridWrap.getBoundingClientRect();
-			viewCompose.style.setProperty( '--strip-top', ( wr.top - vr.top ).toFixed( 2 ) + 'px' );
-			viewCompose.style.setProperty( '--strip-h',   wr.height.toFixed( 2 ) + 'px' );
+			stripH     = wr.height;
+			stripExtra = Math.round( window.innerHeight );   // tail long enough to outrun any rubber-band
+			viewCompose.style.setProperty( '--strip-top',   ( wr.top - vr.top ).toFixed( 2 ) + 'px' );
+			viewCompose.style.setProperty( '--strip-h',     stripH.toFixed( 2 ) + 'px' );
+			viewCompose.style.setProperty( '--strip-extra', stripExtra + 'px' );
+			updateTypeClip();                                // re-clip to the freshly measured band
 		}
 		lockEl( typeShadowLeft, pitch );
 		lockEl( typeShadowRight, pitch );
@@ -782,6 +796,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	if ( ! hasScrollTimeline ) {
 		composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
 	}
+	// --vclip is JS-driven for everyone (overscroll is outside any scroll-timeline),
+	// so this listener is always on — unlike updateScrollFades, which is the fallback.
+	composeScroll.addEventListener( 'scroll', updateTypeClip, { passive: true } );
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
