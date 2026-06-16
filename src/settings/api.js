@@ -22,3 +22,11 @@ export function testConnection( platform ) {
 	const url = base().replace( '/settings', '/test-connection' );
 	return apiFetch( { url, method: 'POST', data: { platform }, parse: true } );
 }
+
+export function getHealthStatus() {
+	return apiFetch( { url: base() + '/health', method: 'GET', parse: true } );
+}
+
+export function runHealthCheck() {
+	return apiFetch( { url: base() + '/health', method: 'POST', parse: true } );
+}

@@ -2,6 +2,7 @@ import { ToggleControl, TextControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import SecretInput from '../components/SecretInput';
 import SessionsTable from '../components/SessionsTable';
+import HealthTable from '../components/HealthTable';
 
 const ENRICHMENT_KEYS = [
 	{
@@ -59,6 +60,14 @@ export default function AdvancedTab( { settings, setSettings } ) {
 					/>
 				) ) }
 			</div>
+
+			<h3 className="nop-section-heading">
+				{ __( 'Provider Health', 'nop-indieweb' ) }
+			</h3>
+			<p className="description nop-section-intro">
+				{ __( 'Daily ping of each configured enrichment provider. A failing row also raises a persistent admin notice until it recovers.', 'nop-indieweb' ) }
+			</p>
+			<HealthTable />
 
 			<h3 className="nop-section-heading">
 				{ __( 'Site', 'nop-indieweb' ) }

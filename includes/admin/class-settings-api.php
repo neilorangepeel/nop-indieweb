@@ -89,6 +89,22 @@ class Settings_API {
 				],
 			],
 		] );
+
+		// Health-check status (the stored snapshot from the daily WP-Cron run) +
+		// an on-demand re-run that hits every provider live, then refreshes the
+		// stored snapshot. Same code path the cron and the wp-cli command use.
+		register_rest_route( 'nop-indieweb/v1', '/settings/health', [
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'get_health_status' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			],
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'run_health_check' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			],
+		] );
 	}
 
 	public function check_permission(): bool {
@@ -562,5 +578,53 @@ class Settings_API {
 			'ok'      => (bool) $result['ok'],
 			'message' => (string) $result['message'],
 		], 200 );
+	}
+
+	// ——— GET /settings/health + POST /settings/health ————————————————————————
+
+	/**
+	 * Returns the latest stored health snapshot — no live API calls. The shape
+	 * mirrors what HealthTable.js renders directly.
+	 */
+	public function get_health_status(): \WP_REST_Response {
+		return new \WP_REST_Response( $this->health_payload(), 200 );
+	}
+
+	/**
+	 * On-demand health check — re-runs every provider live, then returns the
+	 * fresh snapshot. Same code path the daily cron and the wp-cli command
+	 * use, so the three paths can't drift.
+	 */
+	public function run_health_check(): \WP_REST_Response {
+		( new \NOP\IndieWeb\Health_Check() )->run();
+		return new \WP_REST_Response( $this->health_payload(), 200 );
+	}
+
+	private function health_payload(): array {
+		$status    = (array) get_option( \NOP\IndieWeb\Health_Check::OPTION_KEY, [] );
+		$providers = (array) ( $status['providers'] ?? [] );
+		$labels    = [
+			'pirate_weather' => 'Pirate Weather',
+			'geoapify'       => 'Geoapify',
+			'foursquare'     => 'Foursquare',
+			'tmdb'           => 'TMDB',
+		];
+		$rows = [];
+		foreach ( $labels as $slug => $label ) {
+			$info   = (array) ( $providers[ $slug ] ?? [] );
+			$rows[] = [
+				'slug'           => $slug,
+				'label'          => $label,
+				'status'         => (string) ( $info['status']         ?? 'unknown' ),
+				'last_ok_at'     => isset( $info['last_ok_at'] )    ? (int) $info['last_ok_at']    : null,
+				'last_error_at'  => isset( $info['last_error_at'] ) ? (int) $info['last_error_at'] : null,
+				'last_http_code' => $info['last_http_code'] ?? null,
+				'last_message'   => (string) ( $info['last_message']   ?? '' ),
+			];
+		}
+		return [
+			'last_run_at' => isset( $status['last_run_at'] ) ? (int) $status['last_run_at'] : null,
+			'providers'   => $rows,
+		];
 	}
 }
