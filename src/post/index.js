@@ -522,7 +522,33 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var eventStartDate  = document.getElementById( 'eventStartDate' );
 	var eventStartTime  = document.getElementById( 'eventStartTime' );
 	var eventLocation   = document.getElementById( 'eventLocation' );
+	var eventImage      = document.getElementById( 'eventImage' );
+	var eventPoster     = document.getElementById( 'eventPoster' );
+	var eventPosterImg  = document.getElementById( 'eventPosterImg' );
+	var eventPosterRm   = document.getElementById( 'eventPosterRemove' );
 	var eventStatus     = document.getElementById( 'eventStatus' );
+
+	// Apply (or clear) the hot-linked event poster: hidden input carries the URL
+	// through to the Micropub payload, the <figure> is just author confirmation
+	// ("yep, that's the show"). Empty/missing URL hides the figure.
+	function setEventPoster( url ) {
+		url = ( url || '' ).trim();
+		if ( eventImage ) { eventImage.value = url; }
+		if ( ! eventPoster || ! eventPosterImg ) { return; }
+		if ( url ) {
+			eventPosterImg.src = url;
+			eventPoster.hidden = false;
+		} else {
+			eventPosterImg.removeAttribute( 'src' );
+			eventPoster.hidden = true;
+		}
+	}
+	if ( eventPosterRm ) {
+		eventPosterRm.addEventListener( 'click', function () {
+			setEventPoster( '' );
+			saveDraft();
+		} );
+	}
 
 	// The event start rides as a single ISO string ("YYYY-MM-DD" when only the
 	// date is known, "YYYY-MM-DDTHH:MM" when a time was set, blank when unknown).
@@ -774,6 +800,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( d.name )     { eventName.value     = d.name; }
 			if ( d.start )    { splitEventDt( eventStartDate, eventStartTime, d.start ); }
 			if ( d.location ) { eventLocation.value = d.location; }
+			if ( d.image )    { setEventPoster( d.image ); }
 			// "Thin" = only a name came back (no date and no location). Usually a
 			// page-title fallback or a venue/listings page that exposes an og:title
 			// but nothing else useful. Flag it so the author knows to step in.
@@ -1166,6 +1193,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				name:     eventName ? eventName.value.trim() : '',
 				start:    joinEventDt( eventStartDate, eventStartTime ),
 				location: eventLocation ? eventLocation.value.trim() : '',
+				image:    eventImage ? eventImage.value.trim() : '',
 			},
 			tags:        currentTags.slice(),
 			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
@@ -1220,6 +1248,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( ev.name )     { props[ 'event-name' ]     = [ ev.name ]; }
 			if ( ev.start )    { props[ 'event-start' ]    = [ ev.start ]; }
 			if ( ev.location ) { props[ 'event-location' ] = [ ev.location ]; }
+			if ( ev.image )    { props[ 'event-photo' ]    = [ ev.image ]; }
 		}
 
 		// Alt text rides along as the server's array photo shape ({primary, alt});
@@ -1429,6 +1458,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( eventStartDate ) { eventStartDate.value = ''; }
 		if ( eventStartTime ) { eventStartTime.value = ''; }
 		if ( eventLocation )  { eventLocation.value  = ''; }
+		setEventPoster( '' );
 		fetchedEventUrl = '';
 		setEventStatus( '' );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
@@ -1491,6 +1521,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 					name:     eventName ? eventName.value : '',
 					start:    joinEventDt( eventStartDate, eventStartTime ),
 					location: eventLocation ? eventLocation.value : '',
+					image:    eventImage ? eventImage.value : '',
 				},
 			} ) );
 		} catch ( e ) {}
@@ -1522,6 +1553,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( eventName )     { eventName.value     = d.event.name     || ''; }
 			splitEventDt( eventStartDate, eventStartTime, d.event.start );
 			if ( eventLocation ) { eventLocation.value = d.event.location || ''; }
+			setEventPoster( d.event.image || '' );
 			// Treat a restored URL as already fetched so reopening a draft doesn't
 			// re-hit the endpoint and clobber restored edits.
 			if ( typeof d.url === 'string' ) { fetchedEventUrl = d.url.trim(); }

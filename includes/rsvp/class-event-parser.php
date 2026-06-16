@@ -35,7 +35,7 @@ class Event_Parser {
 	/**
 	 * Fetches $url and returns the parsed event.
 	 *
-	 * @return array{source:?string,url:string,name:string,start:string,end:string,location:string,note:string}
+	 * @return array{source:?string,url:string,name:string,start:string,end:string,location:string,image:string,note:string}
 	 */
 	public function fetch( string $url ): array {
 		$empty = [
@@ -45,6 +45,7 @@ class Event_Parser {
 			'start'    => '',
 			'end'      => '',
 			'location' => '',
+			'image'    => '',
 			'note'     => '',
 		];
 
@@ -85,7 +86,7 @@ class Event_Parser {
 	 * Parses event details from an HTML string. Public so it can be unit-tested
 	 * without a network round-trip.
 	 *
-	 * @return array{source:?string,url:string,name:string,start:string,end:string,location:string,note:string}
+	 * @return array{source:?string,url:string,name:string,start:string,end:string,location:string,image:string,note:string}
 	 */
 	public function parse_html( string $html, string $source_url ): array {
 		$base = [
@@ -95,6 +96,7 @@ class Event_Parser {
 			'start'    => '',
 			'end'      => '',
 			'location' => '',
+			'image'    => '',
 			'note'     => '',
 		];
 
@@ -107,7 +109,7 @@ class Event_Parser {
 		// 1. microformats2 h-event.
 		$event = $this->from_mf2( $html, $xpath );
 		if ( '' !== $event['name'] || '' !== $event['start'] ) {
-			return array_merge( $base, $event, [ 'source' => 'mf2' ] );
+			return $this->finish( $base, $event, 'mf2', $xpath, $source_url );
 		}
 
 		// 2. JSON-LD schema.org/Event. Pass the source URL so a multi-event blob
@@ -117,13 +119,13 @@ class Event_Parser {
 		// event happens to come first.
 		$event = $this->from_json_ld( $xpath, $source_url );
 		if ( '' !== $event['name'] || '' !== $event['start'] ) {
-			return array_merge( $base, $event, [ 'source' => 'jsonld' ] );
+			return $this->finish( $base, $event, 'jsonld', $xpath, $source_url );
 		}
 
 		// 3. Open Graph.
 		$event = $this->from_open_graph( $xpath );
 		if ( '' !== $event['name'] ) {
-			return array_merge( $base, $event, [ 'source' => 'opengraph' ] );
+			return $this->finish( $base, $event, 'opengraph', $xpath, $source_url );
 		}
 
 		// 4. <title> only.
@@ -136,6 +138,27 @@ class Event_Parser {
 		return $base;
 	}
 
+	/**
+	 * Merges the winning layer's event data over the base, stamps the source,
+	 * and back-fills the image from `og:image` when the winning layer didn't
+	 * carry one (mf2 h-event rarely sets u-photo; JSON-LD's image is sometimes
+	 * present and sometimes not — OG is the most reliable image source on the
+	 * commercial web).
+	 *
+	 * @param array<string,mixed> $base
+	 * @param array<string,mixed> $event
+	 */
+	private function finish( array $base, array $event, string $source, \DOMXPath $xpath, string $page_url ): array {
+		$merged = array_merge( $base, $event, [ 'source' => $source ] );
+		if ( '' === ( $merged['image'] ?? '' ) ) {
+			$og_image = $this->meta_content( $xpath, [ 'og:image', 'og:image:secure_url', 'twitter:image' ] );
+			if ( '' !== $og_image ) {
+				$merged['image'] = $this->clean_image_url( $og_image, $page_url );
+			}
+		}
+		return $merged;
+	}
+
 	// ── 1. microformats2 ─────────────────────────────────────────────────────
 
 	/**
@@ -146,7 +169,7 @@ class Event_Parser {
 	 * @return array{name:string,start:string,end:string,location:string,note:string}
 	 */
 	private function from_mf2( string $html, \DOMXPath $xpath ): array {
-		$blank = [ 'name' => '', 'start' => '', 'end' => '', 'location' => '', 'note' => '' ];
+		$blank = [ 'name' => '', 'start' => '', 'end' => '', 'location' => '', 'image' => '', 'note' => '' ];
 
 		if ( function_exists( 'Mf2\\parse' ) ) {
 			$parsed = $this->from_mf2_library( $html );
@@ -165,6 +188,7 @@ class Event_Parser {
 			'start'    => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-start', $root ) ),
 			'end'      => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-end', $root ) ),
 			'location' => $this->compose_location( $this->prop_text( $xpath, 'p-location', $root ) ),
+			'image'    => $this->prop_image( $xpath, $root ),
 			'note'     => $this->clean_note( $this->prop_text( $xpath, 'e-content', $root ) ?: $this->prop_text( $xpath, 'p-summary', $root ) ),
 		];
 	}
@@ -198,11 +222,17 @@ class Event_Parser {
 			$content = $content['value'] ?? '';
 		}
 
+		$photo = $props['photo'][0] ?? '';
+		if ( is_array( $photo ) ) {
+			$photo = $photo['value'] ?? '';
+		}
+
 		return [
 			'name'     => $this->clean_text( (string) ( $props['name'][0] ?? '' ) ),
 			'start'    => $this->normalize_datetime( (string) ( $props['start'][0] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $props['end'][0] ?? '' ) ),
 			'location' => $this->compose_location( (string) $location ),
+			'image'    => $this->clean_image_url( (string) $photo, '' ),
 			'note'     => $this->clean_note( (string) $content ),
 		];
 	}
@@ -359,8 +389,37 @@ class Event_Parser {
 			'start'    => $this->normalize_datetime( (string) ( $event['startDate'] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $event['endDate'] ?? '' ) ),
 			'location' => $this->compose_location( $event['location'] ?? '' ),
+			'image'    => $this->jsonld_image( $event['image'] ?? '' ),
 			'note'     => $this->clean_note( (string) ( $event['description'] ?? '' ) ),
 		];
+	}
+
+	/**
+	 * schema.org's `image` value comes in three shapes in the wild — a bare
+	 * URL string, an ImageObject ({"@type":"ImageObject","url":"…"}), or a list
+	 * of either. Pick the first concrete URL.
+	 *
+	 * @param mixed $value
+	 */
+	private function jsonld_image( $value ): string {
+		if ( is_string( $value ) ) {
+			return $this->clean_image_url( $value, '' );
+		}
+		if ( ! is_array( $value ) ) {
+			return '';
+		}
+		// ImageObject node: {"@type":"ImageObject","url":"…"}.
+		if ( isset( $value['url'] ) && is_string( $value['url'] ) ) {
+			return $this->clean_image_url( $value['url'], '' );
+		}
+		// Bare list of any of the above — first concrete URL wins.
+		foreach ( $value as $item ) {
+			$url = $this->jsonld_image( $item );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+		return '';
 	}
 
 	/**
@@ -430,6 +489,7 @@ class Event_Parser {
 			'start'    => $this->normalize_datetime( $this->meta_content( $xpath, [ 'event:start_time', 'og:event:start_time' ] ) ),
 			'end'      => $this->normalize_datetime( $this->meta_content( $xpath, [ 'event:end_time', 'og:event:end_time' ] ) ),
 			'location' => '',
+			'image'    => $this->clean_image_url( $this->meta_content( $xpath, [ 'og:image', 'og:image:secure_url', 'twitter:image' ] ), '' ),
 			'note'     => $this->clean_note( $this->meta_content( $xpath, [ 'og:description', 'description' ] ) ),
 		];
 	}
@@ -501,6 +561,56 @@ class Event_Parser {
 
 	private function clean_text( string $text ): string {
 		return mb_substr( sanitize_text_field( $text ), 0, self::TEXT_CAP );
+	}
+
+	/**
+	 * Returns an absolute http(s) image URL or empty string. Skips data:/javascript:
+	 * URLs (won't archive, can't render reliably) and resolves protocol-relative
+	 * and root-relative references against the page URL when one is known.
+	 *
+	 * Capped at 2 KB — long signed-URL query strings legitimately push past the
+	 * 300-char TEXT_CAP used for prose, but a multi-KB blob is junk.
+	 */
+	private function clean_image_url( string $value, string $page_url ): string {
+		$value = trim( $value );
+		if ( '' === $value || strlen( $value ) > 2048 ) {
+			return '';
+		}
+		// Resolve protocol-relative and root-relative refs against the page URL.
+		if ( str_starts_with( $value, '//' ) ) {
+			$value = 'https:' . $value;
+		} elseif ( str_starts_with( $value, '/' ) && '' !== $page_url ) {
+			$parts = wp_parse_url( $page_url );
+			if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+				$value = $parts['scheme'] . '://' . $parts['host'] . $value;
+			}
+		}
+		$value = esc_url_raw( $value );
+		if ( '' === $value ) {
+			return '';
+		}
+		$scheme = strtolower( (string) wp_parse_url( $value, PHP_URL_SCHEME ) );
+		return in_array( $scheme, [ 'http', 'https' ], true ) ? $value : '';
+	}
+
+	/**
+	 * Pulls a u-photo URL from inside an mf2 h-event root. Prefers an explicit
+	 * <img class="u-photo" src="…">, falls back to its href when applied to an
+	 * <a>, then the inner text — same value-class cascade the rest of the parser
+	 * uses for dt-/u- properties.
+	 */
+	private function prop_image( \DOMXPath $xpath, \DOMElement $root ): string {
+		$node = $xpath->query( './/*[' . $this->cls( 'u-photo' ) . ']', $root )->item( 0 );
+		if ( ! $node instanceof \DOMElement ) {
+			return '';
+		}
+		foreach ( [ 'src', 'href', 'data-src' ] as $attr ) {
+			$value = trim( (string) $node->getAttribute( $attr ) );
+			if ( '' !== $value ) {
+				return $this->clean_image_url( $value, '' );
+			}
+		}
+		return $this->clean_image_url( trim( $node->textContent ), '' );
 	}
 
 	private function clean_note( string $text ): string {

@@ -98,20 +98,34 @@ class Event_Endpoint {
 		}
 
 		$event_url = (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true );
-		if ( '' === $event_url || ! \NOP\IndieWeb\nop_indieweb_is_safe_url( $event_url ) ) {
-			return;
-		}
-		if ( $event_url === (string) get_post_meta( $post_id, 'nop_indieweb_event_archived', true ) ) {
-			return;
+		if ( '' !== $event_url && \NOP\IndieWeb\nop_indieweb_is_safe_url( $event_url ) ) {
+			$this->wayback_save( $event_url, $post_id, 'nop_indieweb_event_archived' );
 		}
 
-		wp_remote_get( 'https://web.archive.org/save/' . $event_url, [
+		// The event poster is hot-linked from the venue's CDN, so it shares the
+		// same dead-link risk as the event page. A second Wayback save preserves
+		// the image binary at the same moment we capture the URL.
+		$image_url = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_image', true );
+		if ( '' !== $image_url && \NOP\IndieWeb\nop_indieweb_is_safe_url( $image_url ) ) {
+			$this->wayback_save( $image_url, $post_id, 'nop_indieweb_event_image_archived' );
+		}
+	}
+
+	/**
+	 * Fires the non-blocking Wayback save and stores the URL we last archived
+	 * against $marker_key so re-publishes of an unchanged URL don't re-ping.
+	 */
+	private function wayback_save( string $url, int $post_id, string $marker_key ): void {
+		if ( $url === (string) get_post_meta( $post_id, $marker_key, true ) ) {
+			return;
+		}
+		wp_remote_get( 'https://web.archive.org/save/' . $url, [
 			'blocking'    => false,
 			'timeout'     => 0.01,
 			'redirection' => 0,
 			'user-agent'  => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (+' . home_url( '/' ) . ')',
 		] );
-		update_post_meta( $post_id, 'nop_indieweb_event_archived', $event_url );
-		\NOP\IndieWeb\nop_indieweb_log( 'RSVP: requested Wayback save', [ 'url' => $event_url ] );
+		update_post_meta( $post_id, $marker_key, $url );
+		\NOP\IndieWeb\nop_indieweb_log( 'RSVP: requested Wayback save', [ 'url' => $url ] );
 	}
 }

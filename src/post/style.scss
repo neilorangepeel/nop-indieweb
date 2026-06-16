@@ -757,12 +757,50 @@ body::before {
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
 .rsvp-btn:active { transform: translate(1px, 1px); }
 
-/* RSVP event detail — a printed cover sheet: a stamped status line up top, then
-   labelled rows (TITLE · WHERE · STARTS · ENDS) that echo the docket header's
-   muted display-caps. Start/end split into a date + time pair so a date-only
-   source (a theatrical run quoted as just "Sat 13 Jun 2026") fills the date
-   honestly without inventing a midnight performance. */
+/* RSVP event detail — a printed cover sheet: a stamped status line up top, an
+   optional hot-linked event poster, then labelled rows (TITLE · WHERE · WHEN)
+   that echo the docket header's muted display-caps. Date+time split so a
+   date-only source (a theatrical run quoted as just "Sat 13 Jun 2026") fills
+   the date honestly without inventing a midnight performance. */
 .event-fields { display: flex; flex-direction: column; gap: var(--sp-3); }
+/* Event poster — author confirmation that the right event was fetched. The
+   image rides as a hot-link from the venue's CDN (no sideload), so we constrain
+   it visually and frame it like a pasted-on Polaroid: a hairline rule, the same
+   muted ink, the same printed-paper feel. Hidden unless an image was fetched. */
+.event-poster {
+	position: relative;
+	margin: 0;
+	max-height: 200px;
+	overflow: hidden;
+	border: var(--bw-rule) solid var(--rule);
+	border-radius: var(--radius);
+	background: color-mix( in srgb, var(--ink) 8%, var(--paper) );
+}
+.event-poster img {
+	display: block;
+	width: 100%;
+	max-height: 200px;
+	object-fit: cover;
+}
+/* Tap-to-dismiss ✕ — same paper-stamped affordance as the photo and tag chip
+   removers (./.thumb__remove, .tag-chip__remove), positioned over the
+   top-right corner of the poster. Pure ink-on-paper, no opaque background. */
+.event-poster__remove {
+	position: absolute;
+	top: var(--sp-1);
+	right: var(--sp-1);
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: 999px;
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.event-poster__remove:active { transform: translate(1px, 1px); }
 .event-status {
 	margin: 0 0 var(--sp-1);
 	font-family: var(--readout);

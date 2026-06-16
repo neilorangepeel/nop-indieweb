@@ -316,11 +316,12 @@
 		// the same value, and an unchanged blur is a no-op.
 		var fetchedRef = useRef( '' );
 
-		var eventUrl  = meta['nop_indieweb_in_reply_to']        || '';
-		var rsvpValue = meta['nop_indieweb_rsvp']               || 'yes';
+		var eventUrl  = meta['nop_indieweb_in_reply_to']         || '';
+		var rsvpValue = meta['nop_indieweb_rsvp']                || 'yes';
 		var eventName = meta['nop_indieweb_rsvp_event_name']     || '';
 		var eventStart= meta['nop_indieweb_rsvp_event_start']    || '';
 		var eventLoc  = meta['nop_indieweb_rsvp_event_location'] || '';
+		var eventImg  = meta['nop_indieweb_rsvp_event_image']    || '';
 		var note      = meta['nop_indieweb_rsvp_note']           || '';
 
 		// Split start into date + time controls so a date-only source (a
@@ -371,6 +372,7 @@
 				if ( data.name )     { update.meta['nop_indieweb_rsvp_event_name']     = data.name; }
 				if ( data.start )    { update.meta['nop_indieweb_rsvp_event_start']    = data.start; }
 				if ( data.location ) { update.meta['nop_indieweb_rsvp_event_location'] = data.location; }
+				if ( data.image )    { update.meta['nop_indieweb_rsvp_event_image']    = data.image; }
 				if ( data.note )     { update.meta['nop_indieweb_rsvp_note']           = data.note; }
 
 				// Fill an empty post title with the event name, matching the
@@ -382,6 +384,8 @@
 				editPostFn( update );
 				// Thin = only a name came back. Usually a page-title fallback or a
 				// venue/listings page that exposes an og:title but nothing else.
+				// An image alone isn't enough — venue og:image often points at a
+				// site-wide logo, not the event's own poster.
 				var thin = ! data.start && ! data.location;
 				setSource( data.source );
 				setStatus( thin ? 'thin' : 'found' );
@@ -477,6 +481,21 @@
 				onChange:                function ( v ) { setMeta( 'nop_indieweb_rsvp_event_location', v ); },
 				__nextHasNoMarginBottom: true,
 			} ),
+
+			// Hot-linked event poster. Just a confirmation thumbnail + a
+			// "remove" affordance — no upload control, the URL only changes
+			// via the event-URL fetch (the parser pulls it from u-photo /
+			// schema.org image / og:image). The Wayback save on publish
+			// preserves the image binary so a future theme can wire a
+			// dead-link fallback when the venue CDN URL eventually 404s.
+			eventImg ? el( 'div', { className: 'nop-rsvp-poster' },
+				el( 'img', { src: eventImg, alt: '', referrerPolicy: 'no-referrer', loading: 'lazy' } ),
+				el( Button, {
+					variant:  'link',
+					isDestructive: true,
+					onClick:  function () { setMeta( 'nop_indieweb_rsvp_event_image', '' ); },
+				}, __( 'Remove poster', 'nop-indieweb' ) )
+			) : null,
 
 			el( TextareaControl, {
 				label:                   __( 'Note (optional)', 'nop-indieweb' ),

@@ -42,6 +42,7 @@ class RSVP extends Url_Response_Service {
 		$parsed['event_start']    = sanitize_text_field( $props['event-start'][0] ?? '' );
 		$parsed['event_end']      = sanitize_text_field( $props['event-end'][0] ?? '' );
 		$parsed['event_location'] = sanitize_text_field( $props['event-location'][0] ?? '' );
+		$parsed['event_image']    = esc_url_raw( $props['event-photo'][0] ?? '' );
 
 		return $parsed;
 	}
@@ -60,6 +61,7 @@ class RSVP extends Url_Response_Service {
 			'nop_indieweb_rsvp_event_start'    => $parsed['event_start']    ?? '',
 			'nop_indieweb_rsvp_event_end'      => $parsed['event_end']      ?? '',
 			'nop_indieweb_rsvp_event_location' => $parsed['event_location'] ?? '',
+			'nop_indieweb_rsvp_event_image'    => $parsed['event_image']    ?? '',
 		] as $key => $value ) {
 			if ( '' !== $value ) {
 				$meta[ $key ] = $value;

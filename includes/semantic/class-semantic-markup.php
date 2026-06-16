@@ -146,8 +146,9 @@ class Semantic_Markup {
 		$start    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true );
 		$end      = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', true );
 		$location = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+		$image    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_image', true );
 
-		$has_event = ( '' !== $name || '' !== $start || '' !== $end || '' !== $location );
+		$has_event = ( '' !== $name || '' !== $start || '' !== $end || '' !== $location || '' !== $image );
 
 		if ( $url && $has_event ) {
 			echo '<div class="h-cite u-in-reply-to" hidden>';
@@ -164,6 +165,18 @@ class Semantic_Markup {
 			}
 			if ( '' !== $location ) {
 				printf( '<span class="p-location">%s</span>', esc_html( $location ) );
+			}
+			// u-photo for mf2 consumers. data-archive carries the Wayback wildcard
+			// URL ('2*' resolves to the closest snapshot, im_ flag serves the raw
+			// image bytes without IA's wrapper) so a theme that lifts this image
+			// into a visible card can wire a tiny onerror fallback when the
+			// venue's CDN URL eventually 404s.
+			if ( '' !== $image ) {
+				printf(
+					'<img class="u-photo" src="%s" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" data-archive="%s">',
+					esc_url( $image ),
+					esc_url( 'https://web.archive.org/web/2*im_/' . $image )
+				);
 			}
 			echo "</div>\n";
 		} elseif ( $url ) {

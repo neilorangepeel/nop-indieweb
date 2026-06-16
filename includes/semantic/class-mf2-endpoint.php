@@ -226,8 +226,9 @@ class MF2_Endpoint {
 		$start    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true );
 		$end      = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', true );
 		$location = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+		$image    = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_image', true );
 
-		if ( '' === $name && '' === $start && '' === $end && '' === $location ) {
+		if ( '' === $name && '' === $start && '' === $end && '' === $location && '' === $image ) {
 			return null;
 		}
 
@@ -237,6 +238,7 @@ class MF2_Endpoint {
 		if ( '' !== $start )    $props['start']    = [ $start ];
 		if ( '' !== $end )      $props['end']      = [ $end ];
 		if ( '' !== $location ) $props['location'] = [ $location ];
+		if ( '' !== $image )    $props['photo']    = [ $image ];
 
 		return [ 'type' => [ 'h-event' ], 'properties' => $props ];
 	}

@@ -493,6 +493,18 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     than inventing midnight. -->
 				<div class="field-group is-conditional event-fields" id="fieldEvent" hidden>
 					<p class="event-status" id="eventStatus" aria-live="polite" hidden></p>
+					<!-- Event poster — hot-linked, hidden field carries the URL through to
+					     the Micropub payload, the thumbnail is just author confirmation
+					     ("yep, that's the show"). Tap the ✕ to dismiss when the parser
+					     pulls the wrong image (a venue-page og:image often resolves to
+					     a site-wide logo, not the event's own poster). -->
+					<figure class="event-poster" id="eventPoster" hidden>
+						<img id="eventPosterImg" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async">
+						<button type="button" class="event-poster__remove" id="eventPosterRemove" aria-label="<?php esc_attr_e( 'Remove poster', 'nop-indieweb' ); ?>">
+							<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+						</button>
+					</figure>
+					<input type="hidden" id="eventImage" value="">
 					<div class="event-row">
 						<span class="event-row__label"><?php esc_html_e( 'Title', 'nop-indieweb' ); ?></span>
 						<input type="text" id="eventName" class="text-field" placeholder="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>">

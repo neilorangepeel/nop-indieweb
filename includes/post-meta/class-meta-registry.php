@@ -259,6 +259,11 @@ class Registry {
 				'label'       => __( 'Event Location', 'nop-indieweb' ),
 				'description' => 'Optional event location (h-event p-location).',
 			] ),
+			'nop_indieweb_rsvp_event_image'    => array_merge( $string, [
+				'label'       => __( 'Event Image', 'nop-indieweb' ),
+				'description' => 'Optional event poster URL (h-event u-photo). Hot-linked; Wayback snapshot taken on publish.',
+				'sanitize_callback' => 'esc_url_raw',
+			] ),
 			'nop_indieweb_rsvp_note'           => array_merge( $string, [
 				'label'       => __( 'RSVP Note', 'nop-indieweb' ),
 				'description' => 'Optional free-text note shown with the response (p-content / p-summary).',
