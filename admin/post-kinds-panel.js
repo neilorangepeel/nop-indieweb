@@ -458,11 +458,16 @@
 				__nextHasNoMarginBottom: true,
 			} ),
 
+			// autoComplete="off" defeats Chrome's heuristic autofill on labelled
+			// date/time inputs — without it, Chrome pre-fills today's date and
+			// the current time on a fresh load, which reads as the field having a
+			// real value the author chose.
 			el( 'div', { className: 'nop-rsvp-when' },
 				el( TextControl, {
 					label:                   __( 'When (date)', 'nop-indieweb' ),
 					type:                    'date',
 					value:                   startDate,
+					autoComplete:            'off',
 					onChange:                function ( v ) { setStart( v, startTime ); },
 					__nextHasNoMarginBottom: true,
 				} ),
@@ -470,6 +475,7 @@
 					label:                   __( 'When (time)', 'nop-indieweb' ),
 					type:                    'time',
 					value:                   startTime,
+					autoComplete:            'off',
 					onChange:                function ( v ) { setStart( startDate, v ); },
 					__nextHasNoMarginBottom: true,
 				} )

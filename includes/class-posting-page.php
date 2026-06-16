@@ -520,9 +520,14 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 					<div class="event-row event-row--when">
 						<span class="event-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
+						<!-- autocomplete="off" + explicit empty value defeat Chrome's
+						     heuristic autofill on labelled date/time inputs — without
+						     this, Chrome desktop pre-fills today's date and the current
+						     time on a fresh load (visible even in incognito), which
+						     looks like the field already has a value the author chose. -->
 						<div class="event-row__pair">
-							<input type="date" id="eventStartDate" class="text-field text-field--date" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
-							<input type="time" id="eventStartTime" class="text-field text-field--time" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
+							<input type="date" id="eventStartDate" class="text-field text-field--date" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
+							<input type="time" id="eventStartTime" class="text-field text-field--time" value="" autocomplete="off" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
 						</div>
 					</div>
 				</div>
