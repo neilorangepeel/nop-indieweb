@@ -532,18 +532,30 @@ body::before {
 /* Group heading — set apart by the condensed display face + caps + tracking, then
    DIMMED so it reads as a quiet supporting label (the data is the figure, the head
    is the ground). One step smaller than the data so the size hierarchy reinforces
-   the role. No brackets — the face/case/dim do the marker work already. */
+   the role. No brackets — the face/case/dim do the marker work already.
+   Dim via a translucent color (not opacity) so the trailing ::after middot can
+   keep full ink — without that, the divider dot would inherit the head's dim and
+   not match the other separators. */
 .ticker__head {
 	font-family: var(--display);
 	font-size: var(--fs-13);
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
-	opacity: 0.55;
-	/* Asymmetric: more air BEFORE each head than after, so the group break sits
-	   on the heading's left edge — between previous group's last datum and this
-	   heading — rather than padding both sides equally. */
-	margin: 0 10px 0 18px;
+	color: color-mix(in srgb, var(--text) 55%, transparent);
+	/* Group break sits on the LEFT of each head — a clearly bigger gap than the
+	   inter-item rhythm (9px middot pad either side, ~18px effective) so the eye
+	   reads "new section". The space AFTER the head is the ::after middot below,
+	   matched to the standard item rhythm. */
+	margin: 0 0 0 24px;
+}
+/* Trailing middot — same character + 9px-each-side rhythm as .ticker__sep, so the
+   head sits inside its own list as just-another-rhythm-tick. Full ink (the head
+   above is dim) so the divider reads as part of the data line, not a quiet label. */
+.ticker__head::after {
+	content: '·';
+	color: var(--text);
+	padding: 0 9px;
 }
 .ticker__item {
 	display: inline-flex;
