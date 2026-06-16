@@ -225,6 +225,7 @@ class Plugin {
 		add_action( 'rest_api_init', [ $this, 'register_foursquare_oauth_routes' ] );
 		( new Settings_API() )->register();
 		( new Posting_Page() )->register();
+		( new Health_Check() )->register();
 
 		if ( is_admin() ) {
 			( new Settings() )->register();

@@ -85,6 +85,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/venue/class-geoapify-geocoder.php';
 require_once NOP_INDIEWEB_DIR . 'includes/ai-policy/class-ai-policy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-websub.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-posting-page.php';
+require_once NOP_INDIEWEB_DIR . 'includes/class-health-check.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -102,6 +103,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-repair-photo-sideloads.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-weather.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-health-check-cli.php';
+	\WP_CLI::add_command( 'nop-indieweb health-check',                \NOP\IndieWeb\Cli\Health_Check_CLI::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );
@@ -121,6 +124,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 // Create the tokens table on activation and on every load if the schema is stale.
 register_activation_hook( __FILE__, function () {
 	\NOP\IndieWeb\IndieAuth\Token_Store::maybe_create_table();
+} );
+
+// Tear down the daily health-check cron on deactivation so a deactivated plugin
+// doesn't leave a ghost event firing against unregistered callbacks.
+register_deactivation_hook( __FILE__, function () {
+	\NOP\IndieWeb\Health_Check::unschedule();
 } );
 
 add_action( 'plugins_loaded', function () {
