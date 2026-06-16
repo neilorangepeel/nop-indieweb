@@ -51,15 +51,22 @@ $event_end  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_end', t
 $event_loc  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
 $rsvp_note  = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_note', true );
 
-// Format a stored datetime (Y-m-d\TH:i or ISO) for display, falling back to the
-// raw value when it can't be parsed.
+// Format a stored datetime for display, falling back to the raw value when it
+// can't be parsed. Drops the · H:i suffix when the stored value is date-only
+// (`YYYY-MM-DD`) — the parser deliberately returns date-only for sources that
+// publish just a date (e.g. theatrical runs), and emitting `· 00:00` here would
+// re-introduce the fabricated-midnight lie the parser change was made to avoid.
 $fmt_dt = static function ( string $value ): string {
 	$value = trim( $value );
 	if ( '' === $value ) {
 		return '';
 	}
-	$ts = strtotime( $value );
-	return false === $ts ? $value : date_i18n( 'j M Y · H:i', $ts );
+	$date_only = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value );
+	$ts        = strtotime( $value );
+	if ( false === $ts ) {
+		return $value;
+	}
+	return date_i18n( $date_only ? 'j M Y' : 'j M Y · H:i', $ts );
 };
 
 if ( ! $rsvp_value && ! $event_url && ! $event_name ) {

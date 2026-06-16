@@ -173,7 +173,7 @@ class Posting_Page {
 		];
 		?>
 'use strict';
-var CACHE = 'nop-post-v6';
+var CACHE = 'nop-post-v7';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -202,12 +202,17 @@ self.addEventListener( 'fetch', function ( e ) {
 	var url = new URL( req.url );
 	if ( url.pathname.indexOf( '/wp-json/' ) !== -1 ) { return; }    // never cache the API
 
-	// The /post page: network-first so the nonce refreshes online; cached shell offline.
+	// The /post page: network-first so the nonce refreshes online; cached shell
+	// offline. Gate the cache write on res.ok — without this, a 503/504 served
+	// by SiteGround during a deploy gets pinned as the offline fallback and
+	// served indefinitely until the next successful navigation.
 	if ( req.mode === 'navigate' ) {
 		e.respondWith(
 			fetch( req ).then( function ( res ) {
-				var copy = res.clone();
-				caches.open( CACHE ).then( function ( c ) { c.put( PAGE, copy ); } );
+				if ( res && res.ok ) {
+					var copy = res.clone();
+					caches.open( CACHE ).then( function ( c ) { c.put( PAGE, copy ); } );
+				}
 				return res;
 			} ).catch( function () {
 				return caches.match( PAGE ).then( function ( m ) { return m || caches.match( req ); } );
@@ -241,6 +246,12 @@ self.addEventListener( 'fetch', function ( e ) {
 						return fb || new Response( '', { status: 504, statusText: 'No cached fallback' } );
 					} );
 				} );
+			} ).catch( function () {
+				// caches.match can itself reject on a corrupted CacheStorage or a
+				// private-mode quota error. Fall back to a fresh network fetch (with
+				// the same retry behaviour) rather than letting respondWith reject —
+				// browser network-error pages are worse than one un-cached request.
+				return fetchResilient( req );
 			} )
 		);
 	}
