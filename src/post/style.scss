@@ -757,6 +757,28 @@ body::before {
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
 .rsvp-btn:active { transform: translate(1px, 1px); }
 
+/* RSVP event detail — name / start–end / location, pre-filled by the event-URL
+   lookup and editable. A printed status line reports the fetch result. */
+.event-fields { gap: var(--sp-3); }
+.event-status {
+	margin: 0;
+	font-family: var(--readout);
+	font-size: var(--fs-12);
+	line-height: 1.4;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+}
+.event-status.is-found { color: var(--accent); }
+.event-when { display: flex; gap: var(--sp-2); }
+.event-when__field { flex: 1 1 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+.field-sublabel {
+	font-family: var(--display);
+	font-size: var(--fs-12);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+}
+
 /* ── Docket / index card ─────────────────────────────────────────────────────
    Each kind composes as a filing docket on the ruled paper: a printed header
    (kind · serial · date), a printed-fields region (the catalog slips), and the

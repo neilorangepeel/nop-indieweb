@@ -32,8 +32,17 @@ class RSVP extends Url_Response_Service {
 
 	public function parse( array $payload ): array {
 		$parsed = parent::parse( $payload );
-		$rsvp   = strtolower( sanitize_key( $payload['properties']['rsvp'][0] ?? '' ) );
+		$props  = $payload['properties'] ?? [];
+		$rsvp   = strtolower( sanitize_key( $props['rsvp'][0] ?? '' ) );
 		$parsed['rsvp'] = in_array( $rsvp, self::VALID_VALUES, true ) ? $rsvp : 'yes';
+
+		// Event detail (h-event), as sent by the /post authoring app's RSVP lookup.
+		// Optional — absent on a bare RSVP, kept editable on the post afterwards.
+		$parsed['event_name']     = sanitize_text_field( $props['event-name'][0] ?? '' );
+		$parsed['event_start']    = sanitize_text_field( $props['event-start'][0] ?? '' );
+		$parsed['event_end']      = sanitize_text_field( $props['event-end'][0] ?? '' );
+		$parsed['event_location'] = sanitize_text_field( $props['event-location'][0] ?? '' );
+
 		return $parsed;
 	}
 
@@ -42,8 +51,21 @@ class RSVP extends Url_Response_Service {
 	}
 
 	public function get_meta( array $parsed ): array {
-		return parent::get_meta( $parsed ) + [
+		$meta = parent::get_meta( $parsed ) + [
 			'nop_indieweb_rsvp' => $parsed['rsvp'],
 		];
+
+		foreach ( [
+			'nop_indieweb_rsvp_event_name'     => $parsed['event_name']     ?? '',
+			'nop_indieweb_rsvp_event_start'    => $parsed['event_start']    ?? '',
+			'nop_indieweb_rsvp_event_end'      => $parsed['event_end']      ?? '',
+			'nop_indieweb_rsvp_event_location' => $parsed['event_location'] ?? '',
+		] as $key => $value ) {
+			if ( '' !== $value ) {
+				$meta[ $key ] = $value;
+			}
+		}
+
+		return $meta;
 	}
 }

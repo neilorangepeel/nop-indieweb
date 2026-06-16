@@ -244,6 +244,7 @@ self.addEventListener( 'fetch', function ( e ) {
 		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
 		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
+		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
@@ -483,6 +484,24 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
+				<!-- RSVP event details (rsvp) — pre-filled from the pasted event URL,
+				     every field stays hand-editable. -->
+				<div class="field-group is-conditional event-fields" id="fieldEvent" hidden>
+					<p class="event-status" id="eventStatus" aria-live="polite" hidden></p>
+					<input type="text" id="eventName" class="text-field" placeholder="<?php esc_attr_e( 'Event name', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event name', 'nop-indieweb' ); ?>">
+					<div class="event-when">
+						<label class="event-when__field">
+							<span class="field-sublabel"><?php esc_html_e( 'Starts', 'nop-indieweb' ); ?></span>
+							<input type="datetime-local" id="eventStart" class="text-field" aria-label="<?php esc_attr_e( 'Event start', 'nop-indieweb' ); ?>">
+						</label>
+						<label class="event-when__field">
+							<span class="field-sublabel"><?php esc_html_e( 'Ends', 'nop-indieweb' ); ?></span>
+							<input type="datetime-local" id="eventEnd" class="text-field" aria-label="<?php esc_attr_e( 'Event end', 'nop-indieweb' ); ?>">
+						</label>
+					</div>
+					<input type="text" id="eventLocation" class="text-field" placeholder="<?php esc_attr_e( 'Location (optional)', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event location', 'nop-indieweb' ); ?>">
+				</div>
+
 				<!-- URL specimen (like, repost) — watermark glyph when empty, big
 				     hostname specimen once a URL parses -->
 				<div class="url-specimen is-conditional" id="urlSpecimen" hidden>
@@ -618,6 +637,7 @@ window.NOP = {
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
 		nowUrl:      <?php echo wp_json_encode( $now_url ); ?>,
+		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		userName:    <?php echo wp_json_encode( $user_name ); ?>,
 		greetings:   <?php echo wp_json_encode( $greetings ); ?>,

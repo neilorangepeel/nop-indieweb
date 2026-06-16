@@ -517,6 +517,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var slipRef      = document.getElementById( 'slipRef' );
 	var slipHost     = document.getElementById( 'slipHost' );
 	var slipPath     = document.getElementById( 'slipPath' );
+	var fieldEvent     = document.getElementById( 'fieldEvent' );
+	var eventName      = document.getElementById( 'eventName' );
+	var eventStart     = document.getElementById( 'eventStart' );
+	var eventEnd       = document.getElementById( 'eventEnd' );
+	var eventLocation  = document.getElementById( 'eventLocation' );
+	var eventStatus    = document.getElementById( 'eventStatus' );
+	// The event URL the detail fetch last ran against — so an unchanged URL
+	// (re-blur, keystroke after the value settled) doesn't re-hit the endpoint.
+	var fetchedEventUrl = '';
 
 	// The docket's printed filing line — kind · serial · date — re-stamped on each
 	// kind switch (and after a post, when the serial bumps).
@@ -689,6 +698,52 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			}
 		}
 	}
+
+	// ── RSVP event lookup ───────────────────────────────────────────────────────
+	// Pasting the event URL on an RSVP fetches the event's name / start / end /
+	// location from the page (mf2 h-event → JSON-LD → OG → <title>) and fills the
+	// editable fields. Best-effort: a miss just shows the manual-entry hint.
+
+	function setEventStatus( state ) {
+		if ( ! eventStatus ) { return; }
+		var msg = '';
+		if ( state === 'loading' ) { msg = 'Fetching event details…'; }
+		else if ( state === 'found' ) { msg = 'Data fetched from event page.'; }
+		else if ( state === 'empty' || state === 'error' ) { msg = 'Couldn’t find event data — please fill in manually.'; }
+		eventStatus.textContent = msg;
+		eventStatus.hidden      = ! msg;
+		eventStatus.className    = 'event-status' + ( state ? ' is-' + state : '' );
+	}
+
+	function fetchEvent( url ) {
+		url = ( url || '' ).trim();
+		if ( currentType !== 'rsvp' || ! url || url === fetchedEventUrl || ! NOP.fetchEventUrl ) { return; }
+		try { new URL( url ); } catch ( e ) { return; }
+		fetchedEventUrl = url;
+		setEventStatus( 'loading' );
+
+		fetch( NOP.fetchEventUrl, {
+			method:  'POST',
+			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+			body:    JSON.stringify( { url: url } ),
+		} ).then( function ( r ) {
+			return r.ok ? r.json() : null;
+		} ).then( function ( d ) {
+			if ( ! d || ! d.source ) { setEventStatus( 'empty' ); return; }
+			// Fill from the fetch; anything it returns wins (the author can still
+			// edit), anything it misses is left for manual entry.
+			if ( d.name )     { eventName.value     = d.name; }
+			if ( d.start )    { eventStart.value    = d.start; }
+			if ( d.end )      { eventEnd.value      = d.end; }
+			if ( d.location ) { eventLocation.value = d.location; }
+			setEventStatus( 'found' );
+			saveDraft();
+		} ).catch( function () {
+			setEventStatus( 'error' );
+		} );
+	}
+
+	var fetchEventSoon = debounce( function () { fetchEvent( urlInput.value ); }, 600 );
 
 	// ── Syndicators ───────────────────────────────────────────────────────────
 	// Targets are inlined server-side (NOP.syndicateTo) — no fetch needed.
@@ -864,6 +919,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 		fieldUrl.hidden     = ! cfg.urlProp;
 		fieldRsvp.hidden    = ! cfg.hasRsvp;
+		if ( fieldEvent ) { fieldEvent.hidden = ! cfg.hasRsvp; }
 		fieldPhoto.hidden   = ! cfg.hasPhoto;
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
@@ -926,7 +982,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		postBtn.disabled = ! enabled;
 	}
 
-	urlInput.addEventListener( 'input', function () { updateSpecimen(); updatePostBtn(); saveDraftSoon(); } );
+	urlInput.addEventListener( 'input', function () {
+		updateSpecimen(); updatePostBtn(); saveDraftSoon();
+		if ( currentType === 'rsvp' ) { fetchEventSoon(); }
+	} );
+	// Blur fetches immediately — covers a paste-then-tab-away before the debounce.
+	urlInput.addEventListener( 'blur', function () {
+		if ( currentType === 'rsvp' ) { fetchEvent( urlInput.value ); }
+	} );
 	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
@@ -1057,6 +1120,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			content:     contentInput.value.trim(),
 			url:         urlInput.value.trim(),
 			rsvp:        currentRsvp,
+			event:       {
+				name:     eventName ? eventName.value.trim() : '',
+				start:    eventStart ? eventStart.value.trim() : '',
+				end:      eventEnd ? eventEnd.value.trim() : '',
+				location: eventLocation ? eventLocation.value.trim() : '',
+			},
 			tags:        currentTags.slice(),
 			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
 			files:       files,
@@ -1102,7 +1171,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// RSVP rides on in-reply-to (the event URL); the rsvp property is what makes
 		// the server resolve it as an RSVP rather than a plain reply.
 		if ( cfg.urlProp && post.url ) { props[ cfg.urlProp ] = [ post.url ]; }
-		if ( cfg.hasRsvp ) { props.rsvp = [ post.rsvp ]; }
+		if ( cfg.hasRsvp ) {
+			props.rsvp = [ post.rsvp ];
+			// Event detail (h-event) carried as extra Micropub properties; the RSVP
+			// service maps each to its nop_indieweb_rsvp_event_* meta. Empty ones omitted.
+			var ev = post.event || {};
+			if ( ev.name )     { props[ 'event-name' ]     = [ ev.name ]; }
+			if ( ev.start )    { props[ 'event-start' ]    = [ ev.start ]; }
+			if ( ev.end )      { props[ 'event-end' ]      = [ ev.end ]; }
+			if ( ev.location ) { props[ 'event-location' ] = [ ev.location ]; }
+		}
 
 		// Alt text rides along as the server's array photo shape ({primary, alt});
 		// sideload_photos copies it onto the attachment, where both the rendered
@@ -1307,6 +1385,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function resetForm() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
+		if ( eventName )     { eventName.value     = ''; }
+		if ( eventStart )    { eventStart.value    = ''; }
+		if ( eventEnd )      { eventEnd.value      = ''; }
+		if ( eventLocation ) { eventLocation.value = ''; }
+		fetchedEventUrl = '';
+		setEventStatus( '' );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 		renderTags();
@@ -1363,6 +1447,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				url:     urlInput.value,
 				tags:    currentTags,
 				rsvp:    currentRsvp,
+				event:   {
+					name:     eventName ? eventName.value : '',
+					start:    eventStart ? eventStart.value : '',
+					end:      eventEnd ? eventEnd.value : '',
+					location: eventLocation ? eventLocation.value : '',
+				},
 			} ) );
 		} catch ( e ) {}
 	}
@@ -1388,6 +1478,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				b.classList.toggle( 'is-active', on );
 				b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
 			} );
+		}
+		if ( d.event ) {
+			if ( eventName )     { eventName.value     = d.event.name     || ''; }
+			if ( eventStart )    { eventStart.value    = d.event.start    || ''; }
+			if ( eventEnd )      { eventEnd.value      = d.event.end      || ''; }
+			if ( eventLocation ) { eventLocation.value = d.event.location || ''; }
+			// Treat a restored URL as already fetched so reopening a draft doesn't
+			// re-hit the endpoint and clobber restored edits.
+			if ( typeof d.url === 'string' ) { fetchedEventUrl = d.url.trim(); }
 		}
 		restoring = false;
 		updateSpecimen();
