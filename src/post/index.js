@@ -517,12 +517,32 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var slipRef      = document.getElementById( 'slipRef' );
 	var slipHost     = document.getElementById( 'slipHost' );
 	var slipPath     = document.getElementById( 'slipPath' );
-	var fieldEvent     = document.getElementById( 'fieldEvent' );
-	var eventName      = document.getElementById( 'eventName' );
-	var eventStart     = document.getElementById( 'eventStart' );
-	var eventEnd       = document.getElementById( 'eventEnd' );
-	var eventLocation  = document.getElementById( 'eventLocation' );
-	var eventStatus    = document.getElementById( 'eventStatus' );
+	var fieldEvent      = document.getElementById( 'fieldEvent' );
+	var eventName       = document.getElementById( 'eventName' );
+	var eventStartDate  = document.getElementById( 'eventStartDate' );
+	var eventStartTime  = document.getElementById( 'eventStartTime' );
+	var eventEndDate    = document.getElementById( 'eventEndDate' );
+	var eventEndTime    = document.getElementById( 'eventEndTime' );
+	var eventLocation   = document.getElementById( 'eventLocation' );
+	var eventStatus     = document.getElementById( 'eventStatus' );
+
+	// Start/end ride as a single ISO string (date-only "YYYY-MM-DD" when the source
+	// page had no time component, full "YYYY-MM-DDTHH:MM" when it did, blank when
+	// unknown). These helpers join/split that string against the two inputs so the
+	// draft + payload shapes stay simple while the form represents date-only
+	// honestly.
+	function joinEventDt( dateEl, timeEl ) {
+		var d = dateEl ? dateEl.value.trim() : '';
+		var t = timeEl ? timeEl.value.trim() : '';
+		if ( ! d ) { return ''; }
+		return t ? d + 'T' + t : d;
+	}
+	function splitEventDt( dateEl, timeEl, value ) {
+		value = ( value || '' ).trim();
+		var m = value.match( /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/ );
+		if ( dateEl ) { dateEl.value = m ? m[1] : ''; }
+		if ( timeEl ) { timeEl.value = ( m && m[2] ) ? m[2] : ''; }
+	}
 	// The event URL the detail fetch last ran against — so an unchanged URL
 	// (re-blur, keystroke after the value settled) doesn't re-hit the endpoint.
 	var fetchedEventUrl = '';
@@ -703,16 +723,34 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// Pasting the event URL on an RSVP fetches the event's name / start / end /
 	// location from the page (mf2 h-event → JSON-LD → OG → <title>) and fills the
 	// editable fields. Best-effort: a miss just shows the manual-entry hint.
+	//
+	// The status line names the source that matched so the author knows whether
+	// they're trusting rich structured data (mf2 / JSON-LD) or a thin fallback
+	// (just the page title — usually a sign the URL was an index/listing page).
 
-	function setEventStatus( state ) {
+	var EVENT_SOURCE_LABEL = {
+		mf2:       'microformats h-event',
+		jsonld:    'schema.org/Event',
+		opengraph: 'Open Graph',
+		title:     'page title',
+	};
+
+	function setEventStatus( state, source ) {
 		if ( ! eventStatus ) { return; }
 		var msg = '';
-		if ( state === 'loading' ) { msg = 'Fetching event details…'; }
-		else if ( state === 'found' ) { msg = 'Data fetched from event page.'; }
-		else if ( state === 'empty' || state === 'error' ) { msg = 'Couldn’t find event data — please fill in manually.'; }
+		if ( state === 'loading' ) {
+			msg = 'Fetching event details…';
+		} else if ( state === 'found' ) {
+			var label = EVENT_SOURCE_LABEL[ source ];
+			msg = label ? ( 'Found via ' + label + '.' ) : 'Found event details.';
+		} else if ( state === 'thin' ) {
+			msg = 'Only the page title was readable — please fill in the details.';
+		} else if ( state === 'empty' || state === 'error' ) {
+			msg = 'Couldn’t find event data — please fill in manually.';
+		}
 		eventStatus.textContent = msg;
 		eventStatus.hidden      = ! msg;
-		eventStatus.className    = 'event-status' + ( state ? ' is-' + state : '' );
+		eventStatus.className   = 'event-status' + ( state ? ' is-' + state : '' );
 	}
 
 	function fetchEvent( url ) {
@@ -731,12 +769,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} ).then( function ( d ) {
 			if ( ! d || ! d.source ) { setEventStatus( 'empty' ); return; }
 			// Fill from the fetch; anything it returns wins (the author can still
-			// edit), anything it misses is left for manual entry.
+			// edit), anything it misses is left for manual entry. start/end may be
+			// date-only — splitEventDt fills the date and leaves the time blank in
+			// that case, rather than inventing midnight.
 			if ( d.name )     { eventName.value     = d.name; }
-			if ( d.start )    { eventStart.value    = d.start; }
-			if ( d.end )      { eventEnd.value      = d.end; }
+			if ( d.start )    { splitEventDt( eventStartDate, eventStartTime, d.start ); }
+			if ( d.end )      { splitEventDt( eventEndDate,   eventEndTime,   d.end ); }
 			if ( d.location ) { eventLocation.value = d.location; }
-			setEventStatus( 'found' );
+			// "Thin" = only a name came back (no date and no location). Usually a
+			// page-title fallback or a venue/listings page that exposes an og:title
+			// but nothing else useful. Flag it so the author knows to step in.
+			var thin = ! d.start && ! d.end && ! d.location;
+			setEventStatus( thin ? 'thin' : 'found', d.source );
 			saveDraft();
 		} ).catch( function () {
 			setEventStatus( 'error' );
@@ -1122,8 +1166,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			rsvp:        currentRsvp,
 			event:       {
 				name:     eventName ? eventName.value.trim() : '',
-				start:    eventStart ? eventStart.value.trim() : '',
-				end:      eventEnd ? eventEnd.value.trim() : '',
+				start:    joinEventDt( eventStartDate, eventStartTime ),
+				end:      joinEventDt( eventEndDate,   eventEndTime ),
 				location: eventLocation ? eventLocation.value.trim() : '',
 			},
 			tags:        currentTags.slice(),
@@ -1385,10 +1429,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function resetForm() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
-		if ( eventName )     { eventName.value     = ''; }
-		if ( eventStart )    { eventStart.value    = ''; }
-		if ( eventEnd )      { eventEnd.value      = ''; }
-		if ( eventLocation ) { eventLocation.value = ''; }
+		if ( eventName )      { eventName.value      = ''; }
+		if ( eventStartDate ) { eventStartDate.value = ''; }
+		if ( eventStartTime ) { eventStartTime.value = ''; }
+		if ( eventEndDate )   { eventEndDate.value   = ''; }
+		if ( eventEndTime )   { eventEndTime.value   = ''; }
+		if ( eventLocation )  { eventLocation.value  = ''; }
 		fetchedEventUrl = '';
 		setEventStatus( '' );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
@@ -1449,8 +1495,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				rsvp:    currentRsvp,
 				event:   {
 					name:     eventName ? eventName.value : '',
-					start:    eventStart ? eventStart.value : '',
-					end:      eventEnd ? eventEnd.value : '',
+					start:    joinEventDt( eventStartDate, eventStartTime ),
+					end:      joinEventDt( eventEndDate,   eventEndTime ),
 					location: eventLocation ? eventLocation.value : '',
 				},
 			} ) );
@@ -1481,8 +1527,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 		if ( d.event ) {
 			if ( eventName )     { eventName.value     = d.event.name     || ''; }
-			if ( eventStart )    { eventStart.value    = d.event.start    || ''; }
-			if ( eventEnd )      { eventEnd.value      = d.event.end      || ''; }
+			splitEventDt( eventStartDate, eventStartTime, d.event.start );
+			splitEventDt( eventEndDate,   eventEndTime,   d.event.end );
 			if ( eventLocation ) { eventLocation.value = d.event.location || ''; }
 			// Treat a restored URL as already fetched so reopening a draft doesn't
 			// re-hit the endpoint and clobber restored edits.

@@ -757,27 +757,50 @@ body::before {
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
 .rsvp-btn:active { transform: translate(1px, 1px); }
 
-/* RSVP event detail — name / start–end / location, pre-filled by the event-URL
-   lookup and editable. A printed status line reports the fetch result. */
-.event-fields { gap: var(--sp-3); }
+/* RSVP event detail — a printed cover sheet: a stamped status line up top, then
+   labelled rows (TITLE · WHERE · STARTS · ENDS) that echo the docket header's
+   muted display-caps. Start/end split into a date + time pair so a date-only
+   source (a theatrical run quoted as just "Sat 13 Jun 2026") fills the date
+   honestly without inventing a midnight performance. */
+.event-fields { display: flex; flex-direction: column; gap: var(--sp-3); }
 .event-status {
-	margin: 0;
+	margin: 0 0 var(--sp-1);
 	font-family: var(--readout);
 	font-size: var(--fs-12);
 	line-height: 1.4;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
 .event-status.is-found { color: var(--accent); }
-.event-when { display: flex; gap: var(--sp-2); }
-.event-when__field { flex: 1 1 0; display: flex; flex-direction: column; gap: var(--sp-1); }
-.field-sublabel {
+/* Thin = only a page title came back. Same muted printed ink as the resting
+   state but italic, so it reads as a soft caveat rather than a green ✓. */
+.event-status.is-thin {
+	font-style: italic;
+	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
+}
+.event-row {
+	display: grid;
+	grid-template-columns: 64px 1fr;
+	column-gap: var(--sp-3);
+	align-items: center;
+}
+/* Display-caps tag in the muted printed ink, matching the docket header.
+   Vertically centred against the input cap-height — the same baseline feel as
+   "REPLY · TK#1234 · 16/06/2026" above. */
+.event-row__label {
 	font-family: var(--display);
 	font-size: var(--fs-12);
 	font-weight: 700;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
+.event-row__pair {
+	display: flex;
+	gap: var(--sp-2);
+	min-width: 0;
+}
+.event-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
+.event-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
 
 /* ── Docket / index card ─────────────────────────────────────────────────────
    Each kind composes as a filing docket on the ruled paper: a printed header

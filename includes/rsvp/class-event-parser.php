@@ -110,8 +110,12 @@ class Event_Parser {
 			return array_merge( $base, $event, [ 'source' => 'mf2' ] );
 		}
 
-		// 2. JSON-LD schema.org/Event.
-		$event = $this->from_json_ld( $xpath );
+		// 2. JSON-LD schema.org/Event. Pass the source URL so a multi-event blob
+		// (e.g. a venue's month-view or a "related events" section) can be
+		// disambiguated by matching the requested URL rather than blindly taking
+		// the first node — otherwise pasting a listing page returns whatever
+		// event happens to come first.
+		$event = $this->from_json_ld( $xpath, $source_url );
 		if ( '' !== $event['name'] || '' !== $event['start'] ) {
 			return array_merge( $base, $event, [ 'source' => 'jsonld' ] );
 		}
@@ -160,7 +164,7 @@ class Event_Parser {
 			'name'     => $this->clean_text( $this->prop_text( $xpath, 'p-name', $root ) ),
 			'start'    => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-start', $root ) ),
 			'end'      => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-end', $root ) ),
-			'location' => $this->clean_text( $this->prop_text( $xpath, 'p-location', $root ) ),
+			'location' => $this->compose_location( $this->prop_text( $xpath, 'p-location', $root ) ),
 			'note'     => $this->clean_note( $this->prop_text( $xpath, 'e-content', $root ) ?: $this->prop_text( $xpath, 'p-summary', $root ) ),
 		];
 	}
@@ -183,7 +187,9 @@ class Event_Parser {
 
 		$props    = $event['properties'] ?? [];
 		$location = $props['location'][0] ?? '';
-		// location can itself be an h-card/h-adr object — reduce it to its name.
+		// location can itself be an h-card/h-adr object — reduce it to its name
+		// or fall back to its plain value (h-card's value field is the linkified
+		// name when both u-url and p-name are present on the same element).
 		if ( is_array( $location ) ) {
 			$location = $location['properties']['name'][0] ?? ( $location['value'] ?? '' );
 		}
@@ -196,7 +202,7 @@ class Event_Parser {
 			'name'     => $this->clean_text( (string) ( $props['name'][0] ?? '' ) ),
 			'start'    => $this->normalize_datetime( (string) ( $props['start'][0] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $props['end'][0] ?? '' ) ),
-			'location' => $this->clean_text( (string) $location ),
+			'location' => $this->compose_location( (string) $location ),
 			'note'     => $this->clean_note( (string) $content ),
 		];
 	}
@@ -250,7 +256,7 @@ class Event_Parser {
 	/**
 	 * @return array{name:string,start:string,end:string,location:string,note:string}
 	 */
-	private function from_json_ld( \DOMXPath $xpath ): array {
+	private function from_json_ld( \DOMXPath $xpath, string $source_url ): array {
 		$blank = [ 'name' => '', 'start' => '', 'end' => '', 'location' => '', 'note' => '' ];
 
 		$scripts = $xpath->query( '//script[@type="application/ld+json"]' );
@@ -258,30 +264,42 @@ class Event_Parser {
 			return $blank;
 		}
 
+		// Collect every Event-typed node across every JSON-LD block on the page
+		// before choosing one. Pages in the wild often split related events into
+		// separate <script> tags (Duke's Events Calendar puts a month-view
+		// @graph in one block and an additional featured Event in another) —
+		// looking at each block in isolation makes the wrong call.
+		$events = [];
 		foreach ( $scripts as $script ) {
 			$decoded = json_decode( trim( (string) $script->textContent ), true );
 			if ( ! is_array( $decoded ) ) {
 				continue;
 			}
-			$event = $this->find_json_ld_event( $decoded );
-			if ( null !== $event ) {
-				return $this->map_json_ld_event( $event );
+			foreach ( $this->collect_event_nodes( $decoded ) as $node ) {
+				$events[] = $node;
 			}
 		}
 
-		return $blank;
+		$event = $this->pick_event( $events, $source_url );
+		return null === $event ? $blank : $this->map_json_ld_event( $event );
 	}
 
-	/** Walks a decoded JSON-LD blob (object, list, or @graph) for an Event node. */
-	private function find_json_ld_event( array $data ): ?array {
+	/**
+	 * Walks a decoded JSON-LD blob (object, list, or @graph) for Event nodes,
+	 * including types that subclass it (TheaterEvent, BusinessEvent, etc.).
+	 *
+	 * @return array<int,array>
+	 */
+	private function collect_event_nodes( array $data ): array {
 		// A bare list of nodes, or an @graph wrapper. isset($data[0]) distinguishes
-		// a numerically-indexed list of nodes from a single associative node
-		// (array_is_list() would be cleaner but needs PHP 8.1; this targets 8.0).
+		// a numerically-indexed list from a single associative node (array_is_list()
+		// would be cleaner but needs PHP 8.1; this targets 8.0).
 		$candidates = isset( $data['@graph'] ) && is_array( $data['@graph'] ) ? $data['@graph'] : null;
 		if ( null === $candidates ) {
 			$candidates = isset( $data[0] ) ? $data : [ $data ];
 		}
 
+		$events = [];
 		foreach ( $candidates as $node ) {
 			if ( ! is_array( $node ) ) {
 				continue;
@@ -289,34 +307,115 @@ class Event_Parser {
 			$types = (array) ( $node['@type'] ?? [] );
 			foreach ( $types as $type ) {
 				if ( is_string( $type ) && str_contains( strtolower( $type ), 'event' ) ) {
-					return $node;
+					$events[] = $node;
+					break;
 				}
 			}
 		}
+		return $events;
+	}
+
+	/**
+	 * Picks the right Event from the collected set.
+	 *
+	 *   none  → null
+	 *   one   → that event (single-event page)
+	 *   many  → the one whose `url` matches the requested page; otherwise null,
+	 *           so a listings/calendar URL falls through to OG/title and the UI
+	 *           reports "couldn't find event data" instead of silently filling
+	 *           the form with whichever unrelated event appeared first.
+	 */
+	private function pick_event( array $events, string $source_url ): ?array {
+		if ( ! $events ) {
+			return null;
+		}
+		if ( 1 === count( $events ) ) {
+			return $events[0];
+		}
+		$want = $this->canon_url( $source_url );
+		foreach ( $events as $node ) {
+			$node_url = (string) ( $node['url'] ?? $node['mainEntityOfPage'] ?? '' );
+			if ( '' !== $node_url && $this->canon_url( $node_url ) === $want ) {
+				return $node;
+			}
+		}
 		return null;
+	}
+
+	/** Normalises a URL for "are these the same page?" comparison. */
+	private function canon_url( string $url ): string {
+		$url = strtolower( trim( $url ) );
+		// '~' delimiter — '#' would collide with the literal '#' in the class.
+		$url = preg_replace( '~[?#].*$~', '', $url );
+		return rtrim( (string) $url, '/' );
 	}
 
 	/**
 	 * @return array{name:string,start:string,end:string,location:string,note:string}
 	 */
 	private function map_json_ld_event( array $event ): array {
-		$location = $event['location'] ?? '';
-		if ( is_array( $location ) ) {
-			$name    = $location['name'] ?? '';
-			$address = $location['address'] ?? '';
-			if ( is_array( $address ) ) {
-				$address = $address['name'] ?? ( $address['streetAddress'] ?? '' );
-			}
-			$location = trim( $name . ( $name && $address ? ', ' : '' ) . $address );
-		}
-
 		return [
 			'name'     => $this->clean_text( (string) ( $event['name'] ?? '' ) ),
 			'start'    => $this->normalize_datetime( (string) ( $event['startDate'] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $event['endDate'] ?? '' ) ),
-			'location' => $this->clean_text( (string) $location ),
+			'location' => $this->compose_location( $event['location'] ?? '' ),
 			'note'     => $this->clean_note( (string) ( $event['description'] ?? '' ) ),
 		];
+	}
+
+	/**
+	 * Reduces a schema.org Place / PostalAddress (or a bare string) to a single
+	 * human-readable location line.
+	 *
+	 * Filters two real-world failure modes the wild publishes:
+	 *   1. Placeholder strings like "None" / "TBA" / "TBD" that the publisher
+	 *      emits as a literal (Duke's Events Calendar fills `Place.name="None"`
+	 *      for every event without a venue) — treated as empty.
+	 *   2. The same name repeated in `Place.name` AND `address.streetAddress`
+	 *      (Luma puts the venue name in streetAddress too) — deduped.
+	 *
+	 * @param mixed $location
+	 */
+	private function compose_location( $location ): string {
+		if ( is_string( $location ) ) {
+			$value = trim( $location );
+			return $this->is_placeholder( $value ) ? '' : $this->clean_text( $value );
+		}
+		if ( ! is_array( $location ) ) {
+			return '';
+		}
+
+		$name = $this->non_placeholder( (string) ( $location['name'] ?? '' ) );
+
+		$address = $location['address'] ?? '';
+		$address_str = '';
+		if ( is_string( $address ) ) {
+			$address_str = trim( $address );
+		} elseif ( is_array( $address ) ) {
+			$address_str = $this->non_placeholder( (string) ( $address['name'] ?? '' ) );
+			if ( '' === $address_str ) {
+				$address_str = $this->non_placeholder( (string) ( $address['streetAddress'] ?? '' ) );
+			}
+		}
+
+		// Dedup: if the address line is literally the venue name again, drop it.
+		if ( '' !== $name && '' !== $address_str
+			&& mb_strtolower( $name ) === mb_strtolower( $address_str ) ) {
+			$address_str = '';
+		}
+
+		$parts = array_filter( [ $name, $address_str ], static fn( $s ) => '' !== $s );
+		return $this->clean_text( implode( ', ', $parts ) );
+	}
+
+	/** Common venue placeholders publishers emit when no real value is set. */
+	private function is_placeholder( string $value ): bool {
+		$norm = mb_strtolower( trim( $value ) );
+		return in_array( $norm, [ '', 'none', 'tba', 'tbd', 'tbc', 'n/a', 'null', 'undefined' ], true );
+	}
+
+	private function non_placeholder( string $value ): string {
+		return $this->is_placeholder( $value ) ? '' : trim( $value );
 	}
 
 	// ── 3. Open Graph ──────────────────────────────────────────────────────────
@@ -363,23 +462,41 @@ class Event_Parser {
 	}
 
 	/**
-	 * Normalises a datetime string to the `Y-m-d\TH:i` shape a datetime-local
-	 * input expects, when it can be parsed; otherwise returns it trimmed so a
-	 * non-standard value still round-trips and stays editable.
+	 * Normalises a datetime string to either `Y-m-d\TH:i` (when the source carried
+	 * a time) or `Y-m-d` (when it only carried a date). The UI splits each into a
+	 * `date` + `time` pair, so a date-only value pre-fills the date and leaves the
+	 * time blank rather than inventing midnight. An unparseable value round-trips
+	 * sanitised so the field stays editable.
+	 *
+	 * Why: schema.org and h-event publishers in the wild range from strict ISO
+	 * datetimes to date-only ranges (e.g. a theatrical run with `"Sat 13 Jun 2026"`).
+	 * Coercing those to midnight reads as the author having said midnight, which is
+	 * a lie — Steel Magnolias on Sat 13 Jun isn't a 00:00 performance.
 	 */
 	private function normalize_datetime( string $value ): string {
 		$value = trim( $value );
 		if ( '' === $value ) {
 			return '';
 		}
-		// Already ISO-shaped (e.g. "2026-05-01T09:30" or "2026-05-01 09:30:00+01:00")?
-		// Keep the date + wall-clock time as-is so an event's local start time isn't
-		// silently shifted to UTC; just normalise the separator to 'T'.
+		// ISO local datetime (e.g. "2026-05-01T09:30" or "2026-05-01 09:30:00+01:00").
+		// Keep the date + wall-clock time as-is so the event's local start time isn't
+		// silently shifted to UTC; normalise the separator to 'T'.
 		if ( preg_match( '/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/', $value, $m ) ) {
 			return $m[1] . 'T' . $m[2];
 		}
+		// ISO date-only — pass straight through.
+		if ( preg_match( '/^(\d{4}-\d{2}-\d{2})$/', $value, $m ) ) {
+			return $m[1];
+		}
 		$ts = strtotime( $value );
-		return false === $ts ? sanitize_text_field( $value ) : gmdate( 'Y-m-d\TH:i', $ts );
+		if ( false === $ts ) {
+			return sanitize_text_field( $value );
+		}
+		// Only emit a time component when the source actually carried one — a bare
+		// "Fri 10 Jul 2026" reports back as a date, not a midnight datetime.
+		return preg_match( '/\d{1,2}:\d{2}/', $value )
+			? gmdate( 'Y-m-d\TH:i', $ts )
+			: gmdate( 'Y-m-d', $ts );
 	}
 
 	private function clean_text( string $text ): string {
