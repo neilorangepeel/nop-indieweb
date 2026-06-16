@@ -94,8 +94,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			lastTime = time;
 		}
 	}
+	// Self-rescheduling timer that aligns to minute boundaries — one wakeup/minute
+	// vs the old setInterval(…,1000) that fired 60× per minute and gated 59 of them.
+	// Backgrounded tabs may drift; visibilitychange below catches that up on return.
+	var clockTimer = 0;
+	function scheduleClock() {
+		clearTimeout( clockTimer );
+		var now = new Date();
+		var ms  = 60000 - ( now.getSeconds() * 1000 + now.getMilliseconds() ) + 25;
+		clockTimer = setTimeout( function () { updateClock(); scheduleClock(); }, ms );
+	}
 	updateClock();
-	setInterval( updateClock, 1000 );
+	scheduleClock();
 
 	// ── Metadata ticker ───────────────────────────────────────────────────────
 	// One crawling line of the current moment (serial · date · place · temp · sky)
@@ -311,19 +321,58 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	// ── Ticker motion ───────────────────────────────────────────────────────────
-	// The crawl is JS-driven (rAF), not the CSS animation, so a finger can scrub it:
-	// drag moves the track 1:1, a flick spins it up, then friction eases the speed
-	// back to the ambient crawl (TK_SPEED) — it never stops, it settles. Pure
-	// progressive enhancement: without JS the CSS @keyframes still crawls, and under
-	// prefers-reduced-motion we leave that CSS alone and don't attach any of this.
+	// Hybrid crawl: CSS @keyframes ticker-crawl owns the AMBIENT crawl (no rAF at
+	// rest, the win), JS takes over during a finger scrub and the post-flick decay,
+	// then hands back to CSS once the friction-eased velocity settles within ε of
+	// the ambient speed. Both speeds are matched because JS sets --ticker-dur =
+	// tkSeqW / TK_SPEED, so the handoff doesn't change crawl speed. Under
+	// prefers-reduced-motion we leave the (disabled) CSS animation alone and never
+	// attach scrub listeners.
 	var tkSeqW    = 0;                 // px width of one sequence — the wrap point
 	var tkOffset  = 0;                 // px scrolled left out of view; wraps at tkSeqW
 	var tkVel     = TK_SPEED;          // current px/sec; eases toward TK_SPEED when idle
 	var TK_TAU    = 0.45;              // s — friction time constant (≈1.5s to settle)
 	var TK_VMAX   = 1800;              // px/sec flick clamp
+	var TK_EPS    = 0.5;               // px/sec — settle window for the JS→CSS handoff
 	var tkRAF     = 0, tkLastFrame = 0, tkDragging = false;
 	var tkDragX   = 0, tkDragOff = 0, tkMoveX = 0, tkMoveT = 0;
 	var tkReduce  = prefersReduce.matches;
+	var tkCssDriven = false;            // true while CSS owns the crawl (rAF idle)
+
+	// Read the CSS animation's current translateX so JS can pick up the same offset.
+	function tkReadCssOffset() {
+		if ( ! tickerTrack ) { return 0; }
+		var m = getComputedStyle( tickerTrack ).transform;
+		if ( ! m || m === 'none' ) { return 0; }
+		try {
+			var off = -( new DOMMatrixReadOnly( m ) ).m41;   // CSS translateX is negative; store positive
+			if ( tkSeqW > 0 ) { off = ( ( off % tkSeqW ) + tkSeqW ) % tkSeqW; }
+			return off;
+		} catch ( e ) { return 0; }
+	}
+	// Snapshot the live offset off the CSS animation, pause it, hand control to rAF.
+	function takeOverFromCSS() {
+		if ( ! tickerTrack ) { return; }
+		tkOffset = tkReadCssOffset();
+		tickerTrack.style.animationPlayState = 'paused';
+		tkCssDriven = false;
+		tkLastFrame = 0;
+		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
+	}
+	// Hand the crawl back: seek the CSS animation to the current pixel offset via
+	// a negative animation-delay, resume, clear the inline transform, stop rAF.
+	// Because --ticker-dur = tkSeqW / TK_SPEED, delay = -tkOffset/TK_SPEED lands
+	// the CSS phase exactly on tkOffset — no visual jump.
+	function handBackToCSS() {
+		if ( ! tickerTrack || tkSeqW <= 0 ) { return; }
+		tickerTrack.style.transform           = '';
+		tickerTrack.style.animationDelay      = ( -( tkOffset / TK_SPEED ) ) + 's';
+		tickerTrack.style.animationPlayState  = 'running';
+		tkCssDriven = true;
+		cancelAnimationFrame( tkRAF );
+		tkRAF = 0;
+		tkVel = TK_SPEED;
+	}
 
 	function tkFrame( t ) {
 		var dt = tkLastFrame ? ( t - tkLastFrame ) / 1000 : 0;
@@ -332,6 +381,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! tkDragging ) {
 			tkVel = TK_SPEED + ( tkVel - TK_SPEED ) * Math.exp( -dt / TK_TAU );   // ease to ambient
 			tkOffset += tkVel * dt;
+			// Settled within ε of ambient — hand the crawl back to CSS and stop rAF.
+			if ( Math.abs( tkVel - TK_SPEED ) < TK_EPS ) {
+				if ( tkSeqW > 0 ) { tkOffset = ( ( tkOffset % tkSeqW ) + tkSeqW ) % tkSeqW; }
+				handBackToCSS();
+				return;
+			}
 		}
 		if ( tkSeqW > 0 ) {
 			tkOffset %= tkSeqW;
@@ -341,12 +396,25 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		tkRAF = requestAnimationFrame( tkFrame );
 	}
 	function startTickerMotion() {
-		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS handles reduced motion
-		tickerTrack.style.animation = 'none';                          // hand the crawl to rAF
-		if ( ! tkRAF ) { tkRAF = requestAnimationFrame( tkFrame ); }
+		if ( tkReduce || ! tickerTrack ) { return; }                   // CSS rule disables animation
+		// Pause first so subsequent --ticker-dur + animation-delay updates take effect
+		// without a brief paint at the old phase.
+		tickerTrack.style.animationPlayState = 'paused';
+		if ( tkSeqW > 0 ) {
+			tickerTrack.style.setProperty( '--ticker-dur', ( tkSeqW / TK_SPEED ) + 's' );
+		}
+		// Mid-scrub or mid-flick: keep rAF in control. Otherwise hand to CSS.
+		if ( tkDragging || ( tkRAF && Math.abs( tkVel - TK_SPEED ) >= TK_EPS ) ) {
+			tkCssDriven = false;
+			if ( ! tkRAF ) { tkLastFrame = 0; tkRAF = requestAnimationFrame( tkFrame ); }
+		} else {
+			handBackToCSS();
+		}
 	}
 	function tkDown( x ) {
 		tkDragging = true;
+		// Coming off the ambient CSS crawl — snapshot the live phase before pausing it.
+		if ( tkCssDriven ) { takeOverFromCSS(); }
 		tkDragX = x; tkDragOff = tkOffset;
 		tkMoveX = x; tkMoveT = Date.now();
 		tkVel = 0;
@@ -476,7 +544,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// -returns while the cached payload is fresh, and a denied permission no longer
 	// prompts, so this can't spam requests.
 	document.addEventListener( 'visibilitychange', function () {
-		if ( document.visibilityState === 'visible' ) { loadNow(); }
+		if ( document.visibilityState === 'visible' ) { loadNow(); updateClock(); scheduleClock(); }
 	} );
 	window.addEventListener( 'pageshow', loadNow );
 
@@ -588,9 +656,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// The note placeholder — one of a rotating set of openers (no greeting for now;
 	// greetingFor + NOP.greetings sit dormant in case it comes back).
 	function notePlaceholder() { return notePrompt; }
+	// Fallback for browsers without CSS field-sizing (Firefox today). Native
+	// field-sizing: content on .compose-field handles the rest for free.
+	var hasFieldSizing    = window.CSS && CSS.supports && CSS.supports( 'field-sizing', 'content' );
+	// Scroll-driven CSS handles --reveal natively on the four fade overlays where
+	// supported (Chrome/Edge ship, Safari 26+, Firefox pending) — the JS writers
+	// below no-op out so we skip a per-scroll var write everywhere supported.
+	var hasScrollTimeline = window.CSS && CSS.supports && CSS.supports( 'animation-timeline', 'scroll()' );
 	function autoGrowContent() {
-		contentInput.style.height = 'auto';
-		contentInput.style.height = contentInput.scrollHeight + 'px';
+		if ( ! hasFieldSizing ) {
+			contentInput.style.height = 'auto';
+			contentInput.style.height = contentInput.scrollHeight + 'px';
+		}
 		updateScrollFades();
 	}
 	var composeScroll = document.querySelector( '.compose-scroll' );
@@ -602,7 +679,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// visual height, so the mask reaches its full hockey-stick over the same
 	// distance as the shadow's pixel depth — proportional, tactile.
 	function updateScrollFades() {
-		if ( ! composeScroll ) return;
+		if ( hasScrollTimeline || ! composeScroll ) return;
 		var RAMP  = 240;
 		var top   = composeScroll.scrollTop;
 		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
@@ -650,7 +727,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		lockEl( typeFadeLeft, pitch );
 		lockEl( typeFadeRight, pitch );
 	}
-	composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+	if ( ! hasScrollTimeline ) {
+		composeScroll.addEventListener( 'scroll', updateScrollFades, { passive: true } );
+	}
 
 	// Horizontal scroll-fades for the kind row — same ramp-by-distance as the
 	// vertical ones, so the left/right halftone edges fade in by how far there is
@@ -659,7 +738,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var typeFadeLeft  = document.querySelector( '.type-fade-left' );
 	var typeFadeRight = document.querySelector( '.type-fade-right' );
 	function updateTypeFades() {
-		if ( ! typeBar ) { return; }
+		if ( hasScrollTimeline || ! typeBar ) { return; }
 		// Matches the vertical fade's RAMP so growth-per-finger-pixel is the
 		// same on both axes — the shadow rate feels consistent whether you're
 		// scrolling the compose body or the kind strip.
@@ -669,7 +748,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( typeFadeLeft )  { typeFadeLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }
 		if ( typeFadeRight ) { typeFadeRight.style.setProperty( '--reveal', Math.min( Math.max( right, 0 ) / RAMP, 1 ) ); }
 	}
-	typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
+	if ( ! hasScrollTimeline ) {
+		typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
+	}
 
 	var resizeRAF;
 	window.addEventListener( 'resize', function () {
@@ -838,7 +919,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var checked = ( s.uid in prev ) ? prev[ s.uid ] : true;
 			return '<label class="syndicator-item">'
 				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '"' + ( checked ? ' checked' : '' ) + '>'
-				+ '<span class="syndicator-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></span>'
+				+ '<span class="syndicator-box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>'
 				+ ' ' + escHtml( s.name )
 				+ ( limit ? '<span class="syndicator-item__limit">' + limit + '</span>' : '' )
 				+ '</label>';
@@ -912,7 +993,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		document.getElementById( 'tagChips' ).innerHTML = currentTags.map( function (tag, i) {
 			return '<span class="tag-chip">'
 				+ escHtml( tag )
-				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '"><svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>'
+				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '"><svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg></button>'
 				+ '</span>';
 		} ).join( '' );
 		if ( quickTags ) {
@@ -1129,7 +1210,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			rm.type          = 'button';
 			rm.className     = 'thumb__remove';
 			rm.dataset.index = i;
-			rm.innerHTML     = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+			rm.innerHTML     = '<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>';
 			rm.setAttribute( 'aria-label', 'Remove photo ' + ( i + 1 ) );
 			cell.appendChild( rm );
 			thumbs.appendChild( cell );

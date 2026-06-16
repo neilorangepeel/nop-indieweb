@@ -3,9 +3,9 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "build": "wp-scripts build src/settings/index.js --output-path=build/settings && wp-scripts build src/post/index.js --output-path=build/post",
-    "build:settings": "wp-scripts build src/settings/index.js --output-path=build/settings",
-    "build:post": "wp-scripts build src/post/index.js --output-path=build/post",
+    "build": "npm run build:settings && npm run build:post",
+    "build:settings": "wp-scripts build src/settings/index.js --output-path=build/settings && rm -f build/settings/style-index-rtl.css",
+    "build:post": "wp-scripts build src/post/index.js --output-path=build/post && rm -f build/post/style-index-rtl.css",
     "start": "wp-scripts start src/settings/index.js --output-path=build/settings",
     "start:post": "wp-scripts start src/post/index.js --output-path=build/post",
     "lint:js": "wp-scripts lint-js src/settings src/post",

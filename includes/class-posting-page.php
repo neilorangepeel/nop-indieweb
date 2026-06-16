@@ -94,9 +94,11 @@ class Posting_Page {
 	 * installable. Paths derive from home_url so it works in a subdirectory.
 	 */
 	private function render_manifest(): void {
-		nocache_headers();
+		// The manifest payload is effectively static (site name, plugin asset URLs,
+		// /post paths). Long-cache it so install / launch doesn't re-hit PHP.
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: application/manifest+json; charset=utf-8' );
+			header( 'Cache-Control: public, max-age=86400' );
 		}
 		$path  = wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post';
 		// Bundled app icon (the target mark on the ink tile) — a dedicated, consistent
@@ -408,6 +410,7 @@ function matchAnyVersion( url ) {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+<meta name="robots" content="noindex, nofollow">
 <link rel="apple-touch-icon" href="<?php echo esc_url( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ); ?>">
 <link rel="manifest" href="<?php echo esc_url( home_url( '/post?manifest=1' ) ); ?>">
 <link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_500.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
@@ -432,6 +435,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 <link rel="stylesheet" href="<?php echo esc_url( $post_css_url ); ?>">
 </head>
 <body>
+<!-- Inline icon sprite — every <use href="#…"> below pulls from these. Hidden so
+     it occupies no layout; currentColor still inherits through <use>. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+	<symbol id="nop-x" viewBox="0 0 24 24"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>
+	<symbol id="nop-check" viewBox="0 0 256 256"><path fill="currentColor" d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+</svg>
 <div class="app" id="app" data-type="note">
 
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
@@ -568,7 +577,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<figure class="event-poster" id="eventPoster" hidden>
 						<img id="eventPosterImg" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async">
 						<button type="button" class="event-poster__remove" id="eventPosterRemove" aria-label="<?php esc_attr_e( 'Remove poster', 'nop-indieweb' ); ?>">
-							<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+							<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>
 						</button>
 					</figure>
 					<input type="hidden" id="eventImage" value="">
@@ -696,7 +705,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="success-scroll">
 				<div class="success-hero">
 					<div class="success-banner">
-						<span class="success-check" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></span>
+						<span class="success-check" aria-hidden="true"><svg width="28" height="28" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
 						<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
 					</div>
 					<p class="success-streak" id="successStreak" hidden></p>

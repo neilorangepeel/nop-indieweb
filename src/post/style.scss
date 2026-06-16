@@ -25,6 +25,14 @@
 	inherits: true;
 	initial-value: #D7331F;
 }
+/* Register --reveal as a <number> so it can interpolate in @keyframes. Without an
+   @property registration, custom-property animations are discrete (jump end-to-end)
+   instead of smooth — required for the scroll-driven fades below to ramp. */
+@property --reveal {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 0;
+}
 
 :root {
 	/* Dark: paper becomes near-black and the inks lift to stay legible — the
@@ -506,7 +514,11 @@ body::before {
 	align-items: center;
 	white-space: nowrap;
 	will-change: transform;
-	animation: ticker-crawl 24s linear infinite;
+	/* Ambient crawl. JS sets --ticker-dur = tkSeqW / TK_SPEED once the sequence
+	   width is measured, so the CSS speed matches the JS scrub speed exactly —
+	   they can hand the crawl back and forth without a velocity jump. Falls back
+	   to 24s before measurement so the brief pre-measure paint still crawls. */
+	animation: ticker-crawl var(--ticker-dur, 24s) linear infinite;
 }
 .ticker__seq { display: flex; align-items: center; }
 /* A labelled cluster (NOW / HERE / LIGHT / LOG). The trailing margin spaces it
@@ -662,6 +674,48 @@ body::before {
 		rgba(0,0,0, calc(var(--reveal) * 0.32))        calc(var(--reveal) * 44%),
 		rgba(0,0,0, calc(var(--reveal) * 0.12))        calc(var(--reveal) * 72%),
 		transparent                                    calc(var(--reveal) * 100%));
+}
+
+/* Scroll-driven --reveal — Chrome 115+, Safari 26+ (Firefox pending). Drops the
+   per-scroll JS that wrote --reveal each frame. Both the vertical scroll-fades
+   (anchored to .compose-scroll) and the horizontal type-fades (anchored to the
+   #typeBar strip via a named timeline) ramp through the same 240px hockey-stick.
+   The JS path stays as the @supports-not fallback for Firefox. */
+@keyframes nop-reveal-in  { from { --reveal: 0; } to { --reveal: 1; } }
+@keyframes nop-reveal-out { from { --reveal: 1; } to { --reveal: 0; } }
+@supports (animation-timeline: scroll()) {
+	/* Vertical fades — nearest scrollable ancestor is .compose-scroll. */
+	.scroll-fade-top {
+		animation: nop-reveal-in linear forwards;
+		animation-timeline: scroll(nearest block);
+		animation-range: 0 240px;
+	}
+	.scroll-fade-bottom {
+		/* fill: both keeps --reveal at 1 before the range (i.e. when there's still
+		   plenty of scroll left below) and at 0 after (at the very bottom). */
+		animation: nop-reveal-out linear both;
+		animation-timeline: scroll(nearest block);
+		animation-range: calc(100% - 240px) 100%;
+	}
+	/* Horizontal type-strip fades — the scroller is a sibling of the fades, so use
+	   a named timeline made visible to both via timeline-scope on the common parent. */
+	.type-grid-wrap { timeline-scope: --type-strip; }
+	.type-grid      { scroll-timeline: --type-strip x; }
+	.type-fade-left {
+		animation: nop-reveal-in linear forwards;
+		animation-timeline: --type-strip;
+		animation-range: 0 240px;
+	}
+	.type-fade-right {
+		animation: nop-reveal-out linear both;
+		animation-timeline: --type-strip;
+		animation-range: calc(100% - 240px) 100%;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	/* No fade reveal animation under reduced-motion — defer to the static base state. */
+	.scroll-fade-top, .scroll-fade-bottom,
+	.type-fade-left, .type-fade-right { animation: none; }
 }
 /* A kind is one --tile-size disc that holds the icon and the name in the same cell,
    stacked. At rest the icon shows; on hover/active the icon dims back and the
@@ -1078,12 +1132,15 @@ body::before {
 	width: 100%;
 	min-height: 150px;
 	height: auto;
+	/* Native auto-grow where supported (Chrome 123+, Safari 18+) — no JS per
+	   keystroke. Firefox falls back to autoGrowContent()'s style.height write. */
+	field-sizing: content;
 	background-color: transparent;
 	/* Ruled legal-pad — faint hairlines sitting just under each baseline so text
-	   reads as written ON the line. The field auto-grows with its content (see
-	   the JS), so an empty note stays a short pad and the page grain runs on,
-	   uninterrupted, below — no paper veil, so no hard seam where the texture
-	   would otherwise stop. */
+	   reads as written ON the line. The field auto-grows with its content (CSS
+	   field-sizing where supported, JS fallback otherwise), so an empty note stays
+	   a short pad and the page grain runs on, uninterrupted, below — no paper veil,
+	   so no hard seam where the texture would otherwise stop. */
 	background-image: repeating-linear-gradient( to bottom,
 		transparent 0, transparent 28px,
 		var(--rule) 28px, var(--rule) 29px,
