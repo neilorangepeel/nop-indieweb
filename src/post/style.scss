@@ -543,15 +543,14 @@ body::before {
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	color: color-mix(in srgb, var(--text) 55%, transparent);
-	/* Group break sits on the LEFT of each head — a clearly bigger gap than the
-	   inter-item rhythm (9px middot pad either side, ~18px effective) so the eye
-	   reads "new section". The space AFTER the head is the ::after middot below,
-	   matched to the standard item rhythm. */
-	margin: 0 0 0 24px;
+	margin: 0;
 }
-/* Trailing middot — same character + 9px-each-side rhythm as .ticker__sep, so the
-   head sits inside its own list as just-another-rhythm-tick. Full ink (the head
-   above is dim) so the divider reads as part of the data line, not a quiet label. */
+/* Middots on BOTH sides of the head — same character + 9px-each-side rhythm as
+   .ticker__sep, so every break in the line (item↔item, head↔item, group↔group, and
+   the looped seam) shares ONE even dot rhythm; no wider "new section" gap. Full ink
+   (the head itself is dim) so the dots read as part of the data line, not a quiet
+   label. The leading dot before the first group sits under the logo mask. */
+.ticker__head::before,
 .ticker__head::after {
 	content: '·';
 	color: var(--text);
