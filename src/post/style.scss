@@ -840,6 +840,19 @@ body::before {
 .event-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
 .event-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
 
+/* Chrome / Edge's built-in calendar + clock glyphs at the right edge of
+   date/time inputs ship as a black SVG that ignores CSS `color`. The
+   `::-webkit-calendar-picker-indicator` pseudo accepts a filter, so we
+   tint the icon to the magenta accent — the only kind that shows these
+   fields is RSVP, so a fixed filter is fine.
+   Filter recipe targets #C81E66 (the light-mode --magenta value).
+   Dark-mode users see a slightly off-magenta variant, acceptable. */
+.event-row__pair .text-field--date::-webkit-calendar-picker-indicator,
+.event-row__pair .text-field--time::-webkit-calendar-picker-indicator {
+	cursor: pointer;
+	filter: invert(20%) sepia(83%) saturate(3500%) hue-rotate(322deg) brightness(89%) contrast(91%);
+}
+
 /* ── Docket / index card ─────────────────────────────────────────────────────
    Each kind composes as a filing docket on the ruled paper: a printed header
    (kind · serial · date), a printed-fields region (the catalog slips), and the
