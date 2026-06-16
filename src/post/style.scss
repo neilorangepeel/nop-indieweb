@@ -1228,17 +1228,19 @@ body::before {
 	justify-content: space-between;
 	padding: var(--sp-3) 0;
 	min-height: 44px;
-	font-family: var(--readout);
-	font-size: var(--fs-14);
+	font-family: var(--display);
+	font-size: var(--fs-12);
 	font-weight: 700;
-	letter-spacing: 0;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 	cursor: pointer;
 	list-style: none;	user-select: none;
 }
 .syndicate-summary::-webkit-details-marker { display: none; }
 .syndicate-summary::after {
 	content: '+';
-	font-size: var(--fs-18); font-weight: 800; line-height: 1;
+	font-size: var(--fs-16); font-weight: 700; line-height: 1; letter-spacing: 0;
 }
 details[open] .syndicate-summary::after { content: '\2212'; }
 /* Animated open — interpolate-size lets block-size transition to auto
@@ -1266,15 +1268,16 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	cursor: pointer;
 	user-select: none;
 }
-/* Square ink toggle — same language as the type tiles; the real checkbox
-   stays in the tree (sr-only) for keyboard and screen readers. */
+/* Square pick toggle — the same muted control border as the rsvp control and
+   text fields; fills with ink when checked. The real checkbox stays in the tree
+   (sr-only) for keyboard and screen readers. */
 .syndicator-box {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 20px; height: 20px;
 	flex-shrink: 0;
-	border: var(--bw) solid var(--line);
+	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--on-accent);

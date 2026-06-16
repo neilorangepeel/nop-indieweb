@@ -550,7 +550,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 				<!-- Syndicators -->
 				<details class="syndicate-details" id="syndicateDetails" hidden>
-					<summary class="syndicate-summary"><?php esc_html_e( 'Syndicate to', 'nop-indieweb' ); ?></summary>
+					<summary class="syndicate-summary"><?php esc_html_e( 'Also post to', 'nop-indieweb' ); ?></summary>
 					<div class="syndicators" id="syndicators"></div>
 				</details>
 

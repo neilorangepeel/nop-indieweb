@@ -1025,7 +1025,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			showView( 'progress' );
 			var result = await sendPost( post, setProgress );
 			recordKindUse( post.type );   // float this kind to the front next time
-			setProgress( 'Syndicating…', 0.97 );
+			setProgress( 'Sharing…', 0.97 );
 			await delay( 600 );
 			if ( post.type === 'photo' && post.content ) {
 				await navigator.clipboard.writeText( post.content ).catch( function () {} );
