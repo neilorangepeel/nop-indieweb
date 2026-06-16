@@ -449,12 +449,13 @@ body::before {
 
 .masthead {
 	flex-shrink: 0;
-	/* Even framing: top, side and bottom insets all = the gutter (--pad-x). That
-	   matches the gap that makes the logo's rounded corner CONCENTRIC with the
-	   sheet's rounded top corner (--screen-radius 30 − the logo's own 10px radius
-	   = 20 = --pad-x), so the curve frames the logo evenly rather than pinching its
-	   top-left. The safe-top zone (status bar) is added on top. */
-	padding: 0 var(--pad-x) var(--pad-x);
+	/* Top + side insets = the gutter (--pad-x). That matches the gap that makes
+	   the logo's rounded corner CONCENTRIC with the sheet's rounded top corner
+	   (--screen-radius 30 − the logo's own 10px radius = 20 = --pad-x), so the
+	   curve frames the logo evenly rather than pinching its top-left. The safe-top
+	   zone (status bar) is added on top. Bottom is tighter than --pad-x — no
+	   corner constraint there, so the masthead sits closer to its divider rule. */
+	padding: 0 var(--pad-x) 14px;
 	padding-top: calc(var(--safe-top) + var(--pad-x));
 	border-bottom: var(--bw) solid var(--line);
 }
@@ -462,7 +463,7 @@ body::before {
 	position: relative;
 	display: flex;
 	align-items: center;
-	height: 46px;
+	height: 44px;
 }
 /* The logo framed as an app icon — an ink tile with the glyph knocked out in
    paper. The tile carries the ink (and re-inks per kind), so the source SVG's
@@ -528,28 +529,28 @@ body::before {
 	display: inline-flex;
 	align-items: center;
 }
-/* Group heading — SAME size and full ink colour as the data, set apart ONLY by the
-   condensed display face + caps (no dimming, no icon). The right margin holds it off
-   its first datum. */
+/* Group heading — set apart by the condensed display face + caps + tracking, then
+   DIMMED so it reads as a quiet supporting label (the data is the figure, the head
+   is the ground). One step smaller than the data so the size hierarchy reinforces
+   the role. No brackets — the face/case/dim do the marker work already. */
 .ticker__head {
 	font-family: var(--display);
-	font-size: var(--fs-14);
+	font-size: var(--fs-13);
 	font-weight: 700;
-	letter-spacing: 0.1em;
+	letter-spacing: 0.12em;
 	text-transform: uppercase;
-	/* The heading sits in its own pocket — equal space either side — so it reads as a
-	   distinct slot between the clusters, not attached to the data. */
-	margin: 0 22px;
+	opacity: 0.55;
+	/* Asymmetric: more air BEFORE each head than after, so the group break sits
+	   on the heading's left edge — between previous group's last datum and this
+	   heading — rather than padding both sides equally. */
+	margin: 0 10px 0 18px;
 }
-/* Bracket the label — [ NOW ] — so each heading reads as a distinct marker. */
-.ticker__head::before { content: '['; margin-right: 0.45em; }
-.ticker__head::after  { content: ']'; margin-left: 0.45em; }
 .ticker__item {
 	display: inline-flex;
 	align-items: center;
-	gap: 5px;
+	gap: 4px;
 	font-family: var(--readout);
-	font-size: var(--fs-14);
+	font-size: var(--fs-13);
 	font-weight: 500;
 	letter-spacing: 0;
 	font-variant-numeric: tabular-nums;
@@ -558,10 +559,10 @@ body::before {
 .ticker__item.tk-offline { font-weight: 700; }   /* pending posts / offline state — a touch louder */
 /* The datum itself. Flex so the sky item's glyph sits beside its summary (the gap
    used to come from the item; the icon now lives in here). */
-.ticker__val { display: inline-flex; align-items: center; gap: 5px; }
-.ticker__sep { padding: 0 14px; }   /* same ink colour as the data, more air between items */
+.ticker__val { display: inline-flex; align-items: center; gap: 4px; }
+.ticker__sep { padding: 0 9px; }   /* tighter rhythm than the head's break (was 14) */
 .ticker__icon { display: inline-flex; }
-.ticker__icon svg { display: block; width: 14px; height: 14px; }
+.ticker__icon svg { display: block; width: 12px; height: 12px; }
 @keyframes ticker-crawl {
 	from { transform: translateX(0); }
 	to   { transform: translateX(-50%); }
