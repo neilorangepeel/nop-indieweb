@@ -129,9 +129,10 @@
 	   because its var(--grain-ink) would resolve at :root (undefined → empty). */
 	--grain-pitch: 3px;
 	--grain-dot:   0.667px;
-	--ht-dot:      0.667px;   /* shadow dot — same size as --grain-dot, just full --ink:
-	                          the identical grid dot, darkened in place by the reveal
-	                          mask (no swell). Bump it for a swelled shadow if wanted. */
+	--ht-dot:      1px;       /* shadow dot — SWELLED past --grain-dot (0.667) so the
+	                          shadow reads as a denser halftone, not grain-sized speckle.
+	                          Same grid + reveal mask; just more ink per dot. Dial toward
+	                          0.667 for subtler, up for heavier. */
 }
 
 /* Per-type ink — selecting a tile re-inks the whole screen (two-tone).
