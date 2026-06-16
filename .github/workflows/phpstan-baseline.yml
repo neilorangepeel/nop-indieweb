@@ -6,6 +6,8 @@ name: PHPStan baseline
 # download the artifact and commit it.
 on:
   workflow_dispatch:
+  push:
+    branches: [refactor/plugin-decomposition]
 
 permissions:
   contents: read
