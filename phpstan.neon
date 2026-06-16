@@ -4,6 +4,10 @@ includes:
 
 parameters:
 	level: 5
+	# Single-threaded: each parallel worker reloads the (large) WordPress stubs,
+	# which blows the memory limit on a small codebase. One process is plenty here.
+	parallel:
+		maximumNumberOfProcesses: 1
 	paths:
 		- nop-indieweb.php
 		- includes
