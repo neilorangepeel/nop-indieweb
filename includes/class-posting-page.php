@@ -162,7 +162,6 @@ class Posting_Page {
 			$page,
 			NOP_INDIEWEB_URL . 'build/post/style-index.css?ver=' . rawurlencode( $sw_ver ),
 			NOP_INDIEWEB_URL . 'build/post/index.js?ver=' . rawurlencode( $sw_ver ),
-			$font_dir . '/brandon-text_normal_400.woff2',
 			$font_dir . '/brandon-text_normal_500.woff2',
 			$font_dir . '/brandon-text_normal_700.woff2',
 			$font_dir . '/brandon-text_normal_800.woff2',
@@ -333,12 +332,12 @@ self.addEventListener( 'fetch', function ( e ) {
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
 <link rel="apple-touch-icon" href="<?php echo esc_url( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ); ?>">
 <link rel="manifest" href="<?php echo esc_url( home_url( '/post?manifest=1' ) ); ?>">
-<link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_400.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_800.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_500.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_700.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <title><?php echo esc_html( $site_name ); ?></title>
 <style>
 <?php
-foreach ( [ '400', '500', '700', '800' ] as $weight ) {
+foreach ( [ '500', '700', '800' ] as $weight ) {
 	printf(
 		'@font-face{font-family:"Brandon Text";font-weight:%1$d;font-style:normal;font-display:swap;src:url("%2$s/brandon-text_normal_%1$d.woff2") format("woff2")}' . "\n",
 		absint( $weight ), esc_url( $font_dir )

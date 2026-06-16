@@ -216,6 +216,9 @@ body::before {
 /* ── App shell ──────────────────────────────────────────────────────────── */
 
 .app {
+	/* No tap-flash anywhere — the app supplies its own :active states. The property
+	   inherits, so one declaration here covers every interactive descendant. */
+	-webkit-tap-highlight-color: transparent;
 	/* Ink-derived tokens declared HERE so the per-type --ink (set on .app[data-type])
 	   re-resolves them per screen. --ink defaults to red; each type overrides it. */
 	--ink:      var(--red);
@@ -391,7 +394,7 @@ body::before {
 .device-chrome > * { visibility: hidden; }
 .device-chrome__time {
 	font-size: var(--fs-16);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0.01em;
 	font-variant-numeric: tabular-nums;
 }
@@ -675,9 +678,7 @@ body::before {
 	border: 0;
 	background: transparent;
 	color: var(--ink);
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
+	cursor: pointer;}
 /* The badge disc: an ink-ring circle, transparent so the fixed dot grid runs
    straight through it. Only the active kind fills (solid --accent disc). The
    pop scales the whole .type-btn so the disc + seal text move in proportion. */
@@ -749,12 +750,10 @@ body::before {
 	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
 	font-family: var(--readout);
 	font-size: var(--fs-14);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0;
 	cursor: pointer;
-	min-height: 44px;
-	-webkit-tap-highlight-color: transparent;
-}
+	min-height: 44px;}
 .rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
 .rsvp-btn:active { transform: translate(1px, 1px); }
 
@@ -926,7 +925,7 @@ body::before {
 	display: block;
 	font-family: var(--readout);
 	font-size: var(--fs-13);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0;
 	opacity: 0.7;
 	margin-bottom: var(--sp-2);
@@ -1024,14 +1023,12 @@ body::before {
 	padding: var(--sp-6) var(--sp-4);
 	text-align: center;
 	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
+	cursor: pointer;}
 .photo-picker:active,
 .photo-picker.drag-over { border-style: solid; border-color: var(--accent); }
 .photo-picker input[type="file"] { display: none; }
 .photo-picker-icon { display: block; margin-bottom: 8px; }
-.photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 600; letter-spacing: 0; }
+.photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 700; letter-spacing: 0; }
 .photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
 .thumbnails {
@@ -1065,9 +1062,7 @@ body::before {
 	font-size: var(--fs-16);
 	font-weight: 800;
 	line-height: 1;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
+	cursor: pointer;}
 .thumb__remove::after { content: ''; position: absolute; inset: -7px; }
 .alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
@@ -1170,7 +1165,7 @@ body::before {
 .url-specimen__hint {
 	font-family: var(--readout);
 	font-size: var(--fs-13);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0;
 	opacity: 0.5;
 }
@@ -1208,12 +1203,10 @@ body::before {
 	min-height: 44px;
 	font-family: var(--readout);
 	font-size: var(--fs-14);
-	font-weight: 600;
+	font-weight: 700;
 	letter-spacing: 0;
 	cursor: pointer;
-	list-style: none;
-	-webkit-tap-highlight-color: transparent;
-	user-select: none;
+	list-style: none;	user-select: none;
 }
 .syndicate-summary::-webkit-details-marker { display: none; }
 .syndicate-summary::after {
@@ -1320,9 +1313,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	font-family: inherit;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-	text-align: center;
+	cursor: pointer;	text-align: center;
 	text-decoration: none;
 }
 
@@ -1394,7 +1385,7 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 	animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.progress-status { font-family: var(--readout); font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.progress-status { font-family: var(--readout); font-size: 15px; font-weight: 700; letter-spacing: 0; }
 .progress-bar-track {
 	width: 200px; height: 6px;
 	border: var(--bw) solid var(--line);
