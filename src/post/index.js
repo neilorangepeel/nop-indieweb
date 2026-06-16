@@ -1719,6 +1719,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	applyKindOrder();                         // tiles in most-recently-used order
 	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
 	setPrompt( notePlaceholder() );
+	// Safari (desktop + iOS) renders today's date and the current time as the
+	// apparent value of an empty <input type="date"> / <input type="time">,
+	// ignoring autocomplete="off" and value="". Force-clear on init so an
+	// untouched form reads as empty. loadDraft below overrides this when a
+	// real draft value is present.
+	if ( eventStartDate ) { eventStartDate.value = ''; }
+	if ( eventStartTime ) { eventStartTime.value = ''; }
 	var hadDraft = false;
 	try { hadDraft = !! localStorage.getItem( DRAFT_KEY ); } catch ( e ) {}
 	loadDraft();
