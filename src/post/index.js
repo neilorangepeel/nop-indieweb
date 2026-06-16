@@ -727,8 +727,36 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	var tagInput  = document.getElementById( 'tagInput' );
 	var tagsField = document.getElementById( 'tagsField' );
+	var quickTags = document.getElementById( 'quickTags' );
 
 	tagsField.addEventListener( 'click', function () { tagInput.focus(); } );
+
+	// Most-used tag chips: revealed only while the tag field is in use, so they
+	// cost no space at rest. Tap to add, tap again to remove; stays in sync with
+	// the tag list however a tag was added/removed (see renderTags below).
+	if ( quickTags ) {
+		var quickTagsTimer;
+		tagInput.addEventListener( 'focus', function () {
+			clearTimeout( quickTagsTimer );
+			quickTags.classList.add( 'is-open' );
+		} );
+		tagInput.addEventListener( 'blur', function () {
+			// Delay the fold so a chip tap (which momentarily blurs the input)
+			// doesn't collapse the panel mid-interaction — the click handler
+			// re-focuses the input, cancelling this.
+			quickTagsTimer = setTimeout( function () { quickTags.classList.remove( 'is-open' ); }, 200 );
+		} );
+		quickTags.addEventListener( 'click', function (e) {
+			var btn = e.target.closest( '.quick-tag' );
+			if ( ! btn ) return;
+			var tag = btn.dataset.tag;
+			var idx = currentTags.indexOf( tag );
+			if ( idx === -1 ) { currentTags.push( tag ); } else { currentTags.splice( idx, 1 ); }
+			renderTags();
+			saveDraft();
+			tagInput.focus(); // keep the panel open + keyboard up for more taps
+		} );
+	}
 
 	tagInput.addEventListener( 'keydown', function (e) {
 		if ( e.key === 'Enter' || e.key === ',' ) {
@@ -759,9 +787,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		document.getElementById( 'tagChips' ).innerHTML = currentTags.map( function (tag, i) {
 			return '<span class="tag-chip">'
 				+ escHtml( tag )
-				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '">×</button>'
+				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '"><svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" focusable="false"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>'
 				+ '</span>';
 		} ).join( '' );
+		if ( quickTags ) {
+			quickTags.querySelectorAll( '.quick-tag' ).forEach( function (b) {
+				b.classList.toggle( 'is-used', currentTags.indexOf( b.dataset.tag ) !== -1 );
+			} );
+		}
 	}
 
 	tagsField.addEventListener( 'click', function (e) {

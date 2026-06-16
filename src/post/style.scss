@@ -1112,9 +1112,9 @@ body::before {
 	color: var(--accent);
 	border: none; padding: 0;
 	border-radius: 1px;
-	cursor: pointer; font-size: var(--fs-13); line-height: 1;
-	font-family: inherit; font-weight: 800;
+	cursor: pointer;
 }
+.tag-chip__remove svg { display: block; }
 /* Keep the 18px mark but extend the tap target to ~32px (Apple HIG) — a transparent
    overlay inside the button, so the visual square and the layout are unchanged. */
 .tag-chip__remove::after { content: ''; position: absolute; inset: -7px; }
@@ -1130,6 +1130,48 @@ body::before {
 	padding: 2px 0;
 }
 .tag-input::placeholder { color: var(--text); opacity: 0.45; }
+
+/* Most-used tags — quick-add chips that reveal only while the tag field is in
+   use (focus-driven), so they cost no space at rest. Subtle accent wash by
+   default, filled when the tag is in the list (toggled live by renderTags). */
+.quick-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sp-2);
+	max-height: 0;
+	margin-top: 0;
+	opacity: 0;
+	overflow: hidden;
+	transition: max-height 0.25s ease, opacity 0.18s ease, margin-top 0.25s ease;
+}
+.quick-tags.is-open {
+	max-height: 240px;
+	margin-top: var(--sp-3);
+	opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+	.quick-tags { transition: none; }
+}
+.quick-tag {
+	display: inline-flex;
+	align-items: center;
+	min-height: 34px;
+	padding: 5px 12px;
+	background: color-mix(in srgb, var(--accent) 8%, transparent);
+	color: var(--accent);
+	border: var(--bw-input) solid color-mix(in srgb, var(--accent) 22%, transparent);
+	border-radius: var(--radius);
+	font-family: var(--readout);
+	font-size: var(--fs-13);
+	font-weight: 700;
+	cursor: pointer;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+.quick-tag.is-used {
+	background: var(--accent);
+	color: var(--on-accent);
+	border-color: var(--accent);
+}
 
 /* URL specimen — fills the void on URL-only kinds (like, repost). Empty: the
    kind glyph as a printed watermark. Filled: the target's hostname set big in

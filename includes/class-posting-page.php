@@ -302,6 +302,21 @@ self.addEventListener( 'fetch', function ( e ) {
 				$manager->get_panel_data()
 			);
 		}
+
+		// Most-used post tags → one-tap chips beneath the tag field. Display
+		// convenience only; tapping seeds the existing client tag list (posted
+		// as `category`). Names keep their original case — tags are case-sensitive.
+		$top_tags  = [];
+		$tag_terms = get_terms( [
+			'taxonomy'   => 'post_tag',
+			'orderby'    => 'count',
+			'order'      => 'DESC',
+			'number'     => 10,
+			'hide_empty' => true,
+		] );
+		if ( is_array( $tag_terms ) ) {
+			$top_tags = array_map( static fn( $t ) => $t->name, $tag_terms );
+		}
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -521,6 +536,13 @@ foreach ( [ '700', '800' ] as $weight ) {
 							autocapitalize="off"
 						>
 					</div>
+					<?php if ( $top_tags ) : ?>
+					<div class="quick-tags" id="quickTags" aria-label="<?php esc_attr_e( 'Most used tags', 'nop-indieweb' ); ?>">
+						<?php foreach ( $top_tags as $quick_tag ) : ?>
+						<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_tag ); ?>"><?php echo esc_html( $quick_tag ); ?></button>
+						<?php endforeach; ?>
+					</div>
+					<?php endif; ?>
 				</div>
 
 				</div><!-- .docket__body -->
