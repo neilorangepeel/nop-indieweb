@@ -868,6 +868,31 @@ body::before {
 }
 .docket__serial { margin-left: auto; }
 .docket__date   { letter-spacing: 0.06em; }
+/* Clear stamp — the only interactive element on the filing line. Same muted
+   printed-ink display-caps as the kind / serial / date labels, framed by a
+   hairline rule like a rubber-stamped action box. Hidden until the form has
+   anything to clear (JS toggles [hidden]); the rest of the filing line stays
+   put because gap shrinks naturally when this child is removed. */
+.docket__clear {
+	appearance: none;
+	margin: 0 0 0 var(--sp-3);
+	padding: 2px var(--sp-2);
+	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
+	border-radius: 2px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	letter-spacing: 0.08em;
+	line-height: 1.2;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.docket__clear:hover  { color: var(--ink); border-color: var(--ink-38); }
+.docket__clear:active { transform: translate(1px, 1px); }
+.docket__clear:focus-visible {
+	outline: var(--bw-input) solid var(--accent);
+	outline-offset: 2px;
+}
 
 .docket__fields,
 .docket__body { display: flex; flex-direction: column; gap: var(--sp-4); }

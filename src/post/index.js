@@ -514,6 +514,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var docketKind   = document.getElementById( 'docketKind' );
 	var docketSerial = document.getElementById( 'docketSerial' );
 	var docketDate   = document.getElementById( 'docketDate' );
+	var clearBtn     = document.getElementById( 'clearBtn' );
 	var slipRef      = document.getElementById( 'slipRef' );
 	var slipHost     = document.getElementById( 'slipHost' );
 	var slipPath     = document.getElementById( 'slipPath' );
@@ -1049,6 +1050,28 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			enabled = contentInput.value.trim().length > 0 || ( cfg.hasPhoto && selectedFiles.length > 0 );
 		}
 		postBtn.disabled = ! enabled;
+		updateClearBtn();
+	}
+
+	// Clear lives in the docket header. It's only useful once the form has
+	// something to clear — an empty compose page is its own affordance.
+	// Piggybacks on updatePostBtn so every input/state change already calls it;
+	// the dedicated event-field listeners (below) cover the fields that didn't
+	// previously hook updatePostBtn (eventName, the date/time inputs, location).
+	function hasFormContent() {
+		if ( urlInput.value.trim() )       { return true; }
+		if ( contentInput.value.trim() )   { return true; }
+		if ( selectedFiles.length )        { return true; }
+		if ( currentTags.length )          { return true; }
+		if ( eventName && eventName.value.trim() )           { return true; }
+		if ( eventStartDate && eventStartDate.value )        { return true; }
+		if ( eventStartTime && eventStartTime.value )        { return true; }
+		if ( eventLocation && eventLocation.value.trim() )   { return true; }
+		if ( eventImage && eventImage.value )                { return true; }
+		return false;
+	}
+	function updateClearBtn() {
+		if ( clearBtn ) { clearBtn.hidden = ! hasFormContent(); }
 	}
 
 	urlInput.addEventListener( 'input', function () {
@@ -1061,6 +1084,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
+
+	// Event-field input listeners — keep the Clear button's "form has content"
+	// flag honest when the author types into the event detail fields. Each
+	// also persists a draft on settle so a refresh mid-edit doesn't lose it.
+	[ eventName, eventStartDate, eventStartTime, eventLocation ].forEach( function ( el ) {
+		if ( ! el ) { return; }
+		el.addEventListener( 'input',  function () { updatePostBtn(); saveDraftSoon(); } );
+		el.addEventListener( 'change', function () { updatePostBtn(); saveDraft(); } );
+	} );
+
+	if ( clearBtn ) {
+		clearBtn.addEventListener( 'click', function () {
+			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
+			clearFields();
+		} );
+	}
 
 	// ── Photo picker ──────────────────────────────────────────────────────────
 
@@ -1451,7 +1490,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		document.getElementById( 'anotherBtn' ).onclick = resetForm;
 	}
 
-	function resetForm() {
+	// Field wipe shared by the Clear button (in-form "start over") and the
+	// post-success "Post another" flow. Resets everything the author can fill
+	// — content, URL, photos, tags, event detail, the rotating note prompt —
+	// but leaves the currently-selected kind, the serial, and the syndicator
+	// tick state alone. The caller decides whether to also swap kind / bump
+	// serial / change view.
+	function clearFields() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
 		if ( eventName )      { eventName.value      = ''; }
@@ -1461,14 +1506,30 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		setEventPoster( '' );
 		fetchedEventUrl = '';
 		setEventStatus( '' );
+		// RSVP response toggle back to its default — same wipe semantics as
+		// every other field on the form.
+		currentRsvp = 'yes';
+		document.querySelectorAll( '.rsvp-btn' ).forEach( function ( b ) {
+			var on = b.dataset.rsvp === currentRsvp;
+			b.classList.toggle( 'is-active', on );
+			b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+		} );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
 		renderTags();
-		clearDraft();
+		updateSpecimen();
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
+		setPrompt( ( currentType === 'note' ) ? notePrompt : ( TYPE_CONFIG[ currentType ].contentPlaceholder || 'Write…' ) );
+		autoGrowContent();
+		updateCounter();
+		updatePostBtn();
+		clearDraft();
+	}
+
+	function resetForm() {
+		clearFields();
 		if ( nextSerial ) { setTk( 'tk-id', TK_ID_PRE + ( ++nextSerial ) ); }
 		switchType( 'note' );
-		updateCounter();
 		showView( 'compose' );
 	}
 

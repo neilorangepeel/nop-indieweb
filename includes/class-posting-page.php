@@ -452,11 +452,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="compose-fields">
 				<div class="docket" id="docket">
 
-				<!-- Filing line — kind · serial · date (filled by switchType) -->
-				<div class="docket__header" id="docketHeader" aria-hidden="true">
-					<span class="docket__kind" id="docketKind"></span>
-					<span class="docket__serial" id="docketSerial"></span>
-					<span class="docket__date" id="docketDate"></span>
+				<!-- Filing line — kind · serial · date · clear (filled by switchType).
+				     The clear button is the only interactive element on the filing
+				     line, so aria-hidden lives on the inner spans, not the wrapper. -->
+				<div class="docket__header" id="docketHeader">
+					<span class="docket__kind" id="docketKind" aria-hidden="true"></span>
+					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
+					<span class="docket__date" id="docketDate" aria-hidden="true"></span>
+					<button type="button" class="docket__clear" id="clearBtn" hidden>
+						<?php esc_html_e( 'Clear', 'nop-indieweb' ); ?>
+					</button>
 				</div>
 
 				<!-- Printed catalog fields (per kind) -->

@@ -166,16 +166,17 @@ class Semantic_Markup {
 			if ( '' !== $location ) {
 				printf( '<span class="p-location">%s</span>', esc_html( $location ) );
 			}
-			// u-photo for mf2 consumers. data-archive carries the Wayback wildcard
-			// URL ('2*' resolves to the closest snapshot, im_ flag serves the raw
-			// image bytes without IA's wrapper) so a theme that lifts this image
-			// into a visible card can wire a tiny onerror fallback when the
-			// venue's CDN URL eventually 404s.
+			// u-photo for mf2 consumers. data-archive points at Wayback's "redirect
+			// to the closest snapshot" form — `web/0im_/<url>` returns a 302 to the
+			// latest archived copy and the `im_` flag serves the raw image bytes
+			// without IA's HTML wrapper. A theme that lifts this image into a
+			// visible card can wire a tiny onerror fallback that swaps src to the
+			// data-archive URL when the venue's CDN URL eventually 404s.
 			if ( '' !== $image ) {
 				printf(
 					'<img class="u-photo" src="%s" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async" data-archive="%s">',
 					esc_url( $image ),
-					esc_url( 'https://web.archive.org/web/2*im_/' . $image )
+					esc_url( 'https://web.archive.org/web/0im_/' . $image )
 				);
 			}
 			echo "</div>\n";
