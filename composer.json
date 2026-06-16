@@ -12,8 +12,8 @@
 		"szepeviktor/phpstan-wordpress": "^2.0"
 	},
 	"scripts": {
-		"phpstan": "phpstan analyse --memory-limit=1G",
-		"phpstan:baseline": "phpstan analyse --memory-limit=1G --generate-baseline=phpstan-baseline.neon",
+		"phpstan": "phpstan analyse --memory-limit=3G",
+		"phpstan:baseline": "phpstan analyse --memory-limit=3G --generate-baseline=phpstan-baseline.neon",
 		"test": "phpunit"
 	},
 	"config": {
