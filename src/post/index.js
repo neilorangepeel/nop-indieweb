@@ -577,6 +577,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var currentTags   = [];
 	var currentRsvp   = 'yes';
 	var includeLocation = false;   // opt-in geotag for note/photo
+	var altWarningDismissed = false;   // one-shot: "Post anyway" past the missing-alt nudge
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 
@@ -1403,7 +1404,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	if ( clearBtn ) {
 		clearBtn.addEventListener( 'click', function () {
 			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
+			var snapshot = formToPost();   // keeps photo/story blobs + alts, unlike the saved draft
 			clearFields();
+			showToast( 'Cleared', null, { label: 'Undo', onTap: function () { restoreSnapshot( snapshot ); } } );
 		} );
 	}
 
@@ -1512,10 +1515,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var cell       = document.createElement( 'figure' );
 			cell.className = 'thumb';
 			cell.dataset.index = i;          // current position — read back after a drag reorder
+			// Alt-text conscience: flag a print with no alt yet (toggled live by the
+			// alt input). The badge is always present; CSS shows it only when missing.
+			cell.classList.toggle( 'is-missing-alt', ! ( photoAlts[ i ] || '' ).trim() );
 			var img = document.createElement( 'img' );
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
 			cell.appendChild( img );
+			var altFlag = document.createElement( 'span' );
+			altFlag.className   = 'thumb__altflag';
+			altFlag.textContent = 'ALT?';
+			altFlag.setAttribute( 'aria-hidden', 'true' );
+			cell.appendChild( altFlag );
 			// Ordinal badge — ties each print to its "Alt text N" slip below. Only when
 			// there's more than one (single photo needs no number, like the alt label).
 			if ( selectedFiles.length > 1 ) {
@@ -1577,7 +1588,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	altTexts.addEventListener( 'input', function (e) {
 		if ( e.target.classList.contains( 'thumb__alt' ) ) {
-			photoAlts[ parseInt( e.target.dataset.index, 10 ) ] = e.target.value;
+			var idx = parseInt( e.target.dataset.index, 10 );
+			photoAlts[ idx ] = e.target.value;
+			var cell = thumbs.querySelector( '.thumb[data-index="' + idx + '"]' );
+			if ( cell ) { cell.classList.toggle( 'is-missing-alt', ! e.target.value.trim() ); }
 		}
 	} );
 
@@ -1643,6 +1657,20 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	postBtn.addEventListener( 'click', async function () {
 		var post = formToPost();
+
+		// Alt-text conscience: alt is lost the moment a photo syndicates, so nudge
+		// once before sending if any selected print still has none. Soft — "Post
+		// anyway" proceeds; ignoring it leaves you on the form to fill them in.
+		if ( ! altWarningDismissed && TYPE_CONFIG[ currentType ].hasPhoto
+			&& post.files.some( function ( f ) { return ! ( f.alt || '' ).trim(); } ) ) {
+			var missing = post.files.filter( function ( f ) { return ! ( f.alt || '' ).trim(); } ).length;
+			showToast(
+				missing + ( missing === 1 ? ' photo needs' : ' photos need' ) + ' alt text',
+				'error',
+				{ label: 'Post anyway', onTap: function () { altWarningDismissed = true; postBtn.click(); } }
+			);
+			return;
+		}
 
 		// Offline up front → straight to the queue (no point attempting the network).
 		if ( ! navigator.onLine && window.indexedDB ) { await queueAndAck( post ); return; }
@@ -2016,6 +2044,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// serial / change view.
 	function clearFields() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
+		altWarningDismissed = false;   // a fresh form is re-checked for missing alt
 		contentInput.value = ''; urlInput.value = '';
 		if ( quoteComment )   { quoteComment.value   = ''; }
 		if ( citeAuthor )     { citeAuthor.value     = ''; }
@@ -2166,6 +2195,61 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		saveDraft();
 	}
 
+	// Rehydrate the form from an in-memory snapshot (Undo a Clear). Mirrors loadDraft
+	// but works from a post object, so it can also bring back the photo/story blobs
+	// the localStorage draft never keeps. clearFields leaves the syndicator ticks
+	// alone, so neither does this.
+	function restoreSnapshot( p ) {
+		if ( ! p ) { return; }
+		restoring = true;
+		if ( p.type && TYPE_CONFIG[ p.type ] ) { switchType( p.type ); }
+		contentInput.value = p.content || '';
+		urlInput.value     = p.url || '';
+		if ( quoteComment ) { quoteComment.value = p.quoteComment || ''; }
+		if ( citeAuthor )   { citeAuthor.value   = p.cite || ''; }
+		if ( quoteLink )    { quoteLink.value    = p.quoteLink || ''; }
+		if ( privateCheck ) { privateCheck.checked = !! p.isPrivate; }
+		currentTags = Array.isArray( p.tags ) ? p.tags.slice() : [];
+		renderTags();
+		currentRsvp = p.rsvp || 'yes';
+		document.querySelectorAll( '.rsvp-btn' ).forEach( function ( b ) {
+			var on = b.dataset.rsvp === currentRsvp;
+			b.classList.toggle( 'is-active', on );
+			b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+		} );
+		if ( p.event ) {
+			if ( eventName )     { eventName.value     = p.event.name     || ''; }
+			splitEventDt( eventStartDate, eventStartTime, p.event.start );
+			if ( eventLocation ) { eventLocation.value = p.event.location || ''; }
+			setEventPoster( p.event.image || '' );
+		}
+		fetchedEventUrl = p.url ? p.url.trim() : '';
+		// Reseat the geotag coords + place so the toggle reads the resolved spot back.
+		includeLocation = !! ( p.location && p.location.lat != null );
+		if ( p.location && p.location.lat != null ) {
+			geoLat = p.location.lat; geoLon = p.location.lon;
+			geoLocality = p.location.locality || ''; geoCountry = p.location.country || '';
+		}
+		if ( locationCheck ) { locationCheck.checked = includeLocation; }
+		updateLocationUI();
+		// Photos / story media — the snapshot's blobs ARE the original File objects.
+		selectedFiles = []; photoAlts = [];
+		if ( TYPE_CONFIG[ p.type ].hasPhoto && p.files && p.files.length ) {
+			selectedFiles = p.files.map( function ( f ) { return f.blob; } );
+			photoAlts     = p.files.map( function ( f ) { return f.alt || ''; } );
+		}
+		renderThumbs();
+		if ( TYPE_CONFIG[ p.type ].hasStoryMedia ) {
+			if ( p.video && p.video.blob )    { setStoryVideo( p.video.blob ); }
+			else if ( p.files && p.files[0] ) { setStoryPhoto( p.files[0].blob ); }
+		}
+		restoring = false;
+		updateSpecimen();
+		updateCounter();
+		updatePostBtn();
+		saveDraft();
+	}
+
 	function clearDraft() { try { localStorage.removeItem( DRAFT_KEY ); } catch ( e ) {} }
 
 	// ── Character counter ──────────────────────────────────────────────────────
@@ -2187,15 +2271,37 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// renderSyndicators() at module init, before any cached ref would resolve.
 	function updateCounter() {
 		var el  = document.getElementById( 'charCount' );
-		var len = contentInput.value.length;
-		if ( ! TYPE_CONFIG[ currentType ].hasContent || ! len ) {
-			el.hidden = true;
-			return;
-		}
+		var hasContent = TYPE_CONFIG[ currentType ].hasContent;
+		var len = hasContent ? contentInput.value.length : 0;
+
+		// Per-network truth: each ticked syndicator's chip shows how many characters
+		// it has LEFT (and by how much you're over) so you can see WHICH network is
+		// the constraint — not just the strictest count collapsed into one number.
+		updateSyndicatorChips( len );
+
+		if ( ! hasContent || ! len ) { el.hidden = true; return; }
 		var lim = currentLimit();   // smallest char limit among the ticked syndicators
 		el.hidden = false;
 		el.textContent = lim ? ( len + ' / ' + lim ) : ( len + ( len === 1 ? ' character' : ' characters' ) );
 		el.classList.toggle( 'is-over', !! lim && len > lim );
+	}
+
+	function updateSyndicatorChips( len ) {
+		document.querySelectorAll( '#syndicators .syndicator-item' ).forEach( function ( item ) {
+			var cb  = item.querySelector( 'input[type="checkbox"]' );
+			var out = item.querySelector( '.syndicator-item__limit' );
+			if ( ! cb || ! out ) { return; }
+			var limit = CHAR_LIMITS[ cb.value ];
+			if ( ! limit ) { item.classList.remove( 'is-over' ); return; }
+			if ( cb.checked && len ) {
+				var left = limit - len;
+				out.textContent = left < 0 ? '−' + ( -left ) : String( left );
+				item.classList.toggle( 'is-over', left < 0 );
+			} else {
+				out.textContent = String( limit );   // at rest the chip just shows the cap
+				item.classList.remove( 'is-over' );
+			}
+		} );
 	}
 
 	// ── Streak ─────────────────────────────────────────────────────────────────
@@ -2213,16 +2319,33 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Toast ──────────────────────────────────────────────────────────────────
 
 	var toastTimer;
-	function showToast( message, kind ) {
+	function hideToast() {
+		var el = document.getElementById( 'toast' );
+		el.classList.remove( 'is-visible' );
+		clearTimeout( toastTimer );
+	}
+	// An optional `action` ({ label, onTap }) makes the toast tappable — Undo a
+	// clear, or post past a missing-alt warning. Setting textContent first wipes
+	// any button left over from a previous toast; a plain notice stays text-only
+	// and auto-dismisses, an actionable one lingers longer so there's time to tap.
+	function showToast( message, kind, action ) {
 		var el = document.getElementById( 'toast' );
 		el.textContent = message;
+		if ( action && action.label ) {
+			var btn = document.createElement( 'button' );
+			btn.type        = 'button';
+			btn.className    = 'toast__action';
+			btn.textContent = action.label;
+			btn.addEventListener( 'click', function () { hideToast(); action.onTap(); } );
+			el.appendChild( btn );
+		}
 		// display + @starting-style (CSS) drive the show/hide transition now — no
 		// forced reflow, no hidden-attribute toggling; just flip the class.
 		el.className   = 'toast is-visible' + ( kind === 'error' ? ' toast--error' : '' );
 		clearTimeout( toastTimer );
 		toastTimer = setTimeout( function () {
 			el.classList.remove( 'is-visible' );
-		}, 3500 );
+		}, action ? 6000 : 3500 );
 	}
 
 	// ── Kind order ───────────────────────────────────────────────────────────────

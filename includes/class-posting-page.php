@@ -178,7 +178,7 @@ class Posting_Page {
 // Bump on any change that demands a clean shell refresh on every device. The
 // activate handler deletes every cache whose name doesn't equal CACHE — so
 // changing this string is the textbook way to nuke a stuck precached shell.
-var CACHE = 'nop-post-v12';
+var CACHE = 'nop-post-v13';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
