@@ -71,14 +71,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	var lastTime = '';
 
-	function greetingFor( hour ) {
-		if ( hour < 5 )  return NOP.greetings.night;
-		if ( hour < 12 ) return NOP.greetings.morning;
-		if ( hour < 18 ) return NOP.greetings.afternoon;
-		if ( hour < 22 ) return NOP.greetings.evening;
-		return NOP.greetings.night;
-	}
-
 	function updateClock() {
 		var now  = new Date();
 		var time = String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
@@ -468,6 +460,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var GEO_KEY = 'nop_post_geo', NOW_KEY = 'nop_post_now';
 	var GEO_TTL = 6 * 60 * 60 * 1000, NOW_TTL = 30 * 60 * 1000;
 
+	// The current place, captured from the same /now resolution the ticker uses, so
+	// the opt-in geotag can attach it without a second lookup. Populated as coords
+	// (GEO_KEY) and the reverse-geocode (renderNow) resolve.
+	var geoLat = null, geoLon = null, geoLocality = '', geoCountry = '';
+
 	// Pirate Weather icon keyword → riso glyph (sun/moon reuse the flight-path art).
 	var WX_SUN  = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>';
 	var WX_MOON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>';
@@ -490,6 +487,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function renderNow( d ) {
 		if ( ! d ) { return; }
 		tkPlace = d.place ? ( d.country ? d.place + ', ' + d.country : d.place ) : '';
+		geoLocality = d.place || '';
+		geoCountry  = d.country || '';
+		updateLocationUI();   // fill the geotag readout if the toggle is on
 		// Show both units — Belfast thinks in °C, but the °F is a free, useful glance.
 		// Derive °F from the rounded °C so the two never disagree at a rounding edge
 		// (a raw 11.7° would otherwise print "12°C / 53°F", which reads as a bug).
@@ -510,6 +510,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	function fetchNow( lat, lon ) {
+		geoLat = lat; geoLon = lon;
 		var sep = NOP.nowUrl.indexOf( '?' ) >= 0 ? '&' : '?';
 		var opts = { headers: { 'X-WP-Nonce': NOP.nonce } };
 		// Bound the request — a hung network would otherwise leave the moment data
@@ -561,6 +562,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function loadNow() {
 		var cached = readJSON( NOW_KEY );
 		var geo    = readJSON( GEO_KEY );
+		if ( geo && geo.lat != null ) { geoLat = geo.lat; geoLon = geo.lon; }   // seed coords for the geotag
 		var useful = cached && isUsefulNow( cached.data );
 		console.info( '[nop /now] startup', {
 			nowAgeMin: cached ? Math.round( ( Date.now() - cached.ts ) / 60000 ) : 'no-cache',
@@ -586,8 +588,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'Write a note…' },
-		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, contentPlaceholder: 'What are we looking at?' },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'Write a note…' },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'What are we looking at?' },
 		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…' },
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
@@ -600,6 +602,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var photoAlts     = [];
 	var currentTags   = [];
 	var currentRsvp   = 'yes';
+	var includeLocation = false;   // opt-in geotag for note/photo
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 
@@ -621,6 +624,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var slipRef      = document.getElementById( 'slipRef' );
 	var slipHost     = document.getElementById( 'slipHost' );
 	var slipPath     = document.getElementById( 'slipPath' );
+	var slipTitle    = document.getElementById( 'slipTitle' );
+	var slipExcerpt  = document.getElementById( 'slipExcerpt' );
 	var fieldEvent      = document.getElementById( 'fieldEvent' );
 	var eventName       = document.getElementById( 'eventName' );
 	var eventStartDate  = document.getElementById( 'eventStartDate' );
@@ -631,6 +636,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var eventPosterImg  = document.getElementById( 'eventPosterImg' );
 	var eventPosterRm   = document.getElementById( 'eventPosterRemove' );
 	var eventStatus     = document.getElementById( 'eventStatus' );
+	var fieldLocation   = document.getElementById( 'fieldLocation' );
+	var locationCheck   = document.getElementById( 'locationCheck' );
+	var locationPlace   = document.getElementById( 'locationPlace' );
 
 	// Apply (or clear) the hot-linked event poster: hidden input carries the URL
 	// through to the Micropub payload, the <figure> is just author confirmation
@@ -688,8 +696,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// Big rotating prompt overlay — set its text, and fade it once typing starts.
 	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
 	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
-	// The note placeholder — one of a rotating set of openers (no greeting for now;
-	// greetingFor + NOP.greetings sit dormant in case it comes back).
+	// The note placeholder — one of a rotating set of openers.
 	function notePlaceholder() { return notePrompt; }
 	// Fallback for browsers without CSS field-sizing (Firefox today). Native
 	// field-sizing: content on .compose-field handles the rest for free.
@@ -844,6 +851,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 
 	var photoInput   = document.getElementById( 'photoInput' );
+	var photoCapture      = document.getElementById( 'photoCapture' );
+	var photoCaptureInput = document.getElementById( 'photoCaptureInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
 	var specimen      = document.getElementById( 'urlSpecimen' );
@@ -851,6 +860,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var specimenHint  = document.getElementById( 'specimenHint' );
 	var specimenHost  = document.getElementById( 'specimenHost' );
 	var specimenPath  = document.getElementById( 'specimenPath' );
+	var specimenTitle = document.getElementById( 'specimenTitle' );
 
 	// URL specimen — on URL-only kinds the empty space below the field shows the
 	// kind glyph as a watermark; once the URL parses it becomes a type specimen
@@ -899,6 +909,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			specimenPath.hidden = path === '/';
 		} else {
 			specimenPath.hidden = true;
+			if ( specimenTitle ) { specimenTitle.hidden = true; }
 			specimenHint.textContent = cfg.urlHint || 'Paste a URL';
 			specimenGlyph.innerHTML = '';
 			var icon = document.querySelector( '.type-btn[data-type="' + currentType + '"] .type-btn__icon svg' );
@@ -980,6 +991,105 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	var fetchEventSoon = debounce( function () { fetchEvent( urlInput.value ); }, 600 );
+
+	// ── URL context preview ───────────────────────────────────────────────────────
+	// reply / like / bookmark / repost all act on a URL. Fetch a lightweight
+	// preview of the target (title / author / excerpt) so you see WHAT you're acting
+	// on rather than a bare hostname. Best-effort: a miss leaves the host/path slip
+	// as-is and stays quiet. RSVP has its own richer event lookup, so it's excluded.
+
+	var fetchedContextUrl = '';
+
+	// True for the kinds that should preview their target: any URL kind except RSVP.
+	function isContextKind() {
+		var cfg = TYPE_CONFIG[ currentType ];
+		return !! cfg.urlProp && currentType !== 'rsvp';
+	}
+
+	function clearContextPreview() {
+		if ( slipTitle )     { slipTitle.hidden     = true; slipTitle.textContent     = ''; }
+		if ( slipExcerpt )   { slipExcerpt.hidden   = true; slipExcerpt.textContent   = ''; }
+		if ( specimenTitle ) { specimenTitle.hidden = true; specimenTitle.textContent = ''; }
+	}
+
+	function applyContextPreview( d ) {
+		if ( ! d || ! d.source ) { return; }
+		var title   = ( d.title   || '' ).trim();
+		var excerpt = ( d.excerpt || '' ).trim();
+		var author  = ( d.author  || '' ).trim();
+		// reply / bookmark write alongside the link → fill the printed slip's
+		// title + excerpt slots. like / repost are URL-only → show the title under
+		// the big hostname specimen.
+		if ( TYPE_CONFIG[ currentType ].hasContent ) {
+			if ( slipTitle )   { slipTitle.textContent   = title;   slipTitle.hidden   = ! title; }
+			if ( slipExcerpt ) { slipExcerpt.textContent = excerpt; slipExcerpt.hidden = ! excerpt; }
+		} else if ( specimenTitle ) {
+			var headline = title || author;
+			specimenTitle.textContent = headline;
+			specimenTitle.hidden      = ! headline;
+		}
+	}
+
+	function fetchContext( url ) {
+		url = ( url || '' ).trim();
+		if ( ! isContextKind() || ! url || url === fetchedContextUrl || ! NOP.fetchContextUrl ) { return; }
+		try { new URL( url ); } catch ( e ) { return; }
+		fetchedContextUrl = url;
+
+		fetch( NOP.fetchContextUrl, {
+			method:  'POST',
+			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+			body:    JSON.stringify( { url: url } ),
+		} ).then( function ( r ) {
+			return r.ok ? r.json() : null;
+		} ).then( function ( d ) {
+			// Drop a stale response if the field changed (or the kind switched) while
+			// the request was in flight.
+			if ( urlInput.value.trim() !== url || ! isContextKind() ) { return; }
+			applyContextPreview( d );
+		} ).catch( function () {} );
+	}
+
+	var fetchContextSoon = debounce( function () { fetchContext( urlInput.value ); }, 600 );
+
+	// ── Location (opt-in geotag) ──────────────────────────────────────────────────
+	// note / photo can carry the device's current place. Off by default; turning it
+	// on attaches the coordinates + the reverse-geocoded place the ticker already
+	// resolved. Coordinates are only requested when you ask for them here, so a plain
+	// post never touches geolocation.
+
+	// "Belfast, United Kingdom" from the resolved parts, or '' when nothing's known.
+	function locationLabel() {
+		var parts = [];
+		if ( geoLocality ) { parts.push( geoLocality ); }
+		if ( geoCountry )  { parts.push( geoCountry ); }
+		return parts.join( ', ' );
+	}
+
+	// Reflect the toggle + resolved place into the readout. When on but the place
+	// hasn't resolved yet, show a quiet "Locating…" rather than an empty chip.
+	function updateLocationUI() {
+		if ( ! locationPlace ) { return; }
+		if ( ! includeLocation ) {
+			locationPlace.hidden = true;
+			locationPlace.textContent = '';
+			return;
+		}
+		var label = locationLabel();
+		locationPlace.hidden = false;
+		locationPlace.textContent = label || ( geoLat != null ? '…' : 'Locating…' );
+	}
+
+	if ( locationCheck ) {
+		locationCheck.addEventListener( 'change', function () {
+			includeLocation = locationCheck.checked;
+			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
+			// First opt-in with no coords yet → ask for them now (may prompt once).
+			if ( includeLocation && geoLat == null ) { loadNow(); }
+			updateLocationUI();
+			saveDraft();
+		} );
+	}
 
 	// ── Syndicators ───────────────────────────────────────────────────────────
 	// Targets are inlined server-side (NOP.syndicateTo) — no fetch needed.
@@ -1159,6 +1269,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		fieldPhoto.hidden   = ! cfg.hasPhoto;
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
+		if ( fieldLocation ) { fieldLocation.hidden = ! cfg.hasLocation; }
 
 		// Note = a body-only card (the pure ruled writing page); every other kind
 		// carries a printed-fields region.
@@ -1171,7 +1282,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 
 		updateSpecimen();
+		// Reset any previewed target, then re-preview if this kind already carries a
+		// URL (a draft restore, or switching reply→bookmark with the link kept).
+		clearContextPreview();
+		fetchedContextUrl = '';
+		if ( isContextKind() && urlInput.value.trim() ) { fetchContext( urlInput.value ); }
 		renderSyndicators();
+		updateLocationUI();
 		updateCounter();
 		saveDraft();
 		updatePostBtn();
@@ -1243,10 +1360,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	urlInput.addEventListener( 'input', function () {
 		updateSpecimen(); updatePostBtn(); saveDraftSoon();
 		if ( currentType === 'rsvp' ) { fetchEventSoon(); }
+		else if ( isContextKind() ) {
+			// Drop a stale preview the moment the URL changes, then re-fetch.
+			if ( urlInput.value.trim() !== fetchedContextUrl ) { clearContextPreview(); }
+			fetchContextSoon();
+		}
 	} );
 	// Blur fetches immediately — covers a paste-then-tab-away before the debounce.
 	urlInput.addEventListener( 'blur', function () {
 		if ( currentType === 'rsvp' ) { fetchEvent( urlInput.value ); }
+		else if ( isContextKind() ) { fetchContext( urlInput.value ); }
 	} );
 	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
@@ -1279,6 +1402,18 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
 
+	// Take-a-photo — only useful where there's a camera (a coarse pointer). On a
+	// desktop the capture attribute just opens a file dialog, so we hide the button
+	// there and leave the library dropzone as the one affordance.
+	if ( photoCapture && photoCaptureInput && window.matchMedia && window.matchMedia( '(pointer: coarse)' ).matches ) {
+		photoCapture.hidden = false;
+		photoCapture.addEventListener( 'click', function () { photoCaptureInput.click(); } );
+		photoCaptureInput.addEventListener( 'change', function () {
+			appendFiles( Array.from( photoCaptureInput.files ) );
+			photoCaptureInput.value = '';   // let the same camera fire again next tap
+		} );
+	}
+
 	// Render the selected prints + their alt slips from selectedFiles/photoAlts.
 	// Split out so removePhoto() can re-render after dropping one (alt values kept).
 	function renderThumbs() {
@@ -1287,6 +1422,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		selectedFiles.forEach( function (file, i) {
 			var cell       = document.createElement( 'figure' );
 			cell.className = 'thumb';
+			cell.dataset.index = i;          // current position — read back after a drag reorder
 			var img = document.createElement( 'img' );
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
@@ -1328,6 +1464,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		selectedFiles = files.slice( 0, 10 );
 		photoAlts     = [];
 		renderThumbs();
+		saveDraft();
+	}
+	// Append (rather than replace) — the path the camera button uses, so a shot adds
+	// to the set you're building. Caps at 10; keeps existing alts aligned by index.
+	function appendFiles( files ) {
+		var room = 10 - selectedFiles.length;
+		if ( room <= 0 || ! files.length ) { return; }
+		selectedFiles = selectedFiles.concat( files.slice( 0, room ) );
+		renderThumbs();
+		saveDraft();
 	}
 	// Pull one print off the card — drop it (and its alt) from the selection, re-index.
 	function removePhoto( i ) {
@@ -1345,6 +1491,60 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			photoAlts[ parseInt( e.target.dataset.index, 10 ) ] = e.target.value;
 		}
 	} );
+
+	// ── Photo reorder (pointer drag) ────────────────────────────────────────────
+	// Drag a print to reorder the set — its alt slip rides along. Pointer-based so
+	// it works on touch (HTML5 draggable doesn't fire there at all). The DOM is
+	// reordered live for feedback; the new order is committed back to
+	// selectedFiles/photoAlts on drop, then both containers re-render in step.
+	var dragEl = null, dragStartX = 0, dragStartY = 0, dragLifted = false;
+	function thumbAtPoint( x, y ) {
+		var nodes = thumbs.querySelectorAll( '.thumb' );
+		for ( var i = 0; i < nodes.length; i++ ) {
+			var r = nodes[ i ].getBoundingClientRect();
+			if ( x >= r.left && x <= r.right && y >= r.top && y <= r.bottom ) { return nodes[ i ]; }
+		}
+		return null;
+	}
+	thumbs.addEventListener( 'pointerdown', function ( e ) {
+		var fig = e.target.closest( '.thumb' );
+		if ( ! fig || e.target.closest( '.thumb__remove' ) ) { return; }
+		dragEl = fig; dragStartX = e.clientX; dragStartY = e.clientY; dragLifted = false;
+	} );
+	thumbs.addEventListener( 'pointermove', function ( e ) {
+		if ( ! dragEl ) { return; }
+		// A small threshold before "lifting" so a tap/scroll isn't hijacked as a drag.
+		if ( ! dragLifted ) {
+			if ( Math.abs( e.clientX - dragStartX ) + Math.abs( e.clientY - dragStartY ) < 8 ) { return; }
+			dragLifted = true;
+			dragEl.classList.add( 'is-dragging' );
+			if ( thumbs.setPointerCapture ) { try { thumbs.setPointerCapture( e.pointerId ); } catch ( err ) {} }
+			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
+		}
+		e.preventDefault();
+		var over = thumbAtPoint( e.clientX, e.clientY );
+		if ( over && over !== dragEl ) {
+			var r     = over.getBoundingClientRect();
+			var after = ( e.clientX - r.left ) > r.width / 2;
+			thumbs.insertBefore( dragEl, after ? over.nextSibling : over );
+		}
+	} );
+	function endThumbDrag() {
+		if ( ! dragEl ) { return; }
+		var lifted = dragLifted;
+		dragEl.classList.remove( 'is-dragging' );
+		dragEl = null; dragLifted = false;
+		if ( ! lifted ) { return; }
+		// Read the new DOM order (the data-index each print started at) and apply that
+		// permutation to both arrays, then rebuild so indices/labels re-sync.
+		var order = Array.prototype.map.call( thumbs.querySelectorAll( '.thumb' ), function ( n ) { return parseInt( n.dataset.index, 10 ); } );
+		selectedFiles = order.map( function ( i ) { return selectedFiles[ i ]; } );
+		photoAlts     = order.map( function ( i ) { return photoAlts[ i ] || ''; } );
+		renderThumbs();
+		saveDraft();
+	}
+	thumbs.addEventListener( 'pointerup', endThumbDrag );
+	thumbs.addEventListener( 'pointercancel', endThumbDrag );
 
 	// ── Post ──────────────────────────────────────────────────────────────────
 
@@ -1401,6 +1601,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				image:    eventImage ? eventImage.value.trim() : '',
 			},
 			tags:        currentTags.slice(),
+			location:    ( TYPE_CONFIG[ currentType ].hasLocation && includeLocation && geoLat != null )
+				? { lat: geoLat, lon: geoLon, locality: geoLocality, country: geoCountry }
+				: null,
 			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
 			files:       files,
 		};
@@ -1466,6 +1669,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			} );
 		}
 		if ( cfg.hasTags && post.tags.length ) { props.category = post.tags.slice(); }
+
+		// Opt-in geotag: the coordinates as a geo: URI (the Micropub-standard simple
+		// location value) plus the reverse-geocoded place as flat companions the
+		// server maps onto the shared venue meta.
+		if ( cfg.hasLocation && post.location && post.location.lat != null ) {
+			props.location = [ 'geo:' + post.location.lat + ',' + post.location.lon ];
+			if ( post.location.locality ) { props[ 'location-locality' ] = [ post.location.locality ]; }
+			if ( post.location.country )  { props[ 'location-country' ]  = [ post.location.country ]; }
+		}
 
 		// Always sent, even when empty — an explicitly empty selection means
 		// "this site only"; omitting the property would fall back to the
@@ -1682,8 +1894,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
 		picker.querySelector( 'p' ).textContent = 'Add photos';
+		includeLocation = false;
+		if ( locationCheck ) { locationCheck.checked = false; }
+		updateLocationUI();
 		renderTags();
 		updateSpecimen();
+		clearContextPreview();
+		fetchedContextUrl = '';
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
 		setPrompt( ( currentType === 'note' ) ? notePrompt : ( TYPE_CONFIG[ currentType ].contentPlaceholder || 'Write…' ) );
 		autoGrowContent();
@@ -1744,6 +1961,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				url:     urlInput.value,
 				tags:    currentTags,
 				rsvp:    currentRsvp,
+				location: includeLocation,
 				event:   {
 					name:     eventName ? eventName.value : '',
 					start:    joinEventDt( eventStartDate, eventStartTime ),
@@ -1776,6 +1994,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
 			} );
 		}
+		includeLocation = !! d.location;
+		if ( locationCheck ) { locationCheck.checked = includeLocation; }
+		updateLocationUI();
 		if ( d.event ) {
 			if ( eventName )     { eventName.value     = d.event.name     || ''; }
 			splitEventDt( eventStartDate, eventStartTime, d.event.start );
@@ -1851,7 +2072,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}, 3500 );
 	}
 
-	// ── Kind order — most-recently-used first (localStorage) ─────────────────────
+	// ── Kind order ───────────────────────────────────────────────────────────────
+	// The tile order is FIXED (the source order in the markup) so it stays put for
+	// muscle memory — the strip never reshuffles under your thumb. MRU is still
+	// tracked, but only to pick which kind the app LANDS on at launch (a stable
+	// default), not to reorder the dial.
 	var KIND_MRU_KEY = 'nop_kind_mru';
 	function readKindMru() {
 		try { var a = JSON.parse( localStorage.getItem( KIND_MRU_KEY ) || '[]' ); return Array.isArray( a ) ? a : []; }
@@ -1864,16 +2089,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			localStorage.setItem( KIND_MRU_KEY, JSON.stringify( mru ) );
 		} catch ( e ) {}
 	}
-	function applyKindOrder() {
-		var grid = document.getElementById( 'typeBar' );
-		var mru  = readKindMru();
-		if ( ! grid || ! mru.length ) { return; }
-		Array.from( grid.querySelectorAll( '.type-btn' ) ).sort( function ( a, b ) {
-			var ia = mru.indexOf( a.dataset.type ); if ( ia < 0 ) { ia = 99; }
-			var ib = mru.indexOf( b.dataset.type ); if ( ib < 0 ) { ib = 99; }
-			return ia - ib;
-		} ).forEach( function ( btn ) { grid.appendChild( btn ); } );
-	}
 	function mruDefaultKind() {
 		var mru = readKindMru();
 		return ( mru[0] && TYPE_CONFIG[ mru[0] ] ) ? mru[0] : 'note';
@@ -1882,7 +2097,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Init ───────────────────────────────────────────────────────────────────
 
 	setInk( app.dataset.type );               // seed :root ink for the initial kind
-	applyKindOrder();                         // tiles in most-recently-used order
 	app.classList.add( 'no-anim' );           // suppress the re-ink flash for the initial kind
 	setPrompt( notePlaceholder() );
 	// Defensive: explicit value="" on init. Each browser renders its own empty
@@ -1906,6 +2120,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	requestAnimationFrame( alignHalftone );   // re-align once layout (safe-area) settles
 	if ( document.fonts && document.fonts.ready ) { document.fonts.ready.then( alignHalftone ); }  // and after the web font reflows the masthead
 	updateTypeFades();
-	requestAnimationFrame( updateTypeFades );  // after the MRU reorder + layout settles
+	requestAnimationFrame( updateTypeFades );  // after layout settles
 
 } )();

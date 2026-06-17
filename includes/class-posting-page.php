@@ -311,6 +311,7 @@ function matchAnyVersion( url ) {
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
 		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
+		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
@@ -322,8 +323,7 @@ function matchAnyVersion( url ) {
 		$post_css_url = NOP_INDIEWEB_URL . 'build/post/style-index.css?ver=' . rawurlencode( $post_ver );
 		$post_js_url  = NOP_INDIEWEB_URL . 'build/post/index.js?ver=' . rawurlencode( $post_ver );
 
-		$user      = wp_get_current_user();
-		$user_name = $user->first_name ?: $user->display_name;
+		$user = wp_get_current_user();
 
 		// The serial shown in the masthead — the id the next post will most likely
 		// take (the table's high-water mark + 1). A decorative stamp: real gaps
@@ -347,14 +347,6 @@ function matchAnyVersion( url ) {
 
 		$last_ids     = get_posts( [ 'author' => $user->ID, 'post_status' => 'publish', 'post_type' => 'post', 'numberposts' => 1, 'orderby' => 'date', 'order' => 'DESC', 'fields' => 'ids' ] );
 		$last_post_ts = $last_ids ? (int) get_post_timestamp( $last_ids[0] ) : 0;
-
-		// Time-of-day greetings, translated here so the JS device stays i18n-safe.
-		$greetings = [
-			'morning'   => __( 'I’m up early', 'nop-indieweb' ),
-			'afternoon' => __( 'I’m caffeinated', 'nop-indieweb' ),
-			'evening'   => __( 'I’m winding down', 'nop-indieweb' ),
-			'night'     => __( 'I’m up late', 'nop-indieweb' ),
-		];
 
 		// Compute syndication targets here so the page can inline them — saves a
 		// second round-trip (the old ?q=config fetch booted all of WordPress again
@@ -614,6 +606,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<p class="url-specimen__hint" id="specimenHint"></p>
 					<p class="url-specimen__host" id="specimenHost" hidden></p>
 					<p class="url-specimen__path" id="specimenPath" hidden></p>
+					<p class="url-specimen__title" id="specimenTitle" hidden></p>
 				</div>
 
 				<!-- Photo picker -->
@@ -624,6 +617,14 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
 						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
 					</div>
+					<!-- One-tap shoot — shown only on devices with a camera (coarse pointer,
+					     toggled in JS). The capture attribute opens the camera directly and
+					     appends the shot to the set rather than replacing the selection. -->
+					<button type="button" class="photo-capture" id="photoCapture" hidden>
+						<span class="photo-capture__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
+						<?php esc_html_e( 'Take a photo', 'nop-indieweb' ); ?>
+					</button>
+					<input type="file" id="photoCaptureInput" accept="image/*" capture="environment" hidden>
 					<div class="thumbnails" id="thumbnails"></div>
 					<div class="alt-texts" id="altTexts"></div>
 				</div>
@@ -667,6 +668,19 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<?php endforeach; ?>
 					</div>
 					<?php endif; ?>
+				</div>
+
+				<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
+				     attaches the device's current place (reverse-geocoded by the /now
+				     endpoint) to the post. Coordinates are only read once you ask for
+				     them here, so a normal post never touches location. -->
+				<div class="field-group" id="fieldLocation" hidden>
+					<label class="location-toggle" id="locationToggle">
+						<input type="checkbox" id="locationCheck" class="sr-only">
+						<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
+						<span class="location-toggle__label"><?php esc_html_e( 'Add location', 'nop-indieweb' ); ?></span>
+						<span class="location-toggle__place" id="locationPlace" aria-live="polite" hidden></span>
+					</label>
 				</div>
 
 				</div><!-- .docket__body -->
@@ -749,9 +763,8 @@ window.NOP = {
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
 		nowUrl:      <?php echo wp_json_encode( $now_url ); ?>,
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
+		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
-		userName:    <?php echo wp_json_encode( $user_name ); ?>,
-		greetings:   <?php echo wp_json_encode( $greetings ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
 		postsToday:  <?php echo wp_json_encode( $posts_today ); ?>,
 		lastPostTs:  <?php echo wp_json_encode( $last_post_ts ); ?>,
