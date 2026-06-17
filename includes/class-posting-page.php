@@ -532,20 +532,23 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<div class="docket__fields" id="docketFields">
 
 				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
-				<div class="field-group is-conditional docket-slip" id="fieldUrl" hidden>
-					<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'URL', 'nop-indieweb' ); ?>">
-					<!-- Printed reference line: hostname/path now; title/excerpt slot in later (server fetch). -->
-					<div class="slip-ref" id="slipRef" hidden>
-						<span class="slip-ref__host" id="slipHost"></span>
-						<span class="slip-ref__path" id="slipPath"></span>
-						<span class="slip-ref__title" id="slipTitle" hidden></span>
-						<p class="slip-ref__excerpt" id="slipExcerpt" hidden></p>
+				<div class="field-row is-conditional docket-slip" id="fieldUrl" hidden>
+					<span class="field-row__label"><?php esc_html_e( 'Link', 'nop-indieweb' ); ?></span>
+					<div class="field-row__field">
+						<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'URL', 'nop-indieweb' ); ?>">
+						<!-- Printed reference line: hostname/path now; title/excerpt slot in later (server fetch). -->
+						<div class="slip-ref" id="slipRef" hidden>
+							<span class="slip-ref__host" id="slipHost"></span>
+							<span class="slip-ref__path" id="slipPath"></span>
+							<span class="slip-ref__title" id="slipTitle" hidden></span>
+							<p class="slip-ref__excerpt" id="slipExcerpt" hidden></p>
+						</div>
 					</div>
 				</div>
 
 				<!-- RSVP response (rsvp) -->
-				<div class="field-group is-conditional" id="fieldRsvp" hidden>
-					<span class="field-label"><?php esc_html_e( 'Going?', 'nop-indieweb' ); ?></span>
+				<div class="field-row is-conditional" id="fieldRsvp" hidden>
+					<span class="field-row__label"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
 					<div class="rsvp-toggle" id="rsvpToggle" role="group" aria-label="<?php esc_attr_e( 'RSVP response', 'nop-indieweb' ); ?>">
 						<button type="button" class="rsvp-btn is-active" data-rsvp="yes" aria-pressed="true"><?php esc_html_e( 'Yes', 'nop-indieweb' ); ?></button>
 						<button type="button" class="rsvp-btn" data-rsvp="maybe" aria-pressed="false"><?php esc_html_e( 'Maybe', 'nop-indieweb' ); ?></button>
@@ -574,16 +577,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 						</button>
 					</figure>
 					<input type="hidden" id="eventImage" value="">
-					<div class="event-row">
-						<span class="event-row__label"><?php esc_html_e( 'Title', 'nop-indieweb' ); ?></span>
+					<div class="field-row">
+						<span class="field-row__label"><?php esc_html_e( 'Title', 'nop-indieweb' ); ?></span>
 						<input type="text" id="eventName" class="text-field" placeholder="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>">
 					</div>
-					<div class="event-row">
-						<span class="event-row__label"><?php esc_html_e( 'Where', 'nop-indieweb' ); ?></span>
+					<div class="field-row">
+						<span class="field-row__label"><?php esc_html_e( 'Where', 'nop-indieweb' ); ?></span>
 						<input type="text" id="eventLocation" class="text-field" placeholder="<?php esc_attr_e( 'Location (optional)', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event location', 'nop-indieweb' ); ?>">
 					</div>
-					<div class="event-row event-row--when">
-						<span class="event-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
+					<div class="field-row field-row--when">
+						<span class="field-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
 						<!-- Plain native <input type="date"> and <input type="time">.
 						     Empty-state rendering is browser-dependent (Chrome shows the
 						     dd/mm/yyyy pattern, Safari shows today's date as a hint) —
@@ -592,7 +595,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 						     the user hasn't picked, which is what every consumer (form
 						     validation, draft persistence, Micropub payload, the Clear
 						     button visibility check) reads. -->
-						<div class="event-row__pair">
+						<div class="field-row__pair">
 							<input type="date" id="eventStartDate" class="text-field text-field--date" autocomplete="off" aria-label="<?php esc_attr_e( 'Event date', 'nop-indieweb' ); ?>">
 							<input type="time" id="eventStartTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Event time', 'nop-indieweb' ); ?>">
 						</div>
@@ -639,27 +642,29 @@ foreach ( [ '700', '800' ] as $weight ) {
 				</div>
 
 				<!-- Tags (note, photo) -->
-				<div class="field-group" id="fieldTags">
-					<label class="field-label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
-					<div class="tags-field" id="tagsField">
-						<span id="tagChips"></span>
-						<input
-							type="text"
-							id="tagInput"
-							class="tag-input"
-							placeholder="<?php esc_attr_e( 'Add a tag…', 'nop-indieweb' ); ?>"
-							autocomplete="off"
-							autocorrect="off"
-							autocapitalize="off"
-						>
+				<div class="field-row" id="fieldTags">
+					<label class="field-row__label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
+					<div class="field-row__field">
+						<div class="tags-field" id="tagsField">
+							<span id="tagChips"></span>
+							<input
+								type="text"
+								id="tagInput"
+								class="tag-input"
+								placeholder="<?php esc_attr_e( 'Add a tag…', 'nop-indieweb' ); ?>"
+								autocomplete="off"
+								autocorrect="off"
+								autocapitalize="off"
+							>
+						</div>
+						<?php if ( $top_tags ) : ?>
+						<div class="quick-tags" id="quickTags" aria-label="<?php esc_attr_e( 'Most used tags', 'nop-indieweb' ); ?>">
+							<?php foreach ( $top_tags as $quick_tag ) : ?>
+							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_tag ); ?>"><?php echo esc_html( $quick_tag ); ?></button>
+							<?php endforeach; ?>
+						</div>
+						<?php endif; ?>
 					</div>
-					<?php if ( $top_tags ) : ?>
-					<div class="quick-tags" id="quickTags" aria-label="<?php esc_attr_e( 'Most used tags', 'nop-indieweb' ); ?>">
-						<?php foreach ( $top_tags as $quick_tag ) : ?>
-						<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_tag ); ?>"><?php echo esc_html( $quick_tag ); ?></button>
-						<?php endforeach; ?>
-					</div>
-					<?php endif; ?>
 				</div>
 
 				</div><!-- .docket__body -->
@@ -675,8 +680,8 @@ foreach ( [ '700', '800' ] as $weight ) {
 					     endpoint) to the post. Coordinates are only read once you ask for
 					     them here, so a normal post never touches location. #fieldLocation
 					     id kept so switchType() still toggles it. -->
-					<div class="post-options__group" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
-						<span class="field-label" id="optLocationLabel"><?php esc_html_e( 'Location', 'nop-indieweb' ); ?></span>
+					<div class="post-options__group field-row" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
+						<span class="field-row__label" id="optLocationLabel"><?php esc_html_e( 'Location', 'nop-indieweb' ); ?></span>
 						<label class="location-toggle" id="locationToggle">
 							<input type="checkbox" id="locationCheck" class="sr-only">
 							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
@@ -687,8 +692,8 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 					<!-- Syndication targets (all kinds; Pixelfed photo-only). Rendered by
 					     renderSyndicators() into #syndicators; the group is shown/hidden there. -->
-					<div class="post-options__group" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
-						<span class="field-label" id="optSyndicateLabel"><?php esc_html_e( 'Also post to', 'nop-indieweb' ); ?></span>
+					<div class="post-options__group field-row" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
+						<span class="field-row__label" id="optSyndicateLabel"><?php esc_html_e( 'Post to', 'nop-indieweb' ); ?></span>
 						<div class="syndicators" id="syndicators"></div>
 					</div>
 

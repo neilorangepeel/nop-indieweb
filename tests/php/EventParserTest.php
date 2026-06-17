@@ -180,4 +180,31 @@ HTML;
 		$this->assertSame( 'opengraph', $result['source'] );
 		$this->assertSame( '', $result['image'] );
 	}
+
+	public function test_all_caps_event_name_is_title_cased(): void {
+		// Venue pages often publish the title in caps across every field. The NAME is
+		// title-cased; the location keeps the source's own case (it isn't a title).
+		$html = <<<'HTML'
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "Event", "name": "STEEL MAGNOLIAS", "startDate": "2026-06-13T19:30", "location": { "@type": "Place", "name": "GRAND OPERA HOUSE" } }
+</script>
+HTML;
+		$result = $this->parse( $html );
+
+		$this->assertSame( 'Steel Magnolias', $result['name'] );
+		$this->assertSame( 'GRAND OPERA HOUSE', $result['location'] );
+	}
+
+	public function test_all_caps_title_lowercases_minor_words(): void {
+		$result = $this->parse( '<title>ROMEO AND JULIET</title>' );
+
+		$this->assertSame( 'Romeo and Juliet', $result['name'] );
+	}
+
+	public function test_mixed_case_name_is_left_untouched(): void {
+		// A name that already carries lowercase letters is intentional — never reflow it.
+		$result = $this->parse( '<title>iPhone 16 Launch</title>' );
+
+		$this->assertSame( 'iPhone 16 Launch', $result['name'] );
+	}
 }

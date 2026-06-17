@@ -906,16 +906,24 @@ body::before {
 	font-style: italic;
 	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
 }
-.event-row {
+/* The field grid — one left small-caps label column + the control, shared by every
+   labelled field (URL, GOING, TITLE/WHERE/WHEN, TAGS, LOCATION, POST TO) so labels
+   and inputs all align to the same edges. Each field is its own grid (independent
+   show/hide), and they line up because they share the 64px column. align-items:start
+   lets a multi-line control (tags wrap, the syndicator list) sit flush at the top. */
+.field-row {
 	display: grid;
 	grid-template-columns: 64px 1fr;
 	column-gap: var(--sp-3);
-	align-items: center;
+	align-items: start;
 }
-/* Display-caps tag in the muted printed ink, matching the docket header.
-   Vertically centred against the input cap-height — the same baseline feel as
-   "REPLY · TK#1234 · 16/06/2026" above. */
-.event-row__label {
+/* Display-caps label in the muted printed ink, matching the docket header
+   ("REPLY · TK#1234 · 16/06/2026"). The 44px min-height + centred text optically
+   aligns the label with the first 44px control row, however tall the control grows. */
+.field-row__label {
+	display: flex;
+	align-items: center;
+	min-height: 44px;
 	font-family: var(--display);
 	font-size: var(--fs-12);
 	font-weight: 700;
@@ -923,13 +931,17 @@ body::before {
 	text-transform: uppercase;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
-.event-row__pair {
+/* Wrapper for a cell that stacks more than the control (URL input + its reference
+   line; tags-field + the quick-tags reveal). min-width:0 keeps long content from
+   blowing out the 1fr column. */
+.field-row__field { min-width: 0; }
+.field-row__pair {
 	display: flex;
 	gap: var(--sp-2);
 	min-width: 0;
 }
-.event-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
-.event-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
+.field-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
+.field-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
 
 /* Chrome / Edge's built-in calendar + clock glyphs at the right edge of
    date/time inputs ship as a black SVG that ignores CSS `color`. The
@@ -938,8 +950,8 @@ body::before {
    fields is RSVP, so a fixed filter is fine.
    Filter recipe targets #C81E66 (the light-mode --magenta value).
    Dark-mode users see a slightly off-magenta variant, acceptable. */
-.event-row__pair .text-field--date::-webkit-calendar-picker-indicator,
-.event-row__pair .text-field--time::-webkit-calendar-picker-indicator {
+.field-row__pair .text-field--date::-webkit-calendar-picker-indicator,
+.field-row__pair .text-field--time::-webkit-calendar-picker-indicator {
 	cursor: pointer;
 	filter: invert(20%) sepia(83%) saturate(3500%) hue-rotate(322deg) brightness(89%) contrast(91%);
 }
@@ -1127,15 +1139,6 @@ body::before {
    no transition, consistent with the live text inputs the browser can't fade. The
    only motion on a kind switch is the badge pop. */
 
-.field-label {
-	display: block;
-	font-family: var(--readout);
-	font-size: var(--fs-13);
-	font-weight: 700;
-	letter-spacing: 0;
-	opacity: 0.7;
-	margin-bottom: var(--sp-2);
-}
 .sr-only {
 	position: absolute;
 	width: 1px; height: 1px;
@@ -1150,6 +1153,7 @@ body::before {
    so the text on them stays easy to read. */
 .text-field {
 	width: 100%;
+	min-height: 44px;          /* match the buttons/toggles so every control row is one height */
 	background: transparent;
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
@@ -1162,6 +1166,13 @@ body::before {
 }
 .text-field:focus { border-color: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
+/* Shared keyboard-focus ring across every control (inputs, rsvp buttons, toggles) —
+   the same accent outline the Clear stamp uses, so focus reads consistently. */
+.text-field:focus-visible,
+.rsvp-btn:focus-visible {
+	outline: var(--bw-input) solid var(--accent);
+	outline-offset: 2px;
+}
 
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
    text to sit on, a bold red margin instead of a box, and a big rotating prompt
@@ -1498,7 +1509,7 @@ body::before {
 	padding-top: var(--sp-4);
 }
 .post-options:not(:has(> .post-options__group:not([hidden]))) { display: none; }
-.post-options__group { display: flex; flex-direction: column; }
+/* .post-options__group is the collapse hook; its layout comes from .field-row (grid). */
 
 /* Syndicate-to */
 .syndicators {

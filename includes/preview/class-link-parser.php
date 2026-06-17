@@ -379,7 +379,27 @@ class Link_Parser {
 	}
 
 	private function clean_title( string $text ): string {
-		return mb_substr( sanitize_text_field( $text ), 0, self::TITLE_CAP );
+		return $this->normalize_title_case( mb_substr( sanitize_text_field( $text ), 0, self::TITLE_CAP ) );
+	}
+
+	/**
+	 * Title-case a title only when it has NO lowercase letters (an all-caps source
+	 * like "STEEL MAGNOLIAS" — common on venue/event pages that publish caps in
+	 * every field); a mixed/proper-case title is returned untouched. Minor connector
+	 * words are lowercased so it reads naturally ("ROMEO AND JULIET" → "Romeo and
+	 * Juliet"). Trade-off: a genuine all-caps acronym title gets title-cased, which
+	 * is rare for the og:title / JSON-LD / <title> sources this runs on.
+	 */
+	private function normalize_title_case( string $text ): string {
+		if ( '' === $text || preg_match( '/\p{Ll}/u', $text ) ) {
+			return $text;
+		}
+		$titled = mb_convert_case( $text, MB_CASE_TITLE, 'UTF-8' );
+		return (string) preg_replace_callback(
+			'/(?<!^)\b(a|an|and|or|nor|the|of|to|in|on|at|for|with|from|by|vs)\b/iu',
+			static fn( array $m ): string => mb_strtolower( $m[0], 'UTF-8' ),
+			$titled
+		);
 	}
 
 	private function clean_text( string $text ): string {

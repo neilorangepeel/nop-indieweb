@@ -129,7 +129,7 @@ class Event_Parser {
 		}
 
 		// 4. <title> only.
-		$title = $this->clean_text( $this->node_text( $xpath, '//title' ) );
+		$title = $this->clean_title( $this->node_text( $xpath, '//title' ) );
 		if ( '' !== $title ) {
 			return array_merge( $base, [ 'name' => $title, 'source' => 'title' ] );
 		}
@@ -184,7 +184,7 @@ class Event_Parser {
 		}
 
 		return [
-			'name'     => $this->clean_text( $this->prop_text( $xpath, 'p-name', $root ) ),
+			'name'     => $this->clean_title( $this->prop_text( $xpath, 'p-name', $root ) ),
 			'start'    => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-start', $root ) ),
 			'end'      => $this->normalize_datetime( $this->prop_dt( $xpath, 'dt-end', $root ) ),
 			'location' => $this->compose_location( $this->prop_text( $xpath, 'p-location', $root ) ),
@@ -228,7 +228,7 @@ class Event_Parser {
 		}
 
 		return [
-			'name'     => $this->clean_text( (string) ( $props['name'][0] ?? '' ) ),
+			'name'     => $this->clean_title( (string) ( $props['name'][0] ?? '' ) ),
 			'start'    => $this->normalize_datetime( (string) ( $props['start'][0] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $props['end'][0] ?? '' ) ),
 			'location' => $this->compose_location( (string) $location ),
@@ -385,7 +385,7 @@ class Event_Parser {
 	 */
 	private function map_json_ld_event( array $event ): array {
 		return [
-			'name'     => $this->clean_text( (string) ( $event['name'] ?? '' ) ),
+			'name'     => $this->clean_title( (string) ( $event['name'] ?? '' ) ),
 			'start'    => $this->normalize_datetime( (string) ( $event['startDate'] ?? '' ) ),
 			'end'      => $this->normalize_datetime( (string) ( $event['endDate'] ?? '' ) ),
 			'location' => $this->compose_location( $event['location'] ?? '' ),
@@ -484,7 +484,7 @@ class Event_Parser {
 	 */
 	private function from_open_graph( \DOMXPath $xpath ): array {
 		return [
-			'name'     => $this->clean_text( $this->meta_content( $xpath, [ 'og:title' ] ) ),
+			'name'     => $this->clean_title( $this->meta_content( $xpath, [ 'og:title' ] ) ),
 			// OG has no standard event-time vocabulary; some sites emit these.
 			'start'    => $this->normalize_datetime( $this->meta_content( $xpath, [ 'event:start_time', 'og:event:start_time' ] ) ),
 			'end'      => $this->normalize_datetime( $this->meta_content( $xpath, [ 'event:end_time', 'og:event:end_time' ] ) ),
@@ -561,6 +561,35 @@ class Event_Parser {
 
 	private function clean_text( string $text ): string {
 		return mb_substr( sanitize_text_field( $text ), 0, self::TEXT_CAP );
+	}
+
+	/**
+	 * Like clean_text() but for the event NAME: also normalises an all-caps title
+	 * to title case (see normalize_title_case). Kept separate from clean_text() so
+	 * location/note text — which legitimately carries its own case — is untouched.
+	 */
+	private function clean_title( string $text ): string {
+		return $this->normalize_title_case( $this->clean_text( $text ) );
+	}
+
+	/**
+	 * Title-case a name only when it has NO lowercase letters (an all-caps source
+	 * like "STEEL MAGNOLIAS" — common on venue/event pages that publish caps in
+	 * every field); a mixed/proper-case name is returned untouched. Minor connector
+	 * words are lowercased so it reads naturally ("ROMEO AND JULIET" → "Romeo and
+	 * Juliet"). Trade-off: a genuine all-caps acronym name gets title-cased, which
+	 * is rare for the h-event / JSON-LD / og:title sources this runs on.
+	 */
+	private function normalize_title_case( string $text ): string {
+		if ( '' === $text || preg_match( '/\p{Ll}/u', $text ) ) {
+			return $text;
+		}
+		$titled = mb_convert_case( $text, MB_CASE_TITLE, 'UTF-8' );
+		return (string) preg_replace_callback(
+			'/(?<!^)\b(a|an|and|or|nor|the|of|to|in|on|at|for|with|from|by|vs)\b/iu',
+			static fn( array $m ): string => mb_strtolower( $m[0], 'UTF-8' ),
+			$titled
+		);
 	}
 
 	/**
