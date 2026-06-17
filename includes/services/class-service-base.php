@@ -94,6 +94,15 @@ abstract class Service_Base {
 
 		$post_args = $this->map_to_post( $parsed );
 
+		// Private visibility (any kind): the composer sends visibility=private for a
+		// personal post. WP `private` status is already honoured everywhere that matters
+		// — syndication, webmention sending, public feeds/archives and the mf2 endpoint
+		// all gate on `publish` — so setting the status here is the whole feature.
+		$visibility = (string) ( $payload['properties']['visibility'][0] ?? '' );
+		if ( 'private' === $visibility ) {
+			$post_args['post_status'] = 'private';
+		}
+
 		// Stamp the post author so mf2 author h-card emission and capability
 		// checks have a real user to work with.
 		$post_args['post_author'] = $this->resolve_author_id( $author_id );

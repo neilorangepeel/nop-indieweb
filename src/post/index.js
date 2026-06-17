@@ -564,10 +564,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'What are we looking at?' },
 		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…' },
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
-		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
+		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
-		quote:    { urlProp: 'quotation-of', hasContent: true,  hasTags: false, urlLabel: 'Quoting', contentPlaceholder: 'The passage you’re quoting…', hasQuoteComment: true },
-		story:    { urlProp: null,           hasContent: true,  hasTags: false, hasVideo: true, contentPlaceholder: 'Add a caption (optional)…' },
+		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: 'The quote itself…' },
+		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: false, hasVideo: true, hasLocation: true, contentPlaceholder: 'Add a caption (optional)…' },
 		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true },
 	};
 
@@ -828,6 +828,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var altTexts     = document.getElementById( 'altTexts' );
 	var quoteComment      = document.getElementById( 'quoteComment' );
 	var fieldQuoteComment = document.getElementById( 'fieldQuoteComment' );
+	var citeAuthor   = document.getElementById( 'citeAuthor' );
+	var fieldCite    = document.getElementById( 'fieldCite' );
+	var quoteLink    = document.getElementById( 'quoteLink' );
+	var fieldQuoteLink = document.getElementById( 'fieldQuoteLink' );
+	var privateCheck = document.getElementById( 'privateCheck' );
 	var fieldStory    = document.getElementById( 'fieldStory' );
 	var storyInput    = document.getElementById( 'storyInput' );
 	var storyPrompt   = document.getElementById( 'storyPrompt' );
@@ -1252,6 +1257,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		fieldTags.hidden    = ! cfg.hasTags;
 		if ( fieldLocation ) { fieldLocation.hidden = ! cfg.hasLocation; }
 		if ( fieldQuoteComment ) { fieldQuoteComment.hidden = ! cfg.hasQuoteComment; }
+		if ( fieldCite ) { fieldCite.hidden = ! cfg.hasCite; }
+		if ( fieldQuoteLink ) { fieldQuoteLink.hidden = ! cfg.hasQuoteLink; }
 		if ( fieldStory ) { fieldStory.hidden = ! cfg.hasVideo; }
 
 		// Note = a body-only card (the pure ruled writing page); every other kind
@@ -1368,6 +1375,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		el.addEventListener( 'input',  function () { updatePostBtn(); saveDraftSoon(); } );
 		el.addEventListener( 'change', function () { updatePostBtn(); saveDraft(); } );
 	} );
+
+	// Quote attribution / source link / comment — none gate Post (the passage does);
+	// just persist them as you type. Private toggle saves on change.
+	[ citeAuthor, quoteLink, quoteComment ].forEach( function ( el ) {
+		if ( el ) { el.addEventListener( 'input', saveDraftSoon ); }
+	} );
+	if ( privateCheck ) { privateCheck.addEventListener( 'change', saveDraft ); }
 
 	if ( clearBtn ) {
 		clearBtn.addEventListener( 'click', function () {
@@ -1635,6 +1649,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			content:     contentInput.value.trim(),
 			url:         urlInput.value.trim(),
 			quoteComment: quoteComment ? quoteComment.value.trim() : '',
+			cite:        citeAuthor ? citeAuthor.value.trim() : '',
+			quoteLink:   quoteLink ? quoteLink.value.trim() : '',
+			isPrivate:   !! ( privateCheck && privateCheck.checked ),
 			rsvp:        currentRsvp,
 			event:       {
 				name:     eventName ? eventName.value.trim() : '',
@@ -1716,9 +1733,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// RSVP rides on in-reply-to (the event URL); the rsvp property is what makes
 		// the server resolve it as an RSVP rather than a plain reply.
 		if ( cfg.urlProp && post.url ) { props[ cfg.urlProp ] = [ post.url ]; }
-		// Quote: content is the passage (→ blockquote); the optional comment rides as
-		// a custom property the Quote service renders under the quote.
+		// Quote: content is the passage (→ blockquote); the cite is the attribution, the
+		// link an OPTIONAL source (quotation-of), and the comment the author's own note.
+		if ( cfg.hasCite && post.cite ) { props[ 'quote-cite' ] = [ post.cite ]; }
+		if ( cfg.hasQuoteLink && post.quoteLink ) { props[ 'quotation-of' ] = [ post.quoteLink ]; }
 		if ( cfg.hasQuoteComment && post.quoteComment ) { props[ 'quote-comment' ] = [ post.quoteComment ]; }
+		// Private visibility (any kind) — keeps the post out of syndication, webmentions
+		// and public feeds; the server maps it to WP `private` status.
+		if ( post.isPrivate ) { props.visibility = [ 'private' ]; }
 		if ( cfg.hasRsvp ) {
 			props.rsvp = [ post.rsvp ];
 			// Event detail (h-event) carried as extra Micropub properties; the RSVP
@@ -1953,6 +1975,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
 		if ( quoteComment )   { quoteComment.value   = ''; }
+		if ( citeAuthor )     { citeAuthor.value     = ''; }
+		if ( quoteLink )      { quoteLink.value      = ''; }
+		if ( privateCheck )   { privateCheck.checked = false; }
 		if ( typeof clearStoryVideo === 'function' ) { clearStoryVideo(); }
 		if ( eventName )      { eventName.value      = ''; }
 		if ( eventStartDate ) { eventStartDate.value = ''; }
@@ -2037,6 +2062,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				content: contentInput.value,
 				url:     urlInput.value,
 				quoteComment: quoteComment ? quoteComment.value : '',
+				cite:    citeAuthor ? citeAuthor.value : '',
+				quoteLink: quoteLink ? quoteLink.value : '',
+				isPrivate: !! ( privateCheck && privateCheck.checked ),
 				tags:    currentTags,
 				rsvp:    currentRsvp,
 				location: includeLocation,
@@ -2064,6 +2092,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( typeof d.content === 'string' ) contentInput.value = d.content;
 		if ( typeof d.url === 'string' ) urlInput.value = d.url;
 		if ( quoteComment && typeof d.quoteComment === 'string' ) quoteComment.value = d.quoteComment;
+		if ( citeAuthor && typeof d.cite === 'string' ) citeAuthor.value = d.cite;
+		if ( quoteLink && typeof d.quoteLink === 'string' ) quoteLink.value = d.quoteLink;
+		if ( privateCheck ) { privateCheck.checked = !! d.isPrivate; }
 		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
 		if ( d.rsvp ) {
 			currentRsvp = d.rsvp;

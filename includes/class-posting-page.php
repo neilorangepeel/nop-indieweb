@@ -580,7 +580,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					     ("yep, that's the show"). Tap the ✕ to dismiss when the parser
 					     pulls the wrong image (a venue-page og:image often resolves to
 					     a site-wide logo, not the event's own poster). -->
-					<figure class="event-poster" id="eventPoster" hidden>
+					<figure class="event-poster preview-halftone" id="eventPoster" hidden>
 						<img id="eventPosterImg" alt="" referrerpolicy="no-referrer" loading="lazy" decoding="async">
 						<button type="button" class="event-poster__remove" id="eventPosterRemove" aria-label="<?php esc_attr_e( 'Remove poster', 'nop-indieweb' ); ?>">
 							<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>
@@ -668,10 +668,28 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
+				<!-- Quote attribution (quote) — who said it. The writing area above holds
+				     the quote itself; the source link below is optional. -->
+				<div class="field-row" id="fieldCite" hidden>
+					<label class="field-row__label" for="citeAuthor"><?php esc_html_e( 'By', 'nop-indieweb' ); ?></label>
+					<div class="field-row__field">
+						<input type="text" id="citeAuthor" class="text-field" placeholder="<?php esc_attr_e( 'e.g. Maya Angelou', 'nop-indieweb' ); ?>" autocomplete="off">
+					</div>
+				</div>
+
+				<!-- Quote source link (quote) — optional; we can't pull the passage from
+				     a URL, so this is just a link to where it came from, if anywhere. -->
+				<div class="field-row" id="fieldQuoteLink" hidden>
+					<label class="field-row__label" for="quoteLink"><?php esc_html_e( 'Link', 'nop-indieweb' ); ?></label>
+					<div class="field-row__field">
+						<input type="url" id="quoteLink" class="text-field" placeholder="<?php esc_attr_e( 'Link (optional)', 'nop-indieweb' ); ?>" autocomplete="off" inputmode="url">
+					</div>
+				</div>
+
 				<!-- Quote commentary (quote) — optional note shown under the quoted
 				     passage; the writing area above holds the passage itself. -->
 				<div class="field-row" id="fieldQuoteComment" hidden>
-					<label class="field-row__label" for="quoteComment"><?php esc_html_e( 'Comment', 'nop-indieweb' ); ?></label>
+					<label class="field-row__label" for="quoteComment"><?php esc_html_e( 'Thoughts', 'nop-indieweb' ); ?></label>
 					<div class="field-row__field">
 						<textarea id="quoteComment" class="text-field text-field--note" rows="2" placeholder="<?php esc_attr_e( 'Add your thoughts (optional)…', 'nop-indieweb' ); ?>" autocomplete="off"></textarea>
 					</div>
@@ -711,13 +729,24 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
 				<div class="post-options" id="fieldOptions">
 
+					<!-- Visibility (all kinds) — Private keeps the post out of syndication,
+					     webmentions and public feeds (server maps it to WP `private`). -->
+					<div class="post-options__group field-row" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
+						<span class="field-row__label" id="optPrivateLabel"><?php esc_html_e( 'Privacy', 'nop-indieweb' ); ?></span>
+						<label class="location-toggle" id="privateToggle">
+							<input type="checkbox" id="privateCheck" class="sr-only">
+							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
+							<span class="location-toggle__label"><?php esc_html_e( 'Private — only you', 'nop-indieweb' ); ?></span>
+						</label>
+					</div>
+
 					<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
 					     attaches the device's current place (reverse-geocoded by the /now
 					     endpoint) to the post. Coordinates are only read once you ask for
 					     them here, so a normal post never touches location. #fieldLocation
 					     id kept so switchType() still toggles it. -->
 					<div class="post-options__group field-row" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
-						<span class="field-row__label" id="optLocationLabel"><?php esc_html_e( 'Location', 'nop-indieweb' ); ?></span>
+						<span class="field-row__label" id="optLocationLabel"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></span>
 						<label class="location-toggle" id="locationToggle">
 							<input type="checkbox" id="locationCheck" class="sr-only">
 							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>

@@ -46,7 +46,7 @@
 	   also targeted by the date-picker filter recipe — both kept. */
 	--red:      light-dark(#D7331F, #FF5A4D);   /* like */
 	--orange:   light-dark(#C75A12, #FF9A3C);   /* reply */
-	--amber:    light-dark(#A87A00, #F2C230);   /* quote — vivid gold */
+	--amber:    light-dark(#8A6200, #F2C230);   /* quote — deep gold (legible on cream), bright in dark */
 	--green:    light-dark(#1E8540, #57C97E);   /* bookmark */
 	--teal:     light-dark(#00857F, #34C6C0);   /* note */
 	--blue:     light-dark(#1E5BE0, #6E96FF);   /* photo */
@@ -909,6 +909,38 @@ body::before {
 	max-height: 200px;
 	object-fit: cover;
 }
+
+/* Ink-halftone preview image — a fetched preview (the RSVP poster; future link/cite
+   images) rendered as an ink↔paper duotone under the kind's dot-screen, so it reads as
+   screen-print and re-tints per kind. CSS-only (filter + blend modes) → cheap, iOS-safe.
+   Reusable modifier: add `preview-halftone` to any preview-image frame. */
+.preview-halftone {
+	isolation: isolate;                 /* contain the blends to this frame */
+	background: var(--ink);             /* duotone shadow tone */
+}
+.preview-halftone img {
+	filter: grayscale(1) contrast(1.08);
+	mix-blend-mode: screen;             /* darks fall to the ink ground, lights lift */
+}
+.preview-halftone::before {            /* highlight tone → paper */
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background: var(--paper);
+	mix-blend-mode: multiply;
+	pointer-events: none;
+}
+.preview-halftone::after {             /* the kind's ink dot-screen → halftone texture */
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	background-image: radial-gradient( var(--ink) var(--ht-dot), transparent calc( var(--ht-dot) + 0.3px ) );
+	background-size: var(--grain-pitch) var(--grain-pitch);
+	mix-blend-mode: multiply;
+	pointer-events: none;
+}
 /* Tap-to-dismiss ✕ — same paper-stamped affordance as the photo and tag chip
    removers (./.thumb__remove, .tag-chip__remove), positioned over the
    top-right corner of the poster. Pure ink-on-paper, no opaque background. */
@@ -916,6 +948,7 @@ body::before {
 	position: absolute;
 	top: var(--sp-1);
 	right: var(--sp-1);
+	z-index: 3;                /* above the duotone/halftone overlays */
 	width: 28px;
 	height: 28px;
 	display: grid;

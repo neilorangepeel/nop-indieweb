@@ -31,6 +31,12 @@ abstract class Url_Response_Service extends Service_Base {
 			'url'       => esc_url_raw( $props[ $this->url_property() ][0] ?? '' ),
 			'content'   => sanitize_textarea_field( $props['content'][0] ?? '' ),
 			'published' => sanitize_text_field( $props['published'][0] ?? '' ),
+			// Topical tags (Micropub `category`) — composer-driven for the kinds that
+			// opt in (bookmark, quote). Stored as WP tags in map_to_post().
+			'tags'      => array_values( array_filter( array_map(
+				'sanitize_text_field',
+				(array) ( $props['category'] ?? [] )
+			) ) ),
 		];
 	}
 
@@ -61,6 +67,9 @@ abstract class Url_Response_Service extends Service_Base {
 
 		if ( $category_ids ) {
 			$args['post_category'] = $category_ids;
+		}
+		if ( ! empty( $parsed['tags'] ) ) {
+			$args['tags_input'] = $parsed['tags'];
 		}
 		if ( $post_date ) {
 			$args['post_date']     = $post_date;

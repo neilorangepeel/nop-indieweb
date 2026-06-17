@@ -368,10 +368,12 @@ class Kind_Taxonomy {
 			'quote' => [
 				'label'          => __( 'Quote', 'nop-indieweb' ),
 				'fields'         => [
-					[ 'key' => 'nop_indieweb_quote_of', 'label' => __( 'Quote from', 'nop-indieweb' ) ],
+					[ 'key' => 'nop_indieweb_quote_of', 'label' => __( 'Source link (optional)', 'nop-indieweb' ) ],
 				],
-				'layout'         => '<!-- wp:quote --><blockquote class="wp-block-quote"><!-- wp:paragraph /--></blockquote><!-- /wp:quote --><!-- wp:nop-indieweb/cite-card /-->',
-				'title_from_url' => true,
+				// Passage + inline <cite> attribution; the source link is optional, so the
+				// title isn't derived from a URL.
+				'layout'         => '<!-- wp:quote --><blockquote class="wp-block-quote"><!-- wp:paragraph /--><cite>Attribution</cite></blockquote><!-- /wp:quote -->',
+				'title_from_url' => false,
 			],
 			'video' => [
 				'label'          => __( 'Video', 'nop-indieweb' ),
