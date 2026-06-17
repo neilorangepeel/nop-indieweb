@@ -567,7 +567,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
 		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: 'The quote itself…' },
-		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: false, hasVideo: true, hasLocation: true, contentPlaceholder: 'Add a caption (optional)…' },
+		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasStoryMedia: true, hasLocation: true, contentPlaceholder: 'Add a caption (optional)…' },
 		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true },
 	};
 
@@ -837,10 +837,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var storyInput    = document.getElementById( 'storyInput' );
 	var storyPrompt   = document.getElementById( 'storyPrompt' );
 	var storyPreview  = document.getElementById( 'storyPreview' );
+	var storyPhotoPreview = document.getElementById( 'storyPhotoPreview' );
 	var storyRemove   = document.getElementById( 'storyRemove' );
-	var storyVideo      = null;   // { blob, name, type } — the picked clip
-	var storyPoster     = null;   // { blob, name, type } — captured first frame (optional)
-	var storyPreviewUrl = '';     // object URL for the <video> preview
+	var storyVideo      = null;   // { blob, name, type } — a picked clip
+	var storyPhoto      = null;   // { blob, name, type } — a picked still (alternative to the clip)
+	var storyPoster     = null;   // { blob, name, type } — captured first frame of a clip (optional)
+	var storyPreviewUrl = '';     // object URL for the <video>/<img> preview
 	var specimen      = document.getElementById( 'urlSpecimen' );
 	var specimenGlyph = document.getElementById( 'specimenGlyph' );
 	var specimenHint  = document.getElementById( 'specimenHint' );
@@ -1088,7 +1090,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		box.querySelectorAll( 'input[type=checkbox]' ).forEach( function (cb) { prev[ cb.value ] = cb.checked; } );
 
 		var synTo = ( NOP.syndicateTo || [] ).filter( function (s) {
-			return ! s.photoOnly || currentType === 'photo';
+			return ! s.kinds || s.kinds.indexOf( currentType ) !== -1;
 		} );
 		if ( ! synTo.length ) {
 			box.innerHTML = '';
@@ -1259,7 +1261,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( fieldQuoteComment ) { fieldQuoteComment.hidden = ! cfg.hasQuoteComment; }
 		if ( fieldCite ) { fieldCite.hidden = ! cfg.hasCite; }
 		if ( fieldQuoteLink ) { fieldQuoteLink.hidden = ! cfg.hasQuoteLink; }
-		if ( fieldStory ) { fieldStory.hidden = ! cfg.hasVideo; }
+		if ( fieldStory ) { fieldStory.hidden = ! cfg.hasStoryMedia; }
 
 		// Note = a body-only card (the pure ruled writing page); every other kind
 		// carries a printed-fields region.
@@ -1314,8 +1316,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function updatePostBtn() {
 		var cfg     = TYPE_CONFIG[ currentType ];
 		var enabled = false;
-		if ( cfg.hasVideo ) {
-			enabled = !! storyVideo;
+		if ( cfg.hasStoryMedia ) {
+			enabled = !! ( storyVideo || storyPhoto );
 		} else if ( currentType === 'photo' ) {
 			enabled = selectedFiles.length > 0;
 		} else if ( cfg.urlProp ) {
@@ -1336,7 +1338,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function hasFormContent() {
 		if ( urlInput.value.trim() )       { return true; }
 		if ( contentInput.value.trim() )   { return true; }
-		if ( storyVideo )                  { return true; }
+		if ( storyVideo || storyPhoto )    { return true; }
 		if ( selectedFiles.length )        { return true; }
 		if ( currentTags.length )          { return true; }
 		if ( eventName && eventName.value.trim() )           { return true; }
@@ -1412,19 +1414,34 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		storyPrompt.addEventListener( 'click', function () { storyInput.click(); } );
 		storyInput.addEventListener( 'change', function () {
 			var f = storyInput.files && storyInput.files[0];
-			if ( f ) { setStoryVideo( f ); }
+			if ( ! f ) { return; }
+			if ( /^video\//.test( f.type || '' ) ) { setStoryVideo( f ); }
+			else { setStoryPhoto( f ); }
 		} );
 	}
-	if ( storyRemove ) { storyRemove.addEventListener( 'click', clearStoryVideo ); }
+	if ( storyRemove ) { storyRemove.addEventListener( 'click', clearStoryMedia ); }
 
 	function setStoryVideo( file ) {
-		clearStoryVideo();
+		clearStoryMedia();
 		storyVideo      = { blob: file, name: file.name || 'story.mp4', type: file.type || 'video/mp4' };
 		storyPreviewUrl = URL.createObjectURL( file );
 		if ( storyPreview ) {
 			storyPreview.src    = storyPreviewUrl;
 			storyPreview.hidden = false;
 			storyPreview.addEventListener( 'loadeddata', captureStoryPoster, { once: true } );
+		}
+		if ( storyPrompt ) { storyPrompt.hidden = true; }
+		if ( storyRemove ) { storyRemove.hidden = false; }
+		updatePostBtn();
+	}
+
+	function setStoryPhoto( file ) {
+		clearStoryMedia();
+		storyPhoto      = { blob: file, name: file.name || 'story.jpg', type: file.type || 'image/jpeg' };
+		storyPreviewUrl = URL.createObjectURL( file );
+		if ( storyPhotoPreview ) {
+			storyPhotoPreview.src    = storyPreviewUrl;
+			storyPhotoPreview.hidden = false;
 		}
 		if ( storyPrompt ) { storyPrompt.hidden = true; }
 		if ( storyRemove ) { storyRemove.hidden = false; }
@@ -1458,11 +1475,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} catch ( e ) { grab(); }
 	}
 
-	function clearStoryVideo() {
+	function clearStoryMedia() {
 		storyVideo  = null;
+		storyPhoto  = null;
 		storyPoster = null;
 		if ( storyPreviewUrl ) { URL.revokeObjectURL( storyPreviewUrl ); storyPreviewUrl = ''; }
 		if ( storyPreview ) { storyPreview.removeAttribute( 'src' ); storyPreview.hidden = true; if ( storyPreview.load ) { storyPreview.load(); } }
+		if ( storyPhotoPreview ) { storyPhotoPreview.removeAttribute( 'src' ); storyPhotoPreview.hidden = true; }
 		if ( storyPrompt ) { storyPrompt.hidden = false; }
 		if ( storyRemove ) { storyRemove.hidden = true; }
 		if ( storyInput )  { storyInput.value = ''; }
@@ -1642,6 +1661,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			for ( var i = 0; i < selectedFiles.length; i++ ) {
 				files.push( { blob: selectedFiles[ i ], name: selectedFiles[ i ].name || 'photo.jpg', type: selectedFiles[ i ].type || 'image/jpeg', alt: ( photoAlts[ i ] || '' ) } );
 			}
+		} else if ( TYPE_CONFIG[ currentType ].hasStoryMedia && storyPhoto ) {
+			// A photo Story rides the normal photo path (→ props.photo → wp:image,
+			// featured image); the caption stays as the post content.
+			files.push( { blob: storyPhoto.blob, name: storyPhoto.name || 'story.jpg', type: storyPhoto.type || 'image/jpeg', alt: '' } );
 		}
 		return {
 			id:          'p' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 7 ),
@@ -1666,8 +1689,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
 			files:       files,
 			// Story clip + poster blobs (structured-clone survives the IndexedDB queue).
-			video:       ( TYPE_CONFIG[ currentType ].hasVideo && storyVideo ) ? storyVideo : null,
-			poster:      ( TYPE_CONFIG[ currentType ].hasVideo && storyPoster ) ? storyPoster : null,
+			// A photo Story carries no video — it rides along in `files` above.
+			video:       ( TYPE_CONFIG[ currentType ].hasStoryMedia && storyVideo ) ? storyVideo : null,
+			poster:      ( TYPE_CONFIG[ currentType ].hasStoryMedia && storyPoster ) ? storyPoster : null,
 		};
 	}
 
@@ -1716,14 +1740,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 		props[ 'post-kind' ] = [ post.type ];
 
-		// For a story the caption rides as the video's alt (→ figcaption under the
-		// clip), so don't also emit it as the post content.
-		if ( post.content && cfg.hasContent && ! cfg.hasVideo ) { props.content = [ post.content ]; }
+		// For a video story the caption rides as the clip's alt (→ figcaption under
+		// the video), so don't also emit it as the post content. A photo story keeps
+		// the caption as ordinary content (a paragraph under the image).
+		var isVideoStory = cfg.hasStoryMedia && media.videoUrl;
+		if ( post.content && cfg.hasContent && ! isVideoStory ) { props.content = [ post.content ]; }
 
-		// Story: the self-hosted clip (+ optional poster frame). The server (Note
-		// service → sideload_videos) reuses our uploaded attachment, sets the poster
-		// as the featured image, and builds the wp:video block.
-		if ( cfg.hasVideo && media.videoUrl ) {
+		// Story (video): the self-hosted clip (+ optional poster frame). The server
+		// (Note service → sideload_videos) reuses our uploaded attachment, sets the
+		// poster as the featured image, and builds the wp:video block.
+		if ( cfg.hasStoryMedia && media.videoUrl ) {
 			var v = { primary: media.videoUrl };
 			if ( media.posterUrl ) { v.poster = media.posterUrl; }
 			if ( post.content )    { v.alt    = post.content; }
@@ -1978,7 +2004,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( citeAuthor )     { citeAuthor.value     = ''; }
 		if ( quoteLink )      { quoteLink.value      = ''; }
 		if ( privateCheck )   { privateCheck.checked = false; }
-		if ( typeof clearStoryVideo === 'function' ) { clearStoryVideo(); }
+		if ( typeof clearStoryMedia === 'function' ) { clearStoryMedia(); }
 		if ( eventName )      { eventName.value      = ''; }
 		if ( eventStartDate ) { eventStartDate.value = ''; }
 		if ( eventStartTime ) { eventStartTime.value = ''; }

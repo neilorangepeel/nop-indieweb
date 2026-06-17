@@ -355,9 +355,14 @@ function matchAnyVersion( url ) {
 		$manager      = Plugin::get_instance()->syndication_manager();
 		if ( $manager ) {
 			$syndicate_to = array_map(
-				// Pixelfed is a photo-only network — flag it so the client only
-				// offers it on photo posts (nothing else can syndicate there).
-				fn( $s ) => [ 'uid' => $s['slug'], 'name' => $s['label'], 'photoOnly' => ( 'pixelfed' === $s['slug'] ) ],
+				// Pixelfed only takes photo posts (→ grid) and story posts (→ Stories
+				// tray); `kinds` restricts which kinds the client offers it on. A null
+				// `kinds` (Mastodon/Bluesky) means every kind.
+				fn( $s ) => [
+					'uid'   => $s['slug'],
+					'name'  => $s['label'],
+					'kinds' => ( 'pixelfed' === $s['slug'] ) ? [ 'photo', 'story' ] : null,
+				],
 				$manager->get_panel_data()
 			);
 		}
@@ -639,18 +644,20 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<!-- Ruled writing area -->
 				<div class="docket__body" id="docketBody">
 
-				<!-- Story video (story) — pick or record one short clip; the writing area
-				     below is the optional caption. A poster frame is captured client-side. -->
+				<!-- Story media (story) — pick one photo or one short clip; the writing
+				     area below is the optional caption. For a clip, a poster frame is
+				     captured client-side. -->
 				<div class="field-group" id="fieldStory" hidden>
 					<div class="story-picker" id="storyPicker">
-						<input type="file" id="storyInput" accept="video/*">
+						<input type="file" id="storyInput" accept="image/*,video/*">
 						<button type="button" class="story-picker__prompt" id="storyPrompt">
 							<span class="story-picker__icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,88h80v80H40Zm96-16V56h32V72Zm-16,0H88V56h32Zm0,112v16H88V184Zm16,0h32v16H136Zm0-16V88h80v80Zm80-96H184V56h32ZM72,56V72H40V56ZM40,184H72v16H40Zm176,16H184V184h32v16Z"/></svg></span>
-							<p><?php esc_html_e( 'Pick or record a clip', 'nop-indieweb' ); ?></p>
-							<small><?php esc_html_e( 'A short vertical video', 'nop-indieweb' ); ?></small>
+							<p><?php esc_html_e( 'Pick a photo or short clip', 'nop-indieweb' ); ?></p>
+							<small><?php esc_html_e( 'A photo or short vertical video', 'nop-indieweb' ); ?></small>
 						</button>
 						<video class="story-picker__preview" id="storyPreview" playsinline muted controls hidden></video>
-						<button type="button" class="story-picker__remove" id="storyRemove" hidden aria-label="<?php esc_attr_e( 'Remove video', 'nop-indieweb' ); ?>">
+						<img class="story-picker__preview" id="storyPhotoPreview" alt="" hidden>
+						<button type="button" class="story-picker__remove" id="storyRemove" hidden aria-label="<?php esc_attr_e( 'Remove media', 'nop-indieweb' ); ?>">
 							<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>
 						</button>
 					</div>
