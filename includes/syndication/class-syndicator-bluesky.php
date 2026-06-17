@@ -123,6 +123,12 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// check-ins, which carry a map image as the card thumbnail).
 		if ( $video ) {
 			$embed = $this->build_video_embed( $video, $session );
+			// If Bluesky couldn't process the clip (wrong codec, too large, or the
+			// video service timed out), still link the self-hosted story rather than
+			// posting an empty text stub.
+			if ( null === $embed ) {
+				$embed = $this->build_link_card( $post_id, $permalink, $session );
+			}
 		} elseif ( $images ) {
 			$embed = $this->build_image_embed( $images, $session );
 		} else {
@@ -379,17 +385,140 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	}
 
 	/**
-	 * Uploads a video file to the PDS as a blob. Bluesky enforces its own
-	 * size/duration limits (currently ~100 MB / ~60 s) — we don't pre-check
-	 * those here; the upload simply fails and the post goes out without
-	 * the video embed if Bluesky rejects it.
+	 * Resolves a video file into a Bluesky blob ref for an embed.
+	 *
+	 * MP4s go through Bluesky's dedicated video service (transcoded *before* the
+	 * post is created, so it plays immediately and the 100 MB / 3 min service
+	 * limits apply). If that path fails — or the clip isn't MP4 — it falls back
+	 * to a raw com.atproto.repo.uploadBlob, which still works for small clips
+	 * within the PDS blob cap. Returns null when neither succeeds; the caller
+	 * then degrades to a link card.
 	 */
 	private function upload_video_blob( array $video, array $session ): ?array {
 		$fetched = $this->fetch_video( (string) $video['url'] );
 		if ( ! $fetched ) {
 			return null;
 		}
+
+		if ( 'video/mp4' === $fetched['mime'] ) {
+			$blob = $this->upload_video_via_service( $fetched['data'], $session, (int) ( $video['attachment_id'] ?? 0 ) );
+			if ( $blob ) {
+				return $blob;
+			}
+		}
+
 		return $this->upload_blob( $fetched['data'], $fetched['mime'], $session );
+	}
+
+	/**
+	 * Uploads an MP4 to Bluesky's video service and returns the processed blob.
+	 *
+	 * Flow (per docs.bsky.app/docs/tutorials/video): mint a service-auth token
+	 * scoped to the video service, POST the bytes to video.bsky.app, then poll
+	 * getJobStatus until the optimised blob is ready. Safe to block — syndication
+	 * runs on the cron worker, not a web request. Returns null on any failure.
+	 */
+	private function upload_video_via_service( string $data, array $session, int $attachment_id ): ?array {
+		$token = $this->get_video_service_auth( $session );
+		if ( ! $token ) {
+			return null;
+		}
+
+		// A name unique per DID dodges the service's "already_exists" on a retry.
+		$name = 'nop-' . $attachment_id . '-' . substr( md5( $data ), 0, 12 ) . '.mp4';
+
+		$upload = wp_remote_post(
+			'https://video.bsky.app/xrpc/app.bsky.video.uploadVideo?' . http_build_query( [
+				'did'  => $session['did'],
+				'name' => $name,
+			] ),
+			[
+				'headers' => [
+					'Authorization'  => 'Bearer ' . $token,
+					'Content-Type'   => 'video/mp4',
+					'Content-Length' => (string) strlen( $data ),
+				],
+				'body'    => $data,
+				'timeout' => 120,
+			]
+		);
+		if ( is_wp_error( $upload ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Bluesky video uploadVideo failed', [ 'error' => $upload->get_error_message() ] );
+			return null;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $upload ), true );
+		// uploadVideo returns a jobStatus at the top level; a 409 already_exists
+		// still carries a jobId we can poll. The job may already hold the blob.
+		$job = is_array( $body ) ? ( $body['jobStatus'] ?? $body ) : [];
+		if ( ! empty( $job['blob'] ) ) {
+			return $job['blob'];
+		}
+		$job_id = $job['jobId'] ?? null;
+		if ( ! $job_id ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Bluesky video uploadVideo: no jobId', [
+				'code' => wp_remote_retrieve_response_code( $upload ),
+				'body' => $body,
+			] );
+			return null;
+		}
+
+		return $this->poll_video_job( (string) $job_id );
+	}
+
+	/**
+	 * Mints a service-auth token scoped to the Bluesky video service, signed with
+	 * the current app-password session. getServiceAuth is an XRPC query (GET).
+	 */
+	private function get_video_service_auth( array $session ): ?string {
+		$response = wp_remote_get(
+			$this->pds() . '/xrpc/com.atproto.server.getServiceAuth?' . http_build_query( [
+				'aud' => 'did:web:video.bsky.app',
+				'lxm' => 'com.atproto.repo.uploadBlob',
+				'exp' => time() + 30 * MINUTE_IN_SECONDS,
+			] ),
+			[
+				'headers' => [ 'Authorization' => 'Bearer ' . $session['accessJwt'] ],
+				'timeout' => 15,
+			]
+		);
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Bluesky getServiceAuth failed', [
+				'code' => is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response ),
+			] );
+			return null;
+		}
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		return ! empty( $body['token'] ) ? (string) $body['token'] : null;
+	}
+
+	/**
+	 * Polls app.bsky.video.getJobStatus until the processed blob is ready, the
+	 * job fails, or a ~90 s budget is hit. getJobStatus is a public endpoint
+	 * (no auth). Returns the blob ref, or null.
+	 */
+	private function poll_video_job( string $job_id ): ?array {
+		$url      = 'https://video.bsky.app/xrpc/app.bsky.video.getJobStatus?' . http_build_query( [ 'jobId' => $job_id ] );
+		$deadline = time() + 90;
+
+		while ( time() < $deadline ) {
+			sleep( 3 );
+			$response = wp_remote_get( $url, [ 'timeout' => 15 ] );
+			if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+				continue;
+			}
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+			$job  = is_array( $body ) ? ( $body['jobStatus'] ?? [] ) : [];
+			if ( ! empty( $job['blob'] ) ) {
+				return $job['blob'];
+			}
+			if ( 'JOB_STATE_FAILED' === ( $job['state'] ?? '' ) ) {
+				\NOP\IndieWeb\nop_indieweb_log( 'Bluesky video job failed', $job );
+				return null;
+			}
+		}
+		\NOP\IndieWeb\nop_indieweb_log( 'Bluesky video job timed out', [ 'jobId' => $job_id ] );
+		return null;
 	}
 
 	private function upload_blob( string $data, string $mime, array $session ): ?array {
