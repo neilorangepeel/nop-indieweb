@@ -164,6 +164,73 @@ function PixelfedPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	);
 }
 
+// ——— Tumblr ————————————————————————————————————————————————————————————————
+
+function TumblrPanel( { value, onChange, networkStatus, opened, onToggle } ) {
+	const set       = ( key, val ) => onChange( { ...value, [ key ]: val } );
+	const active    = networkStatus?.active ?? false;
+	const connected = networkStatus?.connected ?? false;
+	// Connecting needs the app credentials saved first (the callback reads them).
+	const canConnect = !! ( value.consumer_key && value.consumer_secret && value.blog_identifier );
+
+	return (
+		<PanelBody title={ panelTitle( 'Tumblr', active ) } opened={ opened } onToggle={ onToggle }>
+			<div className="nop-network-panel">
+				<ToggleControl
+					label={ __( 'Syndicate posts to Tumblr on publish', 'nop-indieweb' ) }
+					checked={ value.enabled ?? false }
+					onChange={ ( val ) => set( 'enabled', val ) }
+					__nextHasNoMarginBottom
+				/>
+				<TextControl
+					label={ __( 'Blog identifier', 'nop-indieweb' ) }
+					value={ value.blog_identifier ?? '' }
+					onChange={ ( val ) => set( 'blog_identifier', val ) }
+					placeholder="yourblog.tumblr.com"
+					help={ __( 'Your blog hostname, e.g. yourblog.tumblr.com (or a custom domain).', 'nop-indieweb' ) }
+					__nextHasNoMarginBottom
+				/>
+				<TextControl
+					label={ __( 'Consumer Key', 'nop-indieweb' ) }
+					value={ value.consumer_key ?? '' }
+					onChange={ ( val ) => set( 'consumer_key', val ) }
+					help={ __( 'Register an app at tumblr.com/oauth/apps. Callback must be the URL below.', 'nop-indieweb' ) }
+					__nextHasNoMarginBottom
+				/>
+				<SecretInput
+					label={ __( 'Consumer Secret', 'nop-indieweb' ) }
+					value={ value.consumer_secret ?? '' }
+					onChange={ ( val ) => set( 'consumer_secret', val ) }
+				/>
+				<EndpointRow
+					label={ __( 'OAuth callback URL', 'nop-indieweb' ) }
+					url={ ( networkStatus?.authUrl ?? '' ).replace( '/tumblr-auth', '/tumblr-callback' ) }
+				/>
+				<p className="description">
+					{ connected
+						? ( networkStatus?.userName
+							? `${ __( 'Connected as', 'nop-indieweb' ) } ${ networkStatus.userName }`
+							: __( 'Connected.', 'nop-indieweb' ) )
+						: __( 'Save the credentials above, then connect.', 'nop-indieweb' ) }
+				</p>
+				<a
+					className="components-button is-secondary"
+					href={ canConnect ? ( networkStatus?.authUrl ?? '#' ) : undefined }
+					aria-disabled={ ! canConnect }
+				>
+					{ connected ? __( 'Reconnect Tumblr', 'nop-indieweb' ) : __( 'Connect Tumblr', 'nop-indieweb' ) }
+				</a>
+				<ImportSection
+					slug="tumblr"
+					value={ value }
+					onChange={ onChange }
+					importLabel={ __( 'Import Tumblr posts hourly', 'nop-indieweb' ) }
+				/>
+			</div>
+		</PanelBody>
+	);
+}
+
 // ——— Letterboxd ————————————————————————————————————————————————————————————
 
 function LetterboxdPanel( { value, onChange, networkStatus, opened, onToggle } ) {
@@ -234,6 +301,7 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 		mastodon:   targetNetwork === 'mastodon',
 		bluesky:    targetNetwork === 'bluesky',
 		pixelfed:   targetNetwork === 'pixelfed',
+		tumblr:     targetNetwork === 'tumblr',
 		letterboxd: targetNetwork === 'letterboxd',
 		swarm:      targetNetwork === 'swarm',
 	} );
@@ -269,6 +337,13 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 				networkStatus={ networkStatus.pixelfed }
 				opened={ openPanels.pixelfed }
 				onToggle={ toggle( 'pixelfed' ) }
+			/>
+			<TumblrPanel
+				value={ syndicators.tumblr     ?? {} }
+				onChange={ setSyndicator( 'tumblr' ) }
+				networkStatus={ networkStatus.tumblr }
+				opened={ openPanels.tumblr }
+				onToggle={ toggle( 'tumblr' ) }
 			/>
 			<LetterboxdPanel
 				value={ services.letterboxd    ?? {} }

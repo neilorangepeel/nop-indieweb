@@ -32,6 +32,9 @@ class Settings_API {
 		[ 'syndicators', 'mastodon',  'access_token'       ],
 		[ 'syndicators', 'bluesky',   'app_password'        ],
 		[ 'syndicators', 'pixelfed',  'access_token'       ],
+		[ 'syndicators', 'tumblr',    'consumer_secret'    ],
+		[ 'syndicators', 'tumblr',    'access_token'       ],
+		[ 'syndicators', 'tumblr',    'refresh_token'      ],
 		[ 'maps',        null,        'geoapify_api_key'    ],
 		[ 'weather',     null,        'pirate_weather_api_key' ],
 		[ 'venue',       null,        'foursquare_api_key'  ],
@@ -160,6 +163,15 @@ class Settings_API {
 				$out[ $slug ]['handle']       = (string) ( $s['handle'] ?? '' );
 				$out[ $slug ]['app_password'] = $this->redact( $s['app_password'] ?? '' );
 			}
+			if ( 'tumblr' === $slug ) {
+				// App credentials are form-editable; the tokens are written only by
+				// the OAuth callback, so surface a connection flag, not the tokens.
+				$out[ $slug ]['consumer_key']     = (string) ( $s['consumer_key'] ?? '' );
+				$out[ $slug ]['consumer_secret']  = $this->redact( $s['consumer_secret'] ?? '' );
+				$out[ $slug ]['blog_identifier']  = (string) ( $s['blog_identifier'] ?? '' );
+				$out[ $slug ]['connected']        = '' !== (string) ( $s['refresh_token'] ?? '' );
+				$out[ $slug ]['user_name']        = (string) ( $s['user_name'] ?? '' );
+			}
 		}
 		return $out;
 	}
@@ -243,12 +255,14 @@ class Settings_API {
 		$mastodon = $syndicators['mastodon'] ?? [];
 		$bluesky  = $syndicators['bluesky']  ?? [];
 		$pixelfed = $syndicators['pixelfed'] ?? [];
+		$tumblr   = $syndicators['tumblr']   ?? [];
 		$lboxd    = $services['letterboxd']  ?? [];
 		$swarm    = $services['swarm']       ?? [];
 
 		$mastodon_ok = ! empty( $mastodon['enabled'] ) && ! empty( $mastodon['instance'] ) && ! empty( $mastodon['access_token'] );
 		$bluesky_ok  = ! empty( $bluesky['enabled'] ) && ! empty( $bluesky['handle'] ) && ! empty( $bluesky['app_password'] );
 		$pixelfed_ok = ! empty( $pixelfed['enabled'] ) && ! empty( $pixelfed['instance'] ) && ! empty( $pixelfed['access_token'] );
+		$tumblr_ok   = ! empty( $tumblr['enabled'] ) && ! empty( $tumblr['refresh_token'] ) && ! empty( $tumblr['blog_identifier'] );
 		$lboxd_ok    = ! empty( $lboxd['import_enabled'] ) && ! empty( $lboxd['username'] );
 		$swarm_ok    = ! empty( $swarm['enabled'] );
 
@@ -272,6 +286,7 @@ class Settings_API {
 			'mastodon'   => [ 'active' => $mastodon_ok, 'color' => '#6364FF', 'last_label' => $mastodon_ok ? $this->human_time_diff( $mastodon['import_last_at'] ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'bluesky'    => [ 'active' => $bluesky_ok,  'color' => '#0085FF', 'last_label' => $bluesky_ok  ? $this->human_time_diff( $bluesky['import_last_at']  ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'pixelfed'   => [ 'active' => $pixelfed_ok, 'color' => '#1A9C5B', 'last_label' => $pixelfed_ok ? $this->human_time_diff( $pixelfed['import_last_at'] ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
+			'tumblr'     => [ 'active' => $tumblr_ok,   'color' => '#36465D', 'last_label' => $tumblr_ok   ? $this->human_time_diff( $tumblr['import_last_at']   ?? null, __( 'Synced', 'nop-indieweb' ) ) : null, 'authUrl' => rest_url( 'nop-indieweb/v1/tumblr-auth' ), 'connected' => ! empty( $tumblr['refresh_token'] ), 'userName' => (string) ( $tumblr['user_name'] ?? '' ) ],
 			'letterboxd' => [ 'active' => $lboxd_ok,    'color' => '#00C030', 'last_label' => $lboxd_ok    ? $this->human_time_diff( $lboxd['import_last_at']    ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'swarm'      => [ 'active' => $swarm_ok, 'color' => '#FC8D1D', 'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null, 'micropubUrl' => \NOP\IndieWeb\nop_indieweb_endpoint_url() ],
 		];
@@ -384,7 +399,7 @@ class Settings_API {
 		$this->maybe_set_secret( $clean, $input, 'lookups', null,   'tmdb_api_key' );
 
 		// — Syndicators ———————————————————————————————————————————————————————
-		foreach ( [ 'mastodon', 'bluesky', 'pixelfed' ] as $slug ) {
+		foreach ( [ 'mastodon', 'bluesky', 'pixelfed', 'tumblr' ] as $slug ) {
 			$in = $input['syndicators'][ $slug ] ?? null;
 			if ( ! is_array( $in ) ) {
 				continue;
@@ -409,6 +424,16 @@ class Settings_API {
 					$existing_slug['handle'] = sanitize_text_field( (string) $in['handle'] );
 				}
 				$this->maybe_set_secret( $existing_slug, $in, null, null, 'app_password' );
+			}
+			if ( 'tumblr' === $slug ) {
+				// App credentials only; the OAuth callback writes the tokens.
+				if ( isset( $in['consumer_key'] ) ) {
+					$existing_slug['consumer_key'] = sanitize_text_field( (string) $in['consumer_key'] );
+				}
+				if ( isset( $in['blog_identifier'] ) ) {
+					$existing_slug['blog_identifier'] = sanitize_text_field( (string) $in['blog_identifier'] );
+				}
+				$this->maybe_set_secret( $existing_slug, $in, null, null, 'consumer_secret' );
 			}
 
 			$clean['syndicators'][ $slug ] = $existing_slug;

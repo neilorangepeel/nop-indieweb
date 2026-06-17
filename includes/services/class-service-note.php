@@ -290,6 +290,14 @@ class Note extends Service_Base {
 			return 'pixelfed';
 		}
 
+		if ( str_contains( $source_url, '.tumblr.com' ) || str_contains( $source_url, 'tmblr.co' ) ) {
+			return 'tumblr';
+		}
+		$tumblr_blog = (string) \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators.tumblr.blog_identifier', '' );
+		if ( '' !== $tumblr_blog && str_contains( $source_url, $tumblr_blog ) ) {
+			return 'tumblr';
+		}
+
 		return 'entries';
 	}
 
@@ -299,7 +307,7 @@ class Note extends Service_Base {
 	 * anything else falls back to the Entries service settings.
 	 */
 	private function get_inbound_settings( string $platform ): array {
-		if ( in_array( $platform, [ 'mastodon', 'bluesky', 'pixelfed' ], true ) ) {
+		if ( in_array( $platform, [ 'mastodon', 'bluesky', 'pixelfed', 'tumblr' ], true ) ) {
 			$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )[ $platform ] ?? [];
 			// Imported posts default to sideloading their media — owning the copy
 			// is the point of PESOS, and the platform sections have no UI toggle

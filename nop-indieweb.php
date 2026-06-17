@@ -66,6 +66,9 @@ require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-mastodon-compatible-
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-mastodon.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-bluesky.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-pixelfed.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-tumblr-client.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-tumblr-oauth.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-tumblr.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-tmdb.php';

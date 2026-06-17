@@ -226,6 +226,7 @@ class Plugin {
 		( new Template_Registrar() )->register();
 		( new Link_Discovery() )->register();
 		( new Foursquare_OAuth() )->register();
+		( new \NOP\IndieWeb\Syndication\Tumblr_OAuth() )->register();
 		( new Authoring_Routes( $lookup_providers ) )->register();
 		( new Settings_API() )->register();
 		( new Posting_Page() )->register();

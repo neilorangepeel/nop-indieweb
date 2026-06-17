@@ -29,6 +29,7 @@ class Syndication_Manager {
 			new Syndicator_Mastodon(),
 			new Syndicator_Bluesky(),
 			new Syndicator_Pixelfed(),
+			new Syndicator_Tumblr(),
 		] );
 	}
 

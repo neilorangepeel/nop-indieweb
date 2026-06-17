@@ -85,6 +85,7 @@ class Settings {
 				'mastodon'   => wp_create_nonce( 'nop_indieweb_sync_mastodon' ),
 				'bluesky'    => wp_create_nonce( 'nop_indieweb_sync_bluesky' ),
 				'pixelfed'   => wp_create_nonce( 'nop_indieweb_sync_pixelfed' ),
+				'tumblr'     => wp_create_nonce( 'nop_indieweb_sync_tumblr' ),
 				'letterboxd' => wp_create_nonce( 'nop_indieweb_sync_letterboxd' ),
 			],
 		] );

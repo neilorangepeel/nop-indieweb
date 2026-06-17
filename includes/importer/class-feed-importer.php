@@ -60,6 +60,7 @@ class Feed_Importer {
 		$this->import_mastodon_api( 'mastodon' );
 		$this->import_mastodon_api( 'pixelfed' );
 		$this->import_bluesky();
+		$this->import_tumblr();
 		$this->import_letterboxd();
 	}
 
@@ -81,6 +82,8 @@ class Feed_Importer {
 			$this->import_mastodon_api( $platform );
 		} elseif ( 'bluesky' === $platform ) {
 			$this->import_bluesky();
+		} elseif ( 'tumblr' === $platform ) {
+			$this->import_tumblr();
 		} elseif ( 'letterboxd' === $platform ) {
 			$this->import_letterboxd();
 		} else {
@@ -416,6 +419,82 @@ class Feed_Importer {
 		$parts = explode( '/', $uri );
 		$rkey  = end( $parts );
 		return "https://bsky.app/profile/{$did}/post/{$rkey}";
+	}
+
+	// ── Tumblr ────────────────────────────────────────────────────────────────────
+
+	private function import_tumblr(): void {
+		$settings = \NOP\IndieWeb\nop_indieweb_get_option( 'syndicators', [] )['tumblr'] ?? [];
+		if ( empty( $settings['import_enabled'] ) ) {
+			return;
+		}
+
+		$client = new \NOP\IndieWeb\Syndication\Tumblr_Client();
+		if ( '' === $client->blog_id() ) {
+			return;
+		}
+
+		$posts = $client->blog_posts( 20 );
+		if ( is_wp_error( $posts ) || ! $posts ) {
+			return;
+		}
+
+		foreach ( array_reverse( $posts ) as $post ) {
+			// Skip reblogs — only the blog's own posts are ours to mirror.
+			if ( ! empty( $post['parent_post_id'] ) || ! empty( $post['reblogged_root_id'] ) ) {
+				continue;
+			}
+			$url = (string) ( $post['post_url'] ?? '' );
+			if ( '' === $url || $this->was_syndicated_from_wordpress( $url ) ) {
+				continue;
+			}
+			$this->note->handle( $this->tumblr_to_payload( $post, $url ) );
+		}
+
+		\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.tumblr.import_last_at', gmdate( 'c' ) );
+	}
+
+	/**
+	 * Flattens a Tumblr NPF post into a Micropub-shaped payload: text blocks become
+	 * the content, image blocks become photos (with alt), and an image-bearing post
+	 * is tagged as a photo kind so it lands in the grid.
+	 */
+	private function tumblr_to_payload( array $post, string $url ): array {
+		$text   = [];
+		$photos = [];
+		foreach ( (array) ( $post['content'] ?? [] ) as $block ) {
+			$type = (string) ( $block['type'] ?? '' );
+			if ( 'text' === $type && '' !== (string) ( $block['text'] ?? '' ) ) {
+				$text[] = (string) $block['text'];
+			} elseif ( 'image' === $type ) {
+				$src = (string) ( $block['media'][0]['url'] ?? '' );
+				if ( '' !== $src ) {
+					$photos[] = [ 'primary' => $src, 'alt' => (string) ( $block['alt_text'] ?? '' ) ];
+				}
+			} elseif ( 'link' === $type && ! empty( $block['url'] ) ) {
+				$text[] = (string) $block['url'];
+			}
+		}
+
+		$published = ! empty( $post['timestamp'] )
+			? gmdate( 'c', (int) $post['timestamp'] )
+			: (string) ( $post['date'] ?? '' );
+
+		$properties = [
+			'content'     => [ implode( "\n\n", $text ) ],
+			'published'   => [ $published ],
+			'url'         => [ $url ],
+			'syndication' => [ $url ],
+			'photo'       => $photos,
+		];
+		if ( $photos ) {
+			$properties['post-kind'] = [ 'photo' ];
+		}
+
+		return [
+			'type'       => [ 'h-entry' ],
+			'properties' => $properties,
+		];
 	}
 
 	// ── Letterboxd ──────────────────────────────────────────────────────────────
