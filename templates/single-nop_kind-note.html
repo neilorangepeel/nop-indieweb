@@ -21,6 +21,13 @@
 					<!-- /wp:paragraph -->
 
 					<!-- wp:post-terms {"term":"post_tag","prefix":"· ","suffix":"","separator":" ","style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} /-->
+
+					<!-- Opt-in geotag — bound to the shared venue meta; the paragraph renders
+					     empty (and is hidden via .nop-place__value:empty) when the post carries
+					     no location. p-location for mf2 consumers. -->
+					<!-- wp:paragraph {"className":"nop-place__value p-location","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"locality_country"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} -->
+					<p class="nop-place__value p-location" style="font-style:normal;font-weight:500"></p>
+					<!-- /wp:paragraph -->
 				</div>
 				<!-- /wp:group -->
 

@@ -213,6 +213,14 @@ class Endpoint {
 			update_post_meta( $post_id, 'nop_indieweb_syndicate_to', $targets ?: [ 'none' ] );
 		}
 
+		// An opt-in geotag from the composer — a geo: URI plus the reverse-geocoded
+		// place. Stored on the shared venue meta so the same block bindings / mf2
+		// output a checkin uses render it. Kind-agnostic: a geotagged note stays a
+		// note, it just carries a place.
+		if ( array_key_exists( 'location', $props ) ) {
+			$this->store_location( $post_id, $props );
+		}
+
 		// Phase 2 hook: POSSE syndication to Mastodon, Bluesky, etc. hangs off this.
 		do_action( 'nop_indieweb_post_created', $post_id, $payload, $service );
 
@@ -434,6 +442,40 @@ class Endpoint {
 		}
 		$args['post_date']     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
 		$args['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+	}
+
+	/**
+	 * Stores an opt-in geotag onto the shared venue meta.
+	 *
+	 * Accepts a `geo:LAT,LON` URI (the Micropub-standard simple location value,
+	 * optionally with a `;u=ACCURACY` suffix we ignore) for the coordinates, plus
+	 * two flat companion properties the bundled composer sends for the human place:
+	 * `location-locality` and `location-country`. Anything missing is simply not
+	 * written — a coordinates-only or locality-only geotag is valid.
+	 *
+	 * @param array<string,mixed> $props
+	 */
+	private function store_location( int $post_id, array $props ): void {
+		// Only the simple geo: URI string form is handled here — a checkin's h-adr
+		// object location (OwnYourSwarm) is left untouched (its service owns it).
+		$loc = $props['location'] ?? '';
+		if ( is_array( $loc ) ) {
+			$loc = is_string( $loc[0] ?? null ) ? $loc[0] : '';
+		}
+		$geo = is_string( $loc ) ? trim( $loc ) : '';
+		if ( preg_match( '/^geo:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i', $geo, $m ) ) {
+			update_post_meta( $post_id, 'nop_indieweb_venue_lat', $m[1] );
+			update_post_meta( $post_id, 'nop_indieweb_venue_lng', $m[2] );
+		}
+
+		$locality = sanitize_text_field( (string) ( $props['location-locality'][0] ?? '' ) );
+		$country  = sanitize_text_field( (string) ( $props['location-country'][0] ?? '' ) );
+		if ( '' !== $locality ) {
+			update_post_meta( $post_id, 'nop_indieweb_venue_locality', $locality );
+		}
+		if ( '' !== $country ) {
+			update_post_meta( $post_id, 'nop_indieweb_venue_country', $country );
+		}
 	}
 
 	private function merge_meta( int $post_id, string $key, array $values ): void {

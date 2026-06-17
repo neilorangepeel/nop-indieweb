@@ -43,6 +43,7 @@ use NOP\IndieWeb\WebSub;
 use NOP\IndieWeb\AiPolicy\AI_Policy;
 use NOP\IndieWeb\Exercise\Exercise_Endpoint;
 use NOP\IndieWeb\Rsvp\Event_Endpoint;
+use NOP\IndieWeb\Preview\Link_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Endpoint;
 use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
@@ -212,6 +213,7 @@ class Plugin {
 		( new AI_Policy() )->register();
 		( new Exercise_Endpoint() )->register();
 		( new Event_Endpoint() )->register();
+		( new Link_Endpoint() )->register();
 
 		$lookup_providers = apply_filters( 'nop_indieweb_register_lookup_providers', [
 			new Lookup_Provider_TMDB(),

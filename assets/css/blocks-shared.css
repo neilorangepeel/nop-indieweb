@@ -615,3 +615,13 @@ a.nop-post-footer__pill--link:focus-visible {
 .nop-stats-secondary:not( :has( .nop-stat-mini__value:not(:empty) ) ) {
 	display: none;
 }
+
+/* Opt-in geotag in the note/photo dateline. The bound paragraph renders empty
+   when the post has no location → hide it (and let the flex gap collapse). When
+   present, a leading middot folds it into the kind · tags · place rhythm. */
+.nop-place__value:empty {
+	display: none;
+}
+.nop-place__value::before {
+	content: "· ";
+}
