@@ -178,7 +178,7 @@ class Posting_Page {
 // Bump on any change that demands a clean shell refresh on every device. The
 // activate handler deletes every cache whose name doesn't equal CACHE — so
 // changing this string is the textbook way to nuke a stuck precached shell.
-var CACHE = 'nop-post-v10';
+var CACHE = 'nop-post-v11';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -554,7 +554,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					     a one-line "what & when" for the current kind (#kindInfo). -->
 					<button type="button" class="docket__kind" id="kindInfoToggle" aria-expanded="false" aria-controls="kindInfo">
 						<span class="docket__kind-name" id="docketKind"></span>
-						<svg class="docket__kind-i" width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z"/></svg>
+						<svg class="docket__kind-i" width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-4,48a12,12,0,1,1-12,12A12,12,0,0,1,124,72Zm12,112a16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40a8,8,0,0,1,0,16Z"/></svg>
 						<span class="sr-only"><?php esc_html_e( '— what this kind is for', 'nop-indieweb' ); ?></span>
 					</button>
 					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
