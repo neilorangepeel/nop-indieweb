@@ -178,7 +178,7 @@ class Posting_Page {
 // Bump on any change that demands a clean shell refresh on every device. The
 // activate handler deletes every cache whose name doesn't equal CACHE — so
 // changing this string is the textbook way to nuke a stuck precached shell.
-var CACHE = 'nop-post-v11';
+var CACHE = 'nop-post-v12';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -321,15 +321,15 @@ function matchAnyVersion( url ) {
 		// tapped (see the docket filing line). Crossover hints in parentheses help
 		// tell the close ones apart (Note/Quote, Like/Bookmark, Repost/Quote, …).
 		$kind_info = [
-			'note'     => __( 'Your own words — a quick thought, no link needed. The everyday default. (For someone else’s words, use Quote.)', 'nop-indieweb' ),
-			'photo'    => __( 'One or more images with an optional caption — lives in your photo grid and on Pixelfed. (For a single vertical, disappearing shot, use Story.)', 'nop-indieweb' ),
-			'reply'    => __( 'A public response to someone else’s post — paste their link; it sends them a webmention. (Just reacting? Use Like.)', 'nop-indieweb' ),
-			'like'     => __( 'A lightweight ♥ of someone else’s post by link — no words. Tells the author you liked it. (To save it for yourself instead, use Bookmark.)', 'nop-indieweb' ),
-			'bookmark' => __( 'Save a link for later with an optional note — for you, not a signal to the author. (To publicly applaud it, use Like.)', 'nop-indieweb' ),
-			'repost'   => __( 'Share someone else’s post as-is to your followers — a boost, no commentary. (To add your own take, use Quote.)', 'nop-indieweb' ),
-			'quote'    => __( 'Share a passage or post with your own commentary around it. (No comment to add? Use Repost. Your own words from scratch? Use Note.)', 'nop-indieweb' ),
-			'story'    => __( 'One vertical photo or short clip, featured 24h then kept in your archive — your in-the-moment kind; posts to the Pixelfed Stories tray. (For a permanent shot in your grid, use Photo.)', 'nop-indieweb' ),
-			'rsvp'     => __( 'Reply yes, no, or maybe to an event by its link — records your attendance and webmentions the host.', 'nop-indieweb' ),
+			'note'     => __( 'A quick thought, in your own words — no link. (Someone else’s words? Quote.)', 'nop-indieweb' ),
+			'photo'    => __( 'Pictures with a caption, for your grid. (A vertical clip that vanishes? Story.)', 'nop-indieweb' ),
+			'reply'    => __( 'Reply to a post by its link — pings them back. (Just reacting? Like.)', 'nop-indieweb' ),
+			'like'     => __( '♥ a post by its link — no words. (Save it for yourself? Bookmark.)', 'nop-indieweb' ),
+			'bookmark' => __( 'Save a link for later, just for you. (Applaud it publicly? Like.)', 'nop-indieweb' ),
+			'repost'   => __( 'Boost a post as-is — no comment. (Adding your take? Quote.)', 'nop-indieweb' ),
+			'quote'    => __( 'A passage plus your take on it. (No comment to add? Repost.)', 'nop-indieweb' ),
+			'story'    => __( 'A vertical photo or clip — gone in 24h. (Keep it in your grid? Photo.)', 'nop-indieweb' ),
+			'rsvp'     => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ),
 		];
 
 		// Built app assets (CSS now, the app script next) — version-busted from the
