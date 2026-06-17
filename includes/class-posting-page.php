@@ -317,18 +317,17 @@ function matchAnyVersion( url ) {
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
 		$cond_dir     = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
 
-		// One-line "what & when" per kind, surfaced inline when the kind title is
-		// tapped (see the docket filing line). Crossover hints in parentheses help
-		// tell the close ones apart (Note/Quote, Like/Bookmark, Repost/Quote, …).
+		// One-line "what it is" per kind, surfaced inline when the kind title is
+		// tapped (see the docket filing line). Plain and short — just the gist.
 		$kind_info = [
-			'note'     => __( 'A quick thought, in your own words — no link. (Someone else’s words? Quote.)', 'nop-indieweb' ),
-			'photo'    => __( 'Pictures with a caption, for your grid. (A vertical clip that vanishes? Story.)', 'nop-indieweb' ),
-			'reply'    => __( 'Reply to a post by its link — pings them back. (Just reacting? Like.)', 'nop-indieweb' ),
-			'like'     => __( '♥ a post by its link — no words. (Save it for yourself? Bookmark.)', 'nop-indieweb' ),
-			'bookmark' => __( 'Save a link for later, just for you. (Applaud it publicly? Like.)', 'nop-indieweb' ),
-			'repost'   => __( 'Boost a post as-is — no comment. (Adding your take? Quote.)', 'nop-indieweb' ),
-			'quote'    => __( 'A passage plus your take on it. (No comment to add? Repost.)', 'nop-indieweb' ),
-			'story'    => __( 'A vertical photo or clip — gone in 24h. (Keep it in your grid? Photo.)', 'nop-indieweb' ),
+			'note'     => __( 'A quick thought in your own words — no link.', 'nop-indieweb' ),
+			'photo'    => __( 'Pictures with a caption, for your grid.', 'nop-indieweb' ),
+			'reply'    => __( 'Reply to a post by its link.', 'nop-indieweb' ),
+			'like'     => __( '♥ a post by its link — no words.', 'nop-indieweb' ),
+			'bookmark' => __( 'Save a link for later, just for you.', 'nop-indieweb' ),
+			'repost'   => __( 'Boost a post as-is — no comment.', 'nop-indieweb' ),
+			'quote'    => __( 'A passage plus your take on it.', 'nop-indieweb' ),
+			'story'    => __( 'A vertical photo or clip — gone in 24h.', 'nop-indieweb' ),
 			'rsvp'     => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ),
 		];
 
