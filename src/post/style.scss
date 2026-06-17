@@ -1114,24 +1114,20 @@ body::before {
 	border-radius: 2px;
 }
 
-/* The revealed explainer — a quiet ruled note in readable sentence case (not the
-   header's uppercase display), tinted with the accent and rule-marked like a
-   margin annotation. */
+/* The revealed explainer — just a quiet line in readable sentence case (not the
+   header's uppercase display), sitting tight under the title. No box, no rule,
+   no tint: plain muted text. */
 .docket__kind-info {
 	/* Sit tight under the title rule — counter the .docket flex gap (sp-4) so the
 	   gap above reads as the header's own sp-2 padding rhythm, not a stacked sp-4+sp-2. */
 	margin: calc( var(--sp-2) - var(--sp-4) ) 0 0;
-	padding: var(--sp-2) var(--sp-3);
-	border-left: 2px solid var(--accent);
-	border-radius: 0 var(--radius) var(--radius) 0;
-	background: color-mix( in srgb, var(--accent) 6%, var(--paper) );
 	font-family: var(--readout);
 	font-size: var(--fs-13);
 	font-weight: 500;
 	line-height: 1.45;
 	letter-spacing: 0;
 	text-transform: none;
-	color: color-mix( in srgb, var(--ink) 78%, var(--paper) );
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
 
 .docket__fields,
