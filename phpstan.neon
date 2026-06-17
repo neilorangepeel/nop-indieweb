@@ -15,8 +15,10 @@ parameters:
 	bootstrapFiles:
 		- tests/php/phpstan-bootstrap.php
 	# WP-CLI symbols (WP_CLI class + WP_CLI\Utils helpers) for the includes/cli/ commands;
-	# the WordPress core stubs don't carry them.
+	# the WordPress core stubs don't carry them. mf2-stubs declares the optional
+	# php-mf2 \Mf2\parse() symbol (guarded by function_exists at every call site).
 	scanFiles:
 		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+		- tests/php/mf2-stubs.php
 	# WordPress symbols come from szepeviktor/phpstan-wordpress (php-stubs/wordpress-stubs).
 	# The /post and /settings React apps are JS — analysed by `npm run lint:js`, not here.

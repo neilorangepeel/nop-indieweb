@@ -233,12 +233,6 @@ parameters:
 			path: includes/micropub/class-request.php
 
 		-
-			message: '#^Function Mf2\\parse not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: includes/rsvp/class-event-parser.php
-
-		-
 			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
 			identifier: arrayValues.list
 			count: 1
