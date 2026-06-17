@@ -975,8 +975,8 @@ body::before {
 /* Clear stamp — the only interactive element on the filing line. Same muted
    printed-ink display-caps as the kind / serial / date labels, framed by a
    hairline rule like a rubber-stamped action box. Hidden until the form has
-   anything to clear (JS toggles [hidden]); the rest of the filing line stays
-   put because gap shrinks naturally when this child is removed. */
+   anything to clear (JS toggles [hidden]); see the [hidden] rule below — its
+   box stays reserved so popping it in never re-flows the filing line's height. */
 .docket__clear {
 	appearance: none;
 	margin: 0 0 0 var(--sp-3);
@@ -996,6 +996,15 @@ body::before {
 .docket__clear:focus-visible {
 	outline: var(--bw-input) solid var(--accent);
 	outline-offset: 2px;
+}
+/* Reserve the stamp's footprint even when empty so popping it in never re-flows
+   the filing line's height — keep the box in layout (visibility, not display);
+   it just isn't painted or focusable until there's something to clear. The
+   reserved space sits at the row's far right, after the right-filed serial/date. */
+.docket__clear[hidden] {
+	display: inline-block !important;   /* beat the global [hidden]{display:none!important} */
+	visibility: hidden;
+	pointer-events: none;
 }
 
 .docket__fields,
@@ -1059,10 +1068,11 @@ body::before {
 	height: 240px;
 	pointer-events: none;
 	/* A halftone screen in the ink hue on a transparent ground; the mask's
-	   hockey-stick stops AND alphas are scaled by --reveal (0..1), so the
-	   shadow physically grows from the seam as you scroll — every gradient
-	   stop's position and darkness tracks the finger 1:1. JS writes --reveal
-	   from scroll distance; that's the only per-tick property update. */
+	   hockey-stick stops sit at FIXED px (a constant-depth layer shadow cast at
+	   the seam — it finishes naturally, never tracking the content's length).
+	   Only the stop ALPHAS scale by --reveal (0..1), so the shadow fades in as
+	   you scroll and holds. JS (or a scroll-timeline) writes --reveal from scroll
+	   distance; that's the only per-tick property update. */
 	background-image: radial-gradient(var(--ink) var(--ht-dot), transparent calc(var(--ht-dot) + 0.3px));
 	background-size: var(--grain-pitch) var(--grain-pitch);
 	/* No background-attachment:fixed — iOS Safari doesn't honour it (the dots scroll
@@ -1075,32 +1085,32 @@ body::before {
 	margin-bottom: -240px;
 	-webkit-mask-image: linear-gradient( to bottom,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
-		transparent                                    calc(var(--reveal) * 100%));
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         12px,
+		rgba(0,0,0, calc(var(--reveal) * 0.4))         40px,
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        76px,
+		transparent                                    108px);
 	        mask-image: linear-gradient( to bottom,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
-		transparent                                    calc(var(--reveal) * 100%));
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         12px,
+		rgba(0,0,0, calc(var(--reveal) * 0.4))         40px,
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        76px,
+		transparent                                    108px);
 }
 .scroll-fade-bottom {
 	bottom: 0;
 	margin-top: -240px;
 	-webkit-mask-image: linear-gradient( to top,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
-		transparent                                    calc(var(--reveal) * 100%));
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         12px,
+		rgba(0,0,0, calc(var(--reveal) * 0.4))         40px,
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        76px,
+		transparent                                    108px);
 	        mask-image: linear-gradient( to top,
 		rgba(0,0,0, var(--reveal))                     0,
-		rgba(0,0,0, calc(var(--reveal) * 0.72))         calc(var(--reveal) * 12%),
-		rgba(0,0,0, calc(var(--reveal) * 0.4))        calc(var(--reveal) * 38%),
-		rgba(0,0,0, calc(var(--reveal) * 0.14))        calc(var(--reveal) * 68%),
-		transparent                                    calc(var(--reveal) * 100%));
+		rgba(0,0,0, calc(var(--reveal) * 0.72))         12px,
+		rgba(0,0,0, calc(var(--reveal) * 0.4))         40px,
+		rgba(0,0,0, calc(var(--reveal) * 0.14))        76px,
+		transparent                                    108px);
 }
 
 .compose-fields {
@@ -1233,31 +1243,6 @@ body::before {
 .photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 700; letter-spacing: 0; }
 .photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
-/* Take-a-photo — a slim secondary action under the library dropzone, shown only
-   on camera devices (toggled in JS). Quieter than the dropzone; the library
-   stays the primary path. */
-.photo-capture {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--sp-2);
-	width: 100%;
-	margin-top: var(--sp-2);
-	padding: var(--sp-3) var(--sp-4);
-	background: transparent;
-	border: var(--bw-input) solid var(--ink-30);
-	border-radius: var(--radius);
-	color: var(--ink);
-	font-family: var(--readout);
-	font-size: var(--fs-14);
-	font-weight: 700;
-	letter-spacing: 0;
-	cursor: pointer;
-}
-.photo-capture:active { transform: translate(1px, 1px); border-color: var(--accent); }
-.photo-capture__icon { display: flex; }
-.photo-capture__icon svg { display: block; }
-
 .thumbnails {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
@@ -1301,6 +1286,26 @@ body::before {
 	cursor: pointer;}
 .thumb__remove svg { display: block; }
 .thumb__remove::after { content: ''; position: absolute; inset: -9px; }
+/* Ordinal stamp — top-left, opposite the remove chip; ties each print to its
+   "Alt text N" slip below. A quiet ink token, not a loud badge. */
+.thumb__num {
+	position: absolute;
+	top: var(--sp-1);
+	left: var(--sp-1);
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: color-mix( in srgb, var(--ink) 70%, transparent );
+	color: var(--paper);
+	font-family: var(--readout);
+	font-size: var(--fs-10);
+	font-weight: 700;
+	border-radius: var(--nop-radius-pill);
+	pointer-events: none;
+}
 .alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {

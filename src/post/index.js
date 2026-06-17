@@ -687,11 +687,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var composeScroll = document.querySelector( '.compose-scroll' );
 	var fadeTop       = document.querySelector( '.scroll-fade-top' );
 	var fadeBottom    = document.querySelector( '.scroll-fade-bottom' );
-	// --reveal (0..1) drives every mask stop's position AND alpha, so the shadow
-	// physically extends from the seam into the content as you scroll — the
-	// finger's distance from rest IS the shadow's depth. RAMP equals the shadow's
-	// visual height, so the mask reaches its full hockey-stick over the same
-	// distance as the shadow's pixel depth — proportional, tactile.
+	// --reveal (0..1) drives the mask's ALPHA only — the shadow is a fixed-depth
+	// layer cast at the seam (its mask stops sit at constant px, see style.scss),
+	// so it fades in over RAMP as you scroll and holds; it never deepens with the
+	// content's length. RAMP is the fade-in distance, not the shadow's pixel depth.
 	function updateScrollFades() {
 		if ( hasScrollTimeline || ! composeScroll ) return;
 		var RAMP  = 240;
@@ -823,8 +822,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 
 	var photoInput   = document.getElementById( 'photoInput' );
-	var photoCapture      = document.getElementById( 'photoCapture' );
-	var photoCaptureInput = document.getElementById( 'photoCaptureInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
 	var specimen      = document.getElementById( 'urlSpecimen' );
@@ -1374,18 +1371,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	} );
 	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
 
-	// Take-a-photo — only useful where there's a camera (a coarse pointer). On a
-	// desktop the capture attribute just opens a file dialog, so we hide the button
-	// there and leave the library dropzone as the one affordance.
-	if ( photoCapture && photoCaptureInput && window.matchMedia && window.matchMedia( '(pointer: coarse)' ).matches ) {
-		photoCapture.hidden = false;
-		photoCapture.addEventListener( 'click', function () { photoCaptureInput.click(); } );
-		photoCaptureInput.addEventListener( 'change', function () {
-			appendFiles( Array.from( photoCaptureInput.files ) );
-			photoCaptureInput.value = '';   // let the same camera fire again next tap
-		} );
-	}
-
 	// Render the selected prints + their alt slips from selectedFiles/photoAlts.
 	// Split out so removePhoto() can re-render after dropping one (alt values kept).
 	function renderThumbs() {
@@ -1399,6 +1384,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			img.src = URL.createObjectURL( file );
 			img.alt = '';
 			cell.appendChild( img );
+			// Ordinal badge — ties each print to its "Alt text N" slip below. Only when
+			// there's more than one (single photo needs no number, like the alt label).
+			if ( selectedFiles.length > 1 ) {
+				var num = document.createElement( 'span' );
+				num.className   = 'thumb__num';
+				num.textContent = i + 1;
+				num.setAttribute( 'aria-hidden', 'true' );   // decorative; aria-labels already carry the ordinal
+				cell.appendChild( num );
+			}
 			var rm = document.createElement( 'button' );
 			rm.type          = 'button';
 			rm.className     = 'thumb__remove';
@@ -1435,15 +1429,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function handleFiles( files ) {
 		selectedFiles = files.slice( 0, 10 );
 		photoAlts     = [];
-		renderThumbs();
-		saveDraft();
-	}
-	// Append (rather than replace) — the path the camera button uses, so a shot adds
-	// to the set you're building. Caps at 10; keeps existing alts aligned by index.
-	function appendFiles( files ) {
-		var room = 10 - selectedFiles.length;
-		if ( room <= 0 || ! files.length ) { return; }
-		selectedFiles = selectedFiles.concat( files.slice( 0, room ) );
 		renderThumbs();
 		saveDraft();
 	}

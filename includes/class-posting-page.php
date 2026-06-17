@@ -617,14 +617,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
 						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
 					</div>
-					<!-- One-tap shoot — shown only on devices with a camera (coarse pointer,
-					     toggled in JS). The capture attribute opens the camera directly and
-					     appends the shot to the set rather than replacing the selection. -->
-					<button type="button" class="photo-capture" id="photoCapture" hidden>
-						<span class="photo-capture__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
-						<?php esc_html_e( 'Take a photo', 'nop-indieweb' ); ?>
-					</button>
-					<input type="file" id="photoCaptureInput" accept="image/*" capture="environment" hidden>
 					<div class="thumbnails" id="thumbnails"></div>
 					<div class="alt-texts" id="altTexts"></div>
 				</div>
