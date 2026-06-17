@@ -594,6 +594,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var docketKind   = document.getElementById( 'docketKind' );
 	var docketSerial = document.getElementById( 'docketSerial' );
 	var docketDate   = document.getElementById( 'docketDate' );
+	var kindInfoToggle = document.getElementById( 'kindInfoToggle' );
+	var kindInfo       = document.getElementById( 'kindInfo' );
 	var clearBtn     = document.getElementById( 'clearBtn' );
 	var slipRef      = document.getElementById( 'slipRef' );
 	var slipHost     = document.getElementById( 'slipHost' );
@@ -665,6 +667,19 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( docketKind )   { docketKind.textContent = lbl ? lbl.textContent : type; }
 		if ( docketSerial ) { docketSerial.textContent = TK_ID_PRE + nextSerial; }
 		if ( docketDate )   { var n = new Date(), p = function ( v ) { return ( v < 10 ? '0' : '' ) + v; }; docketDate.textContent = p( n.getDate() ) + '/' + p( n.getMonth() + 1 ) + '/' + n.getFullYear(); }
+		// Refresh the inline explainer for the new kind (stays in sync whether the
+		// panel is open or closed, so flipping through kinds reads each one's blurb).
+		if ( kindInfo ) { kindInfo.textContent = ( NOP.kindInfo && NOP.kindInfo[ type ] ) || ''; }
+	}
+
+	// Tapping the kind title in the filing line reveals a one-line explainer for
+	// the current kind — what it's for, and how it differs from the close ones.
+	if ( kindInfoToggle && kindInfo ) {
+		kindInfoToggle.addEventListener( 'click', function () {
+			var open = kindInfo.hidden;
+			kindInfo.hidden = ! open;
+			kindInfoToggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+		} );
 	}
 
 	// Big rotating prompt overlay — set its text, and fade it once typing starts.

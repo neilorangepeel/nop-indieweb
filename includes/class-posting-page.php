@@ -178,7 +178,7 @@ class Posting_Page {
 // Bump on any change that demands a clean shell refresh on every device. The
 // activate handler deletes every cache whose name doesn't equal CACHE — so
 // changing this string is the textbook way to nuke a stuck precached shell.
-var CACHE = 'nop-post-v9';
+var CACHE = 'nop-post-v10';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -316,6 +316,21 @@ function matchAnyVersion( url ) {
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
 		$cond_dir     = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
+
+		// One-line "what & when" per kind, surfaced inline when the kind title is
+		// tapped (see the docket filing line). Crossover hints in parentheses help
+		// tell the close ones apart (Note/Quote, Like/Bookmark, Repost/Quote, …).
+		$kind_info = [
+			'note'     => __( 'Your own words — a quick thought, no link needed. The everyday default. (For someone else’s words, use Quote.)', 'nop-indieweb' ),
+			'photo'    => __( 'One or more images with an optional caption — lives in your photo grid and on Pixelfed. (For a single vertical, disappearing shot, use Story.)', 'nop-indieweb' ),
+			'reply'    => __( 'A public response to someone else’s post — paste their link; it sends them a webmention. (Just reacting? Use Like.)', 'nop-indieweb' ),
+			'like'     => __( 'A lightweight ♥ of someone else’s post by link — no words. Tells the author you liked it. (To save it for yourself instead, use Bookmark.)', 'nop-indieweb' ),
+			'bookmark' => __( 'Save a link for later with an optional note — for you, not a signal to the author. (To publicly applaud it, use Like.)', 'nop-indieweb' ),
+			'repost'   => __( 'Share someone else’s post as-is to your followers — a boost, no commentary. (To add your own take, use Quote.)', 'nop-indieweb' ),
+			'quote'    => __( 'Share a passage or post with your own commentary around it. (No comment to add? Use Repost. Your own words from scratch? Use Note.)', 'nop-indieweb' ),
+			'story'    => __( 'One vertical photo or short clip, featured 24h then kept in your archive — your in-the-moment kind; posts to the Pixelfed Stories tray. (For a permanent shot in your grid, use Photo.)', 'nop-indieweb' ),
+			'rsvp'     => __( 'Reply yes, no, or maybe to an event by its link — records your attendance and webmentions the host.', 'nop-indieweb' ),
+		];
 
 		// Built app assets (CSS now, the app script next) — version-busted from the
 		// build's asset file so a new build invalidates the URL.
@@ -535,13 +550,21 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     The clear button is the only interactive element on the filing
 				     line, so aria-hidden lives on the inner spans, not the wrapper. -->
 				<div class="docket__header" id="docketHeader">
-					<span class="docket__kind" id="docketKind" aria-hidden="true"></span>
+					<!-- The kind label doubles as the explainer toggle: tap it to reveal
+					     a one-line "what & when" for the current kind (#kindInfo). -->
+					<button type="button" class="docket__kind" id="kindInfoToggle" aria-expanded="false" aria-controls="kindInfo">
+						<span class="docket__kind-name" id="docketKind"></span>
+						<svg class="docket__kind-i" width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z"/></svg>
+						<span class="sr-only"><?php esc_html_e( '— what this kind is for', 'nop-indieweb' ); ?></span>
+					</button>
 					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
 					<span class="docket__date" id="docketDate" aria-hidden="true"></span>
 					<button type="button" class="docket__clear" id="clearBtn" hidden>
 						<?php esc_html_e( 'Clear', 'nop-indieweb' ); ?>
 					</button>
 				</div>
+				<!-- Inline kind explainer — populated/toggled from index.js. -->
+				<p class="docket__kind-info" id="kindInfo" role="note" hidden></p>
 
 				<!-- Printed catalog fields (per kind) -->
 				<div class="docket__fields" id="docketFields">
@@ -844,6 +867,7 @@ window.NOP = {
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
+		kindInfo:    <?php echo wp_json_encode( $kind_info ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
 		postsToday:  <?php echo wp_json_encode( $posts_today ); ?>,
 		lastPostTs:  <?php echo wp_json_encode( $last_post_ts ); ?>,
