@@ -958,8 +958,14 @@ body::before {
    like a catalog card's head. Serial + date file to the right. */
 .docket__header {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: var(--sp-3);
+	/* Reserve the row height for the taller Clear stamp (≈1.2 line-height + 2px
+	   padding + 1px border ≈ 20px) plus this row's padding-bottom + border-bottom,
+	   so popping the stamp in never grows the filing line's height. Horizontal
+	   space still collapses when it's [hidden]; align-items:center keeps the
+	   kind/serial/date labels from shifting vertically as the stamp appears. */
+	min-height: calc( 20px + var(--sp-2) + var(--bw-rule) );
 	padding-bottom: var(--sp-2);
 	border-bottom: var(--bw-rule) solid var(--rule);
 	font-family: var(--display);
@@ -975,8 +981,8 @@ body::before {
 /* Clear stamp — the only interactive element on the filing line. Same muted
    printed-ink display-caps as the kind / serial / date labels, framed by a
    hairline rule like a rubber-stamped action box. Hidden until the form has
-   anything to clear (JS toggles [hidden]); see the [hidden] rule below — its
-   box stays reserved so popping it in never re-flows the filing line's height. */
+   anything to clear (JS toggles [hidden]); it collapses horizontally when empty,
+   while the row's min-height reserves only its height — no vertical re-flow. */
 .docket__clear {
 	appearance: none;
 	margin: 0 0 0 var(--sp-3);
@@ -996,15 +1002,6 @@ body::before {
 .docket__clear:focus-visible {
 	outline: var(--bw-input) solid var(--accent);
 	outline-offset: 2px;
-}
-/* Reserve the stamp's footprint even when empty so popping it in never re-flows
-   the filing line's height — keep the box in layout (visibility, not display);
-   it just isn't painted or focusable until there's something to clear. The
-   reserved space sits at the row's far right, after the right-filed serial/date. */
-.docket__clear[hidden] {
-	display: inline-block !important;   /* beat the global [hidden]{display:none!important} */
-	visibility: hidden;
-	pointer-events: none;
 }
 
 .docket__fields,
@@ -1488,46 +1485,26 @@ body::before {
 	overflow: hidden;
 }
 
-/* Syndicate-to */
-.syndicate-details {
-	border: none;
-	border-top: var(--bw-rule) solid var(--rule);
-}
-.syndicate-summary {
+/* Post options — the "where/how it goes out" controls (opt-in geotag + cross-post
+   targets), gathered into one divided block of consistent toggle rows below the
+   writing area. The :has() rule collapses the whole block (hairline divider and all)
+   when no group is shown — e.g. a kind with no location and zero syndication targets
+   — mirroring the .docket__fields collapse. */
+.post-options {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: var(--sp-3) 0;
-	min-height: 44px;
-	font-family: var(--display);
-	font-size: var(--fs-12);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
-	cursor: pointer;
-	list-style: none;	user-select: none;
+	flex-direction: column;
+	gap: var(--sp-4);
+	border-top: var(--bw-rule) solid var(--rule);
+	padding-top: var(--sp-4);
 }
-.syndicate-summary::-webkit-details-marker { display: none; }
-.syndicate-summary::after {
-	content: '+';
-	font-size: var(--fs-16); font-weight: 700; line-height: 1; letter-spacing: 0;
-}
-details[open] .syndicate-summary::after { content: '\2212'; }
-/* Animated open — interpolate-size lets block-size transition to auto
-   (Chrome 131+ / Safari 18.2+; elsewhere it just opens instantly). */
-.syndicate-details::details-content {
-	block-size: 0;
-	overflow: hidden;
-	interpolate-size: allow-keywords;
-	transition: block-size 0.25s ease, content-visibility 0.25s allow-discrete;
-}
-.syndicate-details[open]::details-content { block-size: auto; }
+.post-options:not(:has(> .post-options__group:not([hidden]))) { display: none; }
+.post-options__group { display: flex; flex-direction: column; }
+
+/* Syndicate-to */
 .syndicators {
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-2);
-	padding: var(--sp-3) 0 var(--sp-1);
 }
 .syndicator-item {
 	display: flex;
@@ -1900,7 +1877,6 @@ details[open] .syndicate-summary::after { content: '\2212'; }
 
 @media (prefers-reduced-motion: reduce) {
 	.btn-primary, .syndicator-box, .syndicator-box svg { transition: none; }
-	.syndicate-details::details-content { transition: none; }
 	.btn-primary:active { transform: none; }
 	.toast { transition: opacity 0.01ms; }
 }

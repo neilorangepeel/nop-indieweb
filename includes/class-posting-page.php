@@ -662,27 +662,37 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<?php endif; ?>
 				</div>
 
-				<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
-				     attaches the device's current place (reverse-geocoded by the /now
-				     endpoint) to the post. Coordinates are only read once you ask for
-				     them here, so a normal post never touches location. -->
-				<div class="field-group" id="fieldLocation" hidden>
-					<label class="location-toggle" id="locationToggle">
-						<input type="checkbox" id="locationCheck" class="sr-only">
-						<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-						<span class="location-toggle__label"><?php esc_html_e( 'Add location', 'nop-indieweb' ); ?></span>
-						<span class="location-toggle__place" id="locationPlace" aria-live="polite" hidden></span>
-					</label>
-				</div>
-
 				</div><!-- .docket__body -->
 				</div><!-- .docket -->
 
-				<!-- Syndicators -->
-				<details class="syndicate-details" id="syndicateDetails" hidden>
-					<summary class="syndicate-summary"><?php esc_html_e( 'Also post to', 'nop-indieweb' ); ?></summary>
-					<div class="syndicators" id="syndicators"></div>
-				</details>
+				<!-- Post options — where/how this goes out: opt-in geotag + cross-post
+				     targets. One divided block of consistent toggle rows; the :has()
+				     rule in style.scss collapses it (divider and all) when no group shows. -->
+				<div class="post-options" id="fieldOptions">
+
+					<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
+					     attaches the device's current place (reverse-geocoded by the /now
+					     endpoint) to the post. Coordinates are only read once you ask for
+					     them here, so a normal post never touches location. #fieldLocation
+					     id kept so switchType() still toggles it. -->
+					<div class="post-options__group" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
+						<span class="field-label" id="optLocationLabel"><?php esc_html_e( 'Location', 'nop-indieweb' ); ?></span>
+						<label class="location-toggle" id="locationToggle">
+							<input type="checkbox" id="locationCheck" class="sr-only">
+							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
+							<span class="location-toggle__label"><?php esc_html_e( 'Add location', 'nop-indieweb' ); ?></span>
+							<span class="location-toggle__place" id="locationPlace" aria-live="polite" hidden></span>
+						</label>
+					</div>
+
+					<!-- Syndication targets (all kinds; Pixelfed photo-only). Rendered by
+					     renderSyndicators() into #syndicators; the group is shown/hidden there. -->
+					<div class="post-options__group" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
+						<span class="field-label" id="optSyndicateLabel"><?php esc_html_e( 'Also post to', 'nop-indieweb' ); ?></span>
+						<div class="syndicators" id="syndicators"></div>
+					</div>
+
+				</div>
 
 				</div><!-- .compose-fields -->
 				<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>

@@ -1075,7 +1075,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 		if ( ! synTo.length ) {
 			box.innerHTML = '';
-			document.getElementById( 'syndicateDetails' ).hidden = true;
+			document.getElementById( 'fieldSyndicate' ).hidden = true;
 			return;
 		}
 		box.innerHTML = synTo.map( function (s) {
@@ -1088,7 +1088,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				+ ( limit ? '<span class="syndicator-item__limit">' + limit + '</span>' : '' )
 				+ '</label>';
 		} ).join( '' );
-		document.getElementById( 'syndicateDetails' ).hidden = false;
+		document.getElementById( 'fieldSyndicate' ).hidden = false;
 		updateCounter();
 	}
 	renderSyndicators();
