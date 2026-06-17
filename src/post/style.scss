@@ -1355,6 +1355,10 @@ body::before {
 	cursor: text;
 }
 .tags-field:focus-within { border-color: var(--accent); }
+/* The chips live in a #tagChips wrapper; display:contents dissolves it so each
+   chip becomes a direct flex item of .tags-field, picking up its gap — otherwise
+   the gap only sits between the wrapper and the input, and chips touch. */
+#tagChips { display: contents; }
 .tag-chip {
 	display: inline-flex;
 	align-items: center;
