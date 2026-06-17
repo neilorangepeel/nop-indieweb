@@ -144,7 +144,7 @@ class Settings_API {
 
 	private function read_syndicators( array $raw ): array {
 		$out = [];
-		foreach ( [ 'mastodon', 'bluesky', 'pixelfed' ] as $slug ) {
+		foreach ( [ 'mastodon', 'bluesky', 'pixelfed', 'tumblr' ] as $slug ) {
 			$s = $raw['syndicators'][ $slug ] ?? [];
 			$out[ $slug ] = [
 				'enabled'        => (bool)   ( $s['enabled']        ?? false ),
