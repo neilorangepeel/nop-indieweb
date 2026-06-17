@@ -500,46 +500,59 @@ abstract class Service_Base {
 			if ( ! is_array( $video ) ) {
 				$video = [ 'primary' => (string) $video ];
 			}
-			$url  = (string) ( $video['primary'] ?? '' );
-			$size = (int) ( $video['size'] ?? 0 );
-			$alt  = (string) ( $video['alt'] ?? '' );
+			$url    = (string) ( $video['primary'] ?? '' );
+			$size   = (int) ( $video['size'] ?? 0 );
+			$alt    = (string) ( $video['alt'] ?? '' );
+			$poster = (string) ( $video['poster'] ?? '' );
 
 			if ( '' === $url ) {
 				continue;
 			}
-			// $size is sender-supplied and can lie — it's only used as an early
-			// reject hint. The real cap is enforced by safe_download_to_tmp().
-			if ( $size > 0 && $size > $cap_bytes ) {
-				\NOP\IndieWeb\nop_indieweb_log( 'Video blob over cap, skipping sideload', [
-					'size' => $size,
-					'cap'  => $cap_bytes,
-					'url'  => $url,
-				] );
-				continue;
-			}
 
-			$tmp = $this->safe_download_to_tmp( $url, $cap_bytes, 120 );
-			if ( is_wp_error( $tmp ) ) {
-				\NOP\IndieWeb\nop_indieweb_log( 'Video download failed', [
-					'url'   => $url,
-					'error' => $tmp->get_error_message(),
-				] );
-				continue;
-			}
+			// A URL already in this site's media library (the /post client uploads
+			// the clip via REST before the Micropub call) is reused as-is — re-parented
+			// to the post rather than re-downloaded, which would duplicate the file.
+			$existing = attachment_url_to_postid( $url );
+			if ( $existing ) {
+				if ( 0 === (int) get_post( $existing )->post_parent ) {
+					wp_update_post( [ 'ID' => $existing, 'post_parent' => $post_id ] );
+				}
+				$id = $existing;
+			} else {
+				// $size is sender-supplied and can lie — it's only used as an early
+				// reject hint. The real cap is enforced by safe_download_to_tmp().
+				if ( $size > 0 && $size > $cap_bytes ) {
+					\NOP\IndieWeb\nop_indieweb_log( 'Video blob over cap, skipping sideload', [
+						'size' => $size,
+						'cap'  => $cap_bytes,
+						'url'  => $url,
+					] );
+					continue;
+				}
 
-			$file = [
-				'name'     => 'video-' . substr( md5( $url ), 0, 12 ) . '.mp4',
-				'tmp_name' => $tmp,
-			];
+				$tmp = $this->safe_download_to_tmp( $url, $cap_bytes, 120 );
+				if ( is_wp_error( $tmp ) ) {
+					\NOP\IndieWeb\nop_indieweb_log( 'Video download failed', [
+						'url'   => $url,
+						'error' => $tmp->get_error_message(),
+					] );
+					continue;
+				}
 
-			$id = media_handle_sideload( $file, $post_id );
-			if ( is_wp_error( $id ) ) {
-				\NOP\IndieWeb\nop_indieweb_log( 'Video sideload failed', [
-					'url'   => $url,
-					'error' => $id->get_error_message(),
-				] );
-				wp_delete_file( $tmp );
-				continue;
+				$file = [
+					'name'     => 'video-' . substr( md5( $url ), 0, 12 ) . '.mp4',
+					'tmp_name' => $tmp,
+				];
+
+				$id = media_handle_sideload( $file, $post_id );
+				if ( is_wp_error( $id ) ) {
+					\NOP\IndieWeb\nop_indieweb_log( 'Video sideload failed', [
+						'url'   => $url,
+						'error' => $id->get_error_message(),
+					] );
+					wp_delete_file( $tmp );
+					continue;
+				}
 			}
 
 			if ( '' !== $alt ) {
@@ -554,6 +567,22 @@ abstract class Service_Base {
 					'post_excerpt' => $alt,
 				] );
 			}
+
+			// Poster frame (e.g. a story's captured first frame): sideload/reuse it as
+			// an image — this also sets it as the post's featured image (the rail + grid
+			// thumbnail) when none is set — and record its URL on the video attachment so
+			// build_video_blocks() can emit a poster="" attribute.
+			if ( '' !== $poster ) {
+				$poster_ids = $this->sideload_photos( [ $poster ], $post_id );
+				$poster_id  = $poster_ids[0] ?? 0;
+				if ( $poster_id ) {
+					$poster_url = (string) wp_get_attachment_url( $poster_id );
+					if ( '' !== $poster_url ) {
+						update_post_meta( (int) $id, '_nop_video_poster', $poster_url );
+					}
+				}
+			}
+
 			$ids[] = (int) $id;
 		}
 
@@ -576,9 +605,12 @@ abstract class Service_Base {
 			$fig_html = '' !== $caption
 				? '<figcaption class="wp-element-caption">' . esc_html( $caption ) . '</figcaption>'
 				: '';
-			$blocks[] = sprintf(
-				"<!-- wp:video {\"id\":%d} -->\n<figure class=\"wp-block-video\"><video controls src=\"%s\"></video>%s</figure>\n<!-- /wp:video -->",
+			$poster      = (string) get_post_meta( $id, '_nop_video_poster', true );
+			$poster_attr = '' !== $poster ? sprintf( ' poster="%s"', esc_url( $poster ) ) : '';
+			$blocks[]    = sprintf(
+				"<!-- wp:video {\"id\":%d} -->\n<figure class=\"wp-block-video\"><video controls%s src=\"%s\"></video>%s</figure>\n<!-- /wp:video -->",
 				$id,
+				$poster_attr,
 				esc_url( $src ),
 				$fig_html
 			);

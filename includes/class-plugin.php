@@ -22,6 +22,7 @@ use NOP\IndieWeb\Services\Bookmark;
 use NOP\IndieWeb\Services\Reply;
 use NOP\IndieWeb\Services\Like;
 use NOP\IndieWeb\Services\Repost;
+use NOP\IndieWeb\Services\Quote;
 use NOP\IndieWeb\Services\RSVP;
 use NOP\IndieWeb\Services\Exercise;
 use NOP\IndieWeb\Semantic\Semantic_Markup;
@@ -171,6 +172,7 @@ class Plugin {
 			new Reply(),
 			new Like(),
 			new Repost(),
+			new Quote(),
 			new Exercise(),
 			$note,
 		] );

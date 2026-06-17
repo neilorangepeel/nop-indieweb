@@ -47,6 +47,8 @@
 	--violet:   light-dark(#6A4ACF, #A78FE8);
 	--orange:   light-dark(#B4500A, #FF9A3C);
 	--magenta:  light-dark(#C81E66, #FF6FA3);
+	--amber:    light-dark(#9A6B0F, #E3B24A);
+	--indigo:   light-dark(#3F3DBF, #9B99F2);
 	--charcoal: light-dark(#1A1A1A, #F4EFE6);
 
 	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
@@ -145,6 +147,8 @@
 .app[data-type="like"]     { --ink: var(--red); }
 .app[data-type="bookmark"] { --ink: var(--green); }
 .app[data-type="repost"]   { --ink: var(--violet); }
+.app[data-type="quote"]    { --ink: var(--amber); }
+.app[data-type="story"]    { --ink: var(--indigo); }
 .app[data-type="rsvp"]     { --ink: var(--magenta); }
 
 html {
@@ -1166,6 +1170,9 @@ body::before {
 }
 .text-field:focus { border-color: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
+/* Quote commentary — a short multi-line note; the input look, just taller and
+   vertically resizable. line-height relaxes the cramped single-line metrics. */
+.text-field--note { line-height: 1.4; resize: vertical; }
 /* Shared keyboard-focus ring across every control (inputs, rsvp buttons, toggles) —
    the same accent outline the Clear stamp uses, so focus reads consistently. */
 .text-field:focus-visible,
@@ -1250,6 +1257,59 @@ body::before {
 .photo-picker-icon { display: block; margin-bottom: 8px; }
 .photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 700; letter-spacing: 0; }
 .photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
+
+/* Story video picker. Empty state is the same compact dashed dropzone as the photo
+   picker; a chosen clip previews CONTAINED (not full-bleed) so it doesn't blow up the
+   scroll. When a clip is present the wrapper shrinks to it so the corner remove stamp
+   lands on the video. */
+.story-picker { position: relative; }
+.story-picker input[type="file"] { display: none; }
+.story-picker__prompt {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	width: 100%;
+	background: transparent;
+	border: var(--bw-input) dashed var(--ink-30);
+	border-radius: var(--radius);
+	padding: var(--sp-6) var(--sp-4);
+	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
+	font-family: var(--readout);
+	cursor: pointer;
+}
+.story-picker__prompt:active { border-style: solid; border-color: var(--accent); }
+.story-picker__prompt p     { font-size: 16px; font-weight: 700; }
+.story-picker__prompt small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; }
+.story-picker:has( .story-picker__preview:not([hidden]) ) {
+	width: fit-content;
+	max-width: 100%;
+	margin-inline: auto;
+}
+.story-picker__preview {
+	display: block;
+	max-height: 280px;
+	max-width: 100%;
+	background: #000;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: var(--radius);
+}
+.story-picker__remove {
+	position: absolute;
+	top: var(--sp-2);
+	right: var(--sp-2);
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	background: var(--accent);
+	color: var(--on-accent);
+	border: var(--bw) solid var(--field);
+	border-radius: var(--nop-radius-pill);
+	cursor: pointer;
+}
+.story-picker__remove svg { display: block; }
 
 .thumbnails {
 	display: grid;

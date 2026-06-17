@@ -64,7 +64,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// Each kind owns a hue. .app[data-type] sets --ink on .app via CSS (instant);
 	// body + html sit outside .app, so mirror the kind's ink onto :root too — the
 	// status-bar accent and the desktop field read it there.
-	var KIND_VAR = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet', rsvp: '--magenta' };
+	var KIND_VAR = { note: '--teal', photo: '--blue', reply: '--orange', like: '--red', bookmark: '--green', repost: '--violet', quote: '--amber', story: '--indigo', rsvp: '--magenta' };
 	var root     = document.documentElement;
 	function setInk( type ) {
 		root.style.setProperty( '--ink', 'var(' + ( KIND_VAR[ type ] || '--red' ) + ')' );
@@ -566,6 +566,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
 		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: false, urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
+		quote:    { urlProp: 'quotation-of', hasContent: true,  hasTags: false, urlLabel: 'Quoting', contentPlaceholder: 'The passage you’re quoting…', hasQuoteComment: true },
+		story:    { urlProp: null,           hasContent: true,  hasTags: false, hasVideo: true, contentPlaceholder: 'Add a caption (optional)…' },
 		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true },
 	};
 
@@ -824,6 +826,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var photoInput   = document.getElementById( 'photoInput' );
 	var thumbs       = document.getElementById( 'thumbnails' );
 	var altTexts     = document.getElementById( 'altTexts' );
+	var quoteComment      = document.getElementById( 'quoteComment' );
+	var fieldQuoteComment = document.getElementById( 'fieldQuoteComment' );
+	var fieldStory    = document.getElementById( 'fieldStory' );
+	var storyInput    = document.getElementById( 'storyInput' );
+	var storyPrompt   = document.getElementById( 'storyPrompt' );
+	var storyPreview  = document.getElementById( 'storyPreview' );
+	var storyRemove   = document.getElementById( 'storyRemove' );
+	var storyVideo      = null;   // { blob, name, type } — the picked clip
+	var storyPoster     = null;   // { blob, name, type } — captured first frame (optional)
+	var storyPreviewUrl = '';     // object URL for the <video> preview
 	var specimen      = document.getElementById( 'urlSpecimen' );
 	var specimenGlyph = document.getElementById( 'specimenGlyph' );
 	var specimenHint  = document.getElementById( 'specimenHint' );
@@ -1239,6 +1251,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		fieldContent.hidden = ! cfg.hasContent;
 		fieldTags.hidden    = ! cfg.hasTags;
 		if ( fieldLocation ) { fieldLocation.hidden = ! cfg.hasLocation; }
+		if ( fieldQuoteComment ) { fieldQuoteComment.hidden = ! cfg.hasQuoteComment; }
+		if ( fieldStory ) { fieldStory.hidden = ! cfg.hasVideo; }
 
 		// Note = a body-only card (the pure ruled writing page); every other kind
 		// carries a printed-fields region.
@@ -1293,7 +1307,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function updatePostBtn() {
 		var cfg     = TYPE_CONFIG[ currentType ];
 		var enabled = false;
-		if ( currentType === 'photo' ) {
+		if ( cfg.hasVideo ) {
+			enabled = !! storyVideo;
+		} else if ( currentType === 'photo' ) {
 			enabled = selectedFiles.length > 0;
 		} else if ( cfg.urlProp ) {
 			enabled = urlInput.value.trim().length > 0;
@@ -1313,6 +1329,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function hasFormContent() {
 		if ( urlInput.value.trim() )       { return true; }
 		if ( contentInput.value.trim() )   { return true; }
+		if ( storyVideo )                  { return true; }
 		if ( selectedFiles.length )        { return true; }
 		if ( currentTags.length )          { return true; }
 		if ( eventName && eventName.value.trim() )           { return true; }
@@ -1370,6 +1387,73 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		handleFiles( Array.from( e.dataTransfer.files ).filter( function (f) { return f.type.startsWith( 'image/' ); } ) );
 	} );
 	photoInput.addEventListener( 'change', function () { handleFiles( Array.from( photoInput.files ) ); } );
+
+	// ── Story video picker ──────────────────────────────────────────────────────
+	// One short self-hosted clip. The prompt taps through to the file input (the
+	// `capture` attr lets a phone record straight in); on load we grab a poster
+	// frame off a <canvas> so the rail/grid has a thumbnail. The writing area is
+	// the optional caption. The blob rides in the post (structured-clone through
+	// IndexedDB) so an offline story still replays.
+	if ( storyInput && storyPrompt ) {
+		storyPrompt.addEventListener( 'click', function () { storyInput.click(); } );
+		storyInput.addEventListener( 'change', function () {
+			var f = storyInput.files && storyInput.files[0];
+			if ( f ) { setStoryVideo( f ); }
+		} );
+	}
+	if ( storyRemove ) { storyRemove.addEventListener( 'click', clearStoryVideo ); }
+
+	function setStoryVideo( file ) {
+		clearStoryVideo();
+		storyVideo      = { blob: file, name: file.name || 'story.mp4', type: file.type || 'video/mp4' };
+		storyPreviewUrl = URL.createObjectURL( file );
+		if ( storyPreview ) {
+			storyPreview.src    = storyPreviewUrl;
+			storyPreview.hidden = false;
+			storyPreview.addEventListener( 'loadeddata', captureStoryPoster, { once: true } );
+		}
+		if ( storyPrompt ) { storyPrompt.hidden = true; }
+		if ( storyRemove ) { storyRemove.hidden = false; }
+		updatePostBtn();
+	}
+
+	// Draw the (slightly-seeked, to dodge a black frame) first frame to a canvas and
+	// keep the JPEG as the poster. Best-effort — a codec the browser can't decode to
+	// canvas just leaves storyPoster null and the rail falls back to the video frame.
+	function captureStoryPoster() {
+		var v = storyPreview;
+		if ( ! v ) { return; }
+		var grab = function () {
+			try {
+				var w = v.videoWidth || 720, h = v.videoHeight || 1280;
+				var c = document.createElement( 'canvas' );
+				c.width = w; c.height = h;
+				c.getContext( '2d' ).drawImage( v, 0, 0, w, h );
+				c.toBlob( function ( b ) {
+					if ( b ) { storyPoster = { blob: b, name: 'poster.jpg', type: 'image/jpeg' }; }
+				}, 'image/jpeg', 0.82 );
+			} catch ( e ) {}
+		};
+		try {
+			if ( v.currentTime < 0.1 && v.duration > 0.2 ) {
+				v.addEventListener( 'seeked', grab, { once: true } );
+				v.currentTime = Math.min( 0.1, v.duration / 2 );
+			} else {
+				grab();
+			}
+		} catch ( e ) { grab(); }
+	}
+
+	function clearStoryVideo() {
+		storyVideo  = null;
+		storyPoster = null;
+		if ( storyPreviewUrl ) { URL.revokeObjectURL( storyPreviewUrl ); storyPreviewUrl = ''; }
+		if ( storyPreview ) { storyPreview.removeAttribute( 'src' ); storyPreview.hidden = true; if ( storyPreview.load ) { storyPreview.load(); } }
+		if ( storyPrompt ) { storyPrompt.hidden = false; }
+		if ( storyRemove ) { storyRemove.hidden = true; }
+		if ( storyInput )  { storyInput.value = ''; }
+		updatePostBtn();
+	}
 
 	// Render the selected prints + their alt slips from selectedFiles/photoAlts.
 	// Split out so removePhoto() can re-render after dropping one (alt values kept).
@@ -1550,6 +1634,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			type:        currentType,
 			content:     contentInput.value.trim(),
 			url:         urlInput.value.trim(),
+			quoteComment: quoteComment ? quoteComment.value.trim() : '',
 			rsvp:        currentRsvp,
 			event:       {
 				name:     eventName ? eventName.value.trim() : '',
@@ -1563,6 +1648,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				: null,
 			syndicateTo: Array.from( document.querySelectorAll( '#syndicators input[type="checkbox"]:checked' ), function ( cb ) { return cb.value; } ),
 			files:       files,
+			// Story clip + poster blobs (structured-clone survives the IndexedDB queue).
+			video:       ( TYPE_CONFIG[ currentType ].hasVideo && storyVideo ) ? storyVideo : null,
+			poster:      ( TYPE_CONFIG[ currentType ].hasVideo && storyPoster ) ? storyPoster : null,
 		};
 	}
 
@@ -1573,15 +1661,25 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( post.files && post.files.length ) {
 			for ( var i = 0; i < post.files.length; i++ ) {
 				if ( onProgress ) { onProgress( 'Uploading ' + ( i + 1 ) + ' of ' + post.files.length + '…', ( i / post.files.length ) * 0.75 ); }
-				var up = await uploadPhoto( post.files[ i ].blob, post.files[ i ].name, post.files[ i ].type );
+				var up = await uploadMedia( post.files[ i ].blob, post.files[ i ].name, post.files[ i ].type );
 				photoUrls.push( up.source_url );
+			}
+		}
+		// Story video (+ optional poster) — uploaded to our own media library so the
+		// server reuses the attachment rather than re-downloading.
+		var media = { videoUrl: '', posterUrl: '' };
+		if ( post.video && post.video.blob ) {
+			if ( onProgress ) { onProgress( 'Uploading video…', 0.45 ); }
+			media.videoUrl = ( await uploadMedia( post.video.blob, post.video.name, post.video.type ) ).source_url;
+			if ( post.poster && post.poster.blob ) {
+				try { media.posterUrl = ( await uploadMedia( post.poster.blob, post.poster.name, post.poster.type ) ).source_url; } catch ( e ) {}
 			}
 		}
 		if ( onProgress ) { onProgress( 'Posting…', 0.88 ); }
 		var response = await fetch( NOP.micropubUrl, {
 			method:  'POST',
 			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
-			body:    JSON.stringify( buildPayload( post, photoUrls ) ),
+			body:    JSON.stringify( buildPayload( post, photoUrls, media ) ),
 		} );
 		if ( response.status !== 201 ) {
 			var errBody = await response.json().catch( function () { return {}; } );
@@ -1594,17 +1692,33 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		};
 	}
 
-	function buildPayload( post, photoUrls ) {
+	function buildPayload( post, photoUrls, media ) {
 		var cfg   = TYPE_CONFIG[ post.type ];
 		var props = {};
+		media = media || {};
 
 		props[ 'post-kind' ] = [ post.type ];
 
-		if ( post.content && cfg.hasContent ) { props.content = [ post.content ]; }
+		// For a story the caption rides as the video's alt (→ figcaption under the
+		// clip), so don't also emit it as the post content.
+		if ( post.content && cfg.hasContent && ! cfg.hasVideo ) { props.content = [ post.content ]; }
+
+		// Story: the self-hosted clip (+ optional poster frame). The server (Note
+		// service → sideload_videos) reuses our uploaded attachment, sets the poster
+		// as the featured image, and builds the wp:video block.
+		if ( cfg.hasVideo && media.videoUrl ) {
+			var v = { primary: media.videoUrl };
+			if ( media.posterUrl ) { v.poster = media.posterUrl; }
+			if ( post.content )    { v.alt    = post.content; }
+			props.video = [ v ];
+		}
 
 		// RSVP rides on in-reply-to (the event URL); the rsvp property is what makes
 		// the server resolve it as an RSVP rather than a plain reply.
 		if ( cfg.urlProp && post.url ) { props[ cfg.urlProp ] = [ post.url ]; }
+		// Quote: content is the passage (→ blockquote); the optional comment rides as
+		// a custom property the Quote service renders under the quote.
+		if ( cfg.hasQuoteComment && post.quoteComment ) { props[ 'quote-comment' ] = [ post.quoteComment ]; }
 		if ( cfg.hasRsvp ) {
 			props.rsvp = [ post.rsvp ];
 			// Event detail (h-event) carried as extra Micropub properties; the RSVP
@@ -1644,13 +1758,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return { type: [ 'h-entry' ], properties: props };
 	}
 
-	async function uploadPhoto( blob, name, type ) {
+	// Upload any media blob (photo / story video / poster) to the Micropub media
+	// endpoint. The endpoint replies 201 with the attachment URL in the Location
+	// header (no JSON body), so read it from there; wrapped as { source_url } so the
+	// photo caller is unchanged.
+	async function uploadMedia( blob, name, type ) {
 		var res = await fetch( NOP.mediaUrl, {
 			method:  'POST',
 			headers: {
 				'X-WP-Nonce':          nonce,
-				'Content-Disposition': 'attachment; filename="' + ( name || 'photo.jpg' ) + '"',
-				'Content-Type':        type || 'image/jpeg',
+				'Content-Disposition': 'attachment; filename="' + ( name || 'upload' ) + '"',
+				'Content-Type':        type || 'application/octet-stream',
 			},
 			body: blob,
 		} );
@@ -1658,7 +1776,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var err = await res.json().catch( function () { return {}; } );
 			throw new Error( err.message || 'Upload failed (' + res.status + ')' );
 		}
-		return res.json();
+		return { source_url: res.headers.get( 'Location' ) || '' };
 	}
 
 	// ── Offline queue (IndexedDB) + replay ───────────────────────────────────────
@@ -1834,6 +1952,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function clearFields() {
 		selectedFiles = []; photoAlts = []; currentTags = [];
 		contentInput.value = ''; urlInput.value = '';
+		if ( quoteComment )   { quoteComment.value   = ''; }
+		if ( typeof clearStoryVideo === 'function' ) { clearStoryVideo(); }
 		if ( eventName )      { eventName.value      = ''; }
 		if ( eventStartDate ) { eventStartDate.value = ''; }
 		if ( eventStartTime ) { eventStartTime.value = ''; }
@@ -1916,6 +2036,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				type:    currentType,
 				content: contentInput.value,
 				url:     urlInput.value,
+				quoteComment: quoteComment ? quoteComment.value : '',
 				tags:    currentTags,
 				rsvp:    currentRsvp,
 				location: includeLocation,
@@ -1942,6 +2063,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( d.type && TYPE_CONFIG[ d.type ] ) switchType( d.type );
 		if ( typeof d.content === 'string' ) contentInput.value = d.content;
 		if ( typeof d.url === 'string' ) urlInput.value = d.url;
+		if ( quoteComment && typeof d.quoteComment === 'string' ) quoteComment.value = d.quoteComment;
 		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
 		if ( d.rsvp ) {
 			currentRsvp = d.rsvp;

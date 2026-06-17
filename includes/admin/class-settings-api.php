@@ -165,7 +165,7 @@ class Settings_API {
 	}
 
 	private function read_services( array $raw ): array {
-		$kinds = [ 'bookmark', 'reply', 'like', 'repost', 'rsvp' ];
+		$kinds = [ 'bookmark', 'reply', 'like', 'repost', 'quote', 'rsvp' ];
 		$out   = [];
 
 		$e = $raw['services']['entries'] ?? [];
@@ -452,7 +452,7 @@ class Settings_API {
 		}
 
 		// — Interaction kinds ——————————————————————————————————————————————————
-		foreach ( [ 'bookmark', 'reply', 'like', 'repost', 'rsvp' ] as $kind ) {
+		foreach ( [ 'bookmark', 'reply', 'like', 'repost', 'quote', 'rsvp' ] as $kind ) {
 			$in = $input['services'][ $kind ] ?? null;
 			if ( ! is_array( $in ) ) {
 				continue;

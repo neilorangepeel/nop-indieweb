@@ -103,6 +103,11 @@ class Template_Registrar {
 				'description' => __( 'Displays a workout post with activity stats (distance, duration, pace) and a start-location map.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-exercise.html',
 			],
+			'nop-indieweb//single-nop_kind-story' => [
+				'title'       => __( 'Single – Story', 'nop-indieweb' ),
+				'description' => __( 'Displays a story post with the self-hosted video as the primary content.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-story.html',
+			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
 			'nop-indieweb//taxonomy-nop_kind-watch' => [
@@ -164,6 +169,11 @@ class Template_Registrar {
 				'title'       => __( 'Archive – Videos', 'nop-indieweb' ),
 				'description' => __( 'Chronological stream of video posts.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-video.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind-story' => [
+				'title'       => __( 'Archive – Stories', 'nop-indieweb' ),
+				'description' => __( 'Poster grid of all story videos — the permanent archive the 24h rail falls back to.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind-story.html',
 			],
 			'nop-indieweb//taxonomy-nop_kind-exercise' => [
 				'title'       => __( 'Archive – Exercise', 'nop-indieweb' ),

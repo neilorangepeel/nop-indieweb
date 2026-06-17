@@ -67,6 +67,7 @@ class Endpoint {
 					[ 'type' => 'bookmark', 'name' => 'Bookmark' ],
 					[ 'type' => 'like',     'name' => 'Like' ],
 					[ 'type' => 'repost',   'name' => 'Repost' ],
+					[ 'type' => 'quote',    'name' => 'Quote' ],
 					[ 'type' => 'reply',    'name' => 'Reply' ],
 					[ 'type' => 'rsvp',     'name' => 'RSVP' ],
 					[ 'type' => 'checkin',  'name' => 'Checkin' ],

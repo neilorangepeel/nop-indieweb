@@ -123,7 +123,7 @@ class Note extends Service_Base {
 
 	public function get_kind( array $parsed = [] ): string {
 		$explicit = $parsed['kind'] ?? '';
-		if ( in_array( $explicit, [ 'photo', 'note', 'article' ], true ) ) {
+		if ( in_array( $explicit, [ 'photo', 'video', 'story', 'note', 'article' ], true ) ) {
 			return $explicit;
 		}
 		return ! empty( $parsed['is_article'] ) ? 'article' : 'note';

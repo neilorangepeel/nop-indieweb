@@ -16,6 +16,37 @@ class Pattern_Registrar {
 
 	public function register(): void {
 		add_action( 'init', [ $this, 'register_patterns' ] );
+		// Extend the core Query Loop used by the Stories rail pattern: scope it to the
+		// story kind and the last 24h. Keyed on the query's `namespace` so it only
+		// touches that one loop — every other Query Loop is left untouched.
+		add_filter( 'query_loop_block_query_vars', [ $this, 'stories_rail_query_vars' ], 10, 2 );
+	}
+
+	/**
+	 * @param array<string,mixed> $query
+	 * @param \WP_Block            $block
+	 * @return array<string,mixed>
+	 */
+	public function stories_rail_query_vars( array $query, $block ): array {
+		$namespace = $block->context['query']['namespace'] ?? '';
+		if ( 'nop-indieweb/stories-rail' !== $namespace ) {
+			return $query;
+		}
+		$query['post_type'] = 'post';
+		$query['tax_query'] = [
+			[
+				'taxonomy' => \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => 'story',
+			],
+		];
+		$query['date_query'] = [
+			[
+				'after'     => '24 hours ago',
+				'inclusive' => true,
+			],
+		];
+		return $query;
 	}
 
 	public function register_patterns(): void {
@@ -510,6 +541,32 @@ HTML,
 </div>
 <!-- /wp:group -->
 
+</div>
+<!-- /wp:group -->
+HTML,
+		] );
+
+		register_block_pattern( 'nop-indieweb/stories-rail', [
+			'title'         => __( 'Stories Rail', 'nop-indieweb' ),
+			'description'   => __( 'A horizontal rail of story-kind videos from the last 24 hours. Core Query Loop showing each story\'s poster (featured image) linked to its permalink; drops to the Story archive once they age out. Drop it at the top of your home template.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'stories', 'story', 'video', 'rail', 'recent', 'indieweb' ],
+			'viewportWidth' => 900,
+			'content'       => <<<'HTML'
+<!-- wp:group {"className":"is-style-stories-rail","metadata":{"name":"Stories"},"align":"wide","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide is-style-stories-rail">
+<!-- wp:query {"query":{"perPage":12,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","inherit":false,"namespace":"nop-indieweb/stories-rail"},"align":"wide"} -->
+<div class="wp-block-query alignwide">
+<!-- wp:post-template {"layout":{"type":"flex","orientation":"horizontal","flexWrap":"nowrap"}} -->
+<!-- wp:post-featured-image {"isLink":true,"aspectRatio":"9/16","width":"112px","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} /-->
+<!-- /wp:post-template -->
+<!-- wp:query-no-results -->
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.8125rem"}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.8125rem">No stories in the last 24 hours.</p>
+<!-- /wp:paragraph -->
+<!-- /wp:query-no-results -->
+</div>
+<!-- /wp:query -->
 </div>
 <!-- /wp:group -->
 HTML,

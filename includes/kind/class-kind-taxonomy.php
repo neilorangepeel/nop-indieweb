@@ -36,6 +36,7 @@ class Kind_Taxonomy {
 		'photo'    => 'Photo',
 		'quote'    => 'Quote',
 		'video'    => 'Video',
+		'story'    => 'Story',
 	];
 
 	const KIND_DESCRIPTIONS = [
@@ -53,6 +54,7 @@ class Kind_Taxonomy {
 		'photo'      => 'A post where an image is the primary content.',
 		'quote'      => 'A quotation from elsewhere, with attribution.',
 		'video'      => 'A post where a video is the primary content.',
+		'story'      => 'A short self-hosted video, featured for 24h then kept in the archive.',
 		'collection' => 'Ownership of a physical or digital media item.',
 		'music'      => 'A music album or release in the collection.',
 		'film'       => 'A film owned on physical or digital media.',
@@ -97,6 +99,7 @@ class Kind_Taxonomy {
 		'bookmark'   => 'journal',
 		'rsvp'       => 'journal',
 		'quote'      => 'journal',
+		'story'      => 'journal',
 	];
 
 	// collection → {music, film, book}; format detail (vinyl, cd, dvd, etc.) goes on tags.
@@ -372,6 +375,12 @@ class Kind_Taxonomy {
 			],
 			'video' => [
 				'label'          => __( 'Video', 'nop-indieweb' ),
+				'fields'         => [],
+				'layout'         => '<!-- wp:video /--><!-- wp:paragraph /-->',
+				'title_from_url' => false,
+			],
+			'story' => [
+				'label'          => __( 'Story', 'nop-indieweb' ),
 				'fields'         => [],
 				'layout'         => '<!-- wp:video /--><!-- wp:paragraph /-->',
 				'title_from_url' => false,

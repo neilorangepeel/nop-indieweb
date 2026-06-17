@@ -505,6 +505,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<span class="type-btn__label"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></span>
 					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-repost-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-repost-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-repost-t" startOffset="50%"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-repost-b" startOffset="50%"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></textPath></text></svg>
 				</button>
+				<button class="type-btn" data-type="quote" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M100,56H40A16,16,0,0,0,24,72v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,100,56Zm0,80H40V72h60ZM216,56H156a16,16,0,0,0-16,16v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,216,56Zm0,80H156V72h60Z"/></svg></span>
+					<span class="type-btn__label"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></span>
+					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-quote-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-quote-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-quote-t" startOffset="50%"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-quote-b" startOffset="50%"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></textPath></text></svg>
+				</button>
+				<button class="type-btn" data-type="story" aria-pressed="false" type="button">
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,88h80v80H40Zm96-16V56h32V72Zm-16,0H88V56h32Zm0,112v16H88V184Zm16,0h32v16H136Zm0-16V88h80v80Zm80-96H184V56h32ZM72,56V72H40V56ZM40,184H72v16H40Zm176,16H184V184h32v16Z"/></svg></span>
+					<span class="type-btn__label"><?php esc_html_e('Story', 'nop-indieweb' ); ?></span>
+					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-story-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-story-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-story-t" startOffset="50%"><?php esc_html_e('Story', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-story-b" startOffset="50%"><?php esc_html_e('Story', 'nop-indieweb' ); ?></textPath></text></svg>
+				</button>
 				<button class="type-btn" data-type="rsvp" aria-pressed="false" type="button">
 					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-29.66-85.66a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L124,164.69l42.34-42.35A8,8,0,0,1,178.34,122.34Z"/></svg></span>
 					<span class="type-btn__label"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></span>
@@ -629,6 +639,23 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<!-- Ruled writing area -->
 				<div class="docket__body" id="docketBody">
 
+				<!-- Story video (story) — pick or record one short clip; the writing area
+				     below is the optional caption. A poster frame is captured client-side. -->
+				<div class="field-group" id="fieldStory" hidden>
+					<div class="story-picker" id="storyPicker">
+						<input type="file" id="storyInput" accept="video/*">
+						<button type="button" class="story-picker__prompt" id="storyPrompt">
+							<span class="story-picker__icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,88h80v80H40Zm96-16V56h32V72Zm-16,0H88V56h32Zm0,112v16H88V184Zm16,0h32v16H136Zm0-16V88h80v80Zm80-96H184V56h32ZM72,56V72H40V56ZM40,184H72v16H40Zm176,16H184V184h32v16Z"/></svg></span>
+							<p><?php esc_html_e( 'Pick or record a clip', 'nop-indieweb' ); ?></p>
+							<small><?php esc_html_e( 'A short vertical video', 'nop-indieweb' ); ?></small>
+						</button>
+						<video class="story-picker__preview" id="storyPreview" playsinline muted controls hidden></video>
+						<button type="button" class="story-picker__remove" id="storyRemove" hidden aria-label="<?php esc_attr_e( 'Remove video', 'nop-indieweb' ); ?>">
+							<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>
+						</button>
+					</div>
+				</div>
+
 				<!-- Content -->
 				<div class="field-group" id="fieldContent">
 					<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
@@ -638,6 +665,15 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 					<div class="compose-meta">
 						<span class="char-count" id="charCount" aria-live="polite" hidden></span>
+					</div>
+				</div>
+
+				<!-- Quote commentary (quote) — optional note shown under the quoted
+				     passage; the writing area above holds the passage itself. -->
+				<div class="field-row" id="fieldQuoteComment" hidden>
+					<label class="field-row__label" for="quoteComment"><?php esc_html_e( 'Comment', 'nop-indieweb' ); ?></label>
+					<div class="field-row__field">
+						<textarea id="quoteComment" class="text-field text-field--note" rows="2" placeholder="<?php esc_attr_e( 'Add your thoughts (optional)…', 'nop-indieweb' ); ?>" autocomplete="off"></textarea>
 					</div>
 				</div>
 

@@ -46,6 +46,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-bookmark.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-reply.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-like.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-repost.php';
+require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-quote.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-rsvp.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-exercise.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-taxonomy.php';
