@@ -1806,10 +1806,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		return { type: [ 'h-entry' ], properties: props };
 	}
 
-	// Upload any media blob (photo / story video / poster) to the Micropub media
-	// endpoint. The endpoint replies 201 with the attachment URL in the Location
-	// header (no JSON body), so read it from there; wrapped as { source_url } so the
-	// photo caller is unchanged.
+	// Upload any media blob (photo / story video / poster) to the WP REST media
+	// endpoint (NOP.mediaUrl = wp/v2/media). The 201 response BODY is the
+	// attachment object — read its `source_url` (the real file URL). Do NOT use
+	// the Location header here: on the core media endpoint that's the REST
+	// resource URL (…/wp-json/wp/v2/media/<id>), which the server can't sideload.
 	async function uploadMedia( blob, name, type ) {
 		var res = await fetch( NOP.mediaUrl, {
 			method:  'POST',
@@ -1824,7 +1825,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var err = await res.json().catch( function () { return {}; } );
 			throw new Error( err.message || 'Upload failed (' + res.status + ')' );
 		}
-		return { source_url: res.headers.get( 'Location' ) || '' };
+		var body = await res.json().catch( function () { return {}; } );
+		return { source_url: body.source_url || '' };
 	}
 
 	// ── Offline queue (IndexedDB) + replay ───────────────────────────────────────
