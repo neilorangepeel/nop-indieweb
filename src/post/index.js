@@ -196,30 +196,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var d = new Date();
 		return 'Day ' + Math.round( ( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) - Date.UTC( d.getFullYear(), 0, 0 ) ) / 86400000 );
 	}
-	// Consecutive days with a post (the daily counters bumpStreak writes). Today
-	// not-yet-posted doesn't break a run standing on yesterday.
-	function streakCount() {
-		var n = 0, d = new Date(), first = true, v;
-		for ( var i = 0; i < 366; i++ ) {
-			try { v = localStorage.getItem( 'nop_post_count_' + d.toISOString().slice( 0, 10 ) ); } catch ( e ) { break; }
-			if ( v && parseInt( v, 10 ) > 0 ) { n++; }
-			else if ( ! first ) { break; }
-			first = false;
-			d.setDate( d.getDate() - 1 );
-		}
-		return n;
-	}
-	function tkStreak() { var n = streakCount(); return n >= 2 ? 'Streak: ' + n + 'd' : ''; }
-	// Longest run on record — persisted and reconciled with the current run so a new
-	// best is captured. Shown only when it beats the current streak (else it would
-	// just restate it).
-	function tkBest() {
-		var best = 0;
-		try { best = parseInt( localStorage.getItem( 'nop_best_streak' ) || '0', 10 ) || 0; } catch ( e ) {}
-		var cur = streakCount();
-		if ( cur > best ) { best = cur; try { localStorage.setItem( 'nop_best_streak', String( best ) ); } catch ( e ) {} }
-		return ( best >= 2 && best > cur ) ? 'Best: ' + best + 'd' : '';
-	}
 	// The LIGHT group adapts to the time of day: golden hour always (once /now has
 	// resolved), daylight-left by day or the next sunrise by night, blue hour around
 	// dusk, and the moon phase after dark.
@@ -258,10 +234,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: 'Queue: ' + queueCount } ); }
 		log.push( { c: 'tk-cadence', h: tkCadence() } );
 		if ( lastPostTs ) { log.push( { c: 'tk-last', h: 'Last: ' + tkAgo( lastPostTs ) } ); }
-		var streak = tkStreak();
-		if ( streak ) { log.push( { c: 'tk-streak', h: streak } ); }
-		var best = tkBest();
-		if ( best ) { log.push( { c: 'tk-best', h: best } ); }
 
 		var groups = [];
 		if ( nowG.length ) { groups.push( { label: 'NOW',  items: nowG } ); }
