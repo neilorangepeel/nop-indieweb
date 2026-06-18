@@ -663,6 +663,10 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			) );
 		}
 
-		return json_decode( wp_remote_retrieve_body( $response ), true );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $data ) || empty( $data['accessJwt'] ) ) {
+			return new \WP_Error( 'nop_syndication_failed', __( 'Bluesky returned an unreadable session.', 'nop-indieweb' ) );
+		}
+		return $data;
 	}
 }

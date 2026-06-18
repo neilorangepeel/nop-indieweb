@@ -168,7 +168,11 @@ class Feed_Importer {
 			// loop on a poison item; the right policy (retry budget? dead-letter?) is
 			// a product decision. Same pattern at the Bluesky/Letterboxd handle calls.
 			$this->note->handle( $this->mastodon_to_payload( $status, 'pixelfed' === $platform ? 'photo' : '' ) );
-			\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
+			// Only advance the cursor when the status carries an id — a missing id would
+			// write an empty since_id and re-import the whole feed on the next run.
+			if ( ! empty( $status['id'] ) ) {
+				\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_id", $status['id'] );
+			}
 		}
 
 		\NOP\IndieWeb\nop_indieweb_update_option( "syndicators.{$platform}.import_last_at", gmdate( 'c' ) );

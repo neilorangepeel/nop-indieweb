@@ -145,14 +145,15 @@ class Webmention_Endpoint {
 			return;
 		}
 
-		// Fetch the source. wp_safe_remote_get blocks SSRF to private/loopback IPs;
+		// Fetch the source through the plugin's strict SSRF guard, which re-validates
+		// EVERY redirect hop against private/reserved ranges — wp_safe_remote_get only
+		// checks the first URL, so a 30x to 169.254/127.x would otherwise slip through.
 		// limit_response_size caps the body so a sender cannot stream gigabytes at us.
-		$response = wp_safe_remote_get( $source, [
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $source, [
 			'timeout'             => 15,
-			'redirection'         => 3,
 			'limit_response_size' => self::MAX_SOURCE_BYTES,
 			'user-agent'          => 'NOP IndieWeb/' . NOP_INDIEWEB_VERSION . ' (webmention; +' . home_url( '/' ) . ')',
-		] );
+		], 3 );
 
 		$http_code = is_wp_error( $response ) ? 0 : wp_remote_retrieve_response_code( $response );
 
