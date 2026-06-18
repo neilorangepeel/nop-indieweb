@@ -1795,10 +1795,8 @@ body::before {
 .ledger {
 	display: flex;
 	flex-direction: column;
-	/* A touch of left air so the ruled metadata list reads as its own indented block,
-	   sitting just in from the writing column above. (background-position is measured
-	   from the padding box, so the margin rule shifts with the rows and stays aligned.) */
-	padding-left: var(--sp-2);
+	/* Full width — flush with the header and the writing column, so the metadata labels
+	   line up with the By/Link fields above (no left indent). */
 	/* The margin rule: a hairline vertical sitting in the gutter between the 64px
 	   label column and the control (64px + half the .field-row column-gap), run full
 	   height by background-size so it spans every row whatever their heights. */
@@ -1810,10 +1808,19 @@ body::before {
 /* Collapse the ledger (margin rule and all) if nothing in it is shown. Privacy is
    an every-kind row, so this is mostly a defensive guard. */
 .ledger:not(:has( .field-row:not([hidden]) )) { display: none; }
+/* When only the always-on Privacy row shows (e.g. Like / Repost with no tags, place or
+   syndication), drop the margin rule — a vertical line beside a single row reads as a
+   stray tick rather than a list binder. */
+.ledger:not(:has( :is(#fieldTags, #fieldLocation, #fieldSyndicate):not([hidden]) )) {
+	background-image: none;
+}
 
 /* Each ruled row lays a hairline along its bottom edge; with the rows tiled (no
    gaps) these become the evenly-spaced ledger lines that cross the margin rule. */
 .field-row--ledger { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
+/* Nudge the whole content column off the margin rule so the tag input, the quick-tag
+   chips and the checkboxes all align to the same edge, just clear of the border. */
+.ledger .field-row > :not(.field-row__label) { padding-left: var(--sp-2); }
 
 /* Post options — the delivery groups inside the ledger. The :has() rule still
    collapses this delivery sub-block on its own when no group shows; the ledger's
@@ -1832,7 +1839,9 @@ body::before {
 .syndicators {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sp-2);
+	/* No gap — each target row tiles at its 44px height, matching the Privacy / Place
+	   ledger rows above so Post-to keeps the same line rhythm. */
+	gap: 0;
 }
 .syndicator-item {
 	display: flex;
