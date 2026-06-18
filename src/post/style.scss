@@ -110,6 +110,13 @@
 	--sp-5: 20px;
 	--sp-6: 24px;
 	--sp-8: 32px;
+	/* The ruled baseline — the compose pad's line pitch (line-height + rule spacing).
+	   Printed field rows step in whole multiples of this so their hairlines continue
+	   the writing lines, like one ruled sheet. */
+	--baseline: 30px;
+	/* The break between stacked sections (header · writing · fields · filing) — one
+	   value so every section sits the same distance from the next. */
+	--section-gap: var(--sp-6);
 	/* The page side gutter (= --sp-5) — the inset shared by every top-level section
 	   (masthead, compose, success). Sized to breathe inside the rounded top corners
 	   (--screen-radius): a gutter smaller than the radius lets the corner arc crowd
@@ -244,6 +251,9 @@ body::before {
 	--accent:   var(--ink);
 	--surface:  color-mix(in srgb, var(--ink) 10%, var(--paper));
 	--rule:     color-mix(in srgb, var(--ink) 36%, var(--paper));
+	/* Fainter than --rule — the quiet ruling of the metadata ledger (margin line
+	   + row hairlines), so the structure reads as notebook ruling, not a divider. */
+	--rule-ledger: color-mix(in srgb, var(--ink) 22%, var(--paper));
 	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
 	/* Muted ink strokes/fills, named by their tone. Mixed toward PAPER (opaque),
 	   NOT transparent — a transparent border lets the dot grid show through the
@@ -1033,7 +1043,7 @@ body::before {
 .docket {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sp-4);
+	gap: var(--section-gap);
 }
 /* The filing line — small-caps, tracked, muted printed ink, under a hairline rule
    like a catalog card's head. Serial + date file to the right. */
@@ -1130,8 +1140,28 @@ body::before {
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
 
-.docket__fields,
-.docket__body { display: flex; flex-direction: column; gap: var(--sp-4); }
+.docket__fields { display: flex; flex-direction: column; gap: var(--sp-4); }
+/* The writing pad is the page's first ruled zone — it draws its own legal-pad lines. A
+   clear BREAK in the lines (set on #fieldContent below) then separates it from the
+   printed fields, so the page reads as distinct postcard sections rather than one
+   unbroken sheet — and the field inputs no longer sit on, and clash with, the grid. */
+.docket__body { display: flex; flex-direction: column; gap: 0; }
+#fieldStory { margin-bottom: var(--sp-4); }
+/* Printed fields under the pad (quote's By / Link) — their own section: label + value
+   on one baseline line with the hairline hugging the value (the input collapses to a
+   single line height, NOT a 44px box, so the rule sits right under the text like the
+   writing lines), then a blank baseline of space before the next — an even rhythm. */
+/* Each field is a single ruled line (no double-height slot), so By / Link / Thoughts
+   stack tight on consecutive lines like an address block. */
+.docket__body > .field-row {
+	align-items: start;
+}
+/* Label rides the same first line as the value (shared 6px lead + baseline). */
+.docket__body > .field-row > .field-row__label {
+	min-height: 0;
+	line-height: var(--baseline);
+	padding-top: 6px;
+}
 /* Collapse the printed-fields region when nothing in it is shown (Note, or any kind
    whose fields are all hidden) so the writing body sits straight under the header. */
 .docket--body-only .docket__fields,
@@ -1245,7 +1275,7 @@ body::before {
 	padding: var(--sp-4) var(--pad-x) calc(var(--safe-bottom) + 88px);
 	display: flex;
 	flex-direction: column;
-	gap: var(--sp-4);
+	gap: var(--section-gap);
 }
 
 .field-group { display: flex; flex-direction: column; }
@@ -1263,32 +1293,90 @@ body::before {
 	border: 0;
 }
 
-/* Utility inputs are flat SOLID filled fields (figure-ground by value, no dots)
-   so the text on them stays easy to read. */
+/* Text you type sits ON a ruled line, never in a box — the legal-pad logic of the
+   compose field applied to every single-line field (URL, title, where, by, link).
+   The hairline baseline IS the field; it goes accent on focus. Date/time keep a box
+   below — they're pickers (genuine controls), the one free-text-row exception. */
+/* ONE shared ruled-line recipe for every line input — the hairline is a gradient rule
+   sitting just under the baseline (the exact compose-pad treatment), so text falls on
+   the line identically everywhere (pad, By, Link, Thoughts, Title, Where). A 6px lead +
+   30px line = one ruled line; `--line` recolours to accent on focus. */
 .text-field {
 	width: 100%;
-	min-height: 44px;          /* match the buttons/toggles so every control row is one height */
+	min-height: calc( var(--baseline) + 6px );
 	background: transparent;
-	border: var(--bw-input) solid var(--ink-38);
-	border-radius: var(--radius);
-	padding: var(--sp-3);
+	border: none;
+	border-radius: 0;
+	padding: 6px 0 0;
+	line-height: var(--baseline);
 	font-size: var(--fs-16);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	outline: none;
+	--line: var(--rule);
+	background-image: repeating-linear-gradient( to bottom,
+		transparent 0, transparent 28px,
+		var(--line) 28px, var(--line) 29px,
+		transparent 29px, transparent 30px );
 }
-.text-field:focus { border-color: var(--accent); }
+.text-field:focus { --line: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
-/* Quote commentary — a short multi-line note; the input look, just taller and
-   vertically resizable. line-height relaxes the cramped single-line metrics. */
-.text-field--note { line-height: 1.4; resize: vertical; }
-/* Shared keyboard-focus ring across every control (inputs, rsvp buttons, toggles) —
-   the same accent outline the Clear stamp uses, so focus reads consistently. */
-.text-field:focus-visible,
+/* Quote commentary — same ruled line, just multi-line: a small document with a real
+   min-height. Inherits the shared rule + metrics from .text-field. */
+.text-field--note {
+	padding: 6px 0 4px;
+	min-height: calc( var(--baseline) * 4 );
+	resize: vertical;
+}
+/* Date & time are genuine controls — a native picker sits behind each, so they reset
+   off the ruled line back to a box. */
+.text-field--date,
+.text-field--time {
+	min-height: 44px;
+	line-height: normal;
+	background-image: none;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: var(--radius);
+	padding: var(--sp-3);
+}
+.text-field--date:focus,
+.text-field--time:focus { border-color: var(--accent); }
+
+/* The link IS the content on like / reply / bookmark / repost (and the event on
+   rsvp), so it isn't a metadata line — it gets a full-width field. An old-browser
+   address bar redrawn in our ink: the row breaks out of the 64px label grid, the
+   label becomes a small caption above, and the input is a squared, faintly sunken
+   ink-stroked well spanning the whole width. */
+#fieldUrl { display: block; }
+#fieldUrl .field-row__label {
+	min-height: 0;
+	margin-bottom: var(--sp-2);
+}
+#typeUrl {
+	min-height: 44px;
+	line-height: normal;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: 2px;
+	padding: var(--sp-3);
+	background: color-mix( in srgb, var(--ink) 4%, var(--paper) );
+	box-shadow: inset 0 1px 2px color-mix( in srgb, var(--ink) 12%, transparent );
+}
+#typeUrl:focus {
+	border-color: var(--accent);
+	box-shadow: inset 0 1px 2px color-mix( in srgb, var(--accent) 18%, transparent );
+}
+/* Keyboard focus. Line-style text fields lift their rule to accent (via --line on
+   :focus) — a focus LINE, no box. Boxed controls (date/time, the URL bar, rsvp
+   buttons) keep the accent outline box. */
+.text-field:focus-visible { outline: none; }
+.text-field--date:focus-visible,
+.text-field--time:focus-visible,
+#typeUrl:focus-visible,
 .rsvp-btn:focus-visible {
 	outline: var(--bw-input) solid var(--accent);
 	outline-offset: 2px;
+	box-shadow: none;
 }
 
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
@@ -1297,7 +1385,9 @@ body::before {
 /* Let the ruled "page" resolve — a clear line's-worth of blank paper below the
    last rule before the next field, so the content doesn't butt up against it.
    (Adds to the 16px field gap for ~one rule-spacing of clearance.) */
-#fieldContent { display: flex; flex-direction: column; margin-bottom: var(--sp-4); }
+/* The break between the writing section and the fields section — the lines stop here
+   and a clear band of blank paper follows, so the two read as separate postcard zones. */
+#fieldContent { display: flex; flex-direction: column; margin-bottom: var(--section-gap); }
 .compose-wrap { position: relative; }
 .compose-field {
 	display: block;
@@ -1308,11 +1398,9 @@ body::before {
 	   keystroke. Firefox falls back to autoGrowContent()'s style.height write. */
 	field-sizing: content;
 	background-color: transparent;
-	/* Ruled legal-pad — faint hairlines sitting just under each baseline so text
-	   reads as written ON the line. The field auto-grows with its content (CSS
-	   field-sizing where supported, JS fallback otherwise), so an empty note stays
-	   a short pad and the page grain runs on, uninterrupted, below — no paper veil,
-	   so no hard seam where the texture would otherwise stop. */
+	/* Ruled legal-pad — faint hairlines just under each baseline so text reads as written
+	   ON the line. This is the writing section's own ruling; the lines stop where the pad
+	   ends (a section break follows), so the fields below sit on clean paper. */
 	background-image: repeating-linear-gradient( to bottom,
 		transparent 0, transparent 28px,
 		var(--rule) 28px, var(--rule) 29px,
@@ -1533,19 +1621,19 @@ body::before {
 .thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
 
 /* Tags — solid accent chips, knockout text, square remove. */
+/* Flat on the ledger — no box. The TAGS row's own hairline (.field-row--ledger
+   border-bottom) is the field's underline, matching the box-free writing lines and
+   the checkbox rows; on focus that line goes accent (#fieldTags rule below). */
 .tags-field {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--sp-2);
 	background: transparent;
-	border: var(--bw-input) solid var(--ink-38);
-	border-radius: var(--radius);
-	padding: var(--sp-2) var(--sp-3);
-	min-height: 46px;
+	min-height: 44px;
 	cursor: text;
 }
-.tags-field:focus-within { border-color: var(--accent); }
+#fieldTags:focus-within { border-bottom-color: var(--accent); }
 /* The chips live in a #tagChips wrapper; display:contents dissolves it so each
    chip becomes a direct flex item of .tags-field, picking up its gap — otherwise
    the gap only sits between the wrapper and the input, and chips touch. */
@@ -1607,30 +1695,37 @@ body::before {
 .quick-tags.is-open {
 	max-height: 240px;
 	margin-top: var(--sp-3);
+	/* A little breathing room so the bottom row of suggestions doesn't butt up against
+	   the ledger hairline below. */
+	margin-bottom: var(--sp-3);
 	opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
 	.quick-tags { transition: none; }
 }
+/* Suggestions are ghost stamps — the outline of a tag chip, transparent, that fills
+   to the solid .tag-chip when you tap it in. Gives the run a real UI shape (paired with
+   the committed stamps) without the old web-pill weight: a hairline soft-accent outline,
+   the same squared radius as the chip it becomes. */
 .quick-tag {
 	display: inline-flex;
 	align-items: center;
 	min-height: 34px;
-	padding: 5px 12px;
-	background: color-mix(in srgb, var(--accent) 8%, transparent);
-	color: var(--accent);
-	border: var(--bw-input) solid color-mix(in srgb, var(--accent) 22%, transparent);
+	padding: 4px 10px;
+	background: transparent;
+	border: var(--bw-rule) solid color-mix(in srgb, var(--accent) 40%, var(--paper));
 	border-radius: var(--radius);
+	color: var(--accent);
 	font-family: var(--readout);
 	font-size: var(--fs-13);
 	font-weight: 700;
 	cursor: pointer;
 	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
+/* Already added (its solid chip shows above) — recede so the run reads as "remaining". */
 .quick-tag.is-used {
-	background: var(--accent);
-	color: var(--on-accent);
-	border-color: var(--accent);
+	border-color: color-mix(in srgb, var(--accent) 16%, var(--paper));
+	color: color-mix(in srgb, var(--accent) 42%, var(--paper));
 }
 
 /* URL specimen — fills the void on URL-only kinds (like, repost). Empty: the
@@ -1691,20 +1786,47 @@ body::before {
 	overflow: hidden;
 }
 
-/* Post options — the "where/how it goes out" controls (opt-in geotag + cross-post
-   targets), gathered into one divided block of consistent toggle rows below the
-   writing area. The :has() rule collapses the whole block (hairline divider and all)
-   when no group is shown — e.g. a kind with no location and zero syndication targets
-   — mirroring the .docket__fields collapse. */
+/* Metadata ledger — TAGS + the delivery options (PRIVACY / PLACE / POST TO) ruled
+   as one index section, in the spirit of a notebook's margin column. A single
+   continuous hairline runs down the gutter (drawn here as a background rule so it
+   never breaks between rows), and each row lays a faint horizontal rule; the two
+   cross in quiet registration marks. All ink is --rule-ledger (fainter than the
+   --rule dividers) so the structure reads as ruling, not boxing. */
+.ledger {
+	display: flex;
+	flex-direction: column;
+	/* A touch of left air so the ruled metadata list reads as its own indented block,
+	   sitting just in from the writing column above. (background-position is measured
+	   from the padding box, so the margin rule shifts with the rows and stays aligned.) */
+	padding-left: var(--sp-2);
+	/* The margin rule: a hairline vertical sitting in the gutter between the 64px
+	   label column and the control (64px + half the .field-row column-gap), run full
+	   height by background-size so it spans every row whatever their heights. */
+	background-image: linear-gradient( var(--rule-ledger), var(--rule-ledger) );
+	background-repeat: no-repeat;
+	background-size: var(--bw-rule) 100%;
+	background-position: calc( 64px + var(--sp-3) / 2 - var(--bw-rule) / 2 ) 0;
+}
+/* Collapse the ledger (margin rule and all) if nothing in it is shown. Privacy is
+   an every-kind row, so this is mostly a defensive guard. */
+.ledger:not(:has( .field-row:not([hidden]) )) { display: none; }
+
+/* Each ruled row lays a hairline along its bottom edge; with the rows tiled (no
+   gaps) these become the evenly-spaced ledger lines that cross the margin rule. */
+.field-row--ledger { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
+
+/* Post options — the delivery groups inside the ledger. The :has() rule still
+   collapses this delivery sub-block on its own when no group shows; the ledger's
+   margin rule and the TAGS row above it stay. */
 .post-options {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sp-4);
-	border-top: var(--bw-rule) solid var(--rule);
-	padding-top: var(--sp-4);
 }
 .post-options:not(:has(> .post-options__group:not([hidden]))) { display: none; }
 /* .post-options__group is the collapse hook; its layout comes from .field-row (grid). */
+/* Drop the rule under the last VISIBLE delivery group so the ledger closes on its
+   final line (POST TO) rather than trailing a rule into the gap before the button. */
+.post-options__group:not(:has( ~ .post-options__group:not([hidden]) )) { border-bottom: 0; }
 
 /* Syndicate-to */
 .syndicators {

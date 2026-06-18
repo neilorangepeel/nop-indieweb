@@ -724,8 +724,17 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
+				</div><!-- .docket__body -->
+				</div><!-- .docket -->
+
+				<!-- Metadata ledger — tags + delivery options ruled as one index
+				     section. The vertical margin rule (drawn on .ledger) runs unbroken
+				     down the gutter; each .field-row--ledger lays a hairline rule, and
+				     the two cross in faint registration marks. -->
+				<div class="ledger" id="metaLedger">
+
 				<!-- Tags (note, photo) -->
-				<div class="field-row" id="fieldTags">
+				<div class="field-row field-row--ledger" id="fieldTags">
 					<label class="field-row__label" for="tagInput"><?php esc_html_e( 'Tags', 'nop-indieweb' ); ?></label>
 					<div class="field-row__field">
 						<div class="tags-field" id="tagsField">
@@ -750,9 +759,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
-				</div><!-- .docket__body -->
-				</div><!-- .docket -->
-
 				<!-- Post options — where/how this goes out: opt-in geotag + cross-post
 				     targets. One divided block of consistent toggle rows; the :has()
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
@@ -760,7 +766,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 					<!-- Visibility (all kinds) — Private keeps the post out of syndication,
 					     webmentions and public feeds (server maps it to WP `private`). -->
-					<div class="post-options__group field-row" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
+					<div class="post-options__group field-row field-row--ledger" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
 						<span class="field-row__label" id="optPrivateLabel"><?php esc_html_e( 'Privacy', 'nop-indieweb' ); ?></span>
 						<label class="location-toggle" id="privateToggle">
 							<input type="checkbox" id="privateCheck" class="sr-only">
@@ -774,7 +780,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					     endpoint) to the post. Coordinates are only read once you ask for
 					     them here, so a normal post never touches location. #fieldLocation
 					     id kept so switchType() still toggles it. -->
-					<div class="post-options__group field-row" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
+					<div class="post-options__group field-row field-row--ledger" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
 						<span class="field-row__label" id="optLocationLabel"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></span>
 						<label class="location-toggle" id="locationToggle">
 							<input type="checkbox" id="locationCheck" class="sr-only">
@@ -786,12 +792,14 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 					<!-- Syndication targets (all kinds; Pixelfed photo-only). Rendered by
 					     renderSyndicators() into #syndicators; the group is shown/hidden there. -->
-					<div class="post-options__group field-row" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
+					<div class="post-options__group field-row field-row--ledger" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
 						<span class="field-row__label" id="optSyndicateLabel"><?php esc_html_e( 'Post to', 'nop-indieweb' ); ?></span>
 						<div class="syndicators" id="syndicators"></div>
 					</div>
 
 				</div>
+
+				</div><!-- .ledger -->
 
 				</div><!-- .compose-fields -->
 				<div class="scroll-fade scroll-fade-bottom" aria-hidden="true"></div>
