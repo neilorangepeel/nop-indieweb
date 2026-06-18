@@ -506,9 +506,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			.catch( function ( e ) { console.warn( '[nop /now] network error', e ); } );
 	}
 
-	function withCoords( cb ) {
+	function withCoords( cb, allowPrompt ) {
 		var g = readJSON( GEO_KEY );
 		if ( g && g.lat != null && ( Date.now() - g.ts ) < GEO_TTL ) { cb( g.lat, g.lon ); return; }
+		// Never ask for location on page load — only when the reader taps the mark (or
+		// turns on the geotag). It's friendlier not to prompt until there's intent, and
+		// it clears the Lighthouse "geolocation on start" flag.
+		if ( ! allowPrompt ) { return; }
 		if ( ! navigator.geolocation ) { console.warn( '[nop /now] no Geolocation API' ); return; }
 		navigator.geolocation.getCurrentPosition(
 			function ( pos ) {
@@ -531,7 +535,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function isUsefulNow( d ) {
 		return !! ( d && ( d.place || d.temp_c != null || d.summary ) );
 	}
-	function loadNow() {
+	function loadNow( allowPrompt ) {
 		var cached = readJSON( NOW_KEY );
 		var geo    = readJSON( GEO_KEY );
 		if ( geo && geo.lat != null ) { geoLat = geo.lat; geoLon = geo.lon; }   // seed coords for the geotag
@@ -543,19 +547,21 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 		if ( useful ) { renderNow( cached.data ); }                                          // paint instantly
 		if ( useful && ( Date.now() - cached.ts ) < NOW_TTL ) { return; }                    // still fresh
-		withCoords( fetchNow );
+		withCoords( fetchNow, allowPrompt );
 	}
-	loadNow();
-	// Retry when the tab becomes visible again. iOS Safari's site-settings panel
-	// (aA → Location → Allow) does NOT re-fire a load-time geolocation request, so
-	// without this the grid stays empty until a manual reload after granting. Also
-	// covers pull-to-refresh and bfcache restores. Cheap on repeat — loadNow() early
-	// -returns while the cached payload is fresh, and a denied permission no longer
-	// prompts, so this can't spam requests.
+	loadNow();   // startup: cached-only — never prompts for location (tap the mark to load)
+	// Refresh the moment when the tab becomes visible again — cached-only (no prompt),
+	// so it repaints from fresh coords if we have them but never asks for location off a
+	// background→foreground transition. Also covers pull-to-refresh and bfcache restores.
+	// (pageshow is wrapped so its event isn't passed as allowPrompt.)
 	document.addEventListener( 'visibilitychange', function () {
 		if ( document.visibilityState === 'visible' ) { loadNow(); updateClock(); scheduleClock(); }
 	} );
-	window.addEventListener( 'pageshow', loadNow );
+	window.addEventListener( 'pageshow', function () { loadNow(); } );
+	// The mark doubles as the "load the moment" control: tap it to fetch place · temp ·
+	// sky (asking for location the first time), so the page never prompts on its own.
+	var nowBtn = document.getElementById( 'nowBtn' );
+	if ( nowBtn ) { nowBtn.addEventListener( 'click', function () { loadNow( true ); } ); }
 
 	// ── Type configuration ────────────────────────────────────────────────────
 
@@ -1088,8 +1094,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		locationCheck.addEventListener( 'change', function () {
 			includeLocation = locationCheck.checked;
 			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
-			// First opt-in with no coords yet → ask for them now (may prompt once).
-			if ( includeLocation && geoLat == null ) { loadNow(); }
+			// First opt-in with no coords yet → ask for them now (this toggle is the tap
+			// gesture, so allowPrompt = true).
+			if ( includeLocation && geoLat == null ) { loadNow( true ); }
 			updateLocationUI();
 			saveDraft();
 		} );

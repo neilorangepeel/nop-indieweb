@@ -489,6 +489,16 @@ body::before {
    path flips to paper to read against it. Sits above the ticker, which crawls
    its metadata out of sight beneath it. */
 .brand__mark {
+	/* It's a <button> (tap to load place · temp · sky) — strip the UA chrome but keep
+	   the inked square. */
+	appearance: none;
+	-webkit-appearance: none;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 	position: relative;
 	z-index: 2;
 	display: grid;
@@ -498,6 +508,11 @@ body::before {
 	height: 42px;
 	border-radius: 10px;
 	background: var(--ink);
+}
+.brand__mark:active { transform: translateY(1px); }
+.brand__mark:focus-visible {
+	outline: var(--bw-input) solid var(--accent);
+	outline-offset: 2px;
 }
 .brand__mark svg,
 .brand__mark img { display: block; width: 26px; height: 26px; }
