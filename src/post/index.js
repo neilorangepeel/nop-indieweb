@@ -628,6 +628,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var scheduleFields  = document.getElementById( 'scheduleFields' );
 	var postLabel       = document.querySelector( '.btn-primary__label' );
 	var postLabelText   = postLabel ? postLabel.textContent : 'Post';   // the i18n'd "Post"
+	var saveDraftBtn    = document.getElementById( 'saveDraftBtn' );
+	var draftsBtn       = document.getElementById( 'draftsBtn' );
+	var draftsCount     = document.getElementById( 'draftsCount' );
+	var draftsDrawer    = document.getElementById( 'draftsDrawer' );
+	var draftsList      = document.getElementById( 'draftsList' );
+	var draftsClose     = document.getElementById( 'draftsClose' );
 
 	// Apply (or clear) the hot-linked event poster: hidden input carries the URL
 	// through to the Micropub payload, the <figure> is just author confirmation
@@ -1732,6 +1738,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( post.type === 'photo' && post.content ) {
 				await navigator.clipboard.writeText( post.content ).catch( function () {} );
 			}
+			await clearActiveDraft();   // a published draft leaves the drafts library
 			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt );
 		} catch ( err ) {
 			// A dropped connection mid-send → queue it rather than lose the post.
@@ -1933,14 +1940,55 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// When offline, a post is stored whole (incl. photo blobs) and replayed when the
 	// app is next open and back online. iOS Safari has no Background Sync, so replay
 	// is page-driven: on the `online` event and on launch.
-	var DB_NAME = 'nop_post_queue', STORE = 'posts', replaying = false;
+	var DB_NAME = 'nop_post_queue', STORE = 'posts', DRAFTS = 'drafts', replaying = false;
 
 	function qOpen() {
 		var d = Promise.withResolvers();
-		var req = indexedDB.open( DB_NAME, 1 );
-		req.onupgradeneeded = function () { req.result.createObjectStore( STORE, { keyPath: 'id' } ); };
+		// v2 adds the `drafts` store alongside the offline `posts` queue. The guarded
+		// creates keep both an existing v1 install and a fresh one working.
+		var req = indexedDB.open( DB_NAME, 2 );
+		req.onupgradeneeded = function () {
+			var db = req.result;
+			if ( ! db.objectStoreNames.contains( STORE ) )  { db.createObjectStore( STORE,  { keyPath: 'id' } ); }
+			if ( ! db.objectStoreNames.contains( DRAFTS ) ) { db.createObjectStore( DRAFTS, { keyPath: 'id' } ); }
+		};
 		req.onsuccess = function () { d.resolve( req.result ); };
 		req.onerror   = function () { d.reject( req.error ); };
+		return d.promise;
+	}
+
+	// Drafts CRUD — the same single object-per-id shape as the queue, in its own store.
+	function dPut( draft ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
+			var tx = db.transaction( DRAFTS, 'readwrite' ); tx.objectStore( DRAFTS ).put( draft );
+			tx.oncomplete = function () { d.resolve(); }; tx.onerror = function () { d.reject( tx.error ); };
+		}, d.reject );
+		return d.promise;
+	}
+	function dAll() {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
+			var out = [], cur = db.transaction( DRAFTS, 'readonly' ).objectStore( DRAFTS ).openCursor();
+			cur.onsuccess = function ( e ) { var c = e.target.result; if ( c ) { out.push( c.value ); c.continue(); } else { d.resolve( out ); } };
+			cur.onerror = function () { d.resolve( [] ); };
+		}, function () { d.resolve( [] ); } );
+		return d.promise;
+	}
+	function dGet( id ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
+			var r = db.transaction( DRAFTS, 'readonly' ).objectStore( DRAFTS ).get( id );
+			r.onsuccess = function () { d.resolve( r.result || null ); }; r.onerror = function () { d.resolve( null ); };
+		}, function () { d.resolve( null ); } );
+		return d.promise;
+	}
+	function dDelete( id ) {
+		var d = Promise.withResolvers();
+		qOpen().then( function ( db ) {
+			var tx = db.transaction( DRAFTS, 'readwrite' ); tx.objectStore( DRAFTS ).delete( id );
+			tx.oncomplete = function () { d.resolve(); }; tx.onerror = function () { d.resolve(); };
+		}, function () { d.resolve(); } );
 		return d.promise;
 	}
 	function qAdd( post ) {
@@ -2141,6 +2189,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( scheduleTime )   { scheduleTime.value = ''; }
 		if ( scheduleFields ) { scheduleFields.hidden = true; }
 		updatePostLabel();
+		activeDraftId = null;   // a cleared form is no longer editing a stored draft
 		renderTags();
 		updateSpecimen();
 		clearContextPreview();
@@ -2325,14 +2374,205 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( p.video && p.video.blob )    { setStoryVideo( p.video.blob ); }
 			else if ( p.files && p.files[0] ) { setStoryPhoto( p.files[0].blob ); }
 		}
+		if ( scheduleCheck ) {
+			if ( p.scheduledAt ) {
+				var sd = new Date( p.scheduledAt );
+				scheduleCheck.checked = true;
+				if ( scheduleDate ) { scheduleDate.value = sd.getFullYear() + '-' + pad2( sd.getMonth() + 1 ) + '-' + pad2( sd.getDate() ); }
+				if ( scheduleTime ) { scheduleTime.value = pad2( sd.getHours() ) + ':' + pad2( sd.getMinutes() ); }
+			} else {
+				scheduleCheck.checked = false;
+				if ( scheduleDate ) { scheduleDate.value = ''; }
+				if ( scheduleTime ) { scheduleTime.value = ''; }
+			}
+			if ( scheduleFields ) { scheduleFields.hidden = ! scheduleCheck.checked; }
+		}
 		restoring = false;
 		updateSpecimen();
 		updateCounter();
 		updatePostBtn();
+		updatePostLabel();
 		saveDraft();
 	}
 
 	function clearDraft() { try { localStorage.removeItem( DRAFT_KEY ); } catch ( e ) {} }
+
+	// ── Drafts (hybrid: local IndexedDB, full fidelity + a server WP-draft mirror) ─
+	var activeDraftId = null;   // the stored draft currently loaded in the form, or null
+
+	// A text-only Micropub draft payload — photos stay in the local copy until publish.
+	function draftPayload( post ) {
+		var pl = buildPayload( post, [], {} );
+		pl.properties[ 'post-status' ] = [ 'draft' ];
+		delete pl.properties.published;
+		delete pl.properties[ 'syndicate-to' ];
+		return pl;
+	}
+	function mpFetch( body ) {
+		return fetch( NOP.micropubUrl, {
+			method:  'POST',
+			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+			body:    JSON.stringify( body ),
+		} );
+	}
+
+	// Save the current composition as a draft: the FULL snapshot locally (offline,
+	// keeps photo blobs), then mirror its text to a server WP draft so it appears on
+	// other devices. The local copy is the source of truth for editing.
+	async function saveCurrentDraft() {
+		if ( ! window.indexedDB ) { showToast( "Drafts aren't supported here.", 'error' ); return; }
+		if ( ! hasFormContent() ) { showToast( 'Nothing to save yet.', 'info' ); return; }
+		var post     = formToPost();
+		var existing = activeDraftId ? await dGet( activeDraftId ) : null;
+		post.id        = activeDraftId || post.id;
+		post.savedAt   = Date.now();
+		post.serverUrl = ( existing && existing.serverUrl ) || '';
+		try { await dPut( post ); } catch ( e ) { showToast( "Couldn't save the draft.", 'error' ); return; }
+		activeDraftId = post.id;
+		clearDraft();                       // the rolling autosave slot becomes this stored draft
+		showToast( 'Draft saved.', 'info' );
+		refreshDraftsCount();
+		if ( navigator.onLine ) {           // server mirror — best-effort; the local copy is safe
+			try {
+				if ( ! post.serverUrl ) {
+					var res = await mpFetch( draftPayload( post ) );
+					if ( res.status === 201 ) { post.serverUrl = res.headers.get( 'Location' ) || ''; await dPut( post ); }
+				} else {
+					await mpFetch( { action: 'update', url: post.serverUrl, replace: { content: [ post.content || '' ] } } );
+				}
+			} catch ( e ) {}
+		}
+	}
+
+	// After a draft is published, drop it locally and trash its server mirror.
+	async function clearActiveDraft() {
+		if ( ! activeDraftId ) { return; }
+		var d = await dGet( activeDraftId );
+		await dDelete( activeDraftId );
+		if ( d && d.serverUrl && navigator.onLine ) { try { await mpFetch( { action: 'delete', url: d.serverUrl } ); } catch ( e ) {} }
+		activeDraftId = null;
+		refreshDraftsCount();
+	}
+
+	function refreshDraftsCount() {
+		if ( ! window.indexedDB || ! draftsCount ) { return Promise.resolve(); }
+		return dAll().then( function ( list ) {
+			draftsCount.textContent = list.length ? String( list.length ) : '';
+			draftsCount.hidden = ! list.length;
+		} ).catch( function () {} );
+	}
+
+	// Local drafts ∪ server-only drafts (made on another device). Local wins per serverUrl.
+	async function listAllDrafts() {
+		var local = [];
+		try { local = await dAll(); } catch ( e ) {}
+		var seen = {}, rows = local.map( function ( d ) {
+			if ( d.serverUrl ) { seen[ d.serverUrl ] = true; }
+			return { id: d.id, serverUrl: d.serverUrl || '', local: true, type: d.type || 'note',
+				title: ( d.content || d.url || ( d.event && d.event.name ) || '' ).slice( 0, 80 ), when: d.savedAt || 0 };
+		} );
+		if ( navigator.onLine && NOP.draftsUrl ) {
+			try {
+				var res = await fetch( NOP.draftsUrl, { headers: { 'X-WP-Nonce': nonce } } );
+				if ( res.ok ) {
+					( ( await res.json() ).drafts || [] ).forEach( function ( s ) {
+						if ( s.status === 'draft' && ! seen[ s.url ] ) {
+							rows.push( { id: '', serverUrl: s.url, local: false, type: s.kind || 'note', title: ( s.title || s.excerpt || '' ).slice( 0, 80 ), when: 0 } );
+						}
+					} );
+				}
+			} catch ( e ) {}
+		}
+		rows.sort( function ( a, b ) { return ( b.when || 0 ) - ( a.when || 0 ); } );
+		return rows;
+	}
+
+	function renderDraftsList( rows ) {
+		if ( ! draftsList ) { return; }
+		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-drawer__empty">No drafts yet.</p>'; return; }
+		draftsList.innerHTML = rows.map( function ( r ) {
+			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '">'
+				+ '<button type="button" class="draft-row__open">'
+				+ '<span class="draft-row__kind">' + escHtml( r.type ) + ( r.local ? '' : ' ·' ) + '</span>'
+				+ '<span class="draft-row__title">' + escHtml( r.title || '(untitled)' ) + '</span>'
+				+ '</button>'
+				+ '<button type="button" class="draft-row__delete" aria-label="Delete draft">&times;</button>'
+				+ '</div>';
+		} ).join( '' );
+	}
+
+	async function openDraftsDrawer() {
+		if ( ! draftsDrawer ) { return; }
+		draftsList.innerHTML = '<p class="drafts-drawer__empty">Loading…</p>';
+		draftsDrawer.hidden = false;
+		renderDraftsList( await listAllDrafts() );
+	}
+	function closeDraftsDrawer() { if ( draftsDrawer ) { draftsDrawer.hidden = true; } }
+
+	// Build a form snapshot from a server draft's Micropub source (?q=source).
+	async function sourceToPost( url ) {
+		try {
+			var res = await fetch( NOP.micropubUrl + '?q=source&url=' + encodeURIComponent( url ), { headers: { 'X-WP-Nonce': nonce } } );
+			if ( ! res.ok ) { return null; }
+			var p   = ( ( await res.json() ) || {} ).properties || {};
+			var get = function ( k ) { return ( k && p[ k ] && p[ k ][0] ) || ''; };
+			var type = get( 'post-kind' ) || 'note';
+			if ( ! TYPE_CONFIG[ type ] ) { type = 'note'; }
+			// mf2 content can be a plain string or an { html, value } object.
+			var content = get( 'content' );
+			if ( content && typeof content === 'object' ) { content = content.value || content.html || ''; }
+			return {
+				id: '', type: type,
+				content: String( content || '' ),
+				url: get( TYPE_CONFIG[ type ].urlProp ),
+				cite: get( 'quote-cite' ), quoteLink: get( 'quotation-of' ), quoteComment: get( 'quote-comment' ),
+				isPrivate: get( 'visibility' ) === 'private',
+				rsvp: get( 'rsvp' ) || 'yes',
+				event: { name: get( 'event-name' ), start: get( 'event-start' ), location: get( 'event-location' ), image: get( 'event-photo' ) },
+				tags: Array.isArray( p.category ) ? p.category.slice() : [],
+				scheduledAt: null, location: null, syndicateTo: [], files: [],
+			};
+		} catch ( e ) { return null; }
+	}
+
+	// Reopen a draft: local → full restore (blobs); server-only → fetch its source.
+	async function reopenDraft( id, serverUrl ) {
+		var post = id ? await dGet( id ) : null;
+		if ( ! post && serverUrl ) {
+			post = await sourceToPost( serverUrl );
+			if ( post ) {
+				post.id = 'p' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 7 );
+				post.serverUrl = serverUrl;
+				try { await dPut( post ); } catch ( e ) {}
+			}
+		}
+		if ( ! post ) { showToast( "Couldn't open that draft.", 'error' ); return; }
+		clearFields();
+		restoreSnapshot( post );
+		activeDraftId = post.id;
+		closeDraftsDrawer();
+		showView( 'compose' );
+		refreshDraftsCount();
+	}
+
+	if ( saveDraftBtn ) { saveDraftBtn.addEventListener( 'click', saveCurrentDraft ); }
+	if ( draftsBtn )    { draftsBtn.addEventListener( 'click', openDraftsDrawer ); }
+	if ( draftsClose )  { draftsClose.addEventListener( 'click', closeDraftsDrawer ); }
+	if ( draftsDrawer ) {
+		draftsDrawer.addEventListener( 'click', function ( e ) {
+			if ( e.target === draftsDrawer ) { closeDraftsDrawer(); return; }      // backdrop tap
+			var row = e.target.closest( '.draft-row' ); if ( ! row ) { return; }
+			var id = row.getAttribute( 'data-id' ), url = row.getAttribute( 'data-url' );
+			if ( e.target.closest( '.draft-row__delete' ) ) {
+				if ( id )  { dDelete( id ); }
+				if ( url && navigator.onLine ) { mpFetch( { action: 'delete', url: url } ).catch( function () {} ); }
+				if ( id && id === activeDraftId ) { activeDraftId = null; }
+				row.remove(); refreshDraftsCount();
+				return;
+			}
+			reopenDraft( id, url );
+		} );
+	}
 
 	// ── Character counter ──────────────────────────────────────────────────────
 
@@ -2469,6 +2709,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	loadDraft();
 	if ( ! hadDraft ) { switchType( mruDefaultKind() ); }   // no draft → open on the last-used kind
 	applyShareParams();                                     // a share/Shortcut overrides the above
+	refreshDraftsCount();                                   // surface the saved-drafts badge
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();

@@ -1179,6 +1179,139 @@ body::before {
 	outline-offset: 2px;
 }
 
+/* Drafts / Save — same rubber-stamped action box as Clear, sat on the filing line. */
+.docket__action {
+	appearance: none;
+	margin: 0 0 0 var(--space-2xs);
+	padding: 2px var(--space-2xs);
+	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
+	border-radius: 2px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	letter-spacing: 0.08em;
+	line-height: 1.2;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+.docket__action:hover  { color: var(--ink); border-color: var(--ink-38); }
+.docket__action:active { transform: translate(1px, 1px); }
+.docket__action:focus-visible { outline: var(--bw-input) solid var(--accent); outline-offset: 2px; }
+.docket__badge {
+	margin-left: 5px;
+	padding: 0 5px;
+	border-radius: 999px;
+	background: var(--accent);
+	color: var(--paper);
+	font-size: 0.85em;
+	font-weight: 700;
+}
+
+/* ── Drafts drawer — the saved-drafts library, slides up from the bottom ──── */
+.drafts-drawer {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	justify-content: center;
+	align-items: flex-end;
+	background: color-mix( in srgb, var(--ink) 38%, transparent );
+	-webkit-backdrop-filter: blur( 2px );
+	backdrop-filter: blur( 2px );
+}
+.drafts-drawer[hidden] { display: none; }
+.drafts-drawer__panel {
+	width: 100%;
+	max-width: 40rem;
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border-top-left-radius: var(--nop-radius, 10px);
+	border-top-right-radius: var(--nop-radius, 10px);
+	box-shadow: 0 -8px 40px color-mix( in srgb, var(--ink) 30%, transparent );
+	padding: var(--space-s) var(--space-s) calc( var(--space-s) + env( safe-area-inset-bottom ) );
+}
+.drafts-drawer__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--space-2xs);
+}
+.drafts-drawer__title {
+	margin: 0;
+	font-family: var(--display);
+	font-size: var(--step-0);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+.drafts-drawer__close {
+	appearance: none;
+	border: none;
+	background: transparent;
+	font-size: var(--step-2);
+	line-height: 1;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	cursor: pointer;
+	padding: 4px 8px;
+}
+.drafts-drawer__list { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.drafts-drawer__empty {
+	padding: var(--space-m) 0;
+	text-align: center;
+	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+}
+.draft-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	border-bottom: var(--bw-rule) solid var(--rule);
+}
+.draft-row__open {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-xs);
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	padding: var(--space-xs) 0;
+	cursor: pointer;
+}
+.draft-row__kind {
+	flex: 0 0 auto;
+	font-family: var(--display);
+	font-size: var(--step--2);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--accent);
+}
+.draft-row__title {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.draft-row__delete {
+	flex: 0 0 auto;
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: color-mix( in srgb, var(--ink) 45%, var(--paper) );
+	font-size: var(--step-1);
+	line-height: 1;
+	padding: 8px;
+	cursor: pointer;
+}
+.draft-row__delete:hover { color: var(--ink); }
+
 /* The kind label is also the explainer toggle — keep it visually identical to a
    plain filing-line label (inherits the header's display caps), with a small info
    glyph that warms on hover/open. */

@@ -310,6 +310,7 @@ function matchAnyVersion( url ) {
 		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
 		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
 		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
+		$drafts_url   = esc_url( rest_url( 'nop-indieweb/v1/drafts' ) );
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
@@ -558,6 +559,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</button>
 					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
 					<span class="docket__date" id="docketDate" aria-hidden="true"></span>
+					<button type="button" class="docket__action" id="draftsBtn">
+						<?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?><span class="docket__badge" id="draftsCount" hidden></span>
+					</button>
+					<button type="button" class="docket__action" id="saveDraftBtn">
+						<?php esc_html_e( 'Save', 'nop-indieweb' ); ?>
+					</button>
 					<button type="button" class="docket__clear" id="clearBtn" hidden>
 						<?php esc_html_e( 'Clear', 'nop-indieweb' ); ?>
 					</button>
@@ -881,6 +888,18 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+	<!-- Drafts drawer — the saved-drafts library (local + cross-device server drafts).
+	     Rendered/toggled by index.js; a tap on the backdrop or × closes it. -->
+	<div class="drafts-drawer" id="draftsDrawer" hidden>
+		<div class="drafts-drawer__panel" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Drafts', 'nop-indieweb' ); ?>">
+			<div class="drafts-drawer__head">
+				<h2 class="drafts-drawer__title"><?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?></h2>
+				<button type="button" class="drafts-drawer__close" id="draftsClose" aria-label="<?php esc_attr_e( 'Close drafts', 'nop-indieweb' ); ?>">&times;</button>
+			</div>
+			<div class="drafts-drawer__list" id="draftsList"></div>
+		</div>
+	</div>
+
 </div><!-- .app -->
 
 <script>
@@ -889,6 +908,7 @@ window.NOP = {
 		mediaUrl:    <?php echo wp_json_encode( $media_url ); ?>,
 		micropubUrl: <?php echo wp_json_encode( $micropub_url ); ?>,
 		nowUrl:      <?php echo wp_json_encode( $now_url ); ?>,
+		draftsUrl:   <?php echo wp_json_encode( $drafts_url ); ?>,
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
