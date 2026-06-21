@@ -30,8 +30,14 @@ final class Video_Transcoder {
 	/** Default upload ceiling — under Mastodon's common 40 MB instance cap. */
 	private const DEFAULT_MAX_BYTES = 38 * 1024 * 1024;
 
-	/** Returns a path to a network MP4 derivative of $attachment_id, or null. */
-	public static function web_mp4( int $attachment_id ): ?string {
+	/**
+	 * Returns a path to a network MP4 derivative of $attachment_id, or null.
+	 *
+	 * $max_bytes caps the output (0 = the default budget). Networks differ wildly —
+	 * Mastodon ~40 MB, Bluesky 100 MB, Pixelfed Stories only ~14.6 MB — so callers
+	 * pass their own ceiling and each budget is cached as its own derivative.
+	 */
+	public static function web_mp4( int $attachment_id, int $max_bytes = 0 ): ?string {
 		if ( $attachment_id <= 0 ) {
 			return null;
 		}
@@ -41,8 +47,13 @@ final class Video_Transcoder {
 			return null;
 		}
 
+		if ( $max_bytes <= 0 ) {
+			$max_bytes = (int) apply_filters( 'nop_indieweb_syndication_video_max_bytes', self::DEFAULT_MAX_BYTES, $attachment_id );
+		}
+		$cache_key = self::CACHE_META . '_' . $max_bytes;
+
 		// Reuse the cached derivative unless the source has changed since.
-		$cached = (string) get_post_meta( $attachment_id, self::CACHE_META, true );
+		$cached = (string) get_post_meta( $attachment_id, $cache_key, true );
 		if ( '' !== $cached && is_readable( $cached ) && filemtime( $cached ) >= filemtime( $src ) ) {
 			return $cached;
 		}
@@ -61,8 +72,7 @@ final class Video_Transcoder {
 			return null;
 		}
 
-		$out       = preg_replace( '/\.[A-Za-z0-9]+$/', '', $src ) . '-synd.mp4';
-		$max_bytes = (int) apply_filters( 'nop_indieweb_syndication_video_max_bytes', self::DEFAULT_MAX_BYTES, $attachment_id );
+		$out = preg_replace( '/\.[A-Za-z0-9]+$/', '', $src ) . '-synd-' . $max_bytes . '.mp4';
 
 		// Full lossless remux first; trim to fit only if it lands over budget.
 		if ( ! self::remux( $ffmpeg, $src, (string) $out, 0 ) ) {
@@ -76,7 +86,7 @@ final class Video_Transcoder {
 			self::remux( $ffmpeg, $src, (string) $out, $seconds );
 		}
 
-		update_post_meta( $attachment_id, self::CACHE_META, (string) $out );
+		update_post_meta( $attachment_id, $cache_key, (string) $out );
 		return (string) $out;
 	}
 
