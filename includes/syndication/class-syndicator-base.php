@@ -171,14 +171,15 @@ abstract class Syndicator_Base {
 	 * remote cap. Falls back to fetch_video() when the clip isn't a local attachment
 	 * or ffmpeg is unavailable.
 	 *
-	 * @param array $video     collect_inline_video() result (carries attachment_id, url).
-	 * @param int   $max_bytes Per-network output ceiling (0 = the transcoder default).
+	 * @param array $video       collect_inline_video() result (carries attachment_id, url).
+	 * @param int   $max_bytes   Per-network output ceiling (0 = the transcoder default).
+	 * @param int   $max_seconds Per-network duration cap (0 = full length).
 	 * @return array{mime:string,data:string}|null
 	 */
-	protected function fetch_upload_video( array $video, int $max_bytes = 0 ): ?array {
+	protected function fetch_upload_video( array $video, int $max_bytes = 0, int $max_seconds = 0 ): ?array {
 		$attachment_id = (int) ( $video['attachment_id'] ?? 0 );
 		if ( $attachment_id > 0 ) {
-			$mp4 = Video_Transcoder::web_mp4( $attachment_id, $max_bytes );
+			$mp4 = Video_Transcoder::web_mp4( $attachment_id, $max_bytes, $max_seconds );
 			if ( null !== $mp4 && is_readable( $mp4 ) ) {
 				return [ 'mime' => 'video/mp4', 'data' => (string) file_get_contents( $mp4 ) ];
 			}

@@ -16,6 +16,9 @@ class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 	/** Pixelfed Stories upload ceiling — the API caps it at 15000 KB; stay under. */
 	private const STORY_MAX_BYTES = 14 * 1024 * 1024;
 
+	/** Stories play for 15 s, so cap the encoded clip there (and size to fit). */
+	private const STORY_MAX_SECONDS = 15;
+
 	protected function char_limit(): int { return 2000; }
 
 	// Pixelfed has two surfaces we use: the photo grid (timeline) and the 24h
@@ -77,7 +80,7 @@ class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 		if ( $video ) {
 			// Pixelfed Stories reject anything over ~14.6 MB (15000 KB), far below
 			// Mastodon/Bluesky — so ask the transcoder for a story-sized derivative.
-			$fetched = $this->fetch_upload_video( $video, self::STORY_MAX_BYTES );
+			$fetched = $this->fetch_upload_video( $video, self::STORY_MAX_BYTES, self::STORY_MAX_SECONDS );
 			if ( $fetched && 'video/mp4' === $fetched['mime'] ) {
 				return [ 'data' => $fetched['data'], 'mime' => 'video/mp4', 'filename' => 'story.mp4', 'duration' => 15 ];
 			}
