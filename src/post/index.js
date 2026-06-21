@@ -2491,7 +2491,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! draftsList ) { return; }
 		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-drawer__empty">No drafts yet.</p>'; return; }
 		draftsList.innerHTML = rows.map( function ( r ) {
-			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '">'
+			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '" data-kind="' + escAttr( r.type ) + '">'
 				+ '<button type="button" class="draft-row__open">'
 				+ '<span class="draft-row__kind">' + escHtml( r.type ) + ( r.local ? '' : ' ·' ) + '</span>'
 				+ '<span class="draft-row__title">' + escHtml( r.title || '(untitled)' ) + '</span>'
@@ -2509,14 +2509,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	function closeDraftsDrawer() { if ( draftsDrawer ) { draftsDrawer.hidden = true; } }
 
-	// Build a form snapshot from a server draft's Micropub source (?q=source).
-	async function sourceToPost( url ) {
+	// Build a form snapshot from a server draft's Micropub source (?q=source). The
+	// source doesn't echo post-kind, so the drawer row's known kind is the fallback.
+	async function sourceToPost( url, kindHint ) {
 		try {
 			var res = await fetch( NOP.micropubUrl + '?q=source&url=' + encodeURIComponent( url ), { headers: { 'X-WP-Nonce': nonce } } );
 			if ( ! res.ok ) { return null; }
 			var p   = ( ( await res.json() ) || {} ).properties || {};
 			var get = function ( k ) { return ( k && p[ k ] && p[ k ][0] ) || ''; };
-			var type = get( 'post-kind' ) || 'note';
+			var type = get( 'post-kind' ) || ( TYPE_CONFIG[ kindHint ] ? kindHint : 'note' );
 			if ( ! TYPE_CONFIG[ type ] ) { type = 'note'; }
 			// mf2 content can be a plain string or an { html, value } object.
 			var content = get( 'content' );
@@ -2536,10 +2537,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	// Reopen a draft: local → full restore (blobs); server-only → fetch its source.
-	async function reopenDraft( id, serverUrl ) {
+	async function reopenDraft( id, serverUrl, kindHint ) {
 		var post = id ? await dGet( id ) : null;
 		if ( ! post && serverUrl ) {
-			post = await sourceToPost( serverUrl );
+			post = await sourceToPost( serverUrl, kindHint );
 			if ( post ) {
 				post.id = 'p' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 7 );
 				post.serverUrl = serverUrl;
@@ -2562,7 +2563,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		draftsDrawer.addEventListener( 'click', function ( e ) {
 			if ( e.target === draftsDrawer ) { closeDraftsDrawer(); return; }      // backdrop tap
 			var row = e.target.closest( '.draft-row' ); if ( ! row ) { return; }
-			var id = row.getAttribute( 'data-id' ), url = row.getAttribute( 'data-url' );
+			var id = row.getAttribute( 'data-id' ), url = row.getAttribute( 'data-url' ), kind = row.getAttribute( 'data-kind' );
 			if ( e.target.closest( '.draft-row__delete' ) ) {
 				if ( id )  { dDelete( id ); }
 				if ( url && navigator.onLine ) { mpFetch( { action: 'delete', url: url } ).catch( function () {} ); }
@@ -2570,7 +2571,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				row.remove(); refreshDraftsCount();
 				return;
 			}
-			reopenDraft( id, url );
+			reopenDraft( id, url, kind );
 		} );
 	}
 
