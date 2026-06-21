@@ -622,6 +622,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var fieldLocation   = document.getElementById( 'fieldLocation' );
 	var locationCheck   = document.getElementById( 'locationCheck' );
 	var locationPlace   = document.getElementById( 'locationPlace' );
+	var scheduleCheck   = document.getElementById( 'scheduleCheck' );
+	var scheduleDate    = document.getElementById( 'scheduleDate' );
+	var scheduleTime    = document.getElementById( 'scheduleTime' );
+	var scheduleFields  = document.getElementById( 'scheduleFields' );
+	var postLabel       = document.querySelector( '.btn-primary__label' );
+	var postLabelText   = postLabel ? postLabel.textContent : 'Post';   // the i18n'd "Post"
 
 	// Apply (or clear) the hot-linked event poster: hidden input carries the URL
 	// through to the Micropub payload, the <figure> is just author confirmation
@@ -662,6 +668,41 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var m = value.match( /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/ );
 		if ( dateEl ) { dateEl.value = m ? m[1] : ''; }
 		if ( timeEl ) { timeEl.value = ( m && m[2] ) ? m[2] : ''; }
+	}
+
+	// ── Scheduling ───────────────────────────────────────────────────────────
+	function pad2( n ) { return ( '0' + n ).slice( -2 ); }
+
+	// The date+time pickers → a UTC ISO instant. WordPress runs PHP in UTC, so we
+	// convert the author's LOCAL pick to UTC here (a zone-less string would be read
+	// as UTC and land at the wrong hour). Returns null unless a FUTURE time is set —
+	// anything at/in the past just posts now.
+	function getScheduledAt() {
+		if ( ! scheduleCheck || ! scheduleCheck.checked || ! scheduleDate || ! scheduleDate.value ) { return null; }
+		var t     = ( scheduleTime && scheduleTime.value ) ? scheduleTime.value : '00:00';
+		var local = new Date( scheduleDate.value + 'T' + t );   // parsed in the device's zone
+		if ( isNaN( local.getTime() ) || local.getTime() <= Date.now() + 30000 ) { return null; }
+		return local.toISOString();
+	}
+
+	// The POST pill reads "Schedule" once a valid future time is set, else "Post".
+	function updatePostLabel() {
+		if ( postLabel ) { postLabel.textContent = getScheduledAt() ? 'Schedule' : postLabelText; }
+	}
+
+	if ( scheduleCheck ) {
+		scheduleCheck.addEventListener( 'change', function () {
+			if ( scheduleFields ) { scheduleFields.hidden = ! scheduleCheck.checked; }
+			// Default to ~1h out so the author only nudges it.
+			if ( scheduleCheck.checked && scheduleDate && ! scheduleDate.value ) {
+				var soon = new Date( Date.now() + 60 * 60 * 1000 );
+				scheduleDate.value = soon.getFullYear() + '-' + pad2( soon.getMonth() + 1 ) + '-' + pad2( soon.getDate() );
+				if ( scheduleTime ) { scheduleTime.value = pad2( soon.getHours() ) + ':' + pad2( soon.getMinutes() ); }
+			}
+			updatePostLabel(); saveDraft();
+		} );
+		if ( scheduleDate ) { scheduleDate.addEventListener( 'change', function () { updatePostLabel(); saveDraft(); } ); }
+		if ( scheduleTime ) { scheduleTime.addEventListener( 'change', function () { updatePostLabel(); saveDraft(); } ); }
 	}
 	// The event URL the detail fetch last ran against — so an unchanged URL
 	// (re-blur, keystroke after the value settled) doesn't re-hit the endpoint.
@@ -1691,7 +1732,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( post.type === 'photo' && post.content ) {
 				await navigator.clipboard.writeText( post.content ).catch( function () {} );
 			}
-			showSuccess( result.permalink, result.editUrl, result.photoUrls );
+			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt );
 		} catch ( err ) {
 			// A dropped connection mid-send → queue it rather than lose the post.
 			if ( window.indexedDB && ( ! navigator.onLine || err instanceof TypeError ) ) {
@@ -1733,6 +1774,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				image:    eventImage ? eventImage.value.trim() : '',
 			},
 			tags:        currentTags.slice(),
+			scheduledAt: getScheduledAt(),
 			location:    ( TYPE_CONFIG[ currentType ].hasLocation && includeLocation && geoLat != null )
 				? { lat: geoLat, lon: geoLon, locality: geoLocality, country: geoCountry }
 				: null,
@@ -1852,6 +1894,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// "this site only"; omitting the property would fall back to the
 		// server's default of syndicating to every enabled platform.
 		props[ 'syndicate-to' ] = post.syndicateTo.slice();
+
+		// Scheduling: a future publish instant → WP makes a `future` (scheduled) post
+		// from post-status:publish + a future `published`. Syndication fires when it
+		// goes live (the server's transition hook), not now.
+		if ( post.scheduledAt ) {
+			props[ 'post-status' ] = [ 'publish' ];
+			props.published = [ post.scheduledAt ];
+		}
 
 		return { type: [ 'h-entry' ], properties: props };
 	}
@@ -1999,25 +2049,32 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Success ───────────────────────────────────────────────────────────────
 
-	function showSuccess( permalink, editUrl, photoUrls ) {
+	function showSuccess( permalink, editUrl, photoUrls, scheduledAt ) {
 		showView( 'success' );
 		clearDraft();
 		if ( navigator.vibrate ) navigator.vibrate( 10 );
 
 		var streakEl = document.getElementById( 'successStreak' );
-		var count    = bumpStreak();
-		if ( count > 0 ) {
-			streakEl.innerHTML = '<span class="success-streak__num">' + ordinal( count ) + '</span>'
-				+ '<span class="success-streak__label">post today</span>';
+		if ( scheduledAt ) {
+			// A scheduled post isn't live yet — show when it'll publish, and leave
+			// today's streak + ticker untouched (nothing went out).
+			streakEl.innerHTML = '<span class="success-streak__label">Scheduled for '
+				+ escHtml( new Date( scheduledAt ).toLocaleString() ) + '</span>';
 			streakEl.hidden = false;
 		} else {
-			streakEl.hidden = true;
+			var count = bumpStreak();
+			if ( count > 0 ) {
+				streakEl.innerHTML = '<span class="success-streak__num">' + ordinal( count ) + '</span>'
+					+ '<span class="success-streak__label">post today</span>';
+				streakEl.hidden = false;
+			} else {
+				streakEl.hidden = true;
+			}
+			// Keep the ticker's cadence + last-posted live as you post through the session.
+			postsToday  += 1;
+			lastPostTs   = Math.floor( Date.now() / 1000 );
+			renderTicker();
 		}
-
-		// Keep the ticker's cadence + last-posted live as you post through the session.
-		postsToday  += 1;
-		lastPostTs   = Math.floor( Date.now() / 1000 );
-		renderTicker();
 
 		document.getElementById( 'successPhotos' ).innerHTML = photoUrls.map( function (url) {
 			return '<img src="' + escAttr( url ) + '" alt="">';
@@ -2078,6 +2135,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		includeLocation = false;
 		if ( locationCheck ) { locationCheck.checked = false; }
 		updateLocationUI();
+		// Scheduling resets to "post now".
+		if ( scheduleCheck )  { scheduleCheck.checked = false; }
+		if ( scheduleDate )   { scheduleDate.value = ''; }
+		if ( scheduleTime )   { scheduleTime.value = ''; }
+		if ( scheduleFields ) { scheduleFields.hidden = true; }
+		updatePostLabel();
 		renderTags();
 		updateSpecimen();
 		clearContextPreview();
@@ -2153,6 +2216,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 					location: eventLocation ? eventLocation.value : '',
 					image:    eventImage ? eventImage.value : '',
 				},
+				schedule: {
+					on:   !! ( scheduleCheck && scheduleCheck.checked ),
+					date: scheduleDate ? scheduleDate.value : '',
+					time: scheduleTime ? scheduleTime.value : '',
+				},
 			} ) );
 		} catch ( e ) {}
 	}
@@ -2195,10 +2263,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			// re-hit the endpoint and clobber restored edits.
 			if ( typeof d.url === 'string' ) { fetchedEventUrl = d.url.trim(); }
 		}
+		if ( d.schedule && scheduleCheck ) {
+			scheduleCheck.checked = !! d.schedule.on;
+			if ( scheduleDate ) { scheduleDate.value = d.schedule.date || ''; }
+			if ( scheduleTime ) { scheduleTime.value = d.schedule.time || ''; }
+			if ( scheduleFields ) { scheduleFields.hidden = ! scheduleCheck.checked; }
+		}
 		restoring = false;
 		updateSpecimen();
 		updateCounter();
 		updatePostBtn();
+		updatePostLabel();
 		saveDraft();
 	}
 

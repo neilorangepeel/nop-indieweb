@@ -103,6 +103,28 @@ abstract class Service_Base {
 			$post_args['post_status'] = 'private';
 		}
 
+		// Drafts + scheduling from the composer. An explicit post-status:draft keeps the
+		// post out of sight; a FUTURE published instant schedules it (publish + a future
+		// post_date → WP status `future`). Set on the args BEFORE insert so the post is
+		// born in its final state — no momentary publish and its hooks. Only future dates
+		// are honoured here, so a service that carries its own past date (a Swarm check-in)
+		// is untouched.
+		$status_prop = (string) ( $payload['properties']['post-status'][0] ?? '' );
+		if ( in_array( $status_prop, [ 'draft', 'private' ], true ) ) {
+			$post_args['post_status'] = $status_prop;
+		}
+		$published = (string) ( $payload['properties']['published'][0] ?? '' );
+		if ( '' !== $published ) {
+			$ts = strtotime( $published );
+			if ( $ts && $ts > time() + MINUTE_IN_SECONDS ) {
+				$post_args['post_date']     = get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) );
+				$post_args['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+				if ( 'publish' === ( $post_args['post_status'] ?? 'publish' ) ) {
+					$post_args['post_status'] = 'future';
+				}
+			}
+		}
+
 		// Stamp the post author so mf2 author h-card emission and capability
 		// checks have a real user to work with.
 		$post_args['post_author'] = $this->resolve_author_id( $author_id );

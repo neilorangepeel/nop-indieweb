@@ -797,6 +797,24 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<div class="syndicators" id="syndicators"></div>
 					</div>
 
+					<!-- Schedule (all kinds) — opt-in. Off = post now. On + a future date/time
+					     publishes later: the client sends `published` + post-status:publish, WP
+					     schedules it (status `future`), and it syndicates when it goes live. -->
+					<div class="post-options__group field-row field-row--ledger" id="fieldSchedule" role="group" aria-labelledby="optScheduleLabel">
+						<span class="field-row__label" id="optScheduleLabel"><?php esc_html_e( 'Schedule', 'nop-indieweb' ); ?></span>
+						<div class="field-row__field">
+							<label class="location-toggle" id="scheduleToggle">
+								<input type="checkbox" id="scheduleCheck" class="sr-only">
+								<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
+								<span class="location-toggle__label"><?php esc_html_e( 'Post later', 'nop-indieweb' ); ?></span>
+							</label>
+							<div class="field-row__pair schedule-fields" id="scheduleFields" hidden>
+								<input type="date" id="scheduleDate" class="text-field text-field--date" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule date', 'nop-indieweb' ); ?>">
+								<input type="time" id="scheduleTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule time', 'nop-indieweb' ); ?>">
+							</div>
+						</div>
+					</div>
+
 				</div>
 
 				</div><!-- .ledger -->
@@ -814,7 +832,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="bottom-bar">
 				<button class="btn btn-primary" id="postBtn" disabled type="button">
 					<svg class="btn-primary__icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/></svg>
-					<?php esc_html_e( 'Post', 'nop-indieweb' ); ?>
+					<span class="btn-primary__label"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
 				</button>
 			</div>
 		</div><!-- #view-compose -->
