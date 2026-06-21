@@ -251,8 +251,17 @@ body::before {
 	border-top-right-radius: var(--screen-radius);
 	pointer-events: none;
 }
+/* Wider than a phone, the field surround moves FROM body's own background-color TO this
+   fixed layer, so `body` stays transparent at every width and iOS/iPadOS Safari keeps
+   sampling the html ACCENT for its header on iPad/desktop too — a body background-color
+   would override that sample, which is why the header tint used to drop past 600px. Flat
+   (no rounded top) and a touch lighter than the column's 16% grain so the column still
+   reads as denser paper floating on the field. */
 @media (min-width: 600px) {
-	body::before { display: none; }
+	body::before {
+		border-radius: 0;
+		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	}
 }
 
 /* ── App shell ──────────────────────────────────────────────────────────── */
@@ -336,31 +345,29 @@ body::before {
 	.app, body::before, .app::before { corner-shape: squircle; }
 }
 
-/* On phones the paper runs full-bleed. Wider than a phone, it becomes a centred,
-   full-height fluid NOTEBOOK COLUMN on the document's dot field — not a fixed phone
-   frame. The column width lives on the base .app (min(100%, --app-max)); here we only
-   paint the surround field. Because the scale reads `cqi` against the column, the
-   whole UI grows with it through iPad sizes (portrait and landscape) up to --app-max,
-   then holds and centres on big desktops. One full-height scroll column, so landscape
-   just fills the height. */
-@media (min-width: 600px) {
-	body {
-		/* The document's dot field the column sits on — post-hued, lighter than the
-		   column's own 16% grain so the column still reads as denser paper. Restored
-		   here because body is transparent on phones (the status-bar tint trick). */
-		background-color: var(--field);
-		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-		background-size: var(--grain-pitch) var(--grain-pitch);
+/* On phones the paper runs full-bleed — rounded TOP corners echo the device screen.
+   Bigger than a phone but before the iPhone frame (600–819px), it floats as a rounded
+   CARD on the dot field so the corners are actually visible: centred, full-corner radius,
+   a gap of field all round. The surround field is the fixed body::before layer above (so
+   body stays transparent for the Safari header tint), and the scale reads `cqi` against
+   the card so the UI grows with it. At 820px the phone frame takes over (below). */
+@media (min-width: 600px) and (max-width: 819.98px) {
+	.app {
+		--frame-gap: clamp( 16px, 4vh, 40px );
+		width: min( calc( 100% - 2 * var(--frame-gap) ), var(--app-max) );
+		height: calc( 100dvh - 2 * var(--frame-gap) );
+		margin: var(--frame-gap) auto;
+		border-radius: var(--screen-radius);   /* all four corners — base rounds only the top */
 	}
 }
 
-/* After the iPad viewpoint (desktop), the app becomes a true PHONE-WIDTH mock again:
-   a 390px framed phone floating centred on the field — the device-ink frame (re-tints
-   per kind), rounded corners, and the accent status band carrying the token colour.
-   At 390px wide the fluid scale resolves at phone size inside it. Phones and iPads keep
-   the full-bleed / fluid column above; only screens wider than an iPad landscape
-   (≈1200px) shrink to the small phone. (Tunable: the 1200px threshold below.) */
-@media (min-width: 1200px) {
+/* As soon as the screen is wider than the column's max (--app-max, 820px), the app
+   becomes a true PHONE-WIDTH mock: a 390px framed phone floating centred on the field —
+   the device-ink frame (re-tints per kind), rounded corners, and the accent status band
+   carrying the token colour. At 390px wide the fluid scale resolves at phone size inside
+   it. Below 820px the app is the full-bleed fluid notebook (rounded top corners kept);
+   at 820px the phone frame kicks in straight away. (Tunable: the 820px threshold below.) */
+@media (min-width: 820px) {
 	body { display: flex; align-items: center; justify-content: center; }
 	.app {
 		--safe-top: 59px;            /* the status-bar zone the band + island sit in */
