@@ -80,10 +80,15 @@ final class Video_Transcoder {
 			return null;
 		}
 
-		if ( filesize( (string) $out ) > $max_bytes && null !== $probe && $probe['duration'] > 0 ) {
-			// Stream-copy trim cuts on a keyframe, so aim 5% under budget for slack.
-			$seconds = (int) max( 1, floor( $probe['duration'] * ( $max_bytes / filesize( (string) $out ) ) * 0.95 ) );
-			self::remux( $ffmpeg, $src, (string) $out, $seconds );
+		// Trim to fit when over budget. 4K bitrate is bursty, so a single proportional
+		// cut can still overshoot — re-trim from the ACTUAL achieved size, converging
+		// in a couple of passes (all stream copies, so each pass is ~instant).
+		$seconds = is_array( $probe ) ? (float) $probe['duration'] : 0.0;
+		for ( $i = 0; $i < 4 && $seconds > 1 && filesize( (string) $out ) > $max_bytes; $i++ ) {
+			$seconds = max( 1.0, $seconds * ( $max_bytes / filesize( (string) $out ) ) * 0.9 );
+			if ( ! self::remux( $ffmpeg, $src, (string) $out, (int) round( $seconds ) ) ) {
+				break;
+			}
 		}
 
 		update_post_meta( $attachment_id, $cache_key, (string) $out );
