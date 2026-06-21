@@ -61,6 +61,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/preview/class-link-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-semantic-markup.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-open-graph.php';
 require_once NOP_INDIEWEB_DIR . 'includes/semantic/class-mf2-endpoint.php';
+require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-video-transcoder.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-mastodon-compatible-syndicator.php';
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-mastodon.php';

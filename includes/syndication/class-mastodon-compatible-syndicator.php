@@ -102,7 +102,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 	private function upload_post_images( int $post_id, string $instance, string $token ): array {
 		$video = $this->collect_inline_video( $post_id );
 		if ( $video ) {
-			$id = $this->upload_video( $instance, $token, $video['url'], $video['alt'] );
+			$id = $this->upload_video( $instance, $token, $video );
 			return $id ? [ $id ] : [];
 		}
 
@@ -162,13 +162,13 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		);
 	}
 
-	private function upload_video( string $instance, string $token, string $url, string $alt ): ?string {
+	private function upload_video( string $instance, string $token, array $video ): ?string {
 		return $this->upload_media(
 			$instance,
 			$token,
-			$this->fetch_video( $url ),
+			$this->fetch_upload_video( $video ),
 			'video.mp4',
-			$alt
+			(string) ( $video['alt'] ?? '' )
 		);
 	}
 
@@ -210,12 +210,32 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		$code   = wp_remote_retrieve_response_code( $response );
 		$result = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		// 200 = ready immediately, 202 = processing (still usable for the status).
+		// 200 = ready immediately, 202 = still processing. A video attached while
+		// processing makes the status POST 422 ("files that have not finished
+		// processing"), so on 202 poll the media until it's ready before returning.
 		if ( in_array( $code, [ 200, 202 ], true ) && isset( $result['id'] ) ) {
-			return (string) $result['id'];
+			$id = (string) $result['id'];
+			if ( 202 === $code ) {
+				$this->await_media_ready( $instance, $token, $id );
+			}
+			return $id;
 		}
 
 		return null;
+	}
+
+	/** Polls GET /api/v1/media/:id until processing completes (200) or ~60s elapse. */
+	private function await_media_ready( string $instance, string $token, string $id ): void {
+		for ( $i = 0; $i < 30; $i++ ) {
+			sleep( 2 );
+			$response = wp_remote_get(
+				rtrim( $instance, '/' ) . '/api/v1/media/' . rawurlencode( $id ),
+				[ 'headers' => [ 'Authorization' => 'Bearer ' . $token ], 'timeout' => 15 ]
+			);
+			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+				return;
+			}
+		}
 	}
 
 	public function test_connection(): array {

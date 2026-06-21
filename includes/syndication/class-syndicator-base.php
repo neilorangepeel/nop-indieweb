@@ -164,6 +164,27 @@ abstract class Syndicator_Base {
 		return $this->fetch_media( $url, [ 'video/mp4', 'video/webm', 'video/quicktime' ], 60 );
 	}
 
+	/**
+	 * Resolves a video for upload, preferring a transcoded, size-capped MP4 of the
+	 * LOCAL attachment (so a 4K iOS .mov becomes an MP4 the networks accept) over a
+	 * plain URL fetch. Reading the local file also sidesteps fetch_media's 50 MB
+	 * remote cap. Falls back to fetch_video() when the clip isn't a local attachment
+	 * or ffmpeg is unavailable.
+	 *
+	 * @param array $video collect_inline_video() result (carries attachment_id, url).
+	 * @return array{mime:string,data:string}|null
+	 */
+	protected function fetch_upload_video( array $video ): ?array {
+		$attachment_id = (int) ( $video['attachment_id'] ?? 0 );
+		if ( $attachment_id > 0 ) {
+			$mp4 = Video_Transcoder::web_mp4( $attachment_id );
+			if ( null !== $mp4 && is_readable( $mp4 ) ) {
+				return [ 'mime' => 'video/mp4', 'data' => (string) file_get_contents( $mp4 ) ];
+			}
+		}
+		return $this->fetch_video( (string) ( $video['url'] ?? '' ) );
+	}
+
 	/** Hard cap on media body fetched for syndication uploads (50 MB). */
 	private const MEDIA_FETCH_CAP_BYTES = 50 * 1024 * 1024;
 

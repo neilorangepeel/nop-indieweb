@@ -395,7 +395,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	 * then degrades to a link card.
 	 */
 	private function upload_video_blob( array $video, array $session ): ?array {
-		$fetched = $this->fetch_video( (string) $video['url'] );
+		$fetched = $this->fetch_upload_video( $video );
 		if ( ! $fetched ) {
 			return null;
 		}

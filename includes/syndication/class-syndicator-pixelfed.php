@@ -72,7 +72,7 @@ class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 	private function resolve_story_media( int $post_id ): ?array {
 		$video = $this->collect_inline_video( $post_id );
 		if ( $video ) {
-			$fetched = $this->fetch_video( (string) $video['url'] );
+			$fetched = $this->fetch_upload_video( $video );
 			if ( $fetched && 'video/mp4' === $fetched['mime'] ) {
 				return [ 'data' => $fetched['data'], 'mime' => 'video/mp4', 'filename' => 'story.mp4', 'duration' => 15 ];
 			}
