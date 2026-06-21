@@ -120,6 +120,26 @@ class Kind_Taxonomy {
 		add_action( 'set_object_terms', [ $this, 'mirror_kind_to_meta' ], 10, 6 );
 		// Priority 11: after the meta mirror, fill in the kind's default topic category.
 		add_action( 'set_object_terms', [ $this, 'apply_default_category' ], 11, 6 );
+		// Tag every post wrapper in a loop with its kind so themes/cards can colour
+		// or style by kind (reads the read-cache meta — no extra query).
+		add_filter( 'post_class', [ $this, 'add_kind_post_class' ], 10, 3 );
+	}
+
+	/**
+	 * Append a `nop-kind-{slug}` class to a post's wrapper class list (post-template
+	 * items, etc.), so per-kind styling — e.g. the public riso inks — can key off it.
+	 *
+	 * @param string[] $classes Existing class list.
+	 * @param string[] $css     Caller-supplied extra classes (unused).
+	 * @param int      $post_id Post being classed.
+	 * @return string[]
+	 */
+	public function add_kind_post_class( array $classes, $css, $post_id ): array {
+		$kind = (string) get_post_meta( (int) $post_id, 'nop_indieweb_post_kind', true );
+		if ( '' !== $kind ) {
+			$classes[] = 'nop-kind-' . sanitize_html_class( $kind );
+		}
+		return $classes;
 	}
 
 	public function register_taxonomy(): void {

@@ -571,5 +571,39 @@ HTML,
 <!-- /wp:group -->
 HTML,
 		] );
+
+		$this->register_index_pattern();
+	}
+
+	/**
+	 * "The Index" — a full, editable blog/home layout: a bento hero, a colour-coded
+	 * card for every post kind, social like/comment pills, a check-ins rail and an
+	 * RSVP band. The markup lives in patterns/the-index.html with %%KIND:slug%%
+	 * tokens so the Query Loops resolve to this install's term IDs (portable, and
+	 * gracefully empty for kinds a site doesn't use).
+	 */
+	private function register_index_pattern(): void {
+		$file = NOP_INDIEWEB_DIR . 'patterns/the-index.html';
+		if ( ! is_readable( $file ) ) {
+			return;
+		}
+		$content = (string) file_get_contents( $file );
+		$content = (string) preg_replace_callback(
+			'/%%KIND:([a-z0-9-]+)%%/',
+			static function ( array $m ): string {
+				$term = get_term_by( 'slug', $m[1], \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
+				return ( $term instanceof \WP_Term ) ? (string) $term->term_id : '0';
+			},
+			$content
+		);
+
+		register_block_pattern( 'nop-indieweb/the-index', [
+			'title'         => __( 'The Index — mega blog feed', 'nop-indieweb' ),
+			'description'   => __( 'A full blog/home layout: a bento hero plus a colour-coded card for every post kind (notes, photos, replies, likes, bookmarks, reposts, check-ins, exercise, watch, listen…), each with social like/comment pills, then a check-ins rail and an RSVP band. Insert and edit freely.', 'nop-indieweb' ),
+			'categories'    => [ 'nop-indieweb' ],
+			'keywords'      => [ 'blog', 'home', 'index', 'feed', 'grid', 'bento', 'kinds', 'indieweb' ],
+			'viewportWidth' => 1340,
+			'content'       => $content,
+		] );
 	}
 }

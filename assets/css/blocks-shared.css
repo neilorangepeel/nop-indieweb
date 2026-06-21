@@ -32,7 +32,56 @@
 
 	--nop-star-on:  #f59f00;
 	--nop-star-off: #d4d4d8;
+
+	/* Blog/index layout tokens — the card chrome + muted text used by .nop-blog
+	   and .nop-card. Defaults map to the theme palette; theme.json can override. */
+	--nop-line:      var(--wp--preset--color--accent-6, color-mix(in srgb, currentColor 16%, transparent));
+	--nop-ink:       var(--wp--preset--color--contrast, #111);
+	--nop-muted:     var(--wp--preset--color--accent-4, #6b7280);
+	--nop-radius-lg: 14px;
+
+	/* Per-kind riso inks — the public-facing kind identity (mirrors the /post
+	   composer). Each is a sensible default; a theme may re-tone any of them. */
+	--nop-kind-note:     #00857F;
+	--nop-kind-article:  #475569;
+	--nop-kind-photo:    #1E5BE0;
+	--nop-kind-reply:    #C75A12;
+	--nop-kind-like:     #D7331F;
+	--nop-kind-bookmark: #1E8540;
+	--nop-kind-repost:   #8A2CCF;
+	--nop-kind-quote:    #8A6200;
+	--nop-kind-rsvp:     #C81E66;
+	--nop-kind-checkin:  #0E9594;
+	--nop-kind-exercise: #E8590C;
+	--nop-kind-story:    #5338D9;
+	--nop-kind-listen:   #7048E8;
+	--nop-kind-watch:    #862E9C;
+	--nop-kind-video:    #C2255C;
+	--nop-kind-film:     #5F3DC4;
+	--nop-kind-book:     #2B8A3E;
+	--nop-kind-music:    #1098AD;
 }
+
+/* Map each kind class (emitted on posts + set on index cards) to its ink, exposed
+   as --kind-ink for the card chrome below to consume. */
+.nop-kind-note     { --kind-ink: var(--nop-kind-note); }
+.nop-kind-article  { --kind-ink: var(--nop-kind-article); }
+.nop-kind-photo    { --kind-ink: var(--nop-kind-photo); }
+.nop-kind-reply    { --kind-ink: var(--nop-kind-reply); }
+.nop-kind-like     { --kind-ink: var(--nop-kind-like); }
+.nop-kind-bookmark { --kind-ink: var(--nop-kind-bookmark); }
+.nop-kind-repost   { --kind-ink: var(--nop-kind-repost); }
+.nop-kind-quote    { --kind-ink: var(--nop-kind-quote); }
+.nop-kind-rsvp     { --kind-ink: var(--nop-kind-rsvp); }
+.nop-kind-checkin  { --kind-ink: var(--nop-kind-checkin); }
+.nop-kind-exercise { --kind-ink: var(--nop-kind-exercise); }
+.nop-kind-story    { --kind-ink: var(--nop-kind-story); }
+.nop-kind-listen   { --kind-ink: var(--nop-kind-listen); }
+.nop-kind-watch    { --kind-ink: var(--nop-kind-watch); }
+.nop-kind-video    { --kind-ink: var(--nop-kind-video); }
+.nop-kind-film     { --kind-ink: var(--nop-kind-film); }
+.nop-kind-book     { --kind-ink: var(--nop-kind-book); }
+.nop-kind-music    { --kind-ink: var(--nop-kind-music); }
 
 :where(
 	.nop-cite-card,
@@ -665,4 +714,142 @@ a.nop-post-footer__pill--link:focus-visible {
 @media (prefers-reduced-motion: no-preference) {
 	.is-style-stories-rail .wp-block-post-featured-image { transition: transform 0.15s ease; }
 	.is-style-stories-rail li:hover .wp-block-post-featured-image { transform: scale(1.03); }
+}
+
+/* ----------------------------------------------------------------------- */
+/* nop-index :: "The Index" mega-feed (the /blog page)                      */
+/* A bento mosaic where every content type gets a spot, inked by kind.      */
+/* ----------------------------------------------------------------------- */
+
+.nop-index__wordmark {
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	line-height: 0.92;
+	margin: 0;
+}
+.nop-index__lede {
+	color: var(--nop-muted);
+	max-width: 46ch;
+	margin: 0;
+}
+
+/* Kind cards carry their kind ink: a top rule, inked eyebrow + glyph, lift on
+   hover with a kind-tinted shadow. --kind-ink is set by the .nop-kind-* class. */
+/* Zero-specificity default so a .nop-kind-* class always wins the ink. */
+:where(.nop-card, .nop-index__placeholder) { --kind-ink: var(--nop-ink); }
+.nop-card {
+	position: relative;
+	overflow: hidden;
+	transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.nop-card::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 4px;
+	background: var(--kind-ink);
+}
+.nop-card:hover {
+	transform: translateY(-3px);
+	border-color: color-mix(in srgb, var(--kind-ink) 45%, var(--nop-line));
+	box-shadow: 0 16px 34px -20px color-mix(in srgb, var(--kind-ink) 60%, transparent);
+}
+.nop-card .wp-block-post-terms,
+.nop-card .wp-block-post-terms a,
+.nop-card .nop-blog__eyebrow,
+.nop-card .nop-blog__eyebrow a,
+.nop-card .nop-card__eyebrow {
+	color: var(--kind-ink);
+	font-weight: 700;
+	text-decoration: none;
+}
+.nop-card .wp-block-nop-indieweb-kind-icon,
+.nop-card .wp-block-nop-indieweb-exercise-type-icon { color: var(--kind-ink); }
+.nop-card .wp-block-post-title a:hover { color: var(--kind-ink); }
+
+/* The kind badge: glyph + kind term as a filled pill in the kind ink, so every
+   card announces its type in colour. inline-flex shrink-wraps it to the top-left. */
+.nop-card__head {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.34rem;
+	padding: 0.24rem 0.7rem 0.24rem 0.55rem;
+	border-radius: var(--nop-radius-pill);
+	background: var(--kind-ink);
+	color: #fff;
+	line-height: 1;
+}
+.nop-card__head .wp-block-post-terms,
+.nop-card__head .wp-block-post-terms a,
+.nop-card__head .nop-blog__eyebrow,
+.nop-card__head .nop-blog__eyebrow a,
+.nop-card__head .wp-block-nop-indieweb-kind-icon,
+.nop-card__head .wp-block-nop-indieweb-exercise-type-icon {
+	color: #fff;
+	margin: 0;
+}
+.nop-card__head .wp-block-nop-indieweb-kind-icon svg,
+.nop-card__head .wp-block-nop-indieweb-exercise-type-icon svg {
+	width: 0.9em;
+	height: 0.9em;
+	display: block;
+}
+
+/* ---- Hero bento: a feature (span two rows) + two stacked tiles ---------- */
+.nop-index__hero {
+	display: grid;
+	grid-template-columns: 1.7fr 1fr;
+	grid-auto-rows: 1fr;
+	gap: 1.2rem;
+}
+.nop-index__hero > .wp-block-query:first-child { grid-row: span 2; }
+.nop-index__hero > .wp-block-query,
+.nop-index__hero .wp-block-post-template,
+.nop-index__hero .wp-block-post-template > li { height: 100%; }
+.nop-index__hero .wp-block-post-template,
+.nop-index__grid .wp-block-post-template {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.nop-index__hero .wp-block-post-template > li,
+.nop-index__grid .wp-block-post-template > li { margin: 0; }
+.nop-index__hero .nop-index__feature img {
+	width: 100%;
+	height: clamp(220px, 32vw, 380px);
+	object-fit: cover;
+}
+
+/* ---- The kind mosaic --------------------------------------------------- */
+.nop-index__grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.2rem;
+}
+.nop-index__grid > .wp-block-query { min-width: 0; height: 100%; }
+.nop-index__grid > .wp-block-query.nop-span-2 { grid-column: span 2; }
+.nop-index__grid .wp-block-post-template > li,
+.nop-index__grid .nop-card { height: 100%; }
+.nop-index__grid .nop-card img {
+	width: 100%;
+	height: clamp(140px, 18vw, 200px);
+	object-fit: cover;
+}
+
+/* Empty-kind placeholder card (query-no-results) — a quiet dashed tile so the
+   type is still represented. */
+.nop-index__placeholder {
+	border: 1px dashed color-mix(in srgb, var(--kind-ink, var(--nop-line)) 40%, var(--nop-line));
+	border-radius: var(--nop-radius-lg);
+	background: color-mix(in srgb, var(--kind-ink, var(--nop-ink)) 5%, #fff);
+	height: 100%;
+}
+.nop-index__placeholder .nop-blog__eyebrow { color: var(--kind-ink); }
+.nop-index__placeholder p { margin: 0; }
+
+@media (max-width: 781px) {
+	.nop-index__hero,
+	.nop-index__grid { grid-template-columns: 1fr; }
+	.nop-index__hero > .wp-block-query:first-child { grid-row: auto; }
+	.nop-index__grid > .wp-block-query.nop-span-2 { grid-column: auto; }
 }
