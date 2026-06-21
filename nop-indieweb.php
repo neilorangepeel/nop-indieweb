@@ -78,6 +78,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-debug.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-kinds-panel.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-syndication-panel.php';
+require_once NOP_INDIEWEB_DIR . 'includes/admin/class-syndication-notice.php';
 require_once NOP_INDIEWEB_DIR . 'includes/importer/class-feed-importer.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-mf2-parser.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-cite-extractor.php';
@@ -119,7 +120,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-weather.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-health-check-cli.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-syndication-flag.php';
 	\WP_CLI::add_command( 'nop-indieweb health-check',                \NOP\IndieWeb\Cli\Health_Check_CLI::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-syndication-flag',   \NOP\IndieWeb\Cli\Backfill_Syndication_Flag::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );

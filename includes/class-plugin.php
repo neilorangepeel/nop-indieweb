@@ -36,6 +36,7 @@ use NOP\IndieWeb\Admin\Debug;
 use NOP\IndieWeb\Admin\Post_Kinds_Panel;
 use NOP\IndieWeb\Lookup\Lookup_Provider_TMDB;
 use NOP\IndieWeb\Admin\Syndication_Panel;
+use NOP\IndieWeb\Admin\Syndication_Notice;
 use NOP\IndieWeb\IndieAuth\Auth_Endpoint;
 use NOP\IndieWeb\IndieAuth\Token_Endpoint;
 use NOP\IndieWeb\Syndication\Syndication_Manager;
@@ -237,6 +238,7 @@ class Plugin {
 			( new Debug( $services ) )->register();
 			( new Post_Kinds_Panel() )->register();
 			( new Syndication_Panel( $syndication_manager ) )->register();
+			( new Syndication_Notice( $syndication_manager ) )->register();
 		}
 
 		// Clear the personal-best distance transient whenever an exercise post's

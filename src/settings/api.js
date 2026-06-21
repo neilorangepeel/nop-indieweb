@@ -27,6 +27,16 @@ export function getHealthStatus() {
 	return apiFetch( { url: base() + '/health', method: 'GET', parse: true } );
 }
 
+export function getSyndicationHealth() {
+	const url = base().replace( '/settings', '/syndication/health' );
+	return apiFetch( { url, method: 'GET', parse: true } );
+}
+
+export function retrySyndication( postId, target ) {
+	const url = base().replace( '/settings', '/syndication/retry' );
+	return apiFetch( { url, method: 'POST', data: { post_id: postId, target }, parse: true } );
+}
+
 export function runHealthCheck() {
 	return apiFetch( { url: base() + '/health', method: 'POST', parse: true } );
 }

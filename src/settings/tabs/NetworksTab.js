@@ -5,6 +5,7 @@ import SecretInput from '../components/SecretInput';
 import TestConnectionButton from '../components/TestConnectionButton';
 import SyncNowButton from '../components/SyncNowButton';
 import EndpointRow from '../components/EndpointRow';
+import SyndicationHealth from '../components/SyndicationHealth';
 
 // ——— Shared: inbound import section ————————————————————————————————————————
 
@@ -317,6 +318,7 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 
 	return (
 		<div className="nop-tab-content nop-networks-tab">
+			<SyndicationHealth />
 			<MastodonPanel
 				value={ syndicators.mastodon   ?? {} }
 				onChange={ setSyndicator( 'mastodon' ) }

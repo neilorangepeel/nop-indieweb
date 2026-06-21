@@ -14,6 +14,15 @@ class Syndication_Manager {
 
 	private const MAX_ATTEMPTS = 4;
 
+	/** Per-post journal of each platform's delivery state. */
+	public const STATUS_META = 'nop_indieweb_syndication_status';
+
+	/** Cheap indexed flag: present (=1) while any target on this post is failed. */
+	public const FAILED_FLAG_META = 'nop_indieweb_syndication_failed';
+
+	/** Short-lived cache of failure_summary(); busted whenever a status changes. */
+	private const SUMMARY_TRANSIENT = 'nop_indieweb_synd_failure_summary';
+
 	/** Seconds to wait before each retry, keyed by the attempt number being scheduled. */
 	private const RETRY_DELAYS = [
 		2 => 5 * MINUTE_IN_SECONDS,
@@ -144,10 +153,127 @@ class Syndication_Manager {
 		}
 
 		if ( $status ) {
-			update_post_meta( $post_id, 'nop_indieweb_syndication_status', $status );
+			update_post_meta( $post_id, self::STATUS_META, $status );
 		} else {
-			delete_post_meta( $post_id, 'nop_indieweb_syndication_status' );
+			delete_post_meta( $post_id, self::STATUS_META );
 		}
+
+		$this->update_failure_flag( $post_id, $status );
+	}
+
+	/**
+	 * Maintains the indexed "this post has a failed target" flag so the admin
+	 * notice + Networks health can query failures cheaply (no serialized scan),
+	 * and busts the cached summary. Cleared the moment the last failure resolves.
+	 *
+	 * @param array<string,mixed> $status The post's full status journal.
+	 */
+	private function update_failure_flag( int $post_id, array $status ): void {
+		$has_failure = false;
+		foreach ( $status as $entry ) {
+			if ( is_array( $entry ) && 'failed' === ( $entry['state'] ?? '' ) ) {
+				$has_failure = true;
+				break;
+			}
+		}
+
+		if ( $has_failure ) {
+			update_post_meta( $post_id, self::FAILED_FLAG_META, 1 );
+		} else {
+			delete_post_meta( $post_id, self::FAILED_FLAG_META );
+		}
+
+		$this->flush_summary_cache();
+	}
+
+	/** Discards the cached failure_summary() so the next read recomputes. */
+	public function flush_summary_cache(): void {
+		delete_transient( self::SUMMARY_TRANSIENT );
+	}
+
+	/**
+	 * Aggregate of currently-failing syndications across all posts — feeds the
+	 * admin notice and the Networks-tab health view so a dead token is visible
+	 * without opening individual posts. Cheap (indexed flag query) + cached.
+	 *
+	 * @return array{total_failed_posts:int, networks:array<int,array<string,mixed>>, failed_posts:array<int,array<string,mixed>>}
+	 */
+	public function failure_summary(): array {
+		$cached = get_transient( self::SUMMARY_TRANSIENT );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		// Per-network skeleton — configured/enabled comes from the syndicators.
+		$networks = [];
+		foreach ( $this->syndicators as $s ) {
+			$networks[ $s->slug() ] = [
+				'slug'         => $s->slug(),
+				'label'        => $s->label(),
+				'enabled'      => $s->enabled(),
+				'state'        => $s->enabled() ? 'ok' : 'off',
+				'failed_count' => 0,
+				'last_error'   => null,
+			];
+		}
+
+		$failed_posts = [];
+
+		$ids = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 100,
+			'fields'         => 'ids',
+			'meta_key'       => self::FAILED_FLAG_META, // phpcs:ignore WordPress.DB.SlowDBQuery -- indexed flag, bounded + cached.
+			'meta_value'     => '1',                    // phpcs:ignore WordPress.DB.SlowDBQuery
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
+		] );
+
+		foreach ( $ids as $pid ) {
+			$journal = get_post_meta( (int) $pid, self::STATUS_META, true );
+			if ( ! is_array( $journal ) ) {
+				continue;
+			}
+
+			$targets = [];
+			foreach ( $journal as $slug => $entry ) {
+				if ( ! is_array( $entry ) || 'failed' !== ( $entry['state'] ?? '' ) ) {
+					continue;
+				}
+				$error     = (string) ( $entry['error'] ?? '' );
+				$targets[] = [
+					'slug'     => (string) $slug,
+					'error'    => $error,
+					'attempts' => (int) ( $entry['attempts'] ?? 0 ),
+					'updated'  => (int) ( $entry['updated'] ?? 0 ),
+				];
+				if ( isset( $networks[ $slug ] ) ) {
+					$networks[ $slug ]['state'] = 'failing';
+					$networks[ $slug ]['failed_count']++;
+					$networks[ $slug ]['last_error'] = $error;
+				}
+			}
+
+			if ( $targets ) {
+				$failed_posts[] = [
+					'post_id'  => (int) $pid,
+					'title'    => get_the_title( (int) $pid ),
+					'edit_url' => get_edit_post_link( (int) $pid, 'raw' ),
+					'targets'  => $targets,
+				];
+			}
+		}
+
+		$summary = [
+			'total_failed_posts' => count( $failed_posts ),
+			'networks'           => array_values( $networks ),
+			'failed_posts'       => $failed_posts,
+		];
+
+		set_transient( self::SUMMARY_TRANSIENT, $summary, 5 * MINUTE_IN_SECONDS );
+		return $summary;
 	}
 
 	public function register_rest_routes(): void {
@@ -159,6 +285,13 @@ class Syndication_Manager {
 				'post_id' => [ 'type' => 'integer', 'required' => true ],
 				'target'  => [ 'type' => 'string', 'required' => true ],
 			],
+		] );
+
+		// Read-only aggregate of failing syndications for the Networks-tab health view.
+		register_rest_route( 'nop-indieweb/v1', '/syndication/health', [
+			'methods'             => \WP_REST_Server::READABLE,
+			'callback'            => fn() => new \WP_REST_Response( $this->failure_summary(), 200 ),
+			'permission_callback' => fn() => current_user_can( 'manage_options' ),
 		] );
 	}
 
