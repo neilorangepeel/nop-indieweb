@@ -88,6 +88,17 @@ class Syndication_Manager {
 			return;
 		}
 
+		// Don't POSSE backdated posts: a historical import/backfill (e.g. re-syndicated
+		// old check-ins via micropub) must not flood networks as if it were happening now.
+		// A live post publishes at ~now; a backfill carries an old published date. The
+		// /post composer doesn't send `published`, so offline-queue replays land at ~now
+		// and are unaffected. Filterable for the rare "syndicate this old post on purpose".
+		$published = (int) get_post_time( 'U', true, $post_id );
+		$max_age   = (int) apply_filters( 'nop_indieweb_syndicate_max_age', DAY_IN_SECONDS, $post_id );
+		if ( $published && ( time() - $published ) > $max_age ) {
+			return;
+		}
+
 		$targets = $this->resolve_targets( $post_id );
 
 		foreach ( $this->syndicators as $syndicator ) {
