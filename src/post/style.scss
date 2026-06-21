@@ -251,13 +251,14 @@ body::before {
 	border-top-right-radius: var(--screen-radius);
 	pointer-events: none;
 }
-/* Wider than a phone, the field surround moves FROM body's own background-color TO this
-   fixed layer, so `body` stays transparent at every width and iOS/iPadOS Safari keeps
-   sampling the html ACCENT for its header on iPad/desktop too — a body background-color
-   would override that sample, which is why the header tint used to drop past 600px. Flat
-   (no rounded top) and a touch lighter than the column's 16% grain so the column still
-   reads as denser paper floating on the field. */
-@media (min-width: 600px) {
+/* The field surround lives on this fixed layer (not on body's background-color), so
+   `body` stays transparent at every width and iOS/iPadOS/macOS Safari keeps sampling the
+   html ACCENT for its header (a body background-color overrides that sample — that's why
+   the tint used to drop past 600px). BELOW 820 the app is full-bleed, so body::before
+   keeps its base rounded top (matching the app) and the accent peeks in the corner cuts —
+   that's the visible rounded corners. Only ONCE THE PHONE FRAME FLOATS (≥820) does this
+   become the flat, slightly-lighter surround the phone sits on. */
+@media (min-width: 820px) {
 	body::before {
 		border-radius: 0;
 		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
@@ -345,21 +346,11 @@ body::before {
 	.app, body::before, .app::before { corner-shape: squircle; }
 }
 
-/* On phones the paper runs full-bleed — rounded TOP corners echo the device screen.
-   Bigger than a phone but before the iPhone frame (600–819px), it floats as a rounded
-   CARD on the dot field so the corners are actually visible: centred, full-corner radius,
-   a gap of field all round. The surround field is the fixed body::before layer above (so
-   body stays transparent for the Safari header tint), and the scale reads `cqi` against
-   the card so the UI grows with it. At 820px the phone frame takes over (below). */
-@media (min-width: 600px) and (max-width: 819.98px) {
-	.app {
-		--frame-gap: clamp( 16px, 4vh, 40px );
-		width: min( calc( 100% - 2 * var(--frame-gap) ), var(--app-max) );
-		height: calc( 100dvh - 2 * var(--frame-gap) );
-		margin: var(--frame-gap) auto;
-		border-radius: var(--screen-radius);   /* all four corners — base rounds only the top */
-	}
-}
+/* On phones AND every screen up to the phone frame (820px) the paper runs FULL-BLEED:
+   width 100%, no left/right auto margin, with the rounded TOP corners echoing the device
+   screen — the accent (html) peeks through the rounded corner cuts (the app's rounded top
+   over body::before's rounded top), so the corners stay visible the whole way up, never
+   an auto-margin gap before the breakpoint. At 820px the phone frame takes over (below). */
 
 /* As soon as the screen is wider than the column's max (--app-max, 820px), the app
    becomes a true PHONE-WIDTH mock: a 390px framed phone floating centred on the field —
