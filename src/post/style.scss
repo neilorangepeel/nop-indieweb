@@ -93,35 +93,53 @@
 	--safe-top:    env(safe-area-inset-top, 0px);
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
 
-	/* ── Scale tokens — adjust the whole UI from here ──────────────────────── */
-	/* Type scale — the recurring body sizes (poster/display one-offs like 24/32/40
-	   stay literal). Value-named so the source reads true; change one to retune
-	   every label/field/caption printed at that size. */
-	--fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
-	--fs-14: 14px;  --fs-16: 16px;  --fs-18: 18px;
-	/* ── Spacing scale — a 4pt grid (iOS's 8pt grid + a half-step). Layout gaps,
-	   padding and margins snap to these so the whole UI shares one rhythm:
-	     1 hairline · 2 label↔control & tile gaps · 3 control padding ·
-	     4 field-group rhythm · 5 page gutter · 6 section · 8 hero. */
-	--sp-1: 4px;
-	--sp-2: 8px;
-	--sp-3: 12px;
-	--sp-4: 16px;
-	--sp-5: 20px;
-	--sp-6: 24px;
-	--sp-8: 32px;
-	/* The ruled baseline — the compose pad's line pitch (line-height + rule spacing).
-	   Printed field rows step in whole multiples of this so their hairlines continue
-	   the writing lines, like one ruled sheet. */
-	--baseline: 30px;
-	/* The break between stacked sections (header · writing · fields · filing) — one
-	   value so every section sits the same distance from the next. */
-	--section-gap: var(--sp-6);
-	/* The page side gutter (= --sp-5) — the inset shared by every top-level section
-	   (masthead, compose, success). Sized to breathe inside the rounded top corners
-	   (--screen-radius): a gutter smaller than the radius lets the corner arc crowd
-	   the masthead, so it tracks a touch under the radius. */
-	--pad-x: var(--sp-5);
+	/* ── Fluid modular scale — one system, sized from the app's OWN width ─────
+	   Every size below is a clamp() that interpolates with `cqi` (1% of the .app
+	   container's inline size — set `container-type:inline-size` on .app). So the
+	   whole UI scales with the composer's width: full-bleed on a phone, and up
+	   through the fluid column on iPad/desktop — identically, because it tracks the
+	   container, not the viewport. Two anchors: 360px (small phone) → 820px (the
+	   column's max). Type steps relate by ~1.2 (minor third); spacing + the ruled
+	   baseline ride the same curve so they always work together. Retune the whole
+	   app by moving an anchor px here. (Literals that match physical hardware — the
+	   iOS pill, safe-area env() — stay fixed; they're not content sizes.) */
+
+	/* Type — value-name retired for semantic steps; --step-0 is body text. */
+	--step--3: clamp( 9px,  calc( 8.22px  + 0.22cqi ), 10px );
+	--step--2: clamp( 11px, calc( 10.22px + 0.22cqi ), 12px );
+	--step--1: clamp( 13px, calc( 11.43px + 0.43cqi ), 15px );
+	--step-0:  clamp( 16px, calc( 13.65px + 0.65cqi ), 19px );
+	--step-1:  clamp( 18px, calc( 14.09px + 1.09cqi ), 23px );
+	--step-2:  clamp( 22px, calc( 16.52px + 1.52cqi ), 29px );
+	--step-3:  clamp( 28px, calc( 20.96px + 1.96cqi ), 37px );
+	--step-4:  clamp( 33px, calc( 22.83px + 2.83cqi ), 46px );
+	--step-5:  clamp( 40px, calc( 27.48px + 3.48cqi ), 56px );
+
+	/* Spacing — derived on the same curve; --space-s (=body) is the unit. */
+	--space-3xs: clamp( 4px,  calc( 3.22px  + 0.22cqi ), 5px );
+	--space-2xs: clamp( 8px,  calc( 6.43px  + 0.43cqi ), 10px );
+	--space-xs:  clamp( 12px, calc( 9.65px  + 0.65cqi ), 15px );
+	--space-s:   clamp( 16px, calc( 12.87px + 0.87cqi ), 20px );
+	--space-m:   clamp( 20px, calc( 16.09px + 1.09cqi ), 25px );
+	--space-l:   clamp( 24px, calc( 19.30px + 1.30cqi ), 30px );
+	--space-xl:  clamp( 32px, calc( 25.74px + 1.74cqi ), 40px );
+	--space-2xl: clamp( 48px, calc( 38.61px + 2.61cqi ), 60px );
+
+	/* The ruled baseline — the compose pad's line pitch. Fluid too, so the notebook
+	   lines breathe with the type; printed field rows step in whole multiples of it
+	   and the rule gradient is drawn off it (see .text-field), so text always lands
+	   on the line at every width. --lead is the in-cell top lead (kept at 0.2× the
+	   baseline so the text↔rule offset is scale-invariant). */
+	--baseline: clamp( 30px, calc( 25.30px + 1.30cqi ), 36px );
+	--lead: calc( var(--baseline) * 0.2 );
+	/* The break between stacked sections (header · writing · fields · filing). */
+	--section-gap: var(--space-l);
+	/* The page side gutter — the inset shared by every top-level section, sized to
+	   breathe inside the rounded top corners (--screen-radius). */
+	--pad-x: var(--space-m);
+	/* The largest the fluid notebook column grows before it holds and centres —
+	   keeps line-length sane on big desktops while letting iPad fill out. */
+	--app-max: 820px;
 	/* ── Line system — one motif, three weights by meaning ───────────────────
 	   --bw        object & zone stroke: bold full-ink Bauhaus edges (kind tiles,
 	               buttons, banners, the masthead/ticker/type-strip frames).
@@ -233,7 +251,7 @@ body::before {
 	border-top-right-radius: var(--screen-radius);
 	pointer-events: none;
 }
-@media (min-width: 600px) and (min-height: 600px) {
+@media (min-width: 600px) {
 	body::before { display: none; }
 }
 
@@ -279,6 +297,16 @@ body::before {
 	position: relative;
 	z-index: 1;                 /* above the fixed grain backstop (body::before) */
 	margin: 0 auto;
+	/* Fluid column width: full-bleed on phones (100% < --app-max), a centred column
+	   capped at --app-max on iPad/desktop. Centring is the margin:auto above; the
+	   column stays full-height (height:100dvh), so it fills portrait AND landscape. */
+	width: min( 100%, var(--app-max) );
+	/* The sizing container: the whole fluid scale (--step, --space, --baseline)
+	   reads `cqi` against THIS element's inline size, so every size tracks the
+	   composer's own width — full-bleed on a phone, the centred column on larger
+	   screens — identically. (Nothing on .app itself consumes those tokens, which
+	   would resolve against the viewport, not self.) */
+	container-type: inline-size;
 	color: var(--text);
 	/* Same off-white as the html/body field — NO tint fill. The poster's depth
 	   comes only from its dots being a touch darker than the field's (see --grain
@@ -308,48 +336,52 @@ body::before {
 	.app, body::before, .app::before { corner-shape: squircle; }
 }
 
-/* On phones the paper runs full-bleed — no side frame. Edge borders sit in
-   the zone the rounded display corners and sub-pixel rounding clip, so they
-   render ragged; the horizontal rules carry the structure instead. The full
-   2px ink frame only appears when there's genuinely room to float the poster:
-   wide AND tall, so landscape phones stay full-bleed too. */
-@media (min-width: 600px) and (min-height: 600px) {
+/* On phones the paper runs full-bleed. Wider than a phone, it becomes a centred,
+   full-height fluid NOTEBOOK COLUMN on the document's dot field — not a fixed phone
+   frame. The column width lives on the base .app (min(100%, --app-max)); here we only
+   paint the surround field. Because the scale reads `cqi` against the column, the
+   whole UI grows with it through iPad sizes (portrait and landscape) up to --app-max,
+   then holds and centres on big desktops. One full-height scroll column, so landscape
+   just fills the height. */
+@media (min-width: 600px) {
 	body {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		/* The document's own dot field the floating phone sits on — post-hued (var(--ink)
-		   via :root) and part of the ONE master grid: body has no margin so its grain
-		   sits at the viewport origin (0,0), and every other dot layer (phone interior,
-		   shadows) is JS-anchored to that same origin (alignHalftone), so the surround
-		   dots register exactly with the phone's. Lighter than the 16% poster so the
-		   phone still reads as denser. Restored here because body is transparent on
-		   phones (status-bar trick). */
+		/* The document's dot field the column sits on — post-hued, lighter than the
+		   column's own 16% grain so the column still reads as denser paper. Restored
+		   here because body is transparent on phones (the status-bar tint trick). */
 		background-color: var(--field);
 		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 		background-size: var(--grain-pitch) var(--grain-pitch);
 	}
+}
+
+/* After the iPad viewpoint (desktop), the app becomes a true PHONE-WIDTH mock again:
+   a 390px framed phone floating centred on the field — the device-ink frame (re-tints
+   per kind), rounded corners, and the accent status band carrying the token colour.
+   At 390px wide the fluid scale resolves at phone size inside it. Phones and iPads keep
+   the full-bleed / fluid column above; only screens wider than an iPad landscape
+   (≈1200px) shrink to the small phone. (Tunable: the 1200px threshold below.) */
+@media (min-width: 1200px) {
+	body { display: flex; align-items: center; justify-content: center; }
 	.app {
-		/* A fixed, phone-sized poster floating in the browser — iPhone point
-		   dimensions (390x844, 19.5:9) with the display corner radius. The faux
-		   safe-area insets reserve the real iOS status-bar / home-indicator zones
-		   so we design with the device chrome in mind. --device-ink (the kind ink
-		   a shade deeper) tones the faux chrome AND this outer border, so the
-		   device dressing reads as one hue. */
+		--safe-top: 59px;            /* the status-bar zone the band + island sit in */
+		--safe-bottom: 34px;         /* home-indicator breathing room for the scroll pad */
+		--frame-gap: clamp( 16px, 4vh, 48px );
+		/* A phone-sized poster floating in the browser — iPhone point width, capped to
+		   the viewport height so it always fits; body flex centres it both ways. */
 		width: 390px;
 		height: 844px;
-		--safe-top: 59px;
-		--safe-bottom: 34px;
+		max-height: calc( 100dvh - 2 * var(--frame-gap) );
+		margin: 0;
+		/* The device frame — a 2px deeper-ink edge (re-tints per kind) with full rounded
+		   corners, overriding the base top-only radius. */
 		border: var(--bw) solid var(--device-ink);
 		border-radius: 50px;
-		/* Accent base: the field+grain becomes the ::before card below; the only
-		   place this shows is the band zone (under the band) and the card's rounded
-		   top-corner cuts — exactly like the html accent does in standalone. */
+		/* Accent base — the per-kind token colour, shown in the status-bar zone above the
+		   content card and in the rounded corner cuts. */
 		background: var(--bar-accent);
 	}
-	/* The content card: field+grain dropped below the faux status bar with rounded
-	   top corners, so the accent base shows through the cuts (z-index:-1 keeps it
-	   behind the content but above the accent base). Mirrors the standalone look. */
+	/* Content card: field + grain dropped below the faux status bar with a rounded top,
+	   so the accent base reads as the status band behind the chrome. */
 	.app::before {
 		content: "";
 		position: absolute;
@@ -358,13 +390,12 @@ body::before {
 		background-color: var(--field);
 		background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
 		background-size: var(--grain-pitch) var(--grain-pitch);
-		/* Anchored to the viewport master grid (set in alignHalftone) so the card's
-		   dots register exactly with the surround dots and the shadows. */
 		background-position: var(--cardpos, 0 0);
 		border-top-left-radius: var(--screen-radius);
 		border-top-right-radius: var(--screen-radius);
 	}
-	/* Desktop mock: show the band, full height, anchored inside the floating phone. */
+	/* Faux iOS status bar — the time / island / battery that make it read as a phone,
+	   on the accent band. */
 	.app .device-chrome { display: flex; top: 0; height: var(--safe-top); position: absolute; }
 	.app .device-chrome > * { visibility: visible; }
 }
@@ -420,7 +451,7 @@ body::before {
    where iOS renders the genuine chrome over the band. */
 .device-chrome > * { visibility: hidden; }
 .device-chrome__time {
-	font-size: var(--fs-16);
+	font-size: var(--step-0);
 	font-weight: 700;
 	letter-spacing: 0.01em;
 	font-variant-numeric: tabular-nums;
@@ -572,7 +603,7 @@ body::before {
    not match the other separators. */
 .ticker__head {
 	font-family: var(--display);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
@@ -595,7 +626,7 @@ body::before {
 	align-items: center;
 	gap: 4px;
 	font-family: var(--readout);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 500;
 	letter-spacing: 0;
 	font-variant-numeric: tabular-nums;
@@ -642,9 +673,9 @@ body::before {
 
 .type-grid {
 	display: flex;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	flex-shrink: 0;
-	padding: var(--sp-4) var(--pad-x);
+	padding: var(--space-s) var(--pad-x);
 	/* At rest the strip's border-top hides under compose-scroll's top clip and
 	   the masthead's border-bottom reads as the single seam line. Pull the
 	   compose down (iOS overscroll) and the strip rides with it — the gap
@@ -852,7 +883,7 @@ body::before {
 }
 .type-btn__arc text {
 	font-family: var(--display);
-	font-size: 11px;
+	font-size: var(--step--2);
 	font-weight: 700;
 	letter-spacing: 0.2px;
 	text-transform: uppercase;
@@ -892,16 +923,16 @@ body::before {
 
 /* RSVP response — a segmented yes/maybe/no control, sharing the tile's two-tone
    active state so the choice reads in the kind ink. */
-.rsvp-toggle { display: flex; gap: var(--sp-2); }
+.rsvp-toggle { display: flex; gap: var(--space-2xs); }
 .rsvp-btn {
 	flex: 1 1 0;
-	padding: var(--sp-2);
+	padding: var(--space-2xs);
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
 	font-family: var(--readout);
-	font-size: var(--fs-14);
+	font-size: var(--step--1);
 	font-weight: 700;
 	letter-spacing: 0;
 	cursor: pointer;
@@ -921,7 +952,7 @@ body::before {
 /* The status line + poster precede TITLE; with gap:0 give them their own breathing
    room so they don't butt against the first ruled row when shown. */
 .event-fields > .event-status,
-.event-fields > .event-poster { margin-bottom: var(--sp-3); }
+.event-fields > .event-poster { margin-bottom: var(--space-xs); }
 /* Event poster — author confirmation that the right event was fetched. The
    image rides as a hot-link from the venue's CDN (no sideload), so we constrain
    it visually and frame it like a pasted-on Polaroid: a hairline rule, the same
@@ -978,8 +1009,8 @@ body::before {
    top-right corner of the poster. Pure ink-on-paper, no opaque background. */
 .event-poster__remove {
 	position: absolute;
-	top: var(--sp-1);
-	right: var(--sp-1);
+	top: var(--space-3xs);
+	right: var(--space-3xs);
 	z-index: 3;                /* above the duotone/halftone overlays */
 	width: 28px;
 	height: 28px;
@@ -994,9 +1025,9 @@ body::before {
 }
 .event-poster__remove:active { transform: translate(1px, 1px); }
 .event-status {
-	margin: 0 0 var(--sp-1);
+	margin: 0 0 var(--space-3xs);
 	font-family: var(--readout);
-	font-size: var(--fs-12);
+	font-size: var(--step--2);
 	line-height: 1.4;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
@@ -1015,7 +1046,7 @@ body::before {
 .field-row {
 	display: grid;
 	grid-template-columns: 64px 1fr;
-	column-gap: var(--sp-3);
+	column-gap: var(--space-xs);
 	align-items: start;
 }
 /* Display-caps label in the muted printed ink, matching the docket header
@@ -1026,7 +1057,7 @@ body::before {
 	align-items: center;
 	min-height: 44px;
 	font-family: var(--display);
-	font-size: var(--fs-12);
+	font-size: var(--step--2);
 	font-weight: 700;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
@@ -1038,7 +1069,7 @@ body::before {
 .field-row__field { min-width: 0; }
 .field-row__pair {
 	display: flex;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	min-width: 0;
 }
 .field-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
@@ -1072,17 +1103,17 @@ body::before {
 .docket__header {
 	display: flex;
 	align-items: center;
-	gap: var(--sp-3);
+	gap: var(--space-xs);
 	/* Reserve the row height for the taller Clear stamp (≈1.2 line-height + 2px
 	   padding + 1px border ≈ 20px) plus this row's padding-bottom + border-bottom,
 	   so popping the stamp in never grows the filing line's height. Horizontal
 	   space still collapses when it's [hidden]; align-items:center keeps the
 	   kind/serial/date labels from shifting vertically as the stamp appears. */
-	min-height: calc( 20px + var(--sp-2) + var(--bw-rule) );
-	padding-bottom: var(--sp-2);
+	min-height: calc( 20px + var(--space-2xs) + var(--bw-rule) );
+	padding-bottom: var(--space-2xs);
 	border-bottom: var(--bw-rule) solid var(--rule);
 	font-family: var(--display);
-	font-size: var(--fs-12);
+	font-size: var(--step--2);
 	font-weight: 700;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
@@ -1098,8 +1129,8 @@ body::before {
    while the row's min-height reserves only its height — no vertical re-flow. */
 .docket__clear {
 	appearance: none;
-	margin: 0 0 0 var(--sp-3);
-	padding: 2px var(--sp-2);
+	margin: 0 0 0 var(--space-xs);
+	padding: 2px var(--space-2xs);
 	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
 	border-radius: 2px;
 	background: transparent;
@@ -1152,9 +1183,9 @@ body::before {
 .docket__kind-info {
 	/* Sit tight under the title rule — counter the .docket flex gap (sp-4) so the
 	   gap above reads as the header's own sp-2 padding rhythm, not a stacked sp-4+sp-2. */
-	margin: calc( var(--sp-2) - var(--sp-4) ) 0 0;
+	margin: calc( var(--space-2xs) - var(--space-s) ) 0 0;
 	font-family: var(--readout);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 500;
 	line-height: 1.45;
 	letter-spacing: 0;
@@ -1162,13 +1193,13 @@ body::before {
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }
 
-.docket__fields { display: flex; flex-direction: column; gap: var(--sp-4); }
+.docket__fields { display: flex; flex-direction: column; gap: var(--space-s); }
 /* The writing pad is the page's first ruled zone — it draws its own legal-pad lines. A
    clear BREAK in the lines (set on #fieldContent below) then separates it from the
    printed fields, so the page reads as distinct postcard sections rather than one
    unbroken sheet — and the field inputs no longer sit on, and clash with, the grid. */
 .docket__body { display: flex; flex-direction: column; gap: 0; }
-#fieldStory { margin-bottom: var(--sp-4); }
+#fieldStory { margin-bottom: var(--space-s); }
 /* Printed fields under the pad (quote's By / Link) — their own section: label + value
    on one baseline line with the hairline hugging the value (the input collapses to a
    single line height, NOT a 44px box, so the rule sits right under the text like the
@@ -1185,7 +1216,7 @@ body::before {
 .event-fields > .field-row > .field-row__label {
 	min-height: 0;
 	line-height: var(--baseline);
-	padding-top: 6px;
+	padding-top: var(--lead);
 }
 /* Collapse the printed-fields region AND the writing body when nothing in either is
    shown (Note has no fields; Like/Repost have no body) so neither leaves a phantom
@@ -1197,21 +1228,21 @@ body::before {
 /* The reference line under a URL field — hostname/path now; the title/excerpt slots
    stay styled-but-hidden until a future server fetch fills them. */
 .slip-ref {
-	margin-top: var(--sp-2);
+	margin-top: var(--space-2xs);
 	font-family: var(--readout);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	line-height: 1.4;
 	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
 }
 .slip-ref__host { font-weight: 700; }
 .slip-ref__path { opacity: 0.6; word-break: break-all; }
-.slip-ref__title { display: block; font-weight: 700; font-size: var(--fs-14); }
-.slip-ref__excerpt { opacity: 0.7; font-size: var(--fs-12); margin-top: var(--sp-1); }
+.slip-ref__title { display: block; font-weight: 700; font-size: var(--step--1); }
+.slip-ref__excerpt { opacity: 0.7; font-size: var(--step--2); margin-top: var(--space-3xs); }
 
 /* Photo prints filed on the card — a printed rule frames the contact sheet once
    any are selected (the bordered thumbnails + per-photo alt slips read as prints). */
 .thumbnails:not(:empty) {
-	padding-top: var(--sp-3);
+	padding-top: var(--space-xs);
 	border-top: var(--bw-rule) solid var(--rule);
 }
 
@@ -1299,7 +1330,7 @@ body::before {
 	   deep bottom padding clears the floating Post button so the last line can
 	   scroll above it. */
 	flex: 1 0 auto;
-	padding: var(--sp-4) var(--pad-x) calc(var(--safe-bottom) + 88px);
+	padding: var(--space-s) var(--pad-x) calc(var(--safe-bottom) + 88px);
 	display: flex;
 	flex-direction: column;
 	gap: var(--section-gap);
@@ -1334,25 +1365,25 @@ body::before {
 	background: transparent;
 	border: none;
 	border-radius: 0;
-	padding: 6px 0 0;
+	padding: var(--lead) 0 0;
 	line-height: var(--baseline);
-	font-size: var(--fs-16);
+	font-size: var(--step-0);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
 	outline: none;
 	--line: var(--rule);
 	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent 28px,
-		var(--line) 28px, var(--line) 29px,
-		transparent 29px, transparent 30px );
+		transparent 0, transparent calc( var(--baseline) - 2px ),
+		var(--line) calc( var(--baseline) - 2px ), var(--line) calc( var(--baseline) - 1px ),
+		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
 }
 .text-field:focus { --line: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
 /* Quote commentary — same ruled line, just multi-line: a small document with a real
    min-height. Inherits the shared rule + metrics from .text-field. */
 .text-field--note {
-	padding: 6px 0 4px;
+	padding: var(--lead) 0 4px;
 	min-height: calc( var(--baseline) * 4 );
 	resize: vertical;
 }
@@ -1368,16 +1399,16 @@ body::before {
 #fieldUrl { display: block; }
 #fieldUrl .field-row__label {
 	min-height: 0;
-	margin-bottom: var(--sp-2);
+	margin-bottom: var(--space-2xs);
 }
 #typeUrl {
-	font-size: var(--fs-18);
+	font-size: var(--step-1);
 	min-height: 44px;
 	line-height: normal;
 	background-image: none;
 	border: var(--bw-rule) solid var(--rule);
 	border-radius: var(--radius);
-	padding: var(--sp-3);
+	padding: var(--space-xs);
 }
 #typeUrl:focus { border-color: var(--accent); }
 /* Keyboard focus. Line-style text fields lift their rule to accent (via --line on
@@ -1420,13 +1451,13 @@ body::before {
 	   ON the line. This is the writing section's own ruling; the lines stop where the pad
 	   ends (a section break follows), so the fields below sit on clean paper. */
 	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent 28px,
-		var(--rule) 28px, var(--rule) 29px,
-		transparent 29px, transparent 30px );
+		transparent 0, transparent calc( var(--baseline) - 2px ),
+		var(--rule) calc( var(--baseline) - 2px ), var(--rule) calc( var(--baseline) - 1px ),
+		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
 	border: none;
-	padding: 6px 4px 4px 0;
-	font-size: var(--fs-18);
-	line-height: 30px;
+	padding: var(--lead) 4px 4px 0;
+	font-size: var(--step-1);
+	line-height: var(--baseline);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -1440,13 +1471,13 @@ body::before {
    lines precisely where the typed text will, reading as a warm placeholder. */
 .compose-prompt {
 	position: absolute;
-	top: 6px;
+	top: var(--lead);
 	left: 0;
 	right: 8px;
 	font-family: inherit;
-	font-size: var(--fs-18);
+	font-size: var(--step-1);
 	font-weight: 500;
-	line-height: 30px;
+	line-height: var(--baseline);
 	letter-spacing: 0;
 	/* A solid faint tint — not translucent ink — so the ruled lines and the
 	   page grain don't bleed through the letters; they sit behind the opaque
@@ -1463,7 +1494,7 @@ body::before {
 	background: transparent;
 	border: var(--bw-input) dashed var(--ink-30);
 	border-radius: var(--radius);
-	padding: var(--sp-6) var(--sp-4);
+	padding: var(--space-l) var(--space-s);
 	text-align: center;
 	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
 	cursor: pointer;}
@@ -1471,8 +1502,8 @@ body::before {
 .photo-picker.drag-over { border-style: solid; border-color: var(--accent); }
 .photo-picker input[type="file"] { display: none; }
 .photo-picker-icon { display: block; margin-bottom: 8px; }
-.photo-picker p { font-family: var(--readout); font-size: 16px; font-weight: 700; letter-spacing: 0; }
-.photo-picker small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
+.photo-picker p { font-family: var(--readout); font-size: var(--step-0); font-weight: 700; letter-spacing: 0; }
+.photo-picker small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
 /* Story video picker. Empty state is the same compact dashed dropzone as the photo
    picker; a chosen clip previews CONTAINED (not full-bleed) so it doesn't blow up the
@@ -1490,14 +1521,14 @@ body::before {
 	background: transparent;
 	border: var(--bw-input) dashed var(--ink-30);
 	border-radius: var(--radius);
-	padding: var(--sp-6) var(--sp-4);
+	padding: var(--space-l) var(--space-s);
 	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
 	font-family: var(--readout);
 	cursor: pointer;
 }
 .story-picker__prompt:active { border-style: solid; border-color: var(--accent); }
-.story-picker__prompt p     { font-size: 16px; font-weight: 700; }
-.story-picker__prompt small { font-size: var(--fs-12); font-weight: 500; opacity: 0.6; }
+.story-picker__prompt p     { font-size: var(--step-0); font-weight: 700; }
+.story-picker__prompt small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; }
 .story-picker:has( .story-picker__preview:not([hidden]) ) {
 	width: fit-content;
 	max-width: 100%;
@@ -1513,8 +1544,8 @@ body::before {
 }
 .story-picker__remove {
 	position: absolute;
-	top: var(--sp-2);
-	right: var(--sp-2);
+	top: var(--space-2xs);
+	right: var(--space-2xs);
 	width: 28px;
 	height: 28px;
 	display: grid;
@@ -1530,8 +1561,8 @@ body::before {
 .thumbnails {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-	gap: var(--sp-2);
-	margin-top: var(--sp-2);
+	gap: var(--space-2xs);
+	margin-top: var(--space-2xs);
 }
 .thumbnails img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
@@ -1555,8 +1586,8 @@ body::before {
    target (Apple HIG) without growing the mark. */
 .thumb__remove {
 	position: absolute;
-	top: var(--sp-1);
-	right: var(--sp-1);
+	top: var(--space-3xs);
+	right: var(--space-3xs);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1574,8 +1605,8 @@ body::before {
    "Alt text N" slip below. A quiet ink token, not a loud badge. */
 .thumb__num {
 	position: absolute;
-	top: var(--sp-1);
-	left: var(--sp-1);
+	top: var(--space-3xs);
+	left: var(--space-3xs);
 	min-width: 18px;
 	height: 18px;
 	padding: 0 5px;
@@ -1585,7 +1616,7 @@ body::before {
 	background: color-mix( in srgb, var(--ink) 70%, transparent );
 	color: var(--paper);
 	font-family: var(--readout);
-	font-size: var(--fs-10);
+	font-size: var(--step--3);
 	font-weight: 700;
 	border-radius: var(--nop-radius-pill);
 	pointer-events: none;
@@ -1594,8 +1625,8 @@ body::before {
    only while the print has no alt text (toggled live as you type). */
 .thumb__altflag {
 	position: absolute;
-	bottom: var(--sp-1);
-	left: var(--sp-1);
+	bottom: var(--space-3xs);
+	left: var(--space-3xs);
 	display: none;
 	align-items: center;
 	height: 16px;
@@ -1603,7 +1634,7 @@ body::before {
 	background: var(--red);
 	color: var(--paper);
 	font-family: var(--readout);
-	font-size: var(--fs-10);
+	font-size: var(--step--3);
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	border-radius: var(--nop-radius-pill);
@@ -1611,10 +1642,10 @@ body::before {
 }
 .thumb.is-missing-alt .thumb__altflag { display: flex; }
 
-.alt-texts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); }
+.alt-texts { display: flex; flex-direction: column; gap: var(--space-2xs); margin-top: var(--space-2xs); }
 .alt-text-row { display: flex; flex-direction: column; gap: 4px; }
 .alt-text-label {
-	font-size: var(--fs-10);
+	font-size: var(--step--3);
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
@@ -1627,8 +1658,8 @@ body::before {
 	border: none;
 	border-bottom: var(--bw-input) solid var(--ink-38);
 	border-radius: 0;
-	padding: var(--sp-2) 0;
-	font-size: var(--fs-16);
+	padding: var(--space-2xs) 0;
+	font-size: var(--step-0);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -1646,7 +1677,7 @@ body::before {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	background: transparent;
 	min-height: 44px;
 	cursor: text;
@@ -1664,7 +1695,7 @@ body::before {
 	color: var(--on-accent);
 	border-radius: var(--radius);
 	padding: 4px 4px 4px 9px;
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -1688,7 +1719,7 @@ body::before {
 	flex: 1;
 	min-width: 80px;
 	border: none; outline: none;
-	font-size: var(--fs-16);
+	font-size: var(--step-0);
 	font-family: inherit;
 	font-weight: 500;
 	color: var(--text);
@@ -1703,7 +1734,7 @@ body::before {
 .quick-tags {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	max-height: 0;
 	margin-top: 0;
 	opacity: 0;
@@ -1712,10 +1743,10 @@ body::before {
 }
 .quick-tags.is-open {
 	max-height: 240px;
-	margin-top: var(--sp-3);
+	margin-top: var(--space-xs);
 	/* A little breathing room so the bottom row of suggestions doesn't butt up against
 	   the ledger hairline below. */
-	margin-bottom: var(--sp-3);
+	margin-bottom: var(--space-xs);
 	opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1735,7 +1766,7 @@ body::before {
 	border-radius: var(--radius);
 	color: var(--accent);
 	font-family: var(--readout);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 700;
 	cursor: pointer;
 	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
@@ -1756,7 +1787,7 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	min-height: calc( var(--baseline) * 3 );
 	padding: 8px 12px 20px;
 	text-align: center;
@@ -1765,14 +1796,14 @@ body::before {
 .url-specimen__glyph svg { display: block; width: 96px; height: 96px; }
 .url-specimen__hint {
 	font-family: var(--readout);
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 700;
 	letter-spacing: 0;
 	opacity: 0.5;
 }
 .url-specimen__host {
 	font-family: var(--display);
-	font-size: clamp(30px, 10vw, 44px);
+	font-size: var(--step-3);
 	font-weight: 800;
 	line-height: 0.95;
 	text-transform: uppercase;
@@ -1780,7 +1811,7 @@ body::before {
 	word-break: break-word;
 }
 .url-specimen__path {
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 500;
 	opacity: 0.6;
 	word-break: break-all;
@@ -1793,9 +1824,9 @@ body::before {
 /* The fetched headline of the thing being liked/reposted — confirms WHAT the URL
    is, under the big hostname. Quieter than the host, clamped to two lines. */
 .url-specimen__title {
-	margin-top: var(--sp-1);
+	margin-top: var(--space-3xs);
 	font-family: var(--readout);
-	font-size: var(--fs-14);
+	font-size: var(--step--1);
 	font-weight: 700;
 	line-height: 1.25;
 	max-width: 32ch;
@@ -1826,7 +1857,7 @@ body::before {
 	background-image: linear-gradient( var(--rule-ledger), var(--rule-ledger) );
 	background-repeat: no-repeat;
 	background-size: var(--bw-rule) 100%;
-	background-position: calc( 64px + var(--sp-3) / 2 - var(--bw-rule) / 2 ) 0;
+	background-position: calc( 64px + var(--space-xs) / 2 - var(--bw-rule) / 2 ) 0;
 }
 /* Collapse the ledger (margin rule and all) if nothing in it is shown. Privacy is
    an every-kind row, so this is mostly a defensive guard. */
@@ -1843,7 +1874,7 @@ body::before {
 .field-row--ledger { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
 /* Nudge the whole content column off the margin rule so the tag input, the quick-tag
    chips and the checkboxes all align to the same edge, just clear of the border. */
-.ledger .field-row > :not(.field-row__label) { padding-left: var(--sp-2); }
+.ledger .field-row > :not(.field-row__label) { padding-left: var(--space-2xs); }
 
 /* Post options — the delivery groups inside the ledger. The :has() rule still
    collapses this delivery sub-block on its own when no group shows; the ledger's
@@ -1869,9 +1900,9 @@ body::before {
 .syndicator-item {
 	display: flex;
 	align-items: center;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	min-height: 44px;
-	font-size: var(--fs-14);
+	font-size: var(--step--1);
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
@@ -1903,7 +1934,7 @@ body::before {
 }
 .syndicator-item__limit {
 	margin-left: auto;
-	font-size: var(--fs-11);
+	font-size: var(--step--2);
 	font-weight: 700;
 	font-variant-numeric: tabular-nums;
 	opacity: 0.55;
@@ -1917,9 +1948,9 @@ body::before {
 .location-toggle {
 	display: flex;
 	align-items: center;
-	gap: var(--sp-2);
+	gap: var(--space-2xs);
 	min-height: 44px;
-	font-size: var(--fs-14);
+	font-size: var(--step--1);
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
@@ -1949,7 +1980,7 @@ body::before {
 .location-toggle__place {
 	margin-left: auto;
 	font-family: var(--readout);
-	font-size: var(--fs-12);
+	font-size: var(--step--2);
 	font-weight: 500;
 	opacity: 0.6;
 	text-align: right;
@@ -1977,8 +2008,8 @@ body::before {
 	   Bottom padding lifts it clear of the home-indicator zone. */
 	display: flex;
 	justify-content: center;
-	padding: var(--sp-4);
-	padding-bottom: calc(var(--safe-bottom) + var(--sp-4));
+	padding: var(--space-s);
+	padding-bottom: calc(var(--safe-bottom) + var(--space-s));
 	background: transparent;
 	pointer-events: none;
 }
@@ -1992,10 +2023,10 @@ body::before {
 .btn {
 	display: block;
 	width: 100%;
-	padding: var(--sp-4);
+	padding: var(--space-s);
 	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
-	font-size: var(--fs-16);
+	font-size: var(--step-0);
 	font-weight: 800;
 	font-family: inherit;
 	text-transform: uppercase;
@@ -2060,9 +2091,9 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-6);
+	gap: var(--space-l);
 	text-align: center;
-	padding: var(--sp-6);
+	padding: var(--space-l);
 }
 .progress-spinner {
 	width: 44px; height: 44px;
@@ -2072,7 +2103,7 @@ body::before {
 	animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.progress-status { font-family: var(--readout); font-size: 15px; font-weight: 700; letter-spacing: 0; }
+.progress-status { font-family: var(--readout); font-size: var(--step--1); font-weight: 700; letter-spacing: 0; }
 .progress-bar-track {
 	width: 200px; height: 6px;
 	border: var(--bw) solid var(--line);
@@ -2093,15 +2124,15 @@ body::before {
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	/* deep bottom padding clears the floating "Post another" button */
-	padding: var(--sp-4) var(--pad-x) calc(var(--safe-bottom) + 88px);
+	padding: var(--space-s) var(--pad-x) calc(var(--safe-bottom) + 88px);
 }
 .success-hero {
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: var(--sp-8) 0 var(--sp-3);
-	margin-bottom: var(--sp-4);
+	padding: var(--space-xl) 0 var(--space-xs);
+	margin-bottom: var(--space-s);
 }
 /* The confirmation stamp — a fixed -3° rotated block, static (no slam-in). */
 .success-banner {
@@ -2109,19 +2140,19 @@ body::before {
 	z-index: 1;
 	display: inline-flex;
 	align-items: center;
-	gap: var(--sp-3);
+	gap: var(--space-xs);
 	background: var(--accent);
 	color: var(--on-accent);
 	border: var(--bw) solid var(--line);
 	border-radius: var(--radius);
-	padding: var(--sp-4) var(--sp-6);
+	padding: var(--space-s) var(--space-l);
 	box-shadow: var(--shadow);
 	rotate: -3deg;
 }
 .success-check { flex-shrink: 0; display: flex; }
 .success-banner h2 {
 	font-family: var(--display);
-	font-size: 40px;
+	font-size: var(--step-4);
 	font-weight: 800;
 	letter-spacing: 0.01em;
 	text-transform: uppercase;
@@ -2133,17 +2164,17 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	margin-top: var(--sp-6);
+	margin-top: var(--space-l);
 }
 .success-streak__num {
 	font-family: var(--display);
-	font-size: 42px;
+	font-size: var(--step-5);
 	font-weight: 800;
 	line-height: 1;
 }
 .success-streak__label {
 	font-family: var(--display);
-	font-size: var(--fs-12);
+	font-size: var(--step--2);
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
@@ -2152,8 +2183,8 @@ body::before {
 .success-photos {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-	gap: var(--sp-2);
-	margin-bottom: var(--sp-4);
+	gap: var(--space-2xs);
+	margin-bottom: var(--space-s);
 }
 .success-photos img {
 	width: 100%; aspect-ratio: 1; object-fit: cover;
@@ -2161,13 +2192,13 @@ body::before {
 	border-radius: var(--radius);
 }
 .success-permalink {
-	font-size: var(--fs-13);
+	font-size: var(--step--1);
 	font-weight: 700;
 	color: var(--text);
 	text-decoration: underline;
 	text-decoration-thickness: 2px;
 	display: block;
-	margin-bottom: var(--sp-4);
+	margin-bottom: var(--space-s);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -2193,7 +2224,7 @@ body::before {
    "len / lowest-limit". Muted so it reads as ambient, not a chip. */
 .char-count {
 	margin-left: auto;
-	font-size: var(--fs-11);
+	font-size: var(--step--2);
 	font-weight: 700;
 	color: var(--text);
 	opacity: 0.5;
@@ -2219,7 +2250,7 @@ body::before {
 	border-radius: var(--radius);
 	box-shadow: var(--shadow);
 	color: var(--text);
-	font-size: var(--fs-14);
+	font-size: var(--step--1);
 	font-weight: 700;
 	opacity: 0;
 	/* display rides the transition (allow-discrete): it flips on at the start of the
