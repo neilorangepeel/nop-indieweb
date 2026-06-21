@@ -41,7 +41,7 @@ class Syndication_Notice {
 			return;
 		}
 
-		$count = (int) ( $this->manager->failure_summary()['total_failed_posts'] ?? 0 );
+		$count = (int) $this->manager->failure_summary()['total_failed_posts'];
 		if ( $count < 1 ) {
 			return;
 		}
