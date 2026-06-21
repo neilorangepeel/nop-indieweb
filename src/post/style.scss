@@ -1,3 +1,39 @@
+@use 'sass:math';
+@use 'sass:string';
+
+// ── Compile-time helpers (output is identical CSS — these just DRY the source) ──
+// fluid($min,$max): a clamp() that interpolates with `cqi` (the .app container's
+// inline size) between two anchor widths. Move the anchors here to retune the WHOLE
+// scale — every --step / --space / --baseline derives from this one function.
+$fluid-min-vw: 360;
+$fluid-max-vw: 820;
+@function fluid($min, $max) {
+	$min-n: math.div($min, 1px);
+	$max-n: math.div($max, 1px);
+	$slope: math.div(($max-n - $min-n) * 100, $fluid-max-vw - $fluid-min-vw);
+	$intercept: $min-n - $slope * math.div($fluid-min-vw, 100);
+	// round to 3 dp so the compiled clamp stays tidy
+	$slope: math.div(math.round($slope * 1000), 1000);
+	$intercept: math.div(math.round($intercept * 1000), 1000);
+	@return string.unquote("clamp(#{$min}, calc(#{$intercept}px + #{$slope}cqi), #{$max})");
+}
+
+// grain($alpha): the halftone dot field at a given ink alpha. A MIXIN (compile-time
+// expansion), so var(--ink) still resolves per element — this is the safe way to DRY
+// the grain, unlike a :root --grain-img token (whose var(--ink) would resolve at :root).
+@mixin grain($alpha) {
+	background-image: radial-gradient(color-mix(in srgb, var(--ink) #{$alpha}, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+	background-size: var(--grain-pitch) var(--grain-pitch);
+}
+
+// ruled($color): the legal-pad hairline drawn at the baseline pitch, in $color.
+@mixin ruled($color) {
+	background-image: repeating-linear-gradient( to bottom,
+		transparent 0, transparent calc( var(--baseline) - 2px ),
+		#{$color} calc( var(--baseline) - 2px ), #{$color} calc( var(--baseline) - 1px ),
+		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Text selection inverts (ink fill, paper text). The page itself never scrolls
@@ -104,33 +140,34 @@
 	   app by moving an anchor px here. (Literals that match physical hardware — the
 	   iOS pill, safe-area env() — stay fixed; they're not content sizes.) */
 
-	/* Type — value-name retired for semantic steps; --step-0 is body text. */
-	--step--3: clamp( 9px,  calc( 8.22px  + 0.22cqi ), 10px );
-	--step--2: clamp( 11px, calc( 10.22px + 0.22cqi ), 12px );
-	--step--1: clamp( 13px, calc( 11.43px + 0.43cqi ), 15px );
-	--step-0:  clamp( 16px, calc( 13.65px + 0.65cqi ), 19px );
-	--step-1:  clamp( 18px, calc( 14.09px + 1.09cqi ), 23px );
-	--step-2:  clamp( 22px, calc( 16.52px + 1.52cqi ), 29px );
-	--step-3:  clamp( 28px, calc( 20.96px + 1.96cqi ), 37px );
-	--step-4:  clamp( 33px, calc( 22.83px + 2.83cqi ), 46px );
-	--step-5:  clamp( 40px, calc( 27.48px + 3.48cqi ), 56px );
+	/* Type — value-name retired for semantic steps; --step-0 is body text. Each is
+	   fluid(min, max) from the anchors at the top of the file (360px → 820px). */
+	--step--3: #{fluid( 9px, 10px )};
+	--step--2: #{fluid( 11px, 12px )};
+	--step--1: #{fluid( 13px, 15px )};
+	--step-0:  #{fluid( 16px, 19px )};
+	--step-1:  #{fluid( 18px, 23px )};
+	--step-2:  #{fluid( 22px, 29px )};
+	--step-3:  #{fluid( 28px, 37px )};
+	--step-4:  #{fluid( 33px, 46px )};
+	--step-5:  #{fluid( 40px, 56px )};
 
 	/* Spacing — derived on the same curve; --space-s (=body) is the unit. */
-	--space-3xs: clamp( 4px,  calc( 3.22px  + 0.22cqi ), 5px );
-	--space-2xs: clamp( 8px,  calc( 6.43px  + 0.43cqi ), 10px );
-	--space-xs:  clamp( 12px, calc( 9.65px  + 0.65cqi ), 15px );
-	--space-s:   clamp( 16px, calc( 12.87px + 0.87cqi ), 20px );
-	--space-m:   clamp( 20px, calc( 16.09px + 1.09cqi ), 25px );
-	--space-l:   clamp( 24px, calc( 19.30px + 1.30cqi ), 30px );
-	--space-xl:  clamp( 32px, calc( 25.74px + 1.74cqi ), 40px );
-	--space-2xl: clamp( 48px, calc( 38.61px + 2.61cqi ), 60px );
+	--space-3xs: #{fluid( 4px, 5px )};
+	--space-2xs: #{fluid( 8px, 10px )};
+	--space-xs:  #{fluid( 12px, 15px )};
+	--space-s:   #{fluid( 16px, 20px )};
+	--space-m:   #{fluid( 20px, 25px )};
+	--space-l:   #{fluid( 24px, 30px )};
+	--space-xl:  #{fluid( 32px, 40px )};
+	--space-2xl: #{fluid( 48px, 60px )};
 
 	/* The ruled baseline — the compose pad's line pitch. Fluid too, so the notebook
 	   lines breathe with the type; printed field rows step in whole multiples of it
 	   and the rule gradient is drawn off it (see .text-field), so text always lands
 	   on the line at every width. --lead is the in-cell top lead (kept at 0.2× the
 	   baseline so the text↔rule offset is scale-invariant). */
-	--baseline: clamp( 30px, calc( 25.30px + 1.30cqi ), 36px );
+	--baseline: #{fluid( 30px, 36px )};
 	--lead: calc( var(--baseline) * 0.2 );
 	/* The break between stacked sections (header · writing · fields · filing). */
 	--section-gap: var(--space-l);
@@ -244,8 +281,7 @@ body::before {
 	inset: 0;
 	z-index: 0;
 	background-color: var(--field);
-	background-image: radial-gradient(color-mix(in srgb, var(--ink) 16%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
+	@include grain(16%);
 	/* Match the app's rounded top so the accent html shows in the cut corners. */
 	border-top-left-radius: var(--screen-radius);
 	border-top-right-radius: var(--screen-radius);
@@ -261,7 +297,7 @@ body::before {
 @media (min-width: 820px) {
 	body::before {
 		border-radius: 0;
-		background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
+		@include grain(13%);
 	}
 }
 
@@ -282,7 +318,6 @@ body::before {
 	/* Fainter than --rule — the quiet ruling of the metadata ledger (margin line
 	   + row hairlines), so the structure reads as notebook ruling, not a divider. */
 	--rule-ledger: color-mix(in srgb, var(--ink) 22%, var(--paper));
-	--grain:    color-mix(in srgb, var(--ink) 16%, transparent);
 	/* Muted ink strokes/fills, named by their tone. Mixed toward PAPER (opaque),
 	   NOT transparent — a transparent border lets the dot grid show through the
 	   stroke and reads as visual noise; an opaque tone renders the stroke solid. */
@@ -323,8 +358,7 @@ body::before {
 	   vs the body grain), so the background colour never changes, just the dots. */
 	background-color: var(--field);
 	/* Faint halftone grain — the organic "printed on paper" texture. */
-	background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-	background-size: var(--grain-pitch) var(--grain-pitch);
+	@include grain(16%);
 	/* Rounded top corners that echo the phone's screen; overflow:hidden above keeps
 	   the content clipped to them. The accent html behind shows in the cut. The
 	   desktop frame (border-radius:50px) overrides this on ≥600px. */
@@ -386,8 +420,7 @@ body::before {
 		inset: var(--safe-top) 0 0 0;
 		z-index: -1;
 		background-color: var(--field);
-		background-image: radial-gradient(var(--grain) var(--grain-dot), transparent calc(var(--grain-dot) + 0.3px));
-		background-size: var(--grain-pitch) var(--grain-pitch);
+		@include grain(16%);
 		background-position: var(--cardpos, 0 0);
 		border-top-left-radius: var(--screen-radius);
 		border-top-right-radius: var(--screen-radius);
@@ -1371,10 +1404,7 @@ body::before {
 	color: var(--text);
 	outline: none;
 	--line: var(--rule);
-	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent calc( var(--baseline) - 2px ),
-		var(--line) calc( var(--baseline) - 2px ), var(--line) calc( var(--baseline) - 1px ),
-		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
+	@include ruled(var(--line));
 }
 .text-field:focus { --line: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
@@ -1448,10 +1478,7 @@ body::before {
 	/* Ruled legal-pad — faint hairlines just under each baseline so text reads as written
 	   ON the line. This is the writing section's own ruling; the lines stop where the pad
 	   ends (a section break follows), so the fields below sit on clean paper. */
-	background-image: repeating-linear-gradient( to bottom,
-		transparent 0, transparent calc( var(--baseline) - 2px ),
-		var(--rule) calc( var(--baseline) - 2px ), var(--rule) calc( var(--baseline) - 1px ),
-		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
+	@include ruled(var(--rule));
 	border: none;
 	padding: var(--lead) 4px 4px 0;
 	font-size: var(--step-1);
