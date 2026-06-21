@@ -2333,7 +2333,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function restoreSnapshot( p ) {
 		if ( ! p ) { return; }
 		restoring = true;
-		if ( p.type && TYPE_CONFIG[ p.type ] ) { switchType( p.type ); }
+		// A draft of a kind no longer in the composer (e.g. a legacy 'article')
+		// would deref TYPE_CONFIG[p.type] below and throw; fall back to note, the
+		// same coercion sourceToPost applies to server drafts.
+		if ( ! p.type || ! TYPE_CONFIG[ p.type ] ) { p.type = 'note'; }
+		switchType( p.type );
 		contentInput.value = p.content || '';
 		urlInput.value     = p.url || '';
 		if ( quoteComment ) { quoteComment.value = p.quoteComment || ''; }
