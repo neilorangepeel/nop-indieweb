@@ -2461,8 +2461,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function refreshDraftsCount() {
 		if ( ! window.indexedDB || ! draftsCount ) { return Promise.resolve(); }
 		return dAll().then( function ( list ) {
-			draftsCount.textContent = list.length ? String( list.length ) : '';
-			draftsCount.hidden = ! list.length;
+			// Match the drawer: count only composer-authorable kinds (see listAllDrafts).
+			var n = list.filter( function ( d ) { return !! TYPE_CONFIG[ d.type || 'note' ]; } ).length;
+			draftsCount.textContent = n ? String( n ) : '';
+			draftsCount.hidden = ! n;
 		} ).catch( function () {} );
 	}
 
@@ -2481,12 +2483,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				if ( res.ok ) {
 					( ( await res.json() ).drafts || [] ).forEach( function ( s ) {
 						if ( s.status === 'draft' && ! seen[ s.url ] ) {
-							rows.push( { id: '', serverUrl: s.url, local: false, type: s.kind || 'note', title: ( s.title || s.excerpt || '' ).slice( 0, 80 ), when: 0 } );
+							rows.push( { id: '', serverUrl: s.url, local: false, type: s.kind || '', title: ( s.title || s.excerpt || '' ).slice( 0, 80 ), when: 0 } );
 						}
 					} );
 				}
 			} catch ( e ) {}
 		}
+		// Only surface drafts this composer can actually reopen. The /drafts endpoint
+		// returns every post-type draft (block-editor articles, checkins, etc.), but a
+		// kind not in TYPE_CONFIG could only reopen by degrading to a note — so hide it
+		// here rather than mislead. Kindless server drafts (type '') fall out the same way.
+		rows = rows.filter( function ( r ) { return !! TYPE_CONFIG[ r.type ]; } );
 		rows.sort( function ( a, b ) { return ( b.when || 0 ) - ( a.when || 0 ); } );
 		return rows;
 	}
