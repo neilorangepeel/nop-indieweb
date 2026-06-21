@@ -100,6 +100,34 @@ add_filter( 'auth_cookie_expiration', function ( int $expiration, int $user_id )
 }, 10, 2 );
 ```
 
+**Static ffmpeg binary + `wp-content/mu-plugins/nop-ffmpeg.php`**
+The syndication video transcoder (`Video_Transcoder`) re-encodes iOS `.mov` Stories
+to 1080p H.264 MP4 so Bluesky/Pixelfed/Mastodon accept them. The host's stock
+`/usr/local/bin/ffmpeg` has **no software H.264 encoder** (no libx264), so a static
+build is needed. Without it the transcoder falls back to lossless remux+trim (no
+re-encode, no HEVC support, cruder size control), so the plugin still works — just
+not as well. To recreate after a reprovision:
+
+```bash
+# 1. Static ffmpeg WITH libx264, in the account home (PHP exec reaches it; no open_basedir):
+mkdir -p ~/bin && cd /tmp \
+  && curl -sSL -o ff.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
+  && tar xf ff.tar.xz && mv ffmpeg-*-static/ffmpeg ~/bin/nop-ffmpeg && chmod +x ~/bin/nop-ffmpeg
+# 2. Point the plugin's filter at it (path is the REAL home, e.g. /home/u860-.../bin/nop-ffmpeg):
+```
+```php
+<?php
+// wp-content/mu-plugins/nop-ffmpeg.php
+add_filter( 'nop_indieweb_ffmpeg_bin', function () {
+	$bin = '/home/u860-mcfzdhara7gs/bin/nop-ffmpeg';
+	return is_executable( $bin ) ? $bin : '';
+} );
+```
+Notes: encoding runs **single-threaded** (`-threads 1`) — SiteGround's sandbox blocks
+libx264's worker threads (`Generic error in an external library` otherwise). ffprobe
+stays the stock binary (probing needs no encoder). The CRF default (23) and budgets
+are filterable: `nop_indieweb_syndication_video_crf`, `..._video_max_bytes`.
+
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.
