@@ -1663,6 +1663,29 @@ body::before {
 .photo-picker p { font-family: var(--readout); font-size: var(--step-0); font-weight: 700; letter-spacing: 0; }
 .photo-picker small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
+/* Compact photo affordance — on the text-first kinds (note, reply) the writing
+   surface is the hero, so the dropzone collapses from a tall empty well into a slim
+   inline "Add photos" trigger sitting quietly above the ruled lines. The photo kind
+   keeps the full dropzone above: there the image IS the post, so it leads. Thumbnails
+   render below regardless once a photo is actually picked. */
+.app[data-type="note"] .photo-picker,
+.app[data-type="reply"] .photo-picker {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2xs);
+	padding: var(--space-2xs) var(--space-s);
+	border-radius: var(--nop-radius-pill);
+}
+.app[data-type="note"] .photo-picker-icon,
+.app[data-type="reply"] .photo-picker-icon { display: flex; margin-bottom: 0; }
+.app[data-type="note"] .photo-picker-icon svg,
+.app[data-type="reply"] .photo-picker-icon svg { width: 18px; height: 18px; }
+.app[data-type="note"] .photo-picker p,
+.app[data-type="reply"] .photo-picker p { font-size: var(--step--1); }
+.app[data-type="note"] .photo-picker small,
+.app[data-type="reply"] .photo-picker small { display: none; }
+
 /* Story video picker. Empty state is the same compact dashed dropzone as the photo
    picker; a chosen clip previews CONTAINED (not full-bleed) so it doesn't blow up the
    scroll. When a clip is present the wrapper shrinks to it so the corner remove stamp
