@@ -28,6 +28,7 @@ class Authoring_Routes {
 	public function register(): void {
 		add_action( 'rest_api_init', [ $this, 'register_lookup_route' ] );
 		add_action( 'rest_api_init', [ $this, 'register_now_route' ] );
+		add_action( 'rest_api_init', [ $this, 'register_drafts_route' ] );
 	}
 
 	public function register_lookup_route(): void {
@@ -109,5 +110,52 @@ class Authoring_Routes {
 			'sunset'    => $weather['sunset'] ?? null,
 			'moonphase' => $weather['moonphase'] ?? null,
 		], 200 );
+	}
+
+	/**
+	 * The current user's drafts + scheduled posts, for the /post composer's drafts
+	 * list and to reconcile the offline-first local draft store against the server.
+	 * Returns a compact list (newest-modified first); the composer reopens a draft's
+	 * full fields via the Micropub `?q=source` query when it isn't held locally.
+	 */
+	public function register_drafts_route(): void {
+		register_rest_route( 'nop-indieweb/v1', '/drafts', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'drafts_route_handler' ],
+			'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+		] );
+	}
+
+	public function drafts_route_handler( \WP_REST_Request $request ): \WP_REST_Response {
+		$posts = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => [ 'draft', 'future' ],
+			'author'         => get_current_user_id(),
+			'posts_per_page' => 50,
+			'orderby'        => 'modified',
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
+		] );
+
+		$drafts = array_map( static function ( \WP_Post $p ): array {
+			$kind = (string) get_post_meta( $p->ID, 'nop_indieweb_post_kind', true );
+			if ( '' === $kind ) {
+				$terms = wp_get_object_terms( $p->ID, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY, [ 'fields' => 'slugs' ] );
+				$kind  = ( ! is_wp_error( $terms ) && $terms ) ? (string) $terms[0] : '';
+			}
+
+			return [
+				'id'            => $p->ID,
+				'url'           => get_permalink( $p ),
+				'status'        => $p->post_status,
+				'kind'          => $kind,
+				'title'         => get_the_title( $p ),
+				'excerpt'       => wp_trim_words( wp_strip_all_tags( $p->post_content ), 24, '…' ),
+				'scheduled_gmt' => 'future' === $p->post_status ? $p->post_date_gmt : null,
+				'modified_gmt'  => $p->post_modified_gmt,
+			];
+		}, $posts );
+
+		return new \WP_REST_Response( [ 'drafts' => $drafts ], 200 );
 	}
 }

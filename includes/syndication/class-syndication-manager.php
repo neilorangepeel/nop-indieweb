@@ -49,6 +49,11 @@ class Syndication_Manager {
 		// Micropub-created posts: fired explicitly by the endpoint after all meta is set.
 		add_action( 'nop_indieweb_post_created', [ $this, 'syndicate' ], 10, 1 );
 
+		// Scheduled (future→publish, via WP cron) and draft→publish posts — the create-time
+		// triggers above only see the initial insert, so they miss the later publish. The
+		// publish-only + idempotency guards in syndicate() keep this from double-firing.
+		add_action( 'transition_post_status', [ $this, 'maybe_syndicate_on_publish' ], 10, 3 );
+
 		// Per-platform async worker — one cron event per (post, platform, attempt).
 		add_action( self::CRON_HOOK, [ $this, 'run_target' ], 10, 3 );
 
@@ -78,11 +83,41 @@ class Syndication_Manager {
 	}
 
 	/**
+	 * A post becoming published from a non-published state — the scheduled
+	 * (future→publish, fired by WP cron) and draft/pending→publish cases the create-time
+	 * triggers can't see. An immediate publish enters as new→publish (old not in the list)
+	 * and is left to nop_indieweb_post_created / wp_after_insert_post, so this never doubles
+	 * it; syndicate()'s idempotency guard covers any overlap regardless.
+	 */
+	public function maybe_syndicate_on_publish( string $new_status, string $old_status, \WP_Post $post ): void {
+		if ( 'post' !== $post->post_type ) {
+			return;
+		}
+		if ( 'publish' === $new_status && in_array( $old_status, [ 'future', 'draft', 'pending' ], true ) ) {
+			$this->syndicate( $post->ID );
+		}
+	}
+
+	/**
 	 * Queues async syndication to every resolved target. Each platform gets its
 	 * own cron event so one platform's failure or retry never blocks another —
 	 * and the publish request never waits on remote APIs.
 	 */
 	public function syndicate( int $post_id ): void {
+		// Only published posts POSSE — a draft or a scheduled (future) post must not
+		// syndicate until it actually publishes; the transition hook re-fires it then.
+		if ( 'publish' !== get_post_status( $post_id ) ) {
+			return;
+		}
+
+		// Idempotent: once syndication has kicked off, this post carries a status journal,
+		// so the several publish triggers (nop_indieweb_post_created / wp_after_insert_post /
+		// transition_post_status) can never double-queue — the first to fire wins. Manual
+		// retry goes through queue() directly, so it's unaffected.
+		if ( get_post_meta( $post_id, self::STATUS_META, true ) ) {
+			return;
+		}
+
 		// Hard skip for posts flagged as local-only (e.g. private Swarm checkins).
 		if ( get_post_meta( $post_id, 'nop_indieweb_skip_syndication', true ) ) {
 			return;
