@@ -17,14 +17,16 @@ class Foursquare_OAuth {
 
 	public function register(): void {
 		add_action( 'rest_api_init', [ $this, 'register_foursquare_oauth_routes' ] );
+		// The OAuth start runs through admin-post.php, not REST: a top-level
+		// browser navigation to wp-admin authenticates the admin from the login
+		// cookie alone, whereas a cookie-only REST request is treated as
+		// anonymous (so current_user_can() there always fails). The callback
+		// stays a REST route — it's provider-initiated and intentionally public,
+		// guarded by the one-time state instead.
+		add_action( 'admin_post_nop_foursquare_auth', [ $this, 'foursquare_auth_redirect' ] );
 	}
 
 	public function register_foursquare_oauth_routes(): void {
-		register_rest_route( 'nop-indieweb/v1', '/foursquare-auth', [
-			'methods'             => 'GET',
-			'callback'            => [ $this, 'foursquare_auth_redirect' ],
-			'permission_callback' => '__return_true',
-		] );
 		register_rest_route( 'nop-indieweb/v1', '/foursquare-callback', [
 			'methods'             => 'GET',
 			'callback'            => [ $this, 'foursquare_oauth_callback' ],
@@ -48,12 +50,11 @@ class Foursquare_OAuth {
 			wp_die( esc_html__( 'Foursquare Client ID not configured in plugin settings.', 'nop-indieweb' ) );
 		}
 
-		// CSRF protection. This route and its callback are OAuth redirect targets
-		// reached by plain browser navigation, so a WordPress nonce can't guard
-		// them (REST treats cookie-only requests as anonymous, and Foursquare
-		// can't echo a nonce). Instead we issue a one-time random state, stash it
-		// server-side, and require it back on the callback before exchanging the
-		// code — the standard OAuth defence against forged callbacks.
+		// CSRF protection. The callback is a public REST route reached by plain
+		// browser navigation from Foursquare, so a WordPress nonce can't guard it
+		// (Foursquare can't echo one back). Instead we issue a one-time random
+		// state, stash it server-side, and require it back on the callback before
+		// exchanging the code — the standard OAuth defence against forged callbacks.
 		$state = wp_generate_password( 32, false );
 		set_transient( 'nop_indieweb_fsq_oauth_state', $state, 15 * MINUTE_IN_SECONDS );
 

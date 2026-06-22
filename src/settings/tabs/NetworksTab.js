@@ -205,7 +205,7 @@ function TumblrPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 				/>
 				<EndpointRow
 					label={ __( 'OAuth callback URL', 'nop-indieweb' ) }
-					url={ ( networkStatus?.authUrl ?? '' ).replace( '/tumblr-auth', '/tumblr-callback' ) }
+					url={ networkStatus?.callbackUrl ?? '' }
 				/>
 				<p className="description">
 					{ connected

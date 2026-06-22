@@ -16,7 +16,7 @@ use WP_CLI;
  *
  * Bulk-imports historical Swarm checkins via the Foursquare API. Requires a
  * personal OAuth token stored at venue.foursquare_user_token in plugin settings
- * (obtained by visiting /wp-json/nop-indieweb/v1/foursquare-auth).
+ * (obtained by visiting wp-admin/admin-post.php?action=nop_foursquare_auth).
  *
  * Produces posts identical to live OwnYourSwarm Micropub imports so the two
  * sources are indistinguishable. Idempotent: skips posts whose
@@ -64,7 +64,7 @@ class Import_Swarm_Checkins {
 		$tags        = [ 'Swarm' ];
 
 		if ( ! $token ) {
-			WP_CLI::error( 'No Foursquare user token found. Visit /wp-json/nop-indieweb/v1/foursquare-auth to authenticate.' );
+			WP_CLI::error( 'No Foursquare user token found. Visit wp-admin/admin-post.php?action=nop_foursquare_auth to authenticate.' );
 		}
 
 		// ── Fetch total count ──────────────────────────────────────────────────
