@@ -114,7 +114,12 @@ class Tumblr_Client {
 		$code = wp_remote_retrieve_response_code( $response );
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( ! in_array( $code, [ 200, 201 ], true ) || empty( $data['response']['id_string'] ) ) {
+		// The create response carries `id` (an int); `id_string` only appears when
+		// reading posts back. Accept either so a 201 isn't misread as a failure —
+		// a false failure would re-queue and post a duplicate.
+		$new_id = (string) ( $data['response']['id_string'] ?? $data['response']['id'] ?? '' );
+
+		if ( ! in_array( $code, [ 200, 201 ], true ) || '' === $new_id ) {
 			// errors[].detail is the actionable reason (e.g. an invalid-NPF code);
 			// meta.msg is only the generic status text. Prefer the detail.
 			$detail = $data['errors'][0]['detail'] ?? '';
@@ -132,8 +137,7 @@ class Tumblr_Client {
 			);
 		}
 
-		$id = (string) $data['response']['id_string'];
-		return [ 'id' => $id, 'url' => $this->resolve_post_url( $blog, $id, $token ) ];
+		return [ 'id' => $new_id, 'url' => $this->resolve_post_url( $blog, $new_id, $token ) ];
 	}
 
 	/**
