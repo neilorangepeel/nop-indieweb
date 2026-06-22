@@ -221,6 +221,7 @@ function TumblrPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 				>
 					{ connected ? __( 'Reconnect Tumblr', 'nop-indieweb' ) : __( 'Connect Tumblr', 'nop-indieweb' ) }
 				</a>
+				<TestConnectionButton platform="tumblr" disabled={ ! connected } />
 				<ImportSection
 					slug="tumblr"
 					value={ value }
@@ -291,6 +292,25 @@ function SwarmPanel( { value, onChange, networkStatus, opened, onToggle } ) {
 	);
 }
 
+// ——— Exercise ——————————————————————————————————————————————————————————————
+
+function ExercisePanel( { networkStatus, opened, onToggle } ) {
+	const active = networkStatus?.active ?? false;
+	return (
+		<PanelBody title={ panelTitle( __( 'Workouts', 'nop-indieweb' ), active ) } opened={ opened } onToggle={ onToggle }>
+			<div className="nop-network-panel">
+				<EndpointRow
+					label={ __( 'Micropub endpoint', 'nop-indieweb' ) }
+					url={ networkStatus?.micropubUrl ?? '' }
+				/>
+				<p className="description">
+					{ __( 'Workout posts arrive over the Micropub endpoint above. Point an iOS Shortcut that reads your latest HealthKit workout at it (h=entry with an exercise-type property) to log runs, rides, swims, and more. Always listening — no credentials to configure.', 'nop-indieweb' ) }
+				</p>
+			</div>
+		</PanelBody>
+	);
+}
+
 // ——— NetworksTab ———————————————————————————————————————————————————————————
 
 export default function NetworksTab( { settings, setSettings, targetNetwork } ) {
@@ -305,6 +325,7 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 		tumblr:     targetNetwork === 'tumblr',
 		letterboxd: targetNetwork === 'letterboxd',
 		swarm:      targetNetwork === 'swarm',
+		exercise:   targetNetwork === 'exercise',
 	} );
 
 	const toggle = ( slug ) => ( val ) =>
@@ -319,6 +340,13 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 	return (
 		<div className="nop-tab-content nop-networks-tab">
 			<SyndicationHealth />
+
+			<h3 className="nop-section-heading nop-section-heading--first">
+				{ __( 'Syndication targets', 'nop-indieweb' ) }
+			</h3>
+			<p className="description nop-section-intro">
+				{ __( 'Posts you publish are pushed out to these networks. Each can also pull your posts back in on a schedule.', 'nop-indieweb' ) }
+			</p>
 			<MastodonPanel
 				value={ syndicators.mastodon   ?? {} }
 				onChange={ setSyndicator( 'mastodon' ) }
@@ -347,6 +375,13 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 				opened={ openPanels.tumblr }
 				onToggle={ toggle( 'tumblr' ) }
 			/>
+
+			<h3 className="nop-section-heading">
+				{ __( 'Import sources', 'nop-indieweb' ) }
+			</h3>
+			<p className="description nop-section-intro">
+				{ __( 'Pulled into your site on a schedule — no syndication out.', 'nop-indieweb' ) }
+			</p>
 			<LetterboxdPanel
 				value={ services.letterboxd    ?? {} }
 				onChange={ setService( 'letterboxd' ) }
@@ -354,12 +389,24 @@ export default function NetworksTab( { settings, setSettings, targetNetwork } ) 
 				opened={ openPanels.letterboxd }
 				onToggle={ toggle( 'letterboxd' ) }
 			/>
+
+			<h3 className="nop-section-heading">
+				{ __( 'Inbound endpoints', 'nop-indieweb' ) }
+			</h3>
+			<p className="description nop-section-intro">
+				{ __( 'External apps push posts to your site at these endpoints.', 'nop-indieweb' ) }
+			</p>
 			<SwarmPanel
 				value={ services.swarm         ?? {} }
 				onChange={ setService( 'swarm' ) }
 				networkStatus={ networkStatus.swarm }
 				opened={ openPanels.swarm }
 				onToggle={ toggle( 'swarm' ) }
+			/>
+			<ExercisePanel
+				networkStatus={ networkStatus.exercise }
+				opened={ openPanels.exercise }
+				onToggle={ toggle( 'exercise' ) }
 			/>
 		</div>
 	);

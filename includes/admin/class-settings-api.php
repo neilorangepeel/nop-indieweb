@@ -289,6 +289,10 @@ class Settings_API {
 			'tumblr'     => [ 'active' => $tumblr_ok,   'color' => '#36465D', 'last_label' => $tumblr_ok   ? $this->human_time_diff( $tumblr['import_last_at']   ?? null, __( 'Synced', 'nop-indieweb' ) ) : null, 'authUrl' => add_query_arg( '_wpnonce', wp_create_nonce( 'wp_rest' ), rest_url( 'nop-indieweb/v1/tumblr-auth' ) ), 'callbackUrl' => rest_url( 'nop-indieweb/v1/tumblr-callback' ), 'connected' => ! empty( $tumblr['refresh_token'] ), 'userName' => (string) ( $tumblr['user_name'] ?? '' ) ],
 			'letterboxd' => [ 'active' => $lboxd_ok,    'color' => '#00C030', 'last_label' => $lboxd_ok    ? $this->human_time_diff( $lboxd['import_last_at']    ?? null, __( 'Synced', 'nop-indieweb' ) ) : null ],
 			'swarm'      => [ 'active' => $swarm_ok, 'color' => '#FC8D1D', 'last_label' => $swarm_ok ? $this->human_time_diff( $swarm_last_at, __( 'Last check-in', 'nop-indieweb' ) ) : null, 'micropubUrl' => \NOP\IndieWeb\nop_indieweb_endpoint_url() ],
+			// Workouts arrive over the standard Micropub endpoint whenever the
+			// plugin is active — there's no separate credential to toggle, so it's
+			// always listening. Surfaced so the endpoint is discoverable.
+			'exercise'   => [ 'active' => true, 'color' => '#16A34A', 'last_label' => null, 'micropubUrl' => \NOP\IndieWeb\nop_indieweb_endpoint_url() ],
 		];
 	}
 

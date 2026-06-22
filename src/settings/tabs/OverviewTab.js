@@ -7,6 +7,7 @@ const NETWORKS = [
 	{ slug: 'mastodon',   label: 'Mastodon' },
 	{ slug: 'bluesky',    label: 'Bluesky' },
 	{ slug: 'pixelfed',   label: 'Pixelfed' },
+	{ slug: 'tumblr',     label: 'Tumblr' },
 	{ slug: 'letterboxd', label: 'Letterboxd' },
 	{ slug: 'swarm',      label: 'Swarm' },
 ];

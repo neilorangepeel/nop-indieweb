@@ -26,6 +26,13 @@ const PER_SOURCE = [
 		photosLabel: __( 'Save imported photos to media library', 'nop-indieweb' ),
 	},
 	{
+		slug:        'tumblr',
+		section:     'syndicators',
+		label:       'Tumblr',
+		showPhotos:  true,
+		photosLabel: __( 'Save imported photos to media library', 'nop-indieweb' ),
+	},
+	{
 		slug:        'letterboxd',
 		section:     'services',
 		label:       'Letterboxd',
