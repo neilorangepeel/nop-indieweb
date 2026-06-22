@@ -154,7 +154,13 @@ class Syndication_Manager {
 		$result = $syndicator->syndicate( $post_id );
 
 		if ( is_wp_error( $result ) ) {
-			if ( $attempt < self::MAX_ATTEMPTS ) {
+			// A permanent client error (4xx, bar 408/429) won't change on retry —
+			// fail it now instead of burning the remaining attempts. Errors with
+			// no status attached keep the old retry behaviour.
+			$status    = (int) ( ( (array) $result->get_error_data() )['status'] ?? 0 );
+			$permanent = $status >= 400 && $status < 500 && ! in_array( $status, [ 408, 429 ], true );
+
+			if ( ! $permanent && $attempt < self::MAX_ATTEMPTS ) {
 				$next = $attempt + 1;
 				$this->queue( $post_id, $slug, $next, self::RETRY_DELAYS[ $next ], $result->get_error_message() );
 			} else {

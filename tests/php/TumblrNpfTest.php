@@ -38,7 +38,9 @@ final class TumblrNpfTest extends TestCase {
 		$image = $npf['content'][0];
 		$this->assertSame( 'image', $image['type'] );
 		$this->assertSame( 'image/png', $image['media'][0]['type'] );
-		$this->assertSame( 'https://example.com/x.png', $image['media'][0]['url'] );
+		// Images reference an uploaded binary by identifier, not an external URL.
+		$this->assertSame( 'media-0', $image['media'][0]['identifier'] );
+		$this->assertArrayNotHasKey( 'url', $image['media'][0] );
 		$this->assertSame( 'a described png', $image['alt_text'] );
 		$this->assertSame( [ 'type' => 'text', 'text' => 'a caption' ], $npf['content'][1] );
 	}

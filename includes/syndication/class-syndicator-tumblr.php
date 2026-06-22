@@ -71,7 +71,7 @@ class Syndicator_Tumblr extends Syndicator_Base {
 		];
 
 		$npf    = Tumblr_Client::build_npf( $text, $images, $kind, $ctx );
-		$result = ( new Tumblr_Client() )->create_post( $npf );
+		$result = ( new Tumblr_Client() )->create_post( $npf, $images );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}

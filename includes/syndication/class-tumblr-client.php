@@ -73,9 +73,18 @@ class Tumblr_Client {
 
 	/**
 	 * Creates an NPF post, then resolves its canonical permalink.
-	 * Returns [ 'id' => string, 'url' => string ] or a WP_Error.
+	 *
+	 * $images is the same list passed to build_npf. When it's non-empty the post
+	 * is sent as multipart/form-data — Tumblr won't fetch external image URLs at
+	 * creation time, so each image's bytes must travel in the request keyed by
+	 * the identifier its content block references. Media-free posts use a plain
+	 * JSON body.
+	 *
+	 * Returns [ 'id' => string, 'url' => string ] or a WP_Error. The WP_Error
+	 * carries the HTTP status in its data so the caller can skip retrying a
+	 * permanent 4xx.
 	 */
-	public function create_post( array $npf ): array|\WP_Error {
+	public function create_post( array $npf, array $images = [] ): array|\WP_Error {
 		$token = $this->access_token();
 		if ( is_wp_error( $token ) ) {
 			return $token;
@@ -85,14 +94,17 @@ class Tumblr_Client {
 			return new \WP_Error( 'nop_tumblr_unconnected', __( 'No Tumblr blog configured.', 'nop-indieweb' ) );
 		}
 
-		$response = wp_remote_post( self::API_BASE . "/blog/{$blog}/posts", [
-			'headers' => [
-				'Authorization' => 'Bearer ' . $token,
-				'Content-Type'  => 'application/json',
-			],
-			'body'    => wp_json_encode( $npf ),
-			'timeout' => 30,
-		] );
+		$endpoint = self::API_BASE . "/blog/{$blog}/posts";
+		$response = $images
+			? $this->post_multipart( $endpoint, $token, $npf, $images )
+			: wp_remote_post( $endpoint, [
+				'headers' => [
+					'Authorization' => 'Bearer ' . $token,
+					'Content-Type'  => 'application/json',
+				],
+				'body'    => wp_json_encode( $npf ),
+				'timeout' => 30,
+			] );
 
 		if ( is_wp_error( $response ) ) {
 			\NOP\IndieWeb\nop_indieweb_log( 'Tumblr syndication failed', [ 'error' => $response->get_error_message() ] );
@@ -103,18 +115,96 @@ class Tumblr_Client {
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( ! in_array( $code, [ 200, 201 ], true ) || empty( $data['response']['id_string'] ) ) {
-			$msg = $data['meta']['msg'] ?? $data['errors'][0]['detail'] ?? __( 'unknown error', 'nop-indieweb' );
+			// errors[].detail is the actionable reason (e.g. an invalid-NPF code);
+			// meta.msg is only the generic status text. Prefer the detail.
+			$detail = $data['errors'][0]['detail'] ?? '';
+			$msg    = '' !== $detail ? $detail : ( $data['meta']['msg'] ?? __( 'unknown error', 'nop-indieweb' ) );
 			\NOP\IndieWeb\nop_indieweb_log( 'Tumblr syndication rejected', [ 'code' => $code, 'msg' => $msg ] );
-			return new \WP_Error( 'nop_syndication_failed', sprintf(
-				/* translators: 1: HTTP status code, 2: error detail from the Tumblr API */
-				__( 'HTTP %1$d: %2$s', 'nop-indieweb' ),
-				$code,
-				$msg
-			) );
+			return new \WP_Error(
+				'nop_syndication_failed',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error detail from the Tumblr API */
+					__( 'HTTP %1$d: %2$s', 'nop-indieweb' ),
+					$code,
+					$msg
+				),
+				[ 'status' => (int) $code ]
+			);
 		}
 
 		$id = (string) $data['response']['id_string'];
 		return [ 'id' => $id, 'url' => $this->resolve_post_url( $blog, $id, $token ) ];
+	}
+
+	/**
+	 * Posts the NPF as multipart/form-data: a `json` part for the body plus one
+	 * binary part per image, each named with the identifier its block references
+	 * (matching build_npf's media_identifier()). Mirrors the shape Tumblr's
+	 * client libraries use for NPF media uploads.
+	 */
+	private function post_multipart( string $endpoint, string $token, array $npf, array $images ): array|\WP_Error {
+		$boundary = 'nopboundary' . wp_generate_password( 24, false );
+		$eol      = "\r\n";
+
+		$body  = '--' . $boundary . $eol;
+		$body .= 'Content-Disposition: form-data; name="json"' . $eol;
+		$body .= 'Content-Type: application/json' . $eol . $eol;
+		$body .= (string) wp_json_encode( $npf ) . $eol;
+
+		foreach ( $images as $i => $img ) {
+			$src = (string) ( $img['url'] ?? '' );
+			if ( '' === $src ) {
+				continue;
+			}
+			$bin = $this->fetch_binary( $src );
+			if ( is_wp_error( $bin ) ) {
+				return $bin;
+			}
+			$mime       = self::mime_from_url( $src );
+			$identifier = self::media_identifier( $i );
+			$filename   = $identifier . '.' . self::ext_from_mime( $mime );
+
+			$body .= '--' . $boundary . $eol;
+			$body .= 'Content-Disposition: form-data; name="' . $identifier . '"; filename="' . $filename . '"' . $eol;
+			$body .= 'Content-Type: ' . $mime . $eol . $eol;
+			$body .= $bin . $eol;
+		}
+
+		$body .= '--' . $boundary . '--' . $eol;
+
+		return wp_remote_post( $endpoint, [
+			'headers' => [
+				'Authorization' => 'Bearer ' . $token,
+				'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+			],
+			'body'    => $body,
+			'timeout' => 45,
+		] );
+	}
+
+	/** Downloads the bytes at a media URL for upload, or a WP_Error. */
+	private function fetch_binary( string $url ): string|\WP_Error {
+		$response = wp_remote_get( $url, [ 'timeout' => 30 ] );
+		if ( is_wp_error( $response ) ) {
+			return new \WP_Error( 'nop_tumblr_media_fetch', $response->get_error_message() );
+		}
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return new \WP_Error( 'nop_tumblr_media_fetch', __( 'Could not fetch image to upload to Tumblr.', 'nop-indieweb' ) );
+		}
+		return (string) wp_remote_retrieve_body( $response );
+	}
+
+	/** Stable per-image identifier shared by build_npf and the uploader. */
+	private static function media_identifier( int $i ): string {
+		return 'media-' . $i;
+	}
+
+	private static function ext_from_mime( string $mime ): string {
+		return [
+			'image/png'  => 'png',
+			'image/gif'  => 'gif',
+			'image/webp' => 'webp',
+		][ $mime ] ?? 'jpg';
 	}
 
 	/**
@@ -221,14 +311,19 @@ class Tumblr_Client {
 				$content[] = [ 'type' => 'text', 'text' => '— ' . $ctx['cite'] ];
 			}
 		} else {
-			foreach ( $images as $img ) {
+			// Image blocks reference the binary by `identifier`, not by URL:
+			// Tumblr does not fetch external image URLs at post-creation time, so
+			// the bytes must travel in the same multipart request keyed by this
+			// identifier (see create_post). The index keeps build_npf and the
+			// uploader in agreement — both walk the same images array.
+			foreach ( $images as $i => $img ) {
 				$url = (string) ( $img['url'] ?? '' );
 				if ( '' === $url ) {
 					continue;
 				}
 				$block = [
 					'type'  => 'image',
-					'media' => [ [ 'type' => self::mime_from_url( $url ), 'url' => $url ] ],
+					'media' => [ [ 'type' => self::mime_from_url( $url ), 'identifier' => self::media_identifier( $i ) ] ],
 				];
 				if ( ! empty( $img['alt'] ) ) {
 					$block['alt_text'] = (string) $img['alt'];
