@@ -1182,6 +1182,26 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	renderSyndicators();
 
+	// ── Film-grain FX toggle (for-fun) ───────────────────────────────────────
+	// Flips .fx-on on .app (animated noise overlay + a hair of blur, in style.scss)
+	// and remembers the choice. Cosmetic only; no effect on what gets posted.
+	var fxToggle = document.getElementById( 'fxToggle' );
+	var fxApp    = document.getElementById( 'app' );
+	if ( fxToggle && fxApp ) {
+		var FX_KEY = 'nopPostFx';
+		var setFx  = function ( on ) {
+			fxApp.classList.toggle( 'fx-on', on );
+			fxToggle.setAttribute( 'aria-checked', on ? 'true' : 'false' );
+			try { localStorage.setItem( FX_KEY, on ? '1' : '0' ); } catch ( e ) {}
+		};
+		var fxSaved = false;
+		try { fxSaved = localStorage.getItem( FX_KEY ) === '1'; } catch ( e ) {}
+		setFx( fxSaved );
+		fxToggle.addEventListener( 'click', function () {
+			setFx( ! fxApp.classList.contains( 'fx-on' ) );
+		} );
+	}
+
 	// ── Tags ─────────────────────────────────────────────────────────────────
 
 	var tagInput  = document.getElementById( 'tagInput' );

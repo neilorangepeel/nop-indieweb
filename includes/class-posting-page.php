@@ -483,6 +483,14 @@ foreach ( [ '700', '800' ] as $weight ) {
 		</div>
 	</header>
 
+	<!-- For-fun vintage film-grain toggle — flips .fx-on on .app for an animated
+	     static-noise overlay + a hair of blur (a rough Cuphead-ish print feel).
+	     Purely cosmetic; state persists in localStorage. -->
+	<button type="button" class="fx-toggle" id="fxToggle" role="switch" aria-checked="false" aria-label="<?php esc_attr_e( 'Vintage film-grain effect', 'nop-indieweb' ); ?>">
+		<span class="fx-toggle__name"><?php esc_html_e( 'FX', 'nop-indieweb' ); ?></span>
+		<span class="fx-toggle__track" aria-hidden="true"><span class="fx-toggle__knob"></span></span>
+	</button>
+
 	<!-- View container -->
 	<main class="view-container">
 
@@ -773,16 +781,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
 				<div class="post-options" id="fieldOptions">
 
-					<!-- Visibility (all kinds) — Private keeps the post out of syndication,
-					     webmentions and public feeds (server maps it to WP `private`). -->
-					<div class="post-options__group field-row field-row--ledger" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
-						<span class="field-row__label" id="optPrivateLabel"><?php esc_html_e( 'Privacy', 'nop-indieweb' ); ?></span>
-						<label class="location-toggle" id="privateToggle">
-							<input type="checkbox" id="privateCheck" class="sr-only">
-							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-							<span class="location-toggle__label"><?php esc_html_e( 'Private — only you', 'nop-indieweb' ); ?></span>
-						</label>
-					</div>
+					<!-- Order: Place · Privacy · Schedule · Post to (Tags lives in its own
+					     row above this group). The :has()/~ ledger rules below adapt to this
+					     DOM order, so the last visible group always closes the ledger. -->
 
 					<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
 					     attaches the device's current place (reverse-geocoded by the /now
@@ -799,11 +800,15 @@ foreach ( [ '700', '800' ] as $weight ) {
 						</label>
 					</div>
 
-					<!-- Syndication targets (all kinds; Pixelfed photo-only). Rendered by
-					     renderSyndicators() into #syndicators; the group is shown/hidden there. -->
-					<div class="post-options__group field-row field-row--ledger" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
-						<span class="field-row__label" id="optSyndicateLabel"><?php esc_html_e( 'Post to', 'nop-indieweb' ); ?></span>
-						<div class="syndicators" id="syndicators"></div>
+					<!-- Visibility (all kinds) — Private keeps the post out of syndication,
+					     webmentions and public feeds (server maps it to WP `private`). -->
+					<div class="post-options__group field-row field-row--ledger" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
+						<span class="field-row__label" id="optPrivateLabel"><?php esc_html_e( 'Privacy', 'nop-indieweb' ); ?></span>
+						<label class="location-toggle" id="privateToggle">
+							<input type="checkbox" id="privateCheck" class="sr-only">
+							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
+							<span class="location-toggle__label"><?php esc_html_e( 'Private — only you', 'nop-indieweb' ); ?></span>
+						</label>
 					</div>
 
 					<!-- Schedule (all kinds) — opt-in. Off = post now. On + a future date/time
@@ -822,6 +827,13 @@ foreach ( [ '700', '800' ] as $weight ) {
 								<input type="time" id="scheduleTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule time', 'nop-indieweb' ); ?>">
 							</div>
 						</div>
+					</div>
+
+					<!-- Syndication targets (all kinds; Pixelfed photo-only). Rendered by
+					     renderSyndicators() into #syndicators; the group is shown/hidden there. -->
+					<div class="post-options__group field-row field-row--ledger" id="fieldSyndicate" role="group" aria-labelledby="optSyndicateLabel" hidden>
+						<span class="field-row__label" id="optSyndicateLabel"><?php esc_html_e( 'Post to', 'nop-indieweb' ); ?></span>
+						<div class="syndicators" id="syndicators"></div>
 					</div>
 
 				</div>
@@ -901,6 +913,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="drafts-drawer__list" id="draftsList"></div>
 		</div>
 	</div>
+
+	<!-- Film-grain FX layer — animated static noise, painted only when .app.fx-on. -->
+	<div class="fx-grain" aria-hidden="true"></div>
 
 </div><!-- .app -->
 
