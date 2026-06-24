@@ -30,6 +30,18 @@ Recommend **Opus** when the task involves:
 
 Default to **Sonnet** for everything else: feature additions, bug fixes, edits, reviews, and any task with a clear known solution.
 
+## Code philosophy — least code that works
+
+Before writing code, stop at the first rung that holds:
+
+1. **Does it need to exist?** (YAGNI.) Ship the lazy version and question the over-built request in the same response — never stall.
+2. **Already in this codebase?** Reuse it; don't re-implement.
+3. **Does WordPress core or an installed dependency already do this?** Use it — Options API, `wp_kses_*`, transients, `WP_Http`, `wp_remote_*`, `@wordpress/*` — before hand-rolling.
+4. **Can it be one line?** Make it one line.
+5. **Only then:** the minimum that works.
+
+Deletion over addition, boring over clever, fewest files possible. Never simplify away input sanitisation/escaping at trust boundaries, error handling that prevents data loss, security, or accessibility basics — or anything explicitly requested. (Reinforces the existing no-extra-comments and "one owner per concern" styling rules below.)
+
 ## Build step
 
 The settings page React app lives in `src/settings/` and is compiled to `build/settings/` via `@wordpress/scripts`. Run `npm run build` from the plugin root before committing whenever you change any file under `src/`. The compiled output in `build/` is committed to git — the production server does `git pull` with no npm step.
