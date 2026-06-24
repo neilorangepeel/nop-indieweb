@@ -577,7 +577,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 				<!-- URL field (reply, like, bookmark, repost, rsvp) -->
 				<div class="field-row is-conditional docket-slip" id="fieldUrl" hidden>
-					<span class="field-row__label"><?php esc_html_e( 'Link', 'nop-indieweb' ); ?></span>
+					<span class="field-row__label"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></span>
 					<div class="field-row__field">
 						<input type="url" id="typeUrl" class="text-field" placeholder="<?php esc_attr_e( 'Paste a link…', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'URL', 'nop-indieweb' ); ?>">
 						<!-- Printed reference line: hostname/path now; title/excerpt slot in later (server fetch). -->
@@ -623,11 +623,11 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<input type="hidden" id="eventImage" value="">
 					<div class="field-row">
 						<span class="field-row__label"><?php esc_html_e( 'Title', 'nop-indieweb' ); ?></span>
-						<input type="text" id="eventName" class="text-field" placeholder="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>">
+						<textarea id="eventName" class="text-field text-field--grow" rows="1" placeholder="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event title', 'nop-indieweb' ); ?>"></textarea>
 					</div>
 					<div class="field-row">
 						<span class="field-row__label"><?php esc_html_e( 'Where', 'nop-indieweb' ); ?></span>
-						<input type="text" id="eventLocation" class="text-field" placeholder="<?php esc_attr_e( 'Location (optional)', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event location', 'nop-indieweb' ); ?>">
+						<textarea id="eventLocation" class="text-field text-field--grow" rows="1" placeholder="<?php esc_attr_e( 'Location (optional)', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Event location', 'nop-indieweb' ); ?>"></textarea>
 					</div>
 					<div class="field-row field-row--when">
 						<span class="field-row__label"><?php esc_html_e( 'When', 'nop-indieweb' ); ?></span>
@@ -654,18 +654,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<p class="url-specimen__host" id="specimenHost" hidden></p>
 					<p class="url-specimen__path" id="specimenPath" hidden></p>
 					<p class="url-specimen__title" id="specimenTitle" hidden></p>
-				</div>
-
-				<!-- Photo picker -->
-				<div class="field-group is-conditional" id="fieldPhoto" hidden>
-					<div class="photo-picker" id="photoPicker">
-						<input type="file" id="photoInput" accept="image/*" multiple>
-						<span class="photo-picker-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
-						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
-						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
-					</div>
-					<div class="thumbnails" id="thumbnails"></div>
-					<div class="alt-texts" id="altTexts"></div>
 				</div>
 
 				</div><!-- .docket__fields -->
@@ -704,19 +692,33 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
+				<!-- Photo picker — sits below the writing pad on text-first kinds (note,
+				     reply) as a quiet "Add photos" link; the photo kind lifts it back above
+				     the pad as the full hero dropzone (CSS order). -->
+				<div class="field-group is-conditional" id="fieldPhoto" hidden>
+					<div class="photo-picker" id="photoPicker">
+						<input type="file" id="photoInput" accept="image/*" multiple>
+						<span class="photo-picker-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
+						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
+						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
+					</div>
+					<div class="thumbnails" id="thumbnails"></div>
+					<div class="alt-texts" id="altTexts"></div>
+				</div>
+
 				<!-- Quote attribution (quote) — who said it. The writing area above holds
 				     the quote itself; the source link below is optional. -->
 				<div class="field-row" id="fieldCite" hidden>
-					<label class="field-row__label" for="citeAuthor"><?php esc_html_e( 'By', 'nop-indieweb' ); ?></label>
+					<label class="field-row__label" for="citeAuthor"><?php esc_html_e( 'Cite', 'nop-indieweb' ); ?></label>
 					<div class="field-row__field">
-						<input type="text" id="citeAuthor" class="text-field" placeholder="<?php esc_attr_e( 'e.g. Maya Angelou', 'nop-indieweb' ); ?>" autocomplete="off">
+						<textarea id="citeAuthor" class="text-field text-field--grow" rows="1" placeholder="<?php esc_attr_e( 'e.g. Maya Angelou', 'nop-indieweb' ); ?>" autocomplete="off"></textarea>
 					</div>
 				</div>
 
 				<!-- Quote source link (quote) — optional; we can't pull the passage from
 				     a URL, so this is just a link to where it came from, if anywhere. -->
 				<div class="field-row" id="fieldQuoteLink" hidden>
-					<label class="field-row__label" for="quoteLink"><?php esc_html_e( 'Link', 'nop-indieweb' ); ?></label>
+					<label class="field-row__label" for="quoteLink"><?php esc_html_e( 'URL', 'nop-indieweb' ); ?></label>
 					<div class="field-row__field">
 						<input type="url" id="quoteLink" class="text-field" placeholder="<?php esc_attr_e( 'Link (optional)', 'nop-indieweb' ); ?>" autocomplete="off" inputmode="url">
 					</div>

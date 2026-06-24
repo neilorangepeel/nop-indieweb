@@ -1453,6 +1453,30 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	[ citeAuthor, quoteLink, quoteComment ].forEach( function ( el ) {
 		if ( el ) { el.addEventListener( 'input', saveDraftSoon ); }
 	} );
+
+	// Auto-grow textareas: native field-sizing handles Chrome/Safari; shim Firefox by
+	// writing height = scrollHeight on input AND on draft restore (programmatic value
+	// sets fire no input event). The single-line metadata fields (.text-field--grow)
+	// also swallow Enter so a hard newline never lands in a title/author/location.
+	function autoGrowField( el ) {
+		if ( hasFieldSizing || ! el ) { return; }
+		el.style.height = 'auto';
+		el.style.height = el.scrollHeight + 'px';
+	}
+	// Re-grow every field after a programmatic value change (draft restore, Clear) —
+	// those don't fire 'input'. No-op where native field-sizing is present.
+	function growAllFields() {
+		if ( hasFieldSizing ) { return; }
+		[].forEach.call( document.querySelectorAll( '.text-field--grow, .text-field--note' ), autoGrowField );
+	}
+	[].forEach.call( document.querySelectorAll( '.text-field--grow, .text-field--note' ), function ( el ) {
+		el.addEventListener( 'input', function () { autoGrowField( el ); } );
+		if ( el.classList.contains( 'text-field--grow' ) ) {
+			el.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' ) { e.preventDefault(); }
+			} );
+		}
+	} );
 	if ( privateCheck ) { privateCheck.addEventListener( 'change', saveDraft ); }
 
 	if ( clearBtn ) {
@@ -2212,6 +2236,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
 		setPrompt( ( currentType === 'note' ) ? notePrompt : ( TYPE_CONFIG[ currentType ].contentPlaceholder || 'Write…' ) );
 		autoGrowContent();
+		growAllFields();
 		updateCounter();
 		updatePostBtn();
 		clearDraft();
@@ -2338,6 +2363,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		updateCounter();
 		updatePostBtn();
 		updatePostLabel();
+		growAllFields();
 		saveDraft();
 	}
 
@@ -2411,6 +2437,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		updateCounter();
 		updatePostBtn();
 		updatePostLabel();
+		growAllFields();
 		saveDraft();
 	}
 

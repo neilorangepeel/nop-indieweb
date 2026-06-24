@@ -1093,6 +1093,15 @@ body::before {
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	transition: color 0.15s ease;
+}
+/* Focus cue — the label lights accent when its field is focused. Replaces the old
+   accent underline (which sat under the text and muddied the type): the label is off
+   to the side, so the active row stays obvious while the type reads clean.
+   :has(:focus-visible) gives keyboard + click-into-field focus without flickering on
+   stray taps that never land in an input. */
+.field-row:has( .text-field:focus-visible ) > .field-row__label {
+	color: var(--accent);
 }
 /* Wrapper for a cell that stacks more than the control (URL input + its reference
    line; tags-field + the quick-tags reveal). min-width:0 keeps long content from
@@ -1134,12 +1143,19 @@ body::before {
 .docket__header {
 	display: flex;
 	align-items: center;
-	gap: var(--space-xs);
+	/* The filing line is a single row, always — kind · serial · date · Drafts · Save ·
+	   Clear never stack. nowrap stops the flex line breaking; white-space:nowrap stops
+	   a label breaking inside its slot (e.g. "NO. 25750" splitting across two lines).
+	   The buttons lean on this gap for spacing (their own margins are zeroed) and the
+	   serial's margin-left:auto soaks up the slack, so the row stays tight on a phone. */
+	flex-wrap: nowrap;
+	white-space: nowrap;
+	min-width: 0;
+	gap: var(--space-2xs);
 	/* Reserve the row height for the taller Clear stamp (≈1.2 line-height + 2px
 	   padding + 1px border ≈ 20px) plus this row's padding-bottom + border-bottom,
-	   so popping the stamp in never grows the filing line's height. Horizontal
-	   space still collapses when it's [hidden]; align-items:center keeps the
-	   kind/serial/date labels from shifting vertically as the stamp appears. */
+	   so popping the stamp in never grows the filing line's height. align-items:center
+	   keeps the kind/serial/date labels from shifting vertically as the stamp appears. */
 	min-height: calc( 20px + var(--space-2xs) + var(--bw-rule) );
 	padding-bottom: var(--space-2xs);
 	border-bottom: var(--bw-rule) solid var(--rule);
@@ -1160,7 +1176,7 @@ body::before {
    while the row's min-height reserves only its height — no vertical re-flow. */
 .docket__clear {
 	appearance: none;
-	margin: 0 0 0 var(--space-xs);
+	margin: 0;
 	padding: 2px var(--space-2xs);
 	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
 	border-radius: 2px;
@@ -1182,7 +1198,7 @@ body::before {
 /* Drafts / Save — same rubber-stamped action box as Clear, sat on the filing line. */
 .docket__action {
 	appearance: none;
-	margin: 0 0 0 var(--space-2xs);
+	margin: 0;
 	padding: 2px var(--space-2xs);
 	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
 	border-radius: 2px;
@@ -1539,14 +1555,24 @@ body::before {
 	--line: var(--rule);
 	@include ruled(var(--line));
 }
-.text-field:focus { --line: var(--accent); }
 .text-field::placeholder { color: var(--text); opacity: 0.4; }
 /* Quote commentary — same ruled line, just multi-line: a small document with a real
    min-height. Inherits the shared rule + metrics from .text-field. */
 .text-field--note {
 	padding: var(--lead) 0 4px;
 	min-height: calc( var(--baseline) * 4 );
-	resize: vertical;
+}
+/* Auto-grow ruled fields — height tracks content like the compose pad. Native via
+   field-sizing: content (Chrome 123+/Safari 18+); autoGrowField() shims Firefox by
+   writing height = scrollHeight. THOUGHTS is a genuine multi-line note; the metadata
+   trio (CITE/TITLE/WHERE) are textareas ONLY to gain height-growth — their ruled line
+   just wraps for long text — so the JS swallows Enter to keep a stray newline out of a
+   title/author/location. */
+.text-field--grow,
+.text-field--note {
+	field-sizing: content;
+	resize: none;
+	overflow: hidden;
 }
 /* Date & time sit on the ruled line too — the native picker's value reads as text on
    the hairline like every other field. They inherit the .text-field line recipe; the
@@ -1572,9 +1598,10 @@ body::before {
 	padding: var(--space-xs);
 }
 #typeUrl:focus { border-color: var(--accent); }
-/* Keyboard focus. Line-style text fields lift their rule to accent (via --line on
-   :focus) — a focus LINE, no box. The only boxed control left is the GOING toggle,
-   which keeps the accent outline box. */
+/* Keyboard focus. Line-style text fields keep their hairline a constant rule colour
+   on focus — the caret marks the active field, and an accent line directly under the
+   text muddied the type, so the underline no longer recolours. The boxed URL field and
+   the GOING toggle keep their accent focus box (it sits clear of the text). */
 .text-field:focus-visible { outline: none; }
 .rsvp-btn:focus-visible {
 	outline: var(--bw-input) solid var(--accent);
@@ -1663,26 +1690,35 @@ body::before {
 .photo-picker p { font-family: var(--readout); font-size: var(--step-0); font-weight: 700; letter-spacing: 0; }
 .photo-picker small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
 
-/* Compact photo affordance — on the text-first kinds (note, reply) the writing
-   surface is the hero, so the dropzone collapses from a tall empty well into a slim
-   inline "Add photos" trigger sitting quietly above the ruled lines. The photo kind
-   keeps the full dropzone above: there the image IS the post, so it leads. Thumbnails
-   render below regardless once a photo is actually picked. */
+/* Photo affordance on the text-first kinds (note, reply) — the writing surface is the
+   hero, so the dropzone drops its dashed well entirely and becomes a quiet inline
+   "Add photos" link sitting just BELOW the ruled lines (DOM-ordered after the pad).
+   The photo kind keeps the full dropzone, and CSS order lifts it back ABOVE the pad:
+   there the image IS the post, so it leads. Thumbnails render in the link's group
+   regardless once a photo is actually picked. */
+.app[data-type="photo"] #fieldPhoto { order: -1; margin-bottom: var(--space-s); }
 .app[data-type="note"] .photo-picker,
 .app[data-type="reply"] .photo-picker {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	gap: var(--space-2xs);
-	padding: var(--space-2xs) var(--space-s);
-	border-radius: var(--nop-radius-pill);
+	justify-content: flex-start;
+	gap: var(--space-3xs);
+	width: fit-content;
+	padding: var(--space-2xs) 0;
+	border: 0;
+	border-radius: 0;
+	color: var(--accent);
+	text-decoration: underline;
+	text-underline-offset: 3px;
 }
+.app[data-type="note"] .photo-picker:active,
+.app[data-type="reply"] .photo-picker:active { border: 0; }
 .app[data-type="note"] .photo-picker-icon,
 .app[data-type="reply"] .photo-picker-icon { display: flex; margin-bottom: 0; }
 .app[data-type="note"] .photo-picker-icon svg,
-.app[data-type="reply"] .photo-picker-icon svg { width: 18px; height: 18px; }
+.app[data-type="reply"] .photo-picker-icon svg { width: 16px; height: 16px; }
 .app[data-type="note"] .photo-picker p,
-.app[data-type="reply"] .photo-picker p { font-size: var(--step--1); }
+.app[data-type="reply"] .photo-picker p { font-size: var(--step--1); font-weight: 600; }
 .app[data-type="note"] .photo-picker small,
 .app[data-type="reply"] .photo-picker small { display: none; }
 
