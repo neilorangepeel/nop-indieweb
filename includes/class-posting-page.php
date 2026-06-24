@@ -483,14 +483,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 		</div>
 	</header>
 
-	<!-- For-fun vintage film-grain toggle — flips .fx-on on .app for an animated
-	     static-noise overlay + a hair of blur (a rough Cuphead-ish print feel).
-	     Purely cosmetic; state persists in localStorage. -->
-	<button type="button" class="fx-toggle" id="fxToggle" role="switch" aria-checked="false" aria-label="<?php esc_attr_e( 'Vintage film-grain effect', 'nop-indieweb' ); ?>">
-		<span class="fx-toggle__name"><?php esc_html_e( 'FX', 'nop-indieweb' ); ?></span>
-		<span class="fx-toggle__track" aria-hidden="true"><span class="fx-toggle__knob"></span></span>
-	</button>
-
 	<!-- View container -->
 	<main class="view-container">
 
@@ -913,9 +905,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="drafts-drawer__list" id="draftsList"></div>
 		</div>
 	</div>
-
-	<!-- Film-grain FX layer — animated static noise, painted only when .app.fx-on. -->
-	<div class="fx-grain" aria-hidden="true"></div>
 
 </div><!-- .app -->
 
