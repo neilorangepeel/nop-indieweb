@@ -131,6 +131,13 @@ class Plugin {
 		if ( ! $service instanceof Services\Url_Response_Service ) {
 			return $post_args;
 		}
+		// Quote owns its own title + attribution: the user types the cite by hand and
+		// the service sets use_cite_card(): false. A quote's url is its `quotation-of`
+		// source, so scraping it here would clobber the hand-authored title and
+		// nop_indieweb_cite_author_name. Leave quotes untouched.
+		if ( $service instanceof Services\Quote ) {
+			return $post_args;
+		}
 		$url = (string) ( $parsed['url'] ?? '' );
 		if ( '' === $url ) {
 			return $post_args;

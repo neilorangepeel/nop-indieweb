@@ -164,7 +164,10 @@ class Tumblr_Client {
 			if ( is_wp_error( $bin ) ) {
 				return $bin;
 			}
-			$mime       = self::mime_from_url( $src );
+			// Mirror build_npf: caller-resolved MIME (local attachment) wins over the
+			// URL-extension guess, so the part's Content-Type matches the block's type.
+			$mime       = (string) ( $img['mime'] ?? '' );
+			$mime       = '' !== $mime ? $mime : self::mime_from_url( $src );
 			$identifier = self::media_identifier( $i );
 			$filename   = $identifier . '.' . self::ext_from_mime( $mime );
 
@@ -186,9 +189,22 @@ class Tumblr_Client {
 		] );
 	}
 
-	/** Downloads the bytes at a media URL for upload, or a WP_Error. */
+	/** Hard cap on media bytes fetched for a Tumblr upload (50 MB). */
+	private const MEDIA_FETCH_CAP_BYTES = 50 * 1024 * 1024;
+
+	/**
+	 * Downloads the bytes at a media URL for upload, or a WP_Error.
+	 *
+	 * For imported posts the photo URL is parsed out of attacker-influenceable
+	 * post_content, so this uses the SSRF-hardened fetch (re-validates every
+	 * redirect hop against private/reserved IPs) and caps the body — matching the
+	 * threat model the other syndicators' fetch_media() already enforces.
+	 */
 	private function fetch_binary( string $url ): string|\WP_Error {
-		$response = wp_remote_get( $url, [ 'timeout' => 30 ] );
+		$response = \NOP\IndieWeb\nop_indieweb_strict_remote_get( $url, [
+			'timeout'             => 30,
+			'limit_response_size' => self::MEDIA_FETCH_CAP_BYTES,
+		] );
 		if ( is_wp_error( $response ) ) {
 			return new \WP_Error( 'nop_tumblr_media_fetch', $response->get_error_message() );
 		}
@@ -309,32 +325,38 @@ class Tumblr_Client {
 	public static function build_npf( string $text, array $images, string $kind, array $ctx ): array {
 		$content = [];
 
+		// Image blocks reference the binary by `identifier`, not by URL: Tumblr does
+		// not fetch external image URLs at post-creation time, so the bytes must
+		// travel in the same multipart request keyed by this identifier (see
+		// create_post). The index keeps build_npf and the uploader in agreement —
+		// both walk the same images array. Emitted for EVERY kind, including quote:
+		// a quote can carry a photo, and skipping the blocks left the uploaded bytes
+		// orphaned (referenced by no block) and the image dropped.
+		foreach ( $images as $i => $img ) {
+			$url = (string) ( $img['url'] ?? '' );
+			if ( '' === $url ) {
+				continue;
+			}
+			// Prefer the caller-resolved true MIME (from the local attachment); fall
+			// back to the URL extension for remote-only images.
+			$mime  = (string) ( $img['mime'] ?? '' );
+			$mime  = '' !== $mime ? $mime : self::mime_from_url( $url );
+			$block = [
+				'type'  => 'image',
+				'media' => [ [ 'type' => $mime, 'identifier' => self::media_identifier( $i ) ] ],
+			];
+			if ( ! empty( $img['alt'] ) ) {
+				$block['alt_text'] = (string) $img['alt'];
+			}
+			$content[] = $block;
+		}
+
 		if ( 'quote' === $kind && '' !== $text ) {
 			$content[] = [ 'type' => 'text', 'subtype' => 'quote', 'text' => $text ];
 			if ( ! empty( $ctx['cite'] ) ) {
 				$content[] = [ 'type' => 'text', 'text' => '— ' . $ctx['cite'] ];
 			}
 		} else {
-			// Image blocks reference the binary by `identifier`, not by URL:
-			// Tumblr does not fetch external image URLs at post-creation time, so
-			// the bytes must travel in the same multipart request keyed by this
-			// identifier (see create_post). The index keeps build_npf and the
-			// uploader in agreement — both walk the same images array.
-			foreach ( $images as $i => $img ) {
-				$url = (string) ( $img['url'] ?? '' );
-				if ( '' === $url ) {
-					continue;
-				}
-				$block = [
-					'type'  => 'image',
-					'media' => [ [ 'type' => self::mime_from_url( $url ), 'identifier' => self::media_identifier( $i ) ] ],
-				];
-				if ( ! empty( $img['alt'] ) ) {
-					$block['alt_text'] = (string) $img['alt'];
-				}
-				$content[] = $block;
-			}
-
 			if ( '' !== $text ) {
 				$content[] = [ 'type' => 'text', 'text' => $text ];
 			}

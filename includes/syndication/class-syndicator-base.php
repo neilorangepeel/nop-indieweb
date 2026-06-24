@@ -215,12 +215,46 @@ abstract class Syndicator_Base {
 	/**
 	 * Returns the first inline core/video block reference from a post, or null.
 	 * Mirrors collect_inline_images() but capped at one (platform limit).
+	 *
+	 * Falls back to the nop_indieweb_videos URL meta when no block is present:
+	 * the core/video block is injected by the background after_insert cron, which
+	 * is scheduled at the same time() as syndication — so a freshly-composed video
+	 * story can syndicate BEFORE the block exists. Without this fallback the clip
+	 * is silently dropped (Mastodon posts text-only, Bluesky degrades to a link
+	 * card) with no retry. The meta carries only the URL, so the attachment id is
+	 * resolved from it to keep transcoding + alt text working.
 	 */
 	protected function collect_inline_video( int $post_id ): ?array {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return null;
 		}
-		return \NOP\IndieWeb\nop_indieweb_block_video( (string) $post->post_content );
+		$video = \NOP\IndieWeb\nop_indieweb_block_video( (string) $post->post_content );
+		if ( null !== $video ) {
+			return $video;
+		}
+
+		$urls = get_post_meta( $post_id, 'nop_indieweb_videos', true );
+		$url  = is_array( $urls ) ? (string) ( $urls[0] ?? '' ) : '';
+		if ( '' === $url ) {
+			return null;
+		}
+
+		$id  = attachment_url_to_postid( $url );
+		$alt = '';
+		if ( $id ) {
+			$alt = (string) get_post_field( 'post_excerpt', $id );
+			if ( '' === $alt ) {
+				$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+			}
+		}
+		return [
+			'url'           => $url,
+			'alt'           => $alt,
+			'attachment_id' => $id,
+			'width'         => 0,
+			'height'        => 0,
+			'mime'          => 'video/mp4',
+		];
 	}
 }

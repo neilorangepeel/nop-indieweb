@@ -53,13 +53,37 @@ class Syndicator_Tumblr extends Syndicator_Base {
 		// into post_content yet when syndication fires — same race the others hit).
 		$images = $this->collect_inline_images( $post_id, 10 );
 		if ( ! $images ) {
-			$cdn = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+			$cdn  = get_post_meta( $post_id, 'nop_indieweb_photos', true );
+			$alts = get_post_meta( $post_id, 'nop_indieweb_photo_alts', true );
+			$alts = is_array( $alts ) ? $alts : [];
 			if ( is_array( $cdn ) ) {
-				foreach ( array_filter( $cdn ) as $url ) {
-					$images[] = [ 'url' => (string) $url, 'alt' => '' ];
+				foreach ( $cdn as $i => $url ) {
+					if ( '' === (string) $url ) {
+						continue;
+					}
+					$images[] = [
+						'url'           => (string) $url,
+						'alt'           => (string) ( $alts[ $i ] ?? '' ),
+						'attachment_id' => attachment_url_to_postid( (string) $url ),
+					];
 				}
 			}
 		}
+
+		// Pin the true MIME from each local attachment so the NPF image block's
+		// declared type matches the multipart bytes (an extension-only guess can be
+		// wrong for an odd/extension-less CDN URL). Remote-only images keep the
+		// URL-extension fallback inside Tumblr_Client.
+		foreach ( $images as &$img ) {
+			$aid = (int) ( $img['attachment_id'] ?? 0 );
+			if ( $aid > 0 ) {
+				$mime = (string) get_post_mime_type( $aid );
+				if ( '' !== $mime ) {
+					$img['mime'] = $mime;
+				}
+			}
+		}
+		unset( $img );
 
 		$tags = wp_get_post_tags( $post_id, [ 'fields' => 'names' ] );
 		$ctx  = [

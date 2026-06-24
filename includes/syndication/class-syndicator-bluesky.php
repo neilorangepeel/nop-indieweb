@@ -87,16 +87,23 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( ! $video && ! $images ) {
 			$cdn_photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
 			if ( is_array( $cdn_photos ) && $cdn_photos ) {
-				$images = array_values( array_slice(
-					array_map( fn( $url ) => [
+				$cdn_alts = get_post_meta( $post_id, 'nop_indieweb_photo_alts', true );
+				$cdn_alts = is_array( $cdn_alts ) ? $cdn_alts : [];
+				foreach ( $cdn_photos as $i => $url ) {
+					if ( '' === (string) $url || count( $images ) >= 4 ) {
+						continue;
+					}
+					// Resolve the attachment id from the URL so upload_image_blob() can
+					// fall back to a 'medium'/'thumbnail' size when the full image blows
+					// past Bluesky's 1MB blob cap — without it a >1MB photo is dropped.
+					$images[] = [
 						'url'           => (string) $url,
-						'alt'           => '',
-						'attachment_id' => 0,
+						'alt'           => (string) ( $cdn_alts[ $i ] ?? '' ),
+						'attachment_id' => attachment_url_to_postid( (string) $url ),
 						'width'         => 0,
 						'height'        => 0,
-					], array_filter( $cdn_photos ) ),
-					0, 4
-				) );
+					];
+				}
 			}
 		}
 

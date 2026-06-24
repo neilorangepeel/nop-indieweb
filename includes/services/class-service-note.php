@@ -135,6 +135,7 @@ class Note extends Service_Base {
 			'nop_indieweb_source_url'  => $parsed['source_url'],
 			'nop_indieweb_syndication' => $parsed['syndication'],
 			'nop_indieweb_photos'      => $this->media_urls_for_meta( $parsed['photos'] ),
+			'nop_indieweb_photo_alts'  => $this->media_alts_for_meta( $parsed['photos'] ),
 			'nop_indieweb_videos'      => $this->media_urls_for_meta( $parsed['videos'] ),
 			'nop_indieweb_raw_payload' => wp_json_encode( $parsed['raw_payload'] ),
 		];
@@ -160,6 +161,32 @@ class Note extends Service_Base {
 			}
 		}
 		return $urls;
+	}
+
+	/**
+	 * Alt strings aligned 1:1 with media_urls_for_meta() — same entries, same skip
+	 * rule (drop anything with no URL), so nop_indieweb_photos[i] ↔ photo_alts[i].
+	 * Lets syndicators recover alt text during the after_insert race window, when
+	 * the photo blocks (which normally carry the alt) aren't in post_content yet.
+	 */
+	private function media_alts_for_meta( array $entries ): array {
+		$alts = [];
+		foreach ( $entries as $entry ) {
+			if ( is_string( $entry ) ) {
+				$url = esc_url_raw( $entry );
+				$alt = '';
+			} elseif ( is_array( $entry ) ) {
+				$url = esc_url_raw( (string) ( $entry['primary'] ?? $entry['fallback'] ?? '' ) );
+				$alt = (string) ( $entry['alt'] ?? '' );
+			} else {
+				$url = '';
+				$alt = '';
+			}
+			if ( '' !== $url ) {
+				$alts[] = sanitize_text_field( $alt );
+			}
+		}
+		return $alts;
 	}
 
 	protected function after_insert( int $post_id, array $parsed ): void {

@@ -109,8 +109,13 @@ abstract class Service_Base {
 		// born in its final state — no momentary publish and its hooks. Only future dates
 		// are honoured here, so a service that carries its own past date (a Swarm check-in)
 		// is untouched.
+		// An explicit publish also wins here, so a first-party composed post overrides
+		// the inbound service default (e.g. an "Entries" service set to hold imports as
+		// draft must not silently make the author's own /post submissions drafts too).
+		// The private-visibility branch above runs first and is never sent alongside an
+		// explicit publish by the composer, so it can't be clobbered.
 		$status_prop = (string) ( $payload['properties']['post-status'][0] ?? '' );
-		if ( in_array( $status_prop, [ 'draft', 'private' ], true ) ) {
+		if ( in_array( $status_prop, [ 'publish', 'draft', 'private' ], true ) ) {
 			$post_args['post_status'] = $status_prop;
 		}
 		$published = (string) ( $payload['properties']['published'][0] ?? '' );

@@ -1902,11 +1902,19 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// server's default of syndicating to every enabled platform.
 		props[ 'syndicate-to' ] = post.syndicateTo.slice();
 
-		// Scheduling: a future publish instant → WP makes a `future` (scheduled) post
-		// from post-status:publish + a future `published`. Syndication fires when it
-		// goes live (the server's transition hook), not now.
-		if ( post.scheduledAt ) {
+		// Declare an explicit publish status for normal posts. Without it the server
+		// falls back to the inbound "Entries" service's post_status, so a "hold imports
+		// as draft" preference would silently turn first-party composed posts into
+		// drafts too. A private post carries visibility=private instead (its own
+		// non-publish status), so don't force publish over it.
+		if ( ! post.isPrivate ) {
 			props[ 'post-status' ] = [ 'publish' ];
+		}
+
+		// Scheduling: a future `published` instant → WP makes a `future` (scheduled)
+		// post. Syndication fires when it goes live (the server's transition hook),
+		// not now.
+		if ( post.scheduledAt ) {
 			props.published = [ post.scheduledAt ];
 		}
 
@@ -2056,8 +2064,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		catch ( e ) { showView( 'compose' ); showToast( "Couldn't save offline: " + e.message, 'error' ); return; }
 		setQueueCount( queueCount + 1 );        // show "Queue: N" in the ticker
 		recordKindUse( post.type );
-		showToast( 'Saved — will post when you’re back online.', 'info' );
 		resetForm();
+		if ( navigator.onLine ) {
+			// Online, but the send threw (timed out / dropped request). Don't imply it
+			// published — it's saved to the queue so nothing is lost, and we retry now.
+			showToast( "Couldn't reach the server — saved and retrying…", 'info' );
+			replayQueue();
+		} else {
+			showToast( 'Saved — will post when you’re back online.', 'info' );
+		}
 	}
 
 	async function replayQueue() {
