@@ -2139,7 +2139,16 @@ body::before {
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
+	/* Bleed only the RIGHT to the screen edge so the per-service rules line up with the
+	   full-bleed ledger rows on the right, while the left stays inside the value column —
+	   the POST TO label gutter is never crossed. Re-pad so the name + limit keep place. */
+	margin-right: calc( -1 * var(--pad-x) );
+	padding-right: var(--pad-x);
 }
+/* A full border-bottom under each service (Mastodon, Bluesky, …) except the last,
+   whose separation is the group's own .field-row--ledger rule. Scoped to the items, so
+   the POST TO label column is left unchanged. */
+.syndicator-item:not(:last-child) { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
 /* Square pick toggle — the same muted control border as the rsvp control and
    text fields; fills with ink when checked. The real checkbox stays in the tree
    (sr-only) for keyboard and screen readers. */
