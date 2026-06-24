@@ -2130,6 +2130,11 @@ body::before {
 	cursor: pointer;
 	user-select: none;
 }
+/* Hairline between each network so the stacked targets read as separate ruled lines
+   like the Privacy / Place rows above. Scoped to the items (the value column), so it
+   never runs under the POST TO label gutter; the last item's separation is the group's
+   own .field-row--ledger rule. */
+.syndicator-item:not(:last-child) { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
 /* Square pick toggle — the same muted control border as the rsvp control and
    text fields; fills with ink when checked. The real checkbox stays in the tree
    (sr-only) for keyboard and screen readers. */
