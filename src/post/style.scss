@@ -76,19 +76,25 @@ $fluid-max-vw: 820;
 	   Six risograph inks, one per post kind. */
 	color-scheme: light dark;
 	--paper:    light-dark(#F4EFE6, #15140F);
-	/* Nine kind hues on an even, vivid wheel — each kind reads distinct in light and
-	   dark. The cool quartet (teal/blue/indigo/violet) varies lightness as well as hue
-	   so they stay tell-apart-able. --red doubles as the error colour; --magenta is
-	   also targeted by the date-picker filter recipe — both kept. */
-	--red:      light-dark(#D7331F, #FF5A4D);   /* like */
-	--orange:   light-dark(#C75A12, #FF9A3C);   /* reply */
-	--amber:    light-dark(#8A6200, #F2C230);   /* quote — deep gold (legible on cream), bright in dark */
-	--green:    light-dark(#1E8540, #57C97E);   /* bookmark */
-	--teal:     light-dark(#00857F, #34C6C0);   /* note */
-	--blue:     light-dark(#1E5BE0, #6E96FF);   /* photo */
-	--indigo:   light-dark(#5338D9, #9E8CFF);   /* story */
-	--violet:   light-dark(#8A2CCF, #C089F0);   /* repost */
-	--magenta:  light-dark(#C81E66, #FF6FA3);   /* rsvp */
+	/* Nine kind hues as ONE matched poster-paint set — bold primary tempera, not a
+	   scattered wheel. Every hue shares the SAME lightness + chroma per mode (light L0.55
+	   / dark L0.76, C0.19), set in OKLCH so the relationship is explicit: each hue pushed
+	   to a vivid, near-max saturation at a common tonal weight, told apart by HUE alone.
+	   Each kind keeps its identity hue, so the flavour (note=teal, like=red, reply=brand-
+	   orange…) is unchanged. The high chroma sits past the sRGB gamut for several hues
+	   (green/teal especially), so the browser clamps each to its own vivid edge — exactly
+	   the school-paint look, every colour as saturated as it can physically print. --red
+	   doubles as the error colour; --magenta is held near its old hue so the date-picker
+	   filter recipe still lands. */
+	--red:      light-dark( oklch(0.55 0.19 28),  oklch(0.76 0.18 28)  );   /* like */
+	--orange:   light-dark( oklch(0.55 0.19 56),  oklch(0.76 0.18 56)  );   /* reply */
+	--amber:    light-dark( oklch(0.55 0.19 88),  oklch(0.76 0.18 88)  );   /* quote */
+	--green:    light-dark( oklch(0.55 0.19 150), oklch(0.76 0.18 150) );   /* bookmark */
+	--teal:     light-dark( oklch(0.55 0.19 195), oklch(0.76 0.18 195) );   /* note */
+	--blue:     light-dark( oklch(0.55 0.19 250), oklch(0.76 0.18 250) );   /* photo */
+	--indigo:   light-dark( oklch(0.55 0.19 282), oklch(0.76 0.18 282) );   /* story */
+	--violet:   light-dark( oklch(0.55 0.19 312), oklch(0.76 0.18 312) );   /* repost */
+	--magenta:  light-dark( oklch(0.55 0.19 4),   oklch(0.76 0.18 4)   );   /* rsvp */
 	--charcoal: light-dark(#1A1A1A, #F4EFE6);
 
 	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
