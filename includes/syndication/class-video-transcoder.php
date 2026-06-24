@@ -114,7 +114,7 @@ final class Video_Transcoder {
 
 		$cmd = sprintf(
 			'%s -y -loglevel error -i %s %s-threads 1 -vf %s -c:v libx264 -x264-params threads=1 -preset veryfast -crf %d -maxrate %dk -bufsize %dk -pix_fmt yuv420p -profile:v high -c:a aac -b:a 128k -movflags +faststart %s 2>&1',
-			escapeshellcmd( $ffmpeg ),
+			escapeshellarg( $ffmpeg ),
 			escapeshellarg( $src ),
 			$trim,
 			escapeshellarg( self::SCALE ),
@@ -148,7 +148,7 @@ final class Video_Transcoder {
 		$trim = $seconds > 0 ? '-t ' . (int) $seconds . ' ' : '';
 		$cmd  = sprintf(
 			'%s -y -loglevel error -i %s -map 0:v:0 -map 0:a? %s-c copy -movflags +faststart %s 2>&1',
-			escapeshellcmd( $ffmpeg ),
+			escapeshellarg( $ffmpeg ),
 			escapeshellarg( $src ),
 			$trim,
 			escapeshellarg( $out )
@@ -177,7 +177,7 @@ final class Video_Transcoder {
 			return $cache[ $ffmpeg ];
 		}
 		$output = [];
-		exec( escapeshellcmd( $ffmpeg ) . ' -hide_banner -encoders 2>/dev/null', $output );
+		exec( escapeshellarg( $ffmpeg ) . ' -hide_banner -encoders 2>/dev/null', $output );
 		$has = false;
 		foreach ( $output as $line ) {
 			if ( false !== strpos( $line, 'libx264' ) ) {
@@ -201,7 +201,7 @@ final class Video_Transcoder {
 		}
 		$cmd = sprintf(
 			'%s -v error -select_streams v:0 -show_entries stream=codec_name -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s 2>/dev/null',
-			escapeshellcmd( $ffprobe ),
+			escapeshellarg( $ffprobe ),
 			escapeshellarg( $src )
 		);
 		$lines = [];

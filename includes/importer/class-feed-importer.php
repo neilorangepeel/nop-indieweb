@@ -480,7 +480,7 @@ class Feed_Importer {
 		if ( null === $this->tumblr_syndicated_ids ) {
 			$this->tumblr_syndicated_ids = [];
 			foreach ( array_keys( (array) $this->syndicated_urls ) as $u ) {
-				if ( preg_match( '#/post/(\d+)(?:[/?#]|$)#', (string) $u, $m ) ) {
+				if ( preg_match( '~/post/(\d+)(?:[/?#]|$)~', (string) $u, $m ) ) {
 					$this->tumblr_syndicated_ids[ $m[1] ] = true;
 				}
 			}

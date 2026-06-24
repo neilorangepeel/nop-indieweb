@@ -120,12 +120,18 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		}
 
 		// Same race condition as Bluesky: photo blocks aren't in post_content yet
-		// when syndication fires, but CDN URLs are already in meta.
+		// when syndication fires, but the URLs + alts are already in meta. Read the
+		// aligned alt array so accessibility text isn't lost during the race window.
 		$cdn_photos = get_post_meta( $post_id, 'nop_indieweb_photos', true );
 		if ( is_array( $cdn_photos ) && $cdn_photos ) {
-			$ids = [];
-			foreach ( array_slice( array_filter( $cdn_photos ), 0, 4 ) as $url ) {
-				$id = $this->upload_image( $instance, $token, (string) $url, '' );
+			$cdn_alts = get_post_meta( $post_id, 'nop_indieweb_photo_alts', true );
+			$cdn_alts = is_array( $cdn_alts ) ? $cdn_alts : [];
+			$ids      = [];
+			foreach ( $cdn_photos as $i => $url ) {
+				if ( '' === (string) $url || count( $ids ) >= 4 ) {
+					continue;
+				}
+				$id = $this->upload_image( $instance, $token, (string) $url, (string) ( $cdn_alts[ $i ] ?? '' ) );
 				if ( $id ) {
 					$ids[] = $id;
 				}
