@@ -42,6 +42,9 @@ class Feed_Importer {
 	/** Lazily-built set of all outbound syndication URLs (url => true). */
 	private ?array $syndicated_urls = null;
 
+	/** Lazily-built set of Tumblr post ids found in any stored syndication URL (id => true). */
+	private ?array $tumblr_syndicated_ids = null;
+
 	public function __construct( Note $note, Letterboxd $letterboxd ) {
 		$this->note       = $note;
 		$this->letterboxd = $letterboxd;
@@ -449,13 +452,40 @@ class Feed_Importer {
 				continue;
 			}
 			$url = (string) ( $post['post_url'] ?? '' );
-			if ( '' === $url || $this->was_syndicated_from_wordpress( $url ) ) {
+			$id  = (string) ( $post['id_string'] ?? $post['id'] ?? '' );
+			if ( '' === $url || $this->tumblr_was_syndicated( $url, $id ) ) {
 				continue;
 			}
 			$this->note->handle( $this->tumblr_to_payload( $post, $url ) );
 		}
 
 		\NOP\IndieWeb\nop_indieweb_update_option( 'syndicators.tumblr.import_last_at', gmdate( 'c' ) );
+	}
+
+	/**
+	 * True if this Tumblr post originated on WordPress. Checks the exact post_url
+	 * first, then falls back to matching the stable numeric post id: Tumblr's feed
+	 * returns a slugged post_url (/post/{id}/{slug}) while the syndicator often
+	 * stores the bare /post/{id} form (resolve_post_url's fallback when the
+	 * read-after-create lookup misses), so an exact-URL compare alone lets the
+	 * post loop back in as a duplicate.
+	 */
+	private function tumblr_was_syndicated( string $url, string $id ): bool {
+		if ( $this->was_syndicated_from_wordpress( $url ) ) {
+			return true;
+		}
+		if ( '' === $id ) {
+			return false;
+		}
+		if ( null === $this->tumblr_syndicated_ids ) {
+			$this->tumblr_syndicated_ids = [];
+			foreach ( array_keys( (array) $this->syndicated_urls ) as $u ) {
+				if ( preg_match( '#/post/(\d+)(?:[/?#]|$)#', (string) $u, $m ) ) {
+					$this->tumblr_syndicated_ids[ $m[1] ] = true;
+				}
+			}
+		}
+		return isset( $this->tumblr_syndicated_ids[ $id ] );
 	}
 
 	/**
