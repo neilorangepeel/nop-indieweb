@@ -2139,11 +2139,21 @@ body::before {
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
+	/* Full-bleed like the ledger rows so the hairline below spans the screen. Each item
+	   breaks out past the label gutter to the edges, then re-pads its content back to its
+	   column. The left inset is the distance from the screen edge to a syndicator's text:
+	   page pad + 64px label col + the grid column-gap + the .syndicators nudge. Applied to
+	   every item (not just the bordered ones) so all rows share one full-width tap target.
+	   Clipped to the frame by .compose-scroll's overflow-x. */
+	--synd-inset: calc( var(--pad-x) + 64px + var(--space-xs) + var(--space-2xs) );
+	margin-left: calc( -1 * var(--synd-inset) );
+	margin-right: calc( -1 * var(--pad-x) );
+	padding-left: var(--synd-inset);
+	padding-right: var(--pad-x);
 }
 /* Hairline between each network so the stacked targets read as separate ruled lines
-   like the Privacy / Place rows above. Scoped to the items (the value column), so it
-   never runs under the POST TO label gutter; the last item's separation is the group's
-   own .field-row--ledger rule. */
+   like the Privacy / Place rows above, now full-bleed to match them. The last item's
+   separation is the group's own .field-row--ledger rule. */
 .syndicator-item:not(:last-child) { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
 /* Square pick toggle — the same muted control border as the rsvp control and
    text fields; fills with ink when checked. The real checkbox stays in the tree
