@@ -2093,8 +2093,18 @@ body::before {
 }
 
 /* Each ruled row lays a hairline along its bottom edge; with the rows tiled (no
-   gaps) these become the evenly-spaced ledger lines that cross the margin rule. */
-.field-row--ledger { border-bottom: var(--bw-rule) solid var(--rule-ledger); }
+   gaps) these become the evenly-spaced ledger lines that cross the margin rule.
+   Full-bleed: each row breaks out to the screen edges so its hairline spans the full
+   width like notebook ruling, then re-pads its content by --pad-x so the 64px label
+   column and the controls keep their place. Only the ledger rows bleed — the writing
+   column above keeps .compose-fields' own --pad-x. .compose-scroll's overflow-x:hidden
+   clips the bleed to the frame edge, and the ledger box itself doesn't move, so the
+   vertical margin rule stays put. */
+.field-row--ledger {
+	border-bottom: var(--bw-rule) solid var(--rule-ledger);
+	margin-inline: calc( -1 * var(--pad-x) );
+	padding-inline: var(--pad-x);
+}
 /* Nudge the whole content column off the margin rule so the tag input, the quick-tag
    chips and the checkboxes all align to the same edge, just clear of the border. */
 .ledger .field-row > :not(.field-row__label) { padding-left: var(--space-2xs); }
