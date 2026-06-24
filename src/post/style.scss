@@ -2139,10 +2139,14 @@ body::before {
 	font-weight: 700;
 	cursor: pointer;
 	user-select: none;
-	/* Bleed only the RIGHT to the screen edge so the per-service rules line up with the
-	   full-bleed ledger rows on the right, while the left stays inside the value column —
-	   the POST TO label gutter is never crossed. Re-pad so the name + limit keep place. */
+	/* The rule meets the vertical gutter line flush on the left and bleeds to the screen
+	   edge on the right (so it lines up with the full-bleed ledger rows), while never
+	   crossing into the POST TO label column. The left reach = the gap from the value
+	   content back to the gutter centre (half the grid column-gap + the .syndicators
+	   nudge); equal padding keeps the name + limit in place. */
+	margin-left: calc( -1 * ( var(--space-xs) / 2 + var(--space-2xs) ) );
 	margin-right: calc( -1 * var(--pad-x) );
+	padding-left: calc( var(--space-xs) / 2 + var(--space-2xs) );
 	padding-right: var(--pad-x);
 }
 /* A full border-bottom under each service (Mastodon, Bluesky, …) except the last,
