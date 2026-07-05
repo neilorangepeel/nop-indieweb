@@ -126,27 +126,37 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		);
 
 		// A reply to a Bluesky post is threaded natively via record.reply (below),
-		// so it appears in the conversation. Null unless the target resolves to a
-		// Bluesky post — non-Bluesky replies keep their link card.
+		// so it appears in the conversation. A quote of a Bluesky post is embedded
+		// as a native quote card. Both are null unless the target resolves to a
+		// Bluesky post — non-Bluesky responses keep their link card.
 		$reply_ref = $this->build_reply_ref( $post_id );
+		$quote_ref = $this->build_quote_ref( $post_id );
 
-		// Embeds are mutually exclusive on Bluesky. Video wins over images; a
-		// natively-threaded reply shows its parent inline, so it needs no card; with
-		// no media a link-card preview is built for titled posts (and for
-		// check-ins, which carry a map image as the card thumbnail).
+		// The post's own media embed (video wins over images), or null.
+		$media = null;
 		if ( $video ) {
-			$embed = $this->build_video_embed( $video, $session );
-			// If Bluesky couldn't process the clip (wrong codec, too large, or the
-			// video service timed out), still link the self-hosted story rather than
-			// posting an empty text stub.
-			if ( null === $embed ) {
-				$embed = $this->build_link_card( $post_id, $permalink, $session );
-			}
+			$media = $this->build_video_embed( $video, $session );
 		} elseif ( $images ) {
-			$embed = $this->build_image_embed( $images, $session );
+			$media = $this->build_image_embed( $images, $session );
+		}
+
+		// Embeds are mutually exclusive on Bluesky, so pick one:
+		//   quote → the quoted post (recordWithMedia when the post also has media)
+		//   media → the video/images
+		//   threaded reply → nothing (Bluesky shows the parent inline)
+		//   otherwise → a link-card preview (titled posts, check-in maps, cite cards)
+		if ( $quote_ref ) {
+			$record_embed = [ '$type' => 'app.bsky.embed.record', 'record' => $quote_ref ];
+			$embed = $media
+				? [ '$type' => 'app.bsky.embed.recordWithMedia', 'record' => $record_embed, 'media' => $media ]
+				: $record_embed;
+		} elseif ( $media ) {
+			$embed = $media;
 		} elseif ( $reply_ref ) {
 			$embed = null;
 		} else {
+			// If a clip couldn't be processed, $media is null here even though $video
+			// was set — fall through to a link card rather than an empty text stub.
 			$embed = $this->build_link_card( $post_id, $permalink, $session );
 		}
 
@@ -296,7 +306,45 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	 * record.reply.root; otherwise the parent IS the root (a top-level post).
 	 */
 	private function build_reply_ref( int $post_id ): ?array {
-		if ( 'reply' !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+		$post = $this->response_post_node( $post_id, 'reply' );
+		if ( null === $post ) {
+			return null;
+		}
+
+		$parent = [ 'uri' => (string) $post['uri'], 'cid' => (string) $post['cid'] ];
+
+		// If the parent is itself a reply, thread under its root; else it is the root.
+		$record   = is_array( $post['record'] ?? null ) ? $post['record'] : [];
+		$reply    = is_array( $record['reply'] ?? null ) ? $record['reply'] : [];
+		$root_ref = is_array( $reply['root'] ?? null ) ? $reply['root'] : [];
+		$root     = ( ! empty( $root_ref['uri'] ) && ! empty( $root_ref['cid'] ) )
+			? [ 'uri' => (string) $root_ref['uri'], 'cid' => (string) $root_ref['cid'] ]
+			: $parent;
+
+		return [ 'root' => $root, 'parent' => $parent ];
+	}
+
+	/**
+	 * Builds the app.bsky.embed.record strong-ref for a quote-kind post whose
+	 * source is a Bluesky post, so the quoted post is embedded natively rather
+	 * than shown as a flat link card. Null (→ cite/link card) for non-quote kinds,
+	 * non-Bluesky sources, or resolution failures.
+	 */
+	private function build_quote_ref( int $post_id ): ?array {
+		$post = $this->response_post_node( $post_id, 'quote' );
+		return $post
+			? [ 'uri' => (string) $post['uri'], 'cid' => (string) $post['cid'] ]
+			: null;
+	}
+
+	/**
+	 * Resolves the Bluesky post a response post targets into its full thread node
+	 * (carrying uri, cid, and record). Returns null unless the post is of $kind,
+	 * its target is a Bluesky post, and the post resolves. Shared by the reply
+	 * (thread ref) and quote (embed ref) builders.
+	 */
+	private function response_post_node( int $post_id, string $kind ): ?array {
+		if ( $kind !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
 			return null;
 		}
 		$target = $this->response_target_url( $post_id );
@@ -316,21 +364,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		$node = is_array( $thread['thread'] ?? null ) ? $thread['thread'] : [];
 		$post = is_array( $node['post'] ?? null ) ? $node['post'] : [];
-		if ( empty( $post['uri'] ) || empty( $post['cid'] ) ) {
-			return null;
-		}
-
-		$parent = [ 'uri' => (string) $post['uri'], 'cid' => (string) $post['cid'] ];
-
-		// If the parent is itself a reply, thread under its root; else it is the root.
-		$record   = is_array( $post['record'] ?? null ) ? $post['record'] : [];
-		$reply    = is_array( $record['reply'] ?? null ) ? $record['reply'] : [];
-		$root_ref = is_array( $reply['root'] ?? null ) ? $reply['root'] : [];
-		$root     = ( ! empty( $root_ref['uri'] ) && ! empty( $root_ref['cid'] ) )
-			? [ 'uri' => (string) $root_ref['uri'], 'cid' => (string) $root_ref['cid'] ]
-			: $parent;
-
-		return [ 'root' => $root, 'parent' => $parent ];
+		return ( ! empty( $post['uri'] ) && ! empty( $post['cid'] ) ) ? $post : null;
 	}
 
 	/**
