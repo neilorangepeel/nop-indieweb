@@ -417,6 +417,42 @@ function nop_indieweb_compute_venue_visit_number( string $venue_id, string $post
 }
 
 /**
+ * Normalises a Micropub `content` value — a plain string, or a { value, html }
+ * object — into a [plain, html] pair. `html` is a sanitised inline-formatting
+ * subset (empty when the client sent no HTML); `plain` is always safe text for
+ * titles, dedup, and social syndication (which strips HTML to plain anyway).
+ *
+ * @return array{plain:string,html:string}
+ */
+function nop_indieweb_micropub_content_parts( mixed $raw ): array {
+	if ( is_array( $raw ) ) {
+		$html  = (string) ( $raw['html'] ?? '' );
+		$plain = (string) ( $raw['value'] ?? '' );
+		if ( '' === $plain && '' !== $html ) {
+			$plain = wp_strip_all_tags( $html );
+		}
+	} else {
+		$html  = '';
+		$plain = (string) $raw;
+	}
+
+	$allowed = [
+		'strong' => [],
+		'em'     => [],
+		'b'      => [],
+		'i'      => [],
+		'code'   => [],
+		'br'     => [],
+		'a'      => [ 'href' => [], 'title' => [], 'rel' => [] ],
+	];
+
+	return [
+		'plain' => sanitize_textarea_field( $plain ),
+		'html'  => '' !== $html ? trim( wp_kses( $html, $allowed ) ) : '',
+	];
+}
+
+/**
  * The site owner's own profile URLs, gathered from the identity settings and
  * each configured syndicator. Used to advertise rel=me links and to recognise
  * the owner's own silo accounts when back-feeding interactions.

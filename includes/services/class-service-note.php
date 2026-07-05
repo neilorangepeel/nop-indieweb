@@ -44,10 +44,8 @@ class Note extends Service_Base {
 	public function parse( array $payload ): array {
 		$props = $payload['properties'] ?? [];
 
-		$content_raw = $props['content'][0] ?? '';
-		$content     = is_array( $content_raw )
-			? ( $content_raw['value'] ?? '' )
-			: (string) $content_raw;
+		$content_parts = \NOP\IndieWeb\nop_indieweb_micropub_content_parts( $props['content'][0] ?? '' );
+		$content       = $content_parts['plain'];
 
 		$syndication = array_map(
 			'esc_url_raw',
@@ -67,7 +65,8 @@ class Note extends Service_Base {
 		) ) );
 
 		return [
-			'content'     => $content_trimmed,
+			'content'      => $content_trimmed,
+			'content_html' => $content_parts['html'],
 			'name'        => $is_article ? $name : '',
 			'is_article'  => $is_article,
 			'kind'        => sanitize_key( $props['post-kind'][0] ?? '' ),
@@ -90,8 +89,12 @@ class Note extends Service_Base {
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'], true );
 
 		$content = trim( $parsed['content'] );
-		$blocks  = $content
-			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $content ) . "</p>\n<!-- /wp:paragraph -->"
+		$html    = trim( (string) ( $parsed['content_html'] ?? '' ) );
+		// Prefer the sanitised HTML (bold/italic from the composer) so the blog
+		// renders real formatting; socials strip it back to plain text on their own.
+		$inner   = '' !== $html ? $html : ( '' !== $content ? wp_kses_post( $content ) : '' );
+		$blocks  = '' !== $inner
+			? "<!-- wp:paragraph -->\n<p>" . $inner . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
 		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
