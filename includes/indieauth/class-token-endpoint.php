@@ -88,17 +88,18 @@ class Token_Endpoint {
 			return new WP_Error( 'invalid_grant', 'client_id or redirect_uri does not match.', [ 'status' => 400 ] );
 		}
 
-		// Validate PKCE if the authorization request included a code_challenge.
-		// NOP: needs review — PKCE is only enforced when a challenge was present at
-		// the authorize step, so a client that never sends one is exempt. Mandating
-		// PKCE for all clients would close a downgrade gap but may break legacy ones.
-		if ( $stored['challenge'] ) {
-			if ( ! $verifier ) {
-				return new WP_Error( 'invalid_request', 'code_verifier is required.', [ 'status' => 400 ] );
-			}
-			if ( ! $this->verify_pkce( $verifier, $stored['challenge'] ) ) {
-				return new WP_Error( 'invalid_grant', 'PKCE code_verifier does not match code_challenge.', [ 'status' => 400 ] );
-			}
+		// PKCE is mandatory: the authorize step refuses to issue a code without an
+		// S256 challenge, so every code carries one and a verifier is always
+		// required and always checked. There is no downgrade path for a client
+		// that omits it — a missing or empty challenge is treated as a hard error.
+		if ( empty( $stored['challenge'] ) ) {
+			return new WP_Error( 'invalid_grant', 'Authorization code is missing its PKCE challenge.', [ 'status' => 400 ] );
+		}
+		if ( ! $verifier ) {
+			return new WP_Error( 'invalid_request', 'code_verifier is required.', [ 'status' => 400 ] );
+		}
+		if ( ! $this->verify_pkce( $verifier, $stored['challenge'] ) ) {
+			return new WP_Error( 'invalid_grant', 'PKCE code_verifier does not match code_challenge.', [ 'status' => 400 ] );
 		}
 
 		$raw_token = bin2hex( random_bytes( 32 ) );

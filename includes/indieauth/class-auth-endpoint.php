@@ -286,13 +286,26 @@ class Auth_Endpoint {
 			return new WP_Error( 'invalid_redirect_uri', 'redirect_uri host must match client_id host.' );
 		}
 
+		// PKCE is mandatory (IndieAuth 2022-02). Refuse to issue a code unless the
+		// request carries an S256 code_challenge, so there is no downgrade path: a
+		// client that can't do PKCE never gets a code rather than getting an
+		// unprotected one. Only S256 is accepted — the plain method is not.
+		$challenge = sanitize_text_field( $params['code_challenge'] ?? '' );
+		$method    = strtoupper( sanitize_text_field( $params['code_challenge_method'] ?? '' ) );
+		if ( '' === $challenge ) {
+			return new WP_Error( 'invalid_request', 'A PKCE code_challenge is required.' );
+		}
+		if ( 'S256' !== $method ) {
+			return new WP_Error( 'invalid_request', 'code_challenge_method must be S256.' );
+		}
+
 		return [
 			'client_id'             => esc_url_raw( $params['client_id'] ),
 			'redirect_uri'          => esc_url_raw( $params['redirect_uri'] ),
 			'state'                 => sanitize_text_field( $params['state'] ),
 			'scope'                 => sanitize_text_field( $params['scope'] ?? 'create' ),
-			'code_challenge'        => sanitize_text_field( $params['code_challenge'] ?? '' ),
-			'code_challenge_method' => sanitize_text_field( $params['code_challenge_method'] ?? '' ),
+			'code_challenge'        => $challenge,
+			'code_challenge_method' => 'S256',
 		];
 	}
 

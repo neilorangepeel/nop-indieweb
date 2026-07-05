@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.4
+Stable tag: 0.9.5
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,10 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.5 =
+* Security hardening: PKCE is now mandatory for IndieAuth. The authorization endpoint refuses to issue a code unless the request carries an S256 code_challenge, and the token endpoint always requires and verifies a matching code_verifier — closing the downgrade path where a client that omitted PKCE received an unprotected code. Modern Micropub clients already use PKCE and are unaffected.
+* Tests: added unit coverage for the outbound-fetch SSRF gate, asserting loopback, RFC 1918, the 0.0.0.0/8 range and the 169.254.169.254 cloud-metadata address are all refused while genuine public addresses pass. The Lighthouse checker for /post now enforces regression floors (accessibility and best-practices at 100) and exits non-zero when a category drops below its floor, so it can gate a deploy rather than only reporting scores.
 
 = 0.9.4 =
 * Security hardening: the importer's syndication-URL lookup now decodes stored meta with unserialize allowed_classes=false (behind an is_serialized gate), so a tampered row can never instantiate a PHP object.
