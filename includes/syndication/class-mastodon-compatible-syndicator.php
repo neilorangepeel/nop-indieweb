@@ -43,11 +43,17 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		$token     = $this->access_token();
 		$permalink = (string) get_permalink( $post_id );
 
+		// Response kinds (bookmark/like/repost/reply/quote) unfurl the *target*
+		// source — Mastodon builds its preview card from the first URL — so link
+		// that instead of our permalink; every other kind links the permalink.
+		$target = $this->response_target_url( $post_id );
+		$link   = '' !== $target ? $target : $permalink;
+
 		// URLs count as a flat 23 chars on Mastodon-compatible APIs regardless of
-		// the actual permalink length, so budget the suffix at 23 even though the
+		// the actual link length, so budget the suffix at 23 even though the
 		// visible text is the full URL.
 		$text     = $this->build_full_text( $post_id );
-		$status   = $this->compose_status( $text, $this->char_limit(), $permalink, 23 );
+		$status   = $this->compose_status( $text, $this->char_limit(), $link, 23 );
 
 		$body      = [ 'status' => $status ];
 		$media_ids = $this->upload_post_images( $post_id, $instance, $token );
