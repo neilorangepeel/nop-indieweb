@@ -118,11 +118,12 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$label  = '' !== $host ? $host : $permalink;
 		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
 		$facet  = $this->build_label_facet( $text, $label, $permalink );
-		// Bluesky doesn't auto-link hashtags the way Mastodon does — each #tag
-		// the author typed needs an explicit facet to become searchable.
+		// Bluesky doesn't auto-link hashtags or mentions the way Mastodon does —
+		// each #tag and @handle the author typed needs an explicit facet.
 		$facets = array_merge(
 			$facet ? [ $facet ] : [],
-			$this->build_hashtag_facets( $text )
+			$this->build_hashtag_facets( $text ),
+			$this->build_mention_facets( $text )
 		);
 
 		// A reply to a Bluesky post is threaded natively via record.reply (below),
@@ -779,6 +780,53 @@ class Syndicator_Bluesky extends Syndicator_Base {
 				],
 				'features' => [
 					[ '$type' => 'app.bsky.richtext.facet#tag', 'tag' => $tag ],
+				],
+			];
+		}
+		return $facets;
+	}
+
+	/**
+	 * Builds mention facets for @handle tokens the author typed. Bluesky handles
+	 * are domains (e.g. @ciara.bsky.social), so each candidate is resolved to a
+	 * DID via com.atproto.identity.resolveHandle; only handles that resolve become
+	 * facets — a typo or a non-Bluesky @name stays plain text. (Mastodon needs no
+	 * equivalent: its server auto-links @user@instance mentions in the text.)
+	 *
+	 * Byte offsets come from PREG_OFFSET_CAPTURE, which reports byte positions even
+	 * under /u, so multibyte text before the handle is measured correctly.
+	 */
+	private function build_mention_facets( string $text ): array {
+		if ( ! preg_match_all(
+			'/(?:^|\s)(@[a-z0-9][a-z0-9.-]*\.[a-z]{2,})/iu',
+			$text,
+			$matches,
+			PREG_OFFSET_CAPTURE
+		) ) {
+			return [];
+		}
+
+		$facets = [];
+		foreach ( $matches[1] as $match ) {
+			$token      = $match[0];                       // e.g. "@ciara.bsky.social"
+			$byte_start = $match[1];                       // byte offset of the leading @
+			$handle     = strtolower( ltrim( $token, '@' ) );
+
+			$did = (string) ( $this->get_public_json(
+				'com.atproto.identity.resolveHandle',
+				[ 'handle' => $handle ]
+			)['did'] ?? '' );
+			if ( '' === $did ) {
+				continue;   // not a Bluesky account — leave as plain text
+			}
+
+			$facets[] = [
+				'index'    => [
+					'byteStart' => $byte_start,
+					'byteEnd'   => $byte_start + strlen( $token ),
+				],
+				'features' => [
+					[ '$type' => 'app.bsky.richtext.facet#mention', 'did' => $did ],
 				],
 			];
 		}
