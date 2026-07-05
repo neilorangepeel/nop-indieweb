@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.3
+Stable tag: 0.9.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.4 =
+* Security hardening: the importer's syndication-URL lookup now decodes stored meta with unserialize allowed_classes=false (behind an is_serialized gate), so a tampered row can never instantiate a PHP object.
 
 = 0.9.3 =
 * Quality pass: the check-in syndication lead is now translatable (matching the other kind leads); an accessible label was added to the syndication-preview character budget; and unit coverage was added for the Micropub content normaliser behind the Markdown feature.

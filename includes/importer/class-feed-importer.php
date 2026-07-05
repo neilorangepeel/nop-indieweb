@@ -661,7 +661,12 @@ class Feed_Importer {
 		);
 		$set = [];
 		foreach ( $rows as $raw ) {
-			$value = maybe_unserialize( $raw );
+			// Defence-in-depth: this meta is written by the plugin as an array of
+			// URL strings, but decode with allowed_classes=false so a tampered row
+			// can never instantiate a PHP object (object-injection gadget).
+			$value = is_serialized( $raw )
+				? unserialize( $raw, [ 'allowed_classes' => false ] ) // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- guarded: is_serialized gate + allowed_classes=false blocks object injection
+				: $raw;
 			foreach ( (array) $value as $u ) {
 				if ( is_string( $u ) && '' !== $u ) {
 					$set[ $u ] = true;
