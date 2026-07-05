@@ -891,21 +891,24 @@ foreach ( [ '700', '800' ] as $weight ) {
 			</div>
 		</div>
 
+		<!-- Drafts view — the saved-drafts library (local + cross-device server drafts).
+		     A first-class screen on the same paper as compose/success, not a floating
+		     overlay; index.js swaps to it via showView('drafts'). -->
+		<div id="view-drafts" hidden>
+			<div class="drafts-view__scroll">
+				<header class="drafts-view__head">
+					<h2 class="drafts-view__title"><?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?></h2>
+				</header>
+				<div class="drafts-view__list" id="draftsList"></div>
+			</div>
+			<div class="bottom-bar">
+				<button class="btn btn-secondary" id="draftsClose" type="button"><?php esc_html_e( 'Back', 'nop-indieweb' ); ?></button>
+			</div>
+		</div>
+
 	</main><!-- .view-container -->
 
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-	<!-- Drafts drawer — the saved-drafts library (local + cross-device server drafts).
-	     Rendered/toggled by index.js; a tap on the backdrop or × closes it. -->
-	<div class="drafts-drawer" id="draftsDrawer" hidden>
-		<div class="drafts-drawer__panel" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Drafts', 'nop-indieweb' ); ?>">
-			<div class="drafts-drawer__head">
-				<h2 class="drafts-drawer__title"><?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?></h2>
-				<button type="button" class="drafts-drawer__close" id="draftsClose" aria-label="<?php esc_attr_e( 'Close drafts', 'nop-indieweb' ); ?>">&times;</button>
-			</div>
-			<div class="drafts-drawer__list" id="draftsList"></div>
-		</div>
-	</div>
 
 </div><!-- .app -->
 
