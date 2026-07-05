@@ -114,13 +114,19 @@ abstract class Syndicator_Base {
 		$title = (string) ( $post->post_title ?? '' );
 		$body  = \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
 
-		if ( 'bookmark' === $kind ) {
-			// Mirror the check-in lead (📍) with a bookmark lead (🔖). No title:
-			// the captured cite title is often unhelpful (a YouTube link reads
-			// "YouTube", not the video name), so the destination is left to the
-			// link/card below rather than a misleading label.
-			$lead = '🔖 ' . __( 'Bookmarked', 'nop-indieweb' );
-			return '' !== $body ? $lead . "\n\n" . $body : $lead;
+		// Response kinds lead with an emoji + verb (mirroring the 📍 check-in) so
+		// they read as an action rather than a bare domain title. No URL or target
+		// name goes in the text — the response target is carried by the platform
+		// card / unfurl (see target_url()), which the captured cite title often
+		// mislabels anyway (a YouTube link reads "YouTube", not the video name).
+		$leads = [
+			'bookmark' => '🔖 ' . __( 'Bookmarked', 'nop-indieweb' ),
+			'like'     => '⭐ ' . __( 'Liked', 'nop-indieweb' ),
+			'repost'   => '🔁 ' . __( 'Reposted', 'nop-indieweb' ),
+			'quote'    => '💬 ' . __( 'Quoted', 'nop-indieweb' ),
+		];
+		if ( isset( $leads[ $kind ] ) ) {
+			return '' !== $body ? $leads[ $kind ] . "\n\n" . $body : $leads[ $kind ];
 		}
 
 		if ( 'article' === $kind ) {
@@ -128,6 +134,25 @@ abstract class Syndicator_Base {
 		}
 
 		return '' !== $body ? $body : $title;
+	}
+
+	/**
+	 * The URL a response post points at — the bookmarked / liked / reposted /
+	 * replied-to / quoted target — or '' for kinds that aren't responses. Drives
+	 * the platform link card (Bluesky) and preview unfurl (Mastodon) so the card
+	 * represents the cited source, not our own permalink.
+	 */
+	protected function target_url( int $post_id ): string {
+		static $map = [
+			'bookmark' => 'nop_indieweb_bookmark_of',
+			'like'     => 'nop_indieweb_like_of',
+			'repost'   => 'nop_indieweb_repost_of',
+			'reply'    => 'nop_indieweb_in_reply_to',
+			'quote'    => 'nop_indieweb_quote_of',
+		];
+		$kind = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		$key  = $map[ $kind ] ?? '';
+		return '' !== $key ? (string) get_post_meta( $post_id, $key, true ) : '';
 	}
 
 	/**

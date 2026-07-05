@@ -204,6 +204,14 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	}
 
 	private function build_link_card( int $post_id, string $url, array $session ): ?array {
+		// Response kinds (bookmark/like/repost/reply/quote) card the *target* with
+		// the cited source's own title/excerpt/image, so the preview represents
+		// what was linked rather than our permalink.
+		$target = $this->target_url( $post_id );
+		if ( '' !== $target ) {
+			return $this->build_cite_card( $post_id, $target, $session );
+		}
+
 		$post        = get_post( $post_id );
 		$title       = $post->post_title ?: '';
 		$description = get_the_excerpt( $post );
@@ -220,6 +228,42 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		// Upload featured image as thumb blob.
 		$thumb = $this->upload_thumb( $post_id, $session );
+		if ( $thumb ) {
+			$external['thumb'] = $thumb;
+		}
+
+		return [
+			'$type'    => 'app.bsky.embed.external',
+			'external' => $external,
+		];
+	}
+
+	/**
+	 * Builds the external card for a response kind from the cited target: the
+	 * source's own title, excerpt, and image (captured at save time by
+	 * Cite_Extractor), pointing at the target URL. Always returns a card — the
+	 * title falls back to the target host, the thumb to the post's own image
+	 * chain — so a bookmark/like/repost never lands as a bare link.
+	 */
+	private function build_cite_card( int $post_id, string $url, array $session ): ?array {
+		$title = (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true );
+		if ( '' === $title ) {
+			$title = (string) wp_parse_url( $url, PHP_URL_HOST );
+		}
+
+		$external = [
+			'uri'         => $url,
+			'title'       => $title,
+			'description' => (string) get_post_meta( $post_id, 'nop_indieweb_cite_excerpt', true ),
+		];
+
+		$image = (string) get_post_meta( $post_id, 'nop_indieweb_cite_image', true );
+		$thumb = '' !== $image
+			? $this->upload_image_blob( [ 'url' => $image, 'alt' => '', 'attachment_id' => 0, 'width' => 0, 'height' => 0 ], $session )
+			: null;
+		// Fall back to the post's own thumbnail chain (featured image → site icon)
+		// when the source has no usable image, or it blew past the 1 MB blob cap.
+		$thumb = $thumb ?: $this->upload_thumb( $post_id, $session );
 		if ( $thumb ) {
 			$external['thumb'] = $thumb;
 		}
