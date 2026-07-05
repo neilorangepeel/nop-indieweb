@@ -697,6 +697,7 @@ body::before {
 }
 #view-compose,
 #view-progress,
+#view-drafts,
 #view-success {
 	flex: 1;
 	display: flex;
@@ -1230,57 +1231,33 @@ body::before {
 }
 
 /* ── Drafts drawer — the saved-drafts library, slides up from the bottom ──── */
-.drafts-drawer {
-	position: fixed;
-	inset: 0;
-	z-index: 60;
-	display: flex;
-	justify-content: center;
-	align-items: flex-end;
-	background: color-mix( in srgb, var(--ink) 38%, transparent );
-	-webkit-backdrop-filter: blur( 2px );
-	backdrop-filter: blur( 2px );
+/* Drafts view — a first-class screen, not an overlay. The list sits directly on the
+   app's paper + halftone (the view is transparent), sharing the compose/success
+   scaffolding: a scroll region above a floating .bottom-bar. No backdrop, no blur —
+   it reads as another page of the notebook rather than a pane hovering over a
+   frosted copy of the one behind it. */
+.drafts-view__scroll {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	/* Deep bottom padding clears the floating "Back" pill, matching .success-scroll. */
+	padding: var(--space-s) var(--pad-x) calc( var(--safe-bottom) + 88px );
 }
-.drafts-drawer[hidden] { display: none; }
-.drafts-drawer__panel {
-	width: 100%;
-	max-width: 40rem;
-	max-height: 80vh;
-	display: flex;
-	flex-direction: column;
-	background: var(--paper);
-	border-top-left-radius: var(--nop-radius, 10px);
-	border-top-right-radius: var(--nop-radius, 10px);
-	box-shadow: 0 -8px 40px color-mix( in srgb, var(--ink) 30%, transparent );
-	padding: var(--space-s) var(--space-s) calc( var(--space-s) + env( safe-area-inset-bottom ) );
-}
-.drafts-drawer__head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+.drafts-view__head {
+	padding: var(--space-s) 0 var(--space-xs);
+	border-bottom: var(--bw) solid var(--rule);
 	margin-bottom: var(--space-2xs);
 }
-.drafts-drawer__title {
+.drafts-view__title {
 	margin: 0;
 	font-family: var(--display);
-	font-size: var(--step-0);
-	font-weight: 700;
+	font-size: var(--step-2);
+	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
-.drafts-drawer__close {
-	appearance: none;
-	border: none;
-	background: transparent;
-	font-size: var(--step-2);
-	line-height: 1;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
-	cursor: pointer;
-	padding: 4px 8px;
-}
-.drafts-drawer__list { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.drafts-drawer__empty {
-	padding: var(--space-m) 0;
+.drafts-view__empty {
+	padding: var(--space-xl) 0;
 	text-align: center;
 	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
 }

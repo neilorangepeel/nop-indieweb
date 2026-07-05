@@ -631,7 +631,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var saveDraftBtn    = document.getElementById( 'saveDraftBtn' );
 	var draftsBtn       = document.getElementById( 'draftsBtn' );
 	var draftsCount     = document.getElementById( 'draftsCount' );
-	var draftsDrawer    = document.getElementById( 'draftsDrawer' );
 	var draftsList      = document.getElementById( 'draftsList' );
 	var draftsClose     = document.getElementById( 'draftsClose' );
 
@@ -2362,6 +2361,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		function swap() {
 			document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
 			document.getElementById( 'view-progress' ).hidden = name !== 'progress';
+			document.getElementById( 'view-drafts'   ).hidden = name !== 'drafts';
 			document.getElementById( 'view-success'  ).hidden = name !== 'success';
 		}
 		// Cross-fade the swap where supported (Safari 18.2+); hard-swap otherwise, and
@@ -2649,7 +2649,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function renderDraftsList( rows ) {
 		if ( ! draftsList ) { return; }
-		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-drawer__empty">No drafts yet.</p>'; return; }
+		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-view__empty">No drafts yet.</p>'; return; }
 		draftsList.innerHTML = rows.map( function ( r ) {
 			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '" data-kind="' + escAttr( r.type ) + '">'
 				+ '<button type="button" class="draft-row__open">'
@@ -2661,13 +2661,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} ).join( '' );
 	}
 
-	async function openDraftsDrawer() {
-		if ( ! draftsDrawer ) { return; }
-		draftsList.innerHTML = '<p class="drafts-drawer__empty">Loading…</p>';
-		draftsDrawer.hidden = false;
+	async function openDrafts() {
+		if ( ! draftsList ) { return; }
+		draftsList.innerHTML = '<p class="drafts-view__empty">Loading…</p>';
+		showView( 'drafts' );
 		renderDraftsList( await listAllDrafts() );
 	}
-	function closeDraftsDrawer() { if ( draftsDrawer ) { draftsDrawer.hidden = true; } }
+	function closeDrafts() { showView( 'compose' ); }
 
 	// Build a form snapshot from a server draft's Micropub source (?q=source). The
 	// source doesn't echo post-kind, so the drawer row's known kind is the fallback.
@@ -2711,17 +2711,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		clearFields();
 		restoreSnapshot( post );
 		activeDraftId = post.id;
-		closeDraftsDrawer();
 		showView( 'compose' );
 		refreshDraftsCount();
 	}
 
 	if ( saveDraftBtn ) { saveDraftBtn.addEventListener( 'click', saveCurrentDraft ); }
-	if ( draftsBtn )    { draftsBtn.addEventListener( 'click', openDraftsDrawer ); }
-	if ( draftsClose )  { draftsClose.addEventListener( 'click', closeDraftsDrawer ); }
-	if ( draftsDrawer ) {
-		draftsDrawer.addEventListener( 'click', function ( e ) {
-			if ( e.target === draftsDrawer ) { closeDraftsDrawer(); return; }      // backdrop tap
+	if ( draftsBtn )    { draftsBtn.addEventListener( 'click', openDrafts ); }
+	if ( draftsClose )  { draftsClose.addEventListener( 'click', closeDrafts ); }
+	if ( draftsList ) {
+		draftsList.addEventListener( 'click', function ( e ) {
 			var row = e.target.closest( '.draft-row' ); if ( ! row ) { return; }
 			var id = row.getAttribute( 'data-id' ), url = row.getAttribute( 'data-url' ), kind = row.getAttribute( 'data-kind' );
 			if ( e.target.closest( '.draft-row__delete' ) ) {
