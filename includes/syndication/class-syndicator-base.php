@@ -117,7 +117,7 @@ abstract class Syndicator_Base {
 		// Response kinds lead with an emoji + verb (mirroring the 📍 check-in) so
 		// they read as an action rather than a bare domain title. No URL or target
 		// name goes in the text — the response target is carried by the platform
-		// card / unfurl (see target_url()), which the captured cite title often
+		// card / unfurl (see response_target_url()), which the captured cite title often
 		// mislabels anyway (a YouTube link reads "YouTube", not the video name).
 		$leads = [
 			'bookmark' => '🔖 ' . __( 'Bookmarked', 'nop-indieweb' ),
@@ -142,7 +142,7 @@ abstract class Syndicator_Base {
 	 * the platform link card (Bluesky) and preview unfurl (Mastodon) so the card
 	 * represents the cited source, not our own permalink.
 	 */
-	protected function target_url( int $post_id ): string {
+	protected function response_target_url( int $post_id ): string {
 		static $map = [
 			'bookmark' => 'nop_indieweb_bookmark_of',
 			'like'     => 'nop_indieweb_like_of',

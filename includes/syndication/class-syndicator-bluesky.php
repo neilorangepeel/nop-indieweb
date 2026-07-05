@@ -207,7 +207,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// Response kinds (bookmark/like/repost/reply/quote) card the *target* with
 		// the cited source's own title/excerpt/image, so the preview represents
 		// what was linked rather than our permalink.
-		$target = $this->target_url( $post_id );
+		$target = $this->response_target_url( $post_id );
 		if ( '' !== $target ) {
 			return $this->build_cite_card( $post_id, $target, $session );
 		}
@@ -245,7 +245,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	 * title falls back to the target host, the thumb to the post's own image
 	 * chain — so a bookmark/like/repost never lands as a bare link.
 	 */
-	private function build_cite_card( int $post_id, string $url, array $session ): ?array {
+	private function build_cite_card( int $post_id, string $url, array $session ): array {
 		$title = (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true );
 		if ( '' === $title ) {
 			$title = (string) wp_parse_url( $url, PHP_URL_HOST );

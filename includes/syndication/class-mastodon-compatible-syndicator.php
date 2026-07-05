@@ -46,7 +46,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		// Response kinds (bookmark/like/repost/reply/quote) unfurl the *target*
 		// source — Mastodon builds its preview card from the first URL — so link
 		// that instead of our permalink; every other kind links the permalink.
-		$target = $this->target_url( $post_id );
+		$target = $this->response_target_url( $post_id );
 		$link   = '' !== $target ? $target : $permalink;
 
 		// URLs count as a flat 23 chars on Mastodon-compatible APIs regardless of
