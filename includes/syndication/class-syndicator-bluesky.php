@@ -125,7 +125,13 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			$this->build_hashtag_facets( $text )
 		);
 
-		// Embeds are mutually exclusive on Bluesky. Video wins over images; with
+		// A reply to a Bluesky post is threaded natively via record.reply (below),
+		// so it appears in the conversation. Null unless the target resolves to a
+		// Bluesky post — non-Bluesky replies keep their link card.
+		$reply_ref = $this->build_reply_ref( $post_id );
+
+		// Embeds are mutually exclusive on Bluesky. Video wins over images; a
+		// natively-threaded reply shows its parent inline, so it needs no card; with
 		// no media a link-card preview is built for titled posts (and for
 		// check-ins, which carry a map image as the card thumbnail).
 		if ( $video ) {
@@ -138,6 +144,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			}
 		} elseif ( $images ) {
 			$embed = $this->build_image_embed( $images, $session );
+		} elseif ( $reply_ref ) {
+			$embed = null;
 		} else {
 			$embed = $this->build_link_card( $post_id, $permalink, $session );
 		}
@@ -155,6 +163,10 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		if ( $embed ) {
 			$record['embed'] = $embed;
+		}
+
+		if ( $reply_ref ) {
+			$record['reply'] = $reply_ref;
 		}
 
 		$response = wp_remote_post(
@@ -272,6 +284,82 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			'$type'    => 'app.bsky.embed.external',
 			'external' => $external,
 		];
+	}
+
+	/**
+	 * Builds the record.reply strong-ref pair for a reply-kind post whose target
+	 * is a Bluesky post, so the syndicated copy threads under the original instead
+	 * of posting standalone. Returns null (→ standalone + link card) when the post
+	 * isn't a reply, the target isn't a Bluesky post, or resolution fails.
+	 *
+	 * root is the thread's origin: if the parent is itself a reply, we inherit its
+	 * record.reply.root; otherwise the parent IS the root (a top-level post).
+	 */
+	private function build_reply_ref( int $post_id ): ?array {
+		if ( 'reply' !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return null;
+		}
+		$target = $this->response_target_url( $post_id );
+		if ( '' === $target || ! $this->owns_url( $target ) ) {
+			return null;
+		}
+		$at_uri = $this->resolve_at_uri( $target );
+		if ( null === $at_uri ) {
+			return null;
+		}
+
+		$thread = $this->get_public_json( 'app.bsky.feed.getPostThread', [
+			'uri'          => $at_uri,
+			'depth'        => 0,
+			'parentHeight' => 0,
+		] );
+
+		$node = is_array( $thread['thread'] ?? null ) ? $thread['thread'] : [];
+		$post = is_array( $node['post'] ?? null ) ? $node['post'] : [];
+		if ( empty( $post['uri'] ) || empty( $post['cid'] ) ) {
+			return null;
+		}
+
+		$parent = [ 'uri' => (string) $post['uri'], 'cid' => (string) $post['cid'] ];
+
+		// If the parent is itself a reply, thread under its root; else it is the root.
+		$record   = is_array( $post['record'] ?? null ) ? $post['record'] : [];
+		$reply    = is_array( $record['reply'] ?? null ) ? $record['reply'] : [];
+		$root_ref = is_array( $reply['root'] ?? null ) ? $reply['root'] : [];
+		$root     = ( ! empty( $root_ref['uri'] ) && ! empty( $root_ref['cid'] ) )
+			? [ 'uri' => (string) $root_ref['uri'], 'cid' => (string) $root_ref['cid'] ]
+			: $parent;
+
+		return [ 'root' => $root, 'parent' => $parent ];
+	}
+
+	/**
+	 * Resolves a bsky.app post URL to its at:// URI. The profile segment may be a
+	 * DID (used as-is) or a handle (resolved via com.atproto.identity.resolveHandle).
+	 */
+	private function resolve_at_uri( string $bsky_url ): ?string {
+		if ( ! preg_match( '~/profile/([^/]+)/post/([^/?#]+)~', $bsky_url, $m ) ) {
+			return null;
+		}
+		$authority = $m[1];
+		$rkey      = $m[2];
+		$did       = str_starts_with( $authority, 'did:' )
+			? $authority
+			: (string) ( $this->get_public_json( 'com.atproto.identity.resolveHandle', [ 'handle' => $authority ] )['did'] ?? '' );
+		return '' !== $did ? "at://{$did}/app.bsky.feed.post/{$rkey}" : null;
+	}
+
+	/** GETs a public AppView XRPC method and returns the decoded array (or []). */
+	private function get_public_json( string $method, array $params ): array {
+		$response = wp_remote_get(
+			'https://public.api.bsky.app/xrpc/' . $method . '?' . http_build_query( $params ),
+			[ 'timeout' => 15 ]
+		);
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return [];
+		}
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		return is_array( $data ) ? $data : [];
 	}
 
 	private function upload_thumb( int $post_id, array $session ): ?array {
