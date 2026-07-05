@@ -49,6 +49,19 @@ if ( ! function_exists( 'esc_url_raw' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_kses' ) ) {
+	/** Minimal stand-in: drop any tag whose name isn't a key in $allowed; keep text. */
+	function wp_kses( $string, $allowed ) {
+		return preg_replace_callback(
+			'/<\/?([a-zA-Z0-9]+)[^>]*>/',
+			static function ( $m ) use ( $allowed ) {
+				return isset( $allowed[ strtolower( $m[1] ) ] ) ? $m[0] : '';
+			},
+			(string) $string
+		);
+	}
+}
+
 if ( ! function_exists( 'wp_parse_url' ) ) {
 	function wp_parse_url( $url, $component = -1 ) {
 		return parse_url( (string) $url, $component );

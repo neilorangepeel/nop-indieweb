@@ -284,7 +284,14 @@
 				return el( 'div', { key: n.slug, className: 'nop-synpre-net' },
 					el( 'div', { className: 'nop-synpre-head' },
 						el( 'span', { className: 'nop-synpre-name' }, n.label ),
-						el( 'span', { className: 'nop-synpre-budget' + ( over ? ' is-over' : '' ) }, n.count + ' / ' + n.limit )
+						el( 'span', {
+						className: 'nop-synpre-budget' + ( over ? ' is-over' : '' ),
+						'aria-label': sprintf(
+							/* translators: 1: characters used, 2: character limit */
+							__( '%1$d of %2$d characters%3$s', 'nop-indieweb' ),
+							n.count, n.limit, over ? __( ' — over the limit', 'nop-indieweb' ) : ''
+						),
+					}, n.count + ' / ' + n.limit )
 					),
 					el( 'div', { className: 'nop-synpre-render' }, n.text ),
 					el( 'div', { className: 'nop-synpre-badge' }, n.badge )

@@ -115,7 +115,8 @@ abstract class Syndicator_Base {
 
 		if ( $venue_name ) {
 			$body    = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
-			$checkin = sprintf( '📍 Checked in at %s', $venue_name );
+			/* translators: %s: venue name */
+			$checkin = '📍 ' . sprintf( __( 'Checked in at %s', 'nop-indieweb' ), $venue_name );
 			return '' !== $body ? $checkin . "\n\n" . $body : $checkin;
 		}
 		if ( ! $post ) {
