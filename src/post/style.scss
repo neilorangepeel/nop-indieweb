@@ -2099,6 +2099,14 @@ body::before {
    final line (POST TO) rather than trailing a rule into the gap before the button. */
 .post-options__group:not(:has( ~ .post-options__group:not([hidden]) )) { border-bottom: 0; }
 
+/* Lapsed-time notice under the schedule pickers — sits in the same column as the
+   date/time (already inside .field-row__field), a quiet advisory, not an error. */
+.schedule-note {
+	margin: 6px 0 0;
+	font-size: var(--step--1);
+	color: color-mix( in srgb, var(--ink) 62%, var(--paper) );
+}
+
 /* Syndicate-to */
 .syndicators {
 	display: flex;
@@ -2280,21 +2288,26 @@ body::before {
 /* Disabled stays a solid, muted primary — never a ghost outline — so the
    commit target always reads as the primary action. When the form becomes valid
    the fill saturates to full accent and the offset shadow grows: it "charges". */
-.btn-primary:disabled {
+/* .is-incomplete is the same muted "not charged" look, but the button stays
+   clickable (no :disabled) so a premature tap can explain what's still needed. */
+.btn-primary:disabled,
+.btn-primary.is-incomplete {
 	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
 	color: color-mix( in srgb, var(--on-accent) 38%, var(--device-ink) );
 	border-color: transparent;
 	opacity: 1;
-	cursor: default;
 	transform: none;
 	box-shadow: 0 3px 10px rgba(0,0,0,0.10);
 }
+.btn-primary:disabled { cursor: default; }
 .btn-secondary { background: var(--field); color: var(--text); }
 .btn-secondary:active { transform: translate(1px, 1px); }
 .btn-accent { background: var(--field); color: var(--text); margin-top: 0; }
 /* Clean, unbranded share button — same neutral surface as the editor button,
-   with the app mark in the kind accent for a friendly on-brand cue. */
-.btn-share {
+   with the app mark in the kind accent for a friendly on-brand cue. Copy-link
+   shares the treatment (neutral surface, accent glyph). */
+.btn-share,
+.btn-copy {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2303,7 +2316,8 @@ body::before {
 	color: var(--text);
 	border-color: var(--line);
 }
-.btn-share:active { transform: translate(1px, 1px); }
+.btn-share:active,
+.btn-copy:active { transform: translate(1px, 1px); }
 .btn-share__icon { flex-shrink: 0; display: flex; color: var(--accent); }
 
 /* ── Progress ───────────────────────────────────────────────────────────── */
@@ -2339,6 +2353,24 @@ body::before {
 	width: 0%;
 	transition: width 0.3s;
 }
+/* Send-undo control — a quiet, tappable link under the countdown bar. Underlined
+   accent text (not a filled button) so it reads as an escape hatch, not the
+   primary path; generous hit area for a thumb. */
+.progress-undo {
+	margin-top: calc( var(--space-l) * -0.4 );
+	padding: 8px 16px;
+	background: none;
+	border: 0;
+	color: var(--accent);
+	font-family: var(--readout);
+	font-size: var(--step--1);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+.progress-undo:active { transform: translateY(1px); }
 
 /* ── Success — poster moment ────────────────────────────────────────────── */
 

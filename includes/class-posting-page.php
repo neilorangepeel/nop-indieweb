@@ -819,6 +819,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 								<input type="date" id="scheduleDate" class="text-field text-field--date" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule date', 'nop-indieweb' ); ?>">
 								<input type="time" id="scheduleTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule time', 'nop-indieweb' ); ?>">
 							</div>
+							<p class="schedule-note" id="scheduleNote" role="note" aria-live="polite" hidden><?php esc_html_e( "That time's passed — this will post now.", 'nop-indieweb' ); ?></p>
 						</div>
 					</div>
 
@@ -844,7 +845,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 			<div class="type-shadow type-shadow-right" aria-hidden="true"></div>
 
 			<div class="bottom-bar">
-				<button class="btn btn-primary" id="postBtn" disabled type="button">
+				<button class="btn btn-primary is-incomplete" id="postBtn" type="button">
 					<svg class="btn-primary__icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/></svg>
 					<span class="btn-primary__label"><?php esc_html_e( 'Post', 'nop-indieweb' ); ?></span>
 				</button>
@@ -859,6 +860,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
 					<div class="progress-bar-fill" id="progressFill"></div>
 				</div>
+				<button type="button" class="progress-undo" id="progressUndo" hidden><?php esc_html_e( 'Undo', 'nop-indieweb' ); ?></button>
 			</div>
 		</div>
 
@@ -881,6 +883,10 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<button class="btn btn-share" id="shareBtn" type="button" hidden>
 						<span class="btn-share__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 60 60" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 5.45455C16.4439 5.45455 5.45455 16.4439 5.45455 30V35.4545C5.45455 45.9982 14.0018 54.5455 24.5455 54.5455H30C43.5561 54.5455 54.5455 43.5561 54.5455 30C54.5455 16.4439 43.5561 5.45455 30 5.45455ZM0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30C60 46.5685 46.5685 60 30 60H24.5455C10.9893 60 0 49.0107 0 35.4545V30ZM30 16.3636C22.4688 16.3636 16.3636 22.4688 16.3636 30C16.3636 37.5312 22.4688 43.6364 30 43.6364C37.5312 43.6364 43.6364 37.5312 43.6364 30C43.6364 22.4688 37.5312 16.3636 30 16.3636ZM10.9091 30C10.9091 19.4564 19.4564 10.9091 30 10.9091C40.5436 10.9091 49.0909 19.4564 49.0909 30C49.0909 40.5436 40.5436 49.0909 30 49.0909C19.4564 49.0909 10.9091 40.5436 10.9091 30ZM30.0775 27.3502C28.5713 27.3502 27.3502 28.5713 27.3502 30.0775C27.3502 31.5837 26.1292 32.8048 24.623 32.8048C23.1167 32.8048 21.8957 31.5837 21.8957 30.0775C21.8957 25.5589 25.5589 21.8957 30.0775 21.8957C34.5963 21.8957 38.2593 25.5589 38.2593 30.0775C38.2593 31.5837 37.0383 32.8048 35.5321 32.8048C34.0258 32.8048 32.8048 31.5837 32.8048 30.0775C32.8048 28.5713 31.5837 27.3502 30.0775 27.3502Z"/></svg></span>
 						<?php esc_html_e( 'Share', 'nop-indieweb' ); ?>
+					</button>
+					<button class="btn btn-copy" id="copyLinkBtn" type="button" hidden>
+						<span class="btn-share__icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4l24.71-24.71a56,56,0,0,1,79.32,0,8,8,0,0,1-11.32,11.31,40,40,0,0,0-56.68,0L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.19,148a40,40,0,0,1-56.68,0,8,8,0,0,0-11.32,11.31,56,56,0,0,0,79.32,0l24.71-24.71A56.08,56.08,0,0,0,207.62,48.38Z"/></svg></span>
+						<?php esc_html_e( 'Copy link', 'nop-indieweb' ); ?>
 					</button>
 				</div>
 			</div>

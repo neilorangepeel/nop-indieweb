@@ -566,15 +566,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'Write a note…' },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'Write a note…', contentHint: 'Write a note, or add a photo.' },
 		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'What are we looking at?' },
-		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…' },
+		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…', urlHint: "Paste the URL you're replying to" },
 		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
-		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…' },
+		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…', urlHint: 'Paste the URL to bookmark' },
 		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
-		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: 'The quote itself…' },
+		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: 'The quote itself…', contentHint: 'Add the quote itself.' },
 		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasStoryMedia: true, hasLocation: true, contentPlaceholder: 'Add a caption (optional)…' },
-		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true },
+		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true, urlHint: "Paste the event's URL" },
 	};
 
 	var currentType   = 'note';
@@ -693,6 +693,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// The POST pill reads "Schedule" once a valid future time is set, else "Post".
 	function updatePostLabel() {
 		if ( postLabel ) { postLabel.textContent = getScheduledAt() ? 'Schedule' : postLabelText; }
+		updateScheduleNote();
+	}
+
+	// A lapsed schedule time posts NOW (getScheduledAt rejects the past) — say so
+	// inline rather than surprising the author after they tap. Fires whenever the
+	// toggle is on with a date set but no valid future time comes back.
+	function updateScheduleNote() {
+		var note = document.getElementById( 'scheduleNote' );
+		if ( ! note ) { return; }
+		note.hidden = ! ( scheduleCheck && scheduleCheck.checked && scheduleDate && scheduleDate.value && ! getScheduledAt() );
 	}
 
 	if ( scheduleCheck ) {
@@ -1440,20 +1450,32 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Post button state ─────────────────────────────────────────────────────
 
-	function updatePostBtn() {
-		var cfg     = TYPE_CONFIG[ currentType ];
-		var enabled = false;
+	// What (if anything) the current kind still needs before it can post. Returns
+	// null when ready; otherwise { hint, focus } — the one-line reason and the
+	// field to send the author to. Drives both the button's "not charged" look
+	// and the tap-to-learn-why nudge (a disabled button that says nothing is a
+	// dead end; here the button stays live and explains itself).
+	function postReadiness() {
+		var cfg = TYPE_CONFIG[ currentType ];
 		if ( cfg.hasStoryMedia ) {
-			enabled = !! ( storyVideo || storyPhoto );
-		} else if ( currentType === 'photo' ) {
-			enabled = selectedFiles.length > 0;
-		} else if ( cfg.urlProp ) {
-			enabled = urlInput.value.trim().length > 0;
-		} else {
-			// A note posts on text alone, or on an attached image alone.
-			enabled = contentInput.value.trim().length > 0 || ( cfg.hasPhoto && selectedFiles.length > 0 );
+			return ( storyVideo || storyPhoto ) ? null : { hint: 'Pick a photo or a short clip.', focus: storyPrompt };
 		}
-		postBtn.disabled = ! enabled;
+		if ( currentType === 'photo' ) {
+			return selectedFiles.length > 0 ? null : { hint: 'Add at least one photo.', focus: picker };
+		}
+		if ( cfg.urlProp ) {
+			return urlInput.value.trim().length > 0 ? null : { hint: cfg.urlHint || 'Paste a link first.', focus: urlInput };
+		}
+		// A note posts on text alone, or on an attached image alone.
+		if ( contentInput.value.trim().length > 0 || ( cfg.hasPhoto && selectedFiles.length > 0 ) ) { return null; }
+		return { hint: cfg.contentHint || 'Write something first.', focus: contentInput };
+	}
+
+	function updatePostBtn() {
+		// Keep the button clickable even when incomplete: a class carries the muted
+		// "not charged" look (see .btn-primary.is-incomplete) while the click handler
+		// turns a premature tap into a helpful nudge rather than silence.
+		postBtn.classList.toggle( 'is-incomplete', !! postReadiness() );
 		updateClearBtn();
 	}
 
@@ -1811,7 +1833,26 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// nonce can expire before connectivity returns). Live posts use it as-is.
 	var nonce = NOP.nonce;
 
-	postBtn.addEventListener( 'click', async function () {
+	// Send a text input's focus (or scroll a picker into view) so the author lands
+	// exactly on the field that still needs filling — the accent focus rule then
+	// marks it for free. Pickers aren't focused (that would spring the file dialog).
+	function sendToField( el ) {
+		if ( ! el ) { return; }
+		if ( el === urlInput || el === contentInput ) { el.focus(); }
+		else { el.scrollIntoView( { block: 'center', behavior: prefersReduce.matches ? 'auto' : 'smooth' } ); }
+	}
+
+	async function submitPost() {
+		// A premature tap explains itself rather than doing nothing: say what's
+		// missing and send the author to that field. (The button stays live — see
+		// updatePostBtn — precisely so this can fire.)
+		var need = postReadiness();
+		if ( need ) {
+			showToast( need.hint, 'error' );
+			sendToField( need.focus );
+			return;
+		}
+
 		var post = formToPost();
 
 		// Alt-text conscience: alt is lost the moment a photo syndicates, so nudge
@@ -1823,7 +1864,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			showToast(
 				missing + ( missing === 1 ? ' photo needs' : ' photos need' ) + ' alt text',
 				'error',
-				{ label: 'Post anyway', onTap: function () { altWarningDismissed = true; postBtn.click(); } }
+				{ label: 'Post anyway', onTap: function () { altWarningDismissed = true; submitPost(); } }
 			);
 			return;
 		}
@@ -1833,6 +1874,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 		try {
 			showView( 'progress' );
+			// A brief grace window before anything leaves the device — syndication to
+			// public networks can't be pulled back, so give a few seconds to catch a
+			// wrong kind or a typo. Undo returns to the form untouched.
+			if ( await gracePeriod() ) { showView( 'compose' ); return; }
 			var result = await sendPost( post, setProgress );
 			recordKindUse( post.type );   // float this kind to the front next time
 			setProgress( 'Sharing…', 0.97 );
@@ -1848,10 +1893,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				await queueAndAck( post );
 			} else {
 				showView( 'compose' );
-				showToast( 'Something went wrong: ' + err.message, 'error' );
+				showToast( 'Something went wrong: ' + err.message, 'error', { label: 'Try again', onTap: submitPost } );
 			}
 		}
-	} );
+	}
+	postBtn.addEventListener( 'click', submitPost );
 
 	// Snapshot the form into a plain, storable post — photo Files ride along as
 	// blobs (structured-clone keeps them through IndexedDB).
@@ -2290,6 +2336,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			}
 		};
 
+		// Copy the permalink — the universal fallback where Web Share is absent
+		// (desktop, most non-photo posts). Shown whenever there's a link to copy.
+		var copyBtn = document.getElementById( 'copyLinkBtn' );
+		if ( copyBtn ) {
+			copyBtn.hidden = ! permalink;
+			copyBtn.onclick = async function () {
+				try { await navigator.clipboard.writeText( permalink ); showToast( 'Link copied' ); }
+				catch ( e ) { showToast( "Couldn't copy — long-press the link above.", 'error' ); }
+			};
+		}
+
 		document.getElementById( 'anotherBtn' ).onclick = resetForm;
 	}
 
@@ -2382,6 +2439,34 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	function delay( ms ) { return new Promise( function (resolve) { setTimeout( resolve, ms ); } ); }
+
+	// The send-undo grace window. Shows a countdown with an Undo control on the
+	// progress view; resolves true if the author pulls it back, false once the
+	// window elapses (then the real send begins). The progress bar fills as the
+	// seconds run out so the wait reads as a deliberate hold, not a stall.
+	var GRACE_SECS = 5;
+	function gracePeriod() {
+		return new Promise( function ( resolve ) {
+			var undoBtn = document.getElementById( 'progressUndo' );
+			var secs    = GRACE_SECS;
+			var tick, timer;
+			function finish( cancelled ) {
+				clearInterval( tick ); clearTimeout( timer );
+				if ( undoBtn ) { undoBtn.hidden = true; undoBtn.onclick = null; }
+				resolve( cancelled );
+			}
+			// No countdown UI (older browsers) → resolve immediately, don't block posting.
+			if ( ! undoBtn ) { resolve( false ); return; }
+			undoBtn.hidden  = false;
+			undoBtn.onclick = function () { finish( true ); };
+			setProgress( 'Posting in ' + secs + '…', 0 );
+			tick = setInterval( function () {
+				secs -= 1;
+				if ( secs > 0 ) { setProgress( 'Posting in ' + secs + '…', ( GRACE_SECS - secs ) / GRACE_SECS ); }
+			}, 1000 );
+			timer = setTimeout( function () { finish( false ); }, GRACE_SECS * 1000 );
+		} );
+	}
 
 	function escHtml( str ) {
 		return String( str )
