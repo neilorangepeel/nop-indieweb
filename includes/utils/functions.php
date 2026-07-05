@@ -417,6 +417,122 @@ function nop_indieweb_compute_venue_visit_number( string $venue_id, string $post
 }
 
 /**
+ * The site owner's own profile URLs, gathered from the identity settings and
+ * each configured syndicator. Used to advertise rel=me links and to recognise
+ * the owner's own silo accounts when back-feeding interactions.
+ *
+ * @return string[]
+ */
+function nop_indieweb_me_urls(): array {
+	$urls = [];
+
+	$custom = nop_indieweb_get_option( 'me_urls', '' );
+	foreach ( array_filter( array_map( 'trim', explode( "\n", (string) $custom ) ) ) as $url ) {
+		$urls[] = esc_url_raw( $url );
+	}
+
+	$mastodon_url = (string) nop_indieweb_get_option( 'syndicators.mastodon.profile_url', '' );
+	if ( $mastodon_url ) {
+		$urls[] = $mastodon_url;
+	}
+
+	$bluesky_handle = (string) nop_indieweb_get_option( 'syndicators.bluesky.handle', '' );
+	if ( $bluesky_handle ) {
+		$urls[] = 'https://bsky.app/profile/' . $bluesky_handle;
+	}
+
+	$pixelfed_url = (string) nop_indieweb_get_option( 'syndicators.pixelfed.profile_url', '' );
+	if ( $pixelfed_url ) {
+		$urls[] = $pixelfed_url;
+	}
+
+	return array_values( array_unique( array_filter( $urls ) ) );
+}
+
+/**
+ * Normalises a URL for loose comparison: lowercased, scheme stripped, trailing
+ * slash removed. Enough to match the same silo resource across the small
+ * spelling differences between Bridgy and the internal API poller.
+ */
+function nop_indieweb_wm_norm_url( string $url ): string {
+	$url = strtolower( trim( $url ) );
+	$url = (string) preg_replace( '~^https?://~', '', $url );
+	return rtrim( $url, '/' );
+}
+
+/**
+ * True when a back-fed interaction was authored by the site owner's own silo
+ * account — i.e. our own syndicated copy boomeranging back as a reply to the
+ * post that spawned it. Filterable via `nop_indieweb_wm_drop_self` (default on).
+ */
+function nop_indieweb_wm_is_self_author( string $author_url ): bool {
+	if ( '' === trim( $author_url ) || ! apply_filters( 'nop_indieweb_wm_drop_self', true ) ) {
+		return false;
+	}
+	$needle = nop_indieweb_wm_norm_url( $author_url );
+	foreach ( nop_indieweb_me_urls() as $me ) {
+		if ( '' !== $me && $needle === nop_indieweb_wm_norm_url( $me ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Extracts the stable per-post identifier from a silo interaction URL: the
+ * Bluesky record key (`…/post/{rkey}` or `…feed.post/{rkey}`) or the numeric
+ * Mastodon/Pixelfed status id. Returns '' when neither shape matches.
+ */
+function nop_indieweb_wm_silo_post_id( string $url ): string {
+	if ( preg_match( '~(?:/post/|feed\.post/)([^/?#]+)~', $url, $m ) ) {
+		return $m[1];
+	}
+	if ( preg_match( '~/(\d+)(?:[/?#].*)?$~', $url, $m ) ) {
+		return $m[1];
+	}
+	return '';
+}
+
+/**
+ * A platform-agnostic dedup key for a back-fed interaction, so the same silo
+ * event stored via Bridgy and via the internal poller collapses to one row.
+ *
+ * Replies key on the reply's own record id (identical across Bridgy's handle
+ * URLs and the poller's DID URLs); likes/reposts key on the actor's profile
+ * URL, which both paths record the same way.
+ */
+function nop_indieweb_wm_silo_key( string $type, string $silo_url, string $author_url ): string {
+	if ( 'reply' === $type ) {
+		$id = nop_indieweb_wm_silo_post_id( $silo_url );
+		return 'reply:' . ( '' !== $id ? $id : nop_indieweb_wm_norm_url( $silo_url ) );
+	}
+	return $type . ':' . nop_indieweb_wm_norm_url( $author_url );
+}
+
+/**
+ * Returns the id of an existing webmention comment on $post_id carrying
+ * $silo_key, or 0. Used to cross-dedup Bridgy webmentions against the internal
+ * API poller (and vice versa).
+ */
+function nop_indieweb_wm_find_by_silo_key( int $post_id, string $silo_key ): int {
+	if ( 0 === $post_id || '' === $silo_key ) {
+		return 0;
+	}
+	$ids = get_comments( [
+		'post_id'    => $post_id,
+		'type'       => 'webmention',
+		'status'     => 'all',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- low-frequency back-feed dedup lookup, not a hot path
+		'meta_key'   => 'webmention_silo_key',
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- low-frequency back-feed dedup lookup, not a hot path
+		'meta_value' => $silo_key,
+		'number'     => 1,
+		'fields'     => 'ids',
+	] );
+	return isset( $ids[0] ) ? (int) $ids[0] : 0;
+}
+
+/**
  * One-time migration: flip the existing settings option to autoload=false.
  * Idempotent and cheap — runs on plugins_loaded behind a version flag.
  */
