@@ -114,6 +114,15 @@ abstract class Syndicator_Base {
 		$title = (string) ( $post->post_title ?? '' );
 		$body  = \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
 
+		if ( 'bookmark' === $kind ) {
+			// Mirror the check-in lead (📍) with a bookmark lead (🔖). No title:
+			// the captured cite title is often unhelpful (a YouTube link reads
+			// "YouTube", not the video name), so the destination is left to the
+			// link/card below rather than a misleading label.
+			$lead = '🔖 ' . __( 'Bookmarked', 'nop-indieweb' );
+			return '' !== $body ? $lead . "\n\n" . $body : $lead;
+		}
+
 		if ( 'article' === $kind ) {
 			return '' !== $title ? $title : $body;
 		}
