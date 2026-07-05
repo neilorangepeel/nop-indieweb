@@ -27,9 +27,12 @@ abstract class Url_Response_Service extends Service_Base {
 	public function parse( array $payload ): array {
 		$props = $payload['properties'] ?? [];
 
+		$content_parts = \NOP\IndieWeb\nop_indieweb_micropub_content_parts( $props['content'][0] ?? '' );
+
 		return [
-			'url'       => esc_url_raw( $props[ $this->url_property() ][0] ?? '' ),
-			'content'   => sanitize_textarea_field( $props['content'][0] ?? '' ),
+			'url'          => esc_url_raw( $props[ $this->url_property() ][0] ?? '' ),
+			'content'      => $content_parts['plain'],
+			'content_html' => $content_parts['html'],
 			'published' => sanitize_text_field( $props['published'][0] ?? '' ),
 			// Topical tags (Micropub `category`) — composer-driven for the kinds that
 			// opt in (bookmark, quote). Stored as WP tags in map_to_post().
@@ -48,10 +51,14 @@ abstract class Url_Response_Service extends Service_Base {
 		$settings                      = $this->get_settings();
 		[ $post_date, $post_date_gmt ] = $this->parse_post_date( $parsed['published'] );
 
+		$content_html = trim( (string) ( $parsed['content_html'] ?? '' ) );
+		$note_inner   = '' !== $content_html
+			? $content_html
+			: ( $parsed['content'] ? wp_kses_post( $parsed['content'] ) : '' );
 		$parts = array_filter( [
 			$this->use_cite_card() ? '<!-- wp:nop-indieweb/cite-card /-->' : '',
-			$parsed['content']
-				? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
+			'' !== $note_inner
+				? "<!-- wp:paragraph -->\n<p>" . $note_inner . "</p>\n<!-- /wp:paragraph -->"
 				: '',
 		] );
 		$blocks = implode( "\n\n", $parts );

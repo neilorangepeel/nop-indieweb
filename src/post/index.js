@@ -1497,6 +1497,27 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
+	// Markdown affordance (hardware keyboards): ⌘/Ctrl+B and ⌘/Ctrl+I wrap the
+	// selection in **bold** / *italic*. Converted to real <strong>/<em> on submit
+	// (content[html]) so the blog renders formatting; socials strip it to plain.
+	contentInput.addEventListener( 'keydown', function ( e ) {
+		if ( ! ( e.metaKey || e.ctrlKey ) || e.altKey ) { return; }
+		var k = ( e.key || '' ).toLowerCase();
+		if ( k !== 'b' && k !== 'i' ) { return; }
+		e.preventDefault();
+		wrapSelection( k === 'b' ? '**' : '*' );
+	} );
+
+	function wrapSelection( mark ) {
+		var el = contentInput, s = el.selectionStart, en = el.selectionEnd, v = el.value;
+		var sel = v.slice( s, en );
+		el.value = v.slice( 0, s ) + mark + sel + mark + v.slice( en );
+		if ( sel ) { el.selectionStart = s + mark.length; el.selectionEnd = en + mark.length; }
+		else { el.selectionStart = el.selectionEnd = s + mark.length; }
+		el.dispatchEvent( new Event( 'input' ) );  // refresh counter/draft/auto-grow
+		el.focus();
+	}
+
 	// Event-field input listeners — keep the Clear button's "form has content"
 	// flag honest when the author types into the event detail fields. Each
 	// also persists a draft on settle so a refresh mid-edit doesn't lose it.
@@ -1914,6 +1935,27 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		};
 	}
 
+	// ── Markdown → HTML (bold/italic only) ────────────────────────────────────
+	// Minimal, escape-first conversion. Bold is matched before italic so the **
+	// pairs are consumed first, leaving single-* pairs for <em>. The result is
+	// sent as Micropub content[html]; the server re-sanitises with wp_kses.
+	function escHtmlText( s ) {
+		return String( s ).replace( /&/g, '&amp;' ).replace( /</g, '&lt;' ).replace( />/g, '&gt;' );
+	}
+	function mdToHtml( text ) {
+		return escHtmlText( text )
+			.replace( /\*\*([^*]+)\*\*/g, '<strong>$1</strong>' )
+			.replace( /\*([^*]+)\*/g, '<em>$1</em>' )
+			.replace( /_([^_]+)_/g, '<em>$1</em>' );
+	}
+	// Plain text for the value fallback / socials: drop the markers, keep the words.
+	function mdStrip( text ) {
+		return String( text )
+			.replace( /\*\*([^*]+)\*\*/g, '$1' )
+			.replace( /\*([^*]+)\*/g, '$1' )
+			.replace( /_([^_]+)_/g, '$1' );
+	}
+
 	function buildPayload( post, photoUrls, media ) {
 		var cfg   = TYPE_CONFIG[ post.type ];
 		var props = {};
@@ -1925,7 +1967,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// the video), so don't also emit it as the post content. A photo story keeps
 		// the caption as ordinary content (a paragraph under the image).
 		var isVideoStory = cfg.hasStoryMedia && media.videoUrl;
-		if ( post.content && cfg.hasContent && ! isVideoStory ) { props.content = [ post.content ]; }
+		if ( post.content && cfg.hasContent && ! isVideoStory ) {
+			// Emit content[html] only when the author actually used **bold**/*italic*;
+			// otherwise keep the plain string so nothing downstream sees an object.
+			var html = mdToHtml( post.content );
+			props.content = ( html !== escHtmlText( post.content ) )
+				? [ { html: html, value: mdStrip( post.content ) } ]
+				: [ post.content ];
+		}
 
 		// Story (video): the self-hosted clip (+ optional poster frame). The server
 		// (Note service → sideload_videos) reuses our uploaded attachment, sets the
