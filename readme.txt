@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.1
+Stable tag: 0.9.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.2 =
+* Editor: a "Syndication preview" sidebar panel shows how the post will read on each target network — the real composed text (server-side, so it matches what actually posts), the per-network character budget, and the card/thread treatment (link card, quote, in-thread reply, unfurl). Refreshes when you save.
 
 = 0.9.1 =
 * /post composer: light Markdown formatting. ⌘/Ctrl+B and ⌘/Ctrl+I wrap the selection in bold/italic; on publish it's rendered as real `<strong>`/`<em>` on the blog (Micropub `content[html]`) while Mastodon and Bluesky receive plain text, so formatting enriches the canonical post without leaking markers to the silos.

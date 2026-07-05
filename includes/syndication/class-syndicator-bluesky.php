@@ -70,6 +70,44 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		];
 	}
 
+	/**
+	 * Editor preview: the composed status text (truncated to the 300-char budget),
+	 * the raw length against that budget, and a note on the card/embed treatment.
+	 */
+	public function editor_preview( int $post_id ): ?array {
+		if ( ! $this->enabled() || ! $this->is_configured() || ! $this->supports_post( $post_id ) ) {
+			return null;
+		}
+		$host  = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
+		$label = '' !== $host ? $host : (string) get_permalink( $post_id );
+		$body  = $this->build_full_text( $post_id );
+		return [
+			'slug'  => $this->slug(),
+			'label' => $this->label(),
+			'text'  => $this->compose_status( $body, 300, $label, mb_strlen( $label ) ),
+			'count' => mb_strlen( $body ) + 2 + mb_strlen( $label ),
+			'limit' => 300,
+			'badge' => $this->preview_badge( $post_id ),
+		];
+	}
+
+	/** A one-line note on the embed/thread treatment this post will get on Bluesky. */
+	private function preview_badge( int $post_id ): string {
+		$kind   = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		$target = $this->response_target_url( $post_id );
+		if ( '' !== $target && $this->owns_url( $target ) ) {
+			if ( 'reply' === $kind ) { return __( 'Replies in-thread', 'nop-indieweb' ); }
+			if ( 'quote' === $kind ) { return __( 'Quotes the post', 'nop-indieweb' ); }
+		}
+		if ( '' !== $target ) { return __( 'Link card → the source', 'nop-indieweb' ); }
+		if ( $this->collect_inline_video( $post_id ) ) { return __( 'Video', 'nop-indieweb' ); }
+		if ( $this->collect_inline_images( $post_id, 1 ) ) { return __( 'Photos', 'nop-indieweb' ); }
+		$post = get_post( $post_id );
+		return ( $post && '' !== (string) $post->post_title )
+			? __( 'Link card → your post', 'nop-indieweb' )
+			: __( 'Text only', 'nop-indieweb' );
+	}
+
 	protected function do_syndicate( int $post_id ): string|\WP_Error {
 		$session = $this->create_session();
 		if ( is_wp_error( $session ) ) {

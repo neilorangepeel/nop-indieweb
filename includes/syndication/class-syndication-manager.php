@@ -339,6 +339,14 @@ class Syndication_Manager {
 			],
 		] );
 
+		// Editor-side preview: how the post will read on each target network.
+		register_rest_route( 'nop-indieweb/v1', '/syndication/preview', [
+			'methods'             => \WP_REST_Server::READABLE,
+			'callback'            => fn( \WP_REST_Request $r ) => new \WP_REST_Response( $this->editor_previews( (int) $r['post_id'] ), 200 ),
+			'permission_callback' => fn( \WP_REST_Request $r ) => current_user_can( 'edit_post', (int) $r['post_id'] ),
+			'args'                => [ 'post_id' => [ 'type' => 'integer', 'required' => true ] ],
+		] );
+
 		// Read-only aggregate of failing syndications for the Networks-tab health view.
 		register_rest_route( 'nop-indieweb/v1', '/syndication/health', [
 			'methods'             => \WP_REST_Server::READABLE,
@@ -399,6 +407,25 @@ class Syndication_Manager {
 	}
 
 	/** Returns the syndicator with the given slug, or null if unknown. */
+	/**
+	 * Per-network editor previews for the networks this post will actually go to
+	 * (respecting the syndicate_to selection). Syndicators with no text preview
+	 * (Tumblr) or that don't apply return null and are dropped.
+	 *
+	 * @return array<int,array{slug:string,label:string,text:string,count:int,limit:int,badge:string}>
+	 */
+	public function editor_previews( int $post_id ): array {
+		$out = [];
+		foreach ( $this->resolve_targets( $post_id ) as $slug ) {
+			$syndicator = $this->get( $slug );
+			$preview    = $syndicator ? $syndicator->editor_preview( $post_id ) : null;
+			if ( null !== $preview ) {
+				$out[] = $preview;
+			}
+		}
+		return $out;
+	}
+
 	public function get( string $slug ): ?Syndicator_Base {
 		foreach ( $this->syndicators as $syndicator ) {
 			if ( $syndicator->slug() === $slug ) {
