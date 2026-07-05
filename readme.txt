@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.8.0
+Stable tag: 0.9.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,12 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.0 =
+* Conversations now render natively on the silos. Replies to a Bluesky or Mastodon post thread in place (Bluesky `record.reply` root/parent; Mastodon `in_reply_to_id`, resolved through the instance's search); quoting a Bluesky post embeds it as a real quote card (`app.bsky.embed.record`, or `recordWithMedia` with your own media) instead of a flat link; and `@handle` mentions become real Bluesky mentions (`facet#mention` resolved to a DID). Response posts — bookmarks, likes, reposts, quotes, replies — now lead with an emoji verb (🔖 Bookmarked, ⭐ Liked, 🔁 Reposted, 💬 Quoted) and build their preview card from the *linked source* (its own title, excerpt and image) rather than your permalink; on Mastodon the target URL is unfurled so the source shows, not your own site.
+* Bookmarks syndicate with a 🔖 lead line, mirroring the 📍 check-in.
+* /post composer: typing in the Tags field now live-searches your existing tags and offers them as tap-to-add chips, so you complete an existing tag instead of minting a near-duplicate.
+* Fixed duplicate back-fed responses. The inbound Bridgy webmention receiver and the internal social-backfeed poller now share a dedup key, so the same silo interaction is stored once instead of twice; and neither stores the site owner's own syndicated copies as replies to the post that spawned them.
 
 = 0.5.1 =
 * Bluesky link cards now fall back to the site icon (your portrait/avatar) as the card thumbnail when a post has no photo, video, featured image, or map — matching the Open Graph image fallback that Mastodon and other unfurlers already use.
