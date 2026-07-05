@@ -49,13 +49,22 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		$target = $this->response_target_url( $post_id );
 		$link   = '' !== $target ? $target : $permalink;
 
+		// For a reply this instance can resolve to a status, thread natively
+		// (in_reply_to_id) and drop the link suffix — the parent is shown inline,
+		// so re-linking it is noise. Otherwise post standalone as before.
+		$in_reply_to = $this->resolve_reply_status_id( $post_id, $target, $instance, $token );
+		$suffix      = '' !== $in_reply_to ? '' : $link;
+
 		// URLs count as a flat 23 chars on Mastodon-compatible APIs regardless of
 		// the actual link length, so budget the suffix at 23 even though the
 		// visible text is the full URL.
 		$text     = $this->build_full_text( $post_id );
-		$status   = $this->compose_status( $text, $this->char_limit(), $link, 23 );
+		$status   = $this->compose_status( $text, $this->char_limit(), $suffix, 23 );
 
-		$body      = [ 'status' => $status ];
+		$body = [ 'status' => $status ];
+		if ( '' !== $in_reply_to ) {
+			$body['in_reply_to_id'] = $in_reply_to;
+		}
 		$media_ids = $this->upload_post_images( $post_id, $instance, $token );
 		if ( $media_ids ) {
 			$body['media_ids'] = $media_ids;
@@ -96,6 +105,50 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 			return new \WP_Error( 'nop_syndication_failed', __( 'The platform accepted the post but returned no URL.', 'nop-indieweb' ) );
 		}
 		return (string) $data['url'];
+	}
+
+	/**
+	 * Resolves the fediverse status a reply targets into a status id local to this
+	 * instance, for native threading via in_reply_to_id. Returns '' (→ standalone
+	 * post) when the post isn't a reply, no target is set, or the instance can't
+	 * resolve it to a status.
+	 *
+	 * Uses /api/v2/search with resolve=true so the instance fetches the remote
+	 * status if it hasn't seen it; the returned status id is always local, as
+	 * in_reply_to_id requires. Bluesky targets are skipped — they never resolve on
+	 * a Mastodon-compatible instance.
+	 */
+	private function resolve_reply_status_id( int $post_id, string $target, string $instance, string $token ): string {
+		if ( '' === $target || '' === $instance || '' === $token ) {
+			return '';
+		}
+		if ( 'reply' !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return '';
+		}
+		if ( str_contains( $target, 'bsky.app' ) ) {
+			return '';
+		}
+
+		$response = wp_remote_get(
+			$instance . '/api/v2/search?' . http_build_query( [
+				'q'       => $target,
+				'type'    => 'statuses',
+				'resolve' => 'true',
+				'limit'   => 1,
+			] ),
+			[
+				'headers' => [ 'Authorization' => 'Bearer ' . $token ],
+				'timeout' => 20,
+			]
+		);
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return '';
+		}
+
+		$data     = json_decode( wp_remote_retrieve_body( $response ), true );
+		$statuses = ( is_array( $data ) && is_array( $data['statuses'] ?? null ) ) ? $data['statuses'] : [];
+		$first    = is_array( $statuses[0] ?? null ) ? $statuses[0] : [];
+		return ! empty( $first['id'] ) ? (string) $first['id'] : '';
 	}
 
 	/**
