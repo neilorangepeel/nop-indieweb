@@ -233,6 +233,75 @@
 
 	plugins.registerPlugin( 'nop-indieweb-syndication-panel', { render: SyndicationPanel } );
 
+	// ── Syndication preview ────────────────────────────────────────────────────
+	// Shows how the post will read on each target network — the real composed
+	// text (server-side, so it matches what actually gets posted), the per-network
+	// char budget, and the card/thread treatment. Reads saved state, so it
+	// refreshes when you save a draft/update.
+	function SyndicationPreviewPanel() {
+		var sel = useSelect( function ( select ) {
+			var ed = select( 'core/editor' );
+			return {
+				postId:       ed.getCurrentPostId(),
+				isSaving:     ed.isSavingPost(),
+				isAutosaving: ed.isAutosavingPost(),
+			};
+		}, [] );
+		var postId = sel.postId;
+
+		var pv        = useState( { loading: true, nets: [] } );
+		var preview   = pv[0], setPreview = pv[1];
+		var ws        = useState( false );
+		var wasSaving = ws[0], setWasSaving = ws[1];
+
+		function load() {
+			if ( ! postId ) { return; }
+			apiFetch( { path: '/nop-indieweb/v1/syndication/preview?post_id=' + postId } )
+				.then( function ( nets ) { setPreview( { loading: false, nets: nets || [] } ); } )
+				.catch( function () { setPreview( { loading: false, nets: [] } ); } );
+		}
+
+		useEffect( function () { load(); }, [ postId ] );
+
+		// Refetch when a real (non-autosave) save finishes — the endpoint reads the
+		// saved content/meta, so the preview stays honest after each save.
+		useEffect( function () {
+			if ( wasSaving && ! sel.isSaving && ! sel.isAutosaving ) { load(); }
+			setWasSaving( sel.isSaving && ! sel.isAutosaving );
+		}, [ sel.isSaving, sel.isAutosaving ] );
+
+		if ( ! postId ) { return null; }
+
+		var body;
+		if ( preview.loading ) {
+			body = el( 'p', { className: 'nop-synpre-hint' }, el( Spinner, null ) );
+		} else if ( ! preview.nets.length ) {
+			body = el( 'p', { className: 'nop-synpre-hint' },
+				__( 'Not posting to any network. Save the post to refresh.', 'nop-indieweb' ) );
+		} else {
+			var blocks = preview.nets.map( function ( n ) {
+				var over = n.count > n.limit;
+				return el( 'div', { key: n.slug, className: 'nop-synpre-net' },
+					el( 'div', { className: 'nop-synpre-head' },
+						el( 'span', { className: 'nop-synpre-name' }, n.label ),
+						el( 'span', { className: 'nop-synpre-budget' + ( over ? ' is-over' : '' ) }, n.count + ' / ' + n.limit )
+					),
+					el( 'div', { className: 'nop-synpre-render' }, n.text ),
+					el( 'div', { className: 'nop-synpre-badge' }, n.badge )
+				);
+			} );
+			body = el( element.Fragment, null,
+				el( 'p', { className: 'nop-synpre-hint' },
+					__( 'How this post will read on each network. Save to refresh.', 'nop-indieweb' ) ),
+				blocks
+			);
+		}
+
+		return el( Panel, { name: 'nop-indieweb-syndication-preview', title: __( 'Syndication preview', 'nop-indieweb' ) }, body );
+	}
+
+	plugins.registerPlugin( 'nop-indieweb-syndication-preview', { render: SyndicationPreviewPanel } );
+
 } )(
 	window.wp.plugins,
 	window.wp.editor,

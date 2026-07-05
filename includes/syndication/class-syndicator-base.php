@@ -88,6 +88,18 @@ abstract class Syndicator_Base {
 	}
 
 	/**
+	 * Editor-side preview of how this post will read on the platform:
+	 * [ slug, label, text, count, limit, badge ]. Returns null when the platform
+	 * won't receive this post (disabled, unconfigured, unsupported kind), or when
+	 * the syndicator offers no text preview (e.g. Tumblr). Overridden per platform.
+	 *
+	 * @return array{slug:string,label:string,text:string,count:int,limit:int,badge:string}|null
+	 */
+	public function editor_preview( int $post_id ): ?array {
+		return null;
+	}
+
+	/**
 	 * Composes the post body text used by the syndicator. Kind-aware:
 	 *   - checkin → "Checked in at {venue}"
 	 *   - article → title first (link card carries the body)

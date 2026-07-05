@@ -38,6 +38,34 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		return $instance && str_starts_with( $url, $instance );
 	}
 
+	/**
+	 * Editor preview: the composed status text (truncated to the char budget), the
+	 * raw budget usage, and a note on the unfurl/thread treatment. URLs cost a flat
+	 * 23 against the budget regardless of visible length, mirroring do_syndicate().
+	 */
+	public function editor_preview( int $post_id ): ?array {
+		if ( ! $this->enabled() || ! $this->is_configured() || ! $this->supports_post( $post_id ) ) {
+			return null;
+		}
+		$permalink = (string) get_permalink( $post_id );
+		$target    = $this->response_target_url( $post_id );
+		$kind      = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+		$threaded  = 'reply' === $kind && '' !== $target && ! str_contains( $target, 'bsky.app' );
+		$suffix    = $threaded ? '' : ( '' !== $target ? $target : $permalink );
+		$body      = $this->build_full_text( $post_id );
+		$limit     = $this->char_limit();
+		return [
+			'slug'  => $this->slug(),
+			'label' => $this->label(),
+			'text'  => $this->compose_status( $body, $limit, $suffix, 23 ),
+			'count' => mb_strlen( $body ) + ( '' !== $suffix ? 2 + 23 : 0 ),
+			'limit' => $limit,
+			'badge' => $threaded
+				? __( 'Replies in-thread', 'nop-indieweb' )
+				: ( '' !== $target ? __( 'Unfurls the source', 'nop-indieweb' ) : __( 'Link preview', 'nop-indieweb' ) ),
+		];
+	}
+
 	protected function do_syndicate( int $post_id ): string|\WP_Error {
 		$instance  = $this->instance();
 		$token     = $this->access_token();
