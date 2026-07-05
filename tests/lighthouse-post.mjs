@@ -22,6 +22,18 @@ try {
 
 const CHROME = process.env.NOP_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ORIGIN = process.env.NOP_ORIGIN || 'http://localhost:8881';
+
+// Regression floors. Below any of these, the run exits non-zero so this can gate
+// a deploy instead of just printing numbers a human has to eyeball. Accessibility
+// and best-practices hold at 100; performance/SEO match the documented baseline
+// (SEO's 54 is by-design — noindex + no-store on this private page). Override per
+// run, e.g. NOP_MIN_PERF=85 npm run test:lighthouse
+const FLOORS = {
+	performance:     Number( process.env.NOP_MIN_PERF ?? 90 ),
+	accessibility:   Number( process.env.NOP_MIN_A11Y ?? 100 ),
+	'best-practices': Number( process.env.NOP_MIN_BP ?? 100 ),
+	seo:             Number( process.env.NOP_MIN_SEO ?? 50 ),
+};
 const LOGIN  = ORIGIN + '/studio-auto-login?redirect_to=%2Fwp-admin%2F';
 const TARGET = ORIGIN + '/post';
 
@@ -89,3 +101,16 @@ console.log( '\n--- Render-blocking + unused bytes ---' );
 } );
 
 await browser.close();
+
+// Gate: fail the run if any category dropped below its floor.
+const breaches = Object.entries( FLOORS )
+	.map( ( [ cat, floor ] ) => [ cat, pct( cat ), floor ] )
+	.filter( ( [ , score, floor ] ) => score < floor );
+
+if ( breaches.length ) {
+	console.error( '\n✗ Lighthouse regression — below floor:' );
+	breaches.forEach( ( [ cat, score, floor ] ) =>
+		console.error( `   ${ cat.padEnd( 14 ) } ${ score } < ${ floor }` ) );
+	process.exit( 1 );
+}
+console.log( '\n✓ All categories at or above their floors.' );
