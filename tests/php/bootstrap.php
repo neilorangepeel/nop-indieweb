@@ -71,3 +71,4 @@ if ( ! function_exists( 'wp_trim_words' ) ) {
 
 require_once dirname( __DIR__, 2 ) . '/includes/rsvp/class-event-parser.php';
 require_once dirname( __DIR__, 2 ) . '/includes/syndication/class-tumblr-client.php';
+require_once dirname( __DIR__, 2 ) . '/includes/utils/functions.php';

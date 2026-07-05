@@ -188,6 +188,20 @@ class Webmention_Endpoint {
 			return;
 		}
 
+		// Drop self-webmentions: our own syndicated copies link back home, so
+		// Bridgy relays them as replies to the very post that spawned them.
+		if ( \NOP\IndieWeb\nop_indieweb_wm_is_self_author( $parsed['author_url'] ) ) {
+			return;
+		}
+
+		// Cross-dedup against the internal API poller (Social_Backfeed): the same
+		// silo interaction can arrive via both Bridgy and the hourly poll under
+		// different source keys. If the poller already stored it, skip.
+		$silo_key = \NOP\IndieWeb\nop_indieweb_wm_silo_key( $parsed['type'], $parsed['original_url'], $parsed['author_url'] );
+		if ( \NOP\IndieWeb\nop_indieweb_wm_find_by_silo_key( $post_id, $silo_key ) ) {
+			return;
+		}
+
 		$this->insert_webmention( $post_id, $source, $target, $parsed );
 	}
 
@@ -312,6 +326,7 @@ class Webmention_Endpoint {
 		add_comment_meta( $comment_id, 'webmention_platform',     $parsed['platform'],     true );
 		add_comment_meta( $comment_id, 'webmention_author_photo', $parsed['author_photo'], true );
 		add_comment_meta( $comment_id, 'webmention_original_url', $parsed['original_url'], true );
+		add_comment_meta( $comment_id, 'webmention_silo_key', \NOP\IndieWeb\nop_indieweb_wm_silo_key( $parsed['type'], $parsed['original_url'], $parsed['author_url'] ), true );
 	}
 
 	// ── Date helpers ───────────────────────────────────────────────────────────

@@ -281,6 +281,21 @@ class Social_Backfeed {
 	 * @param array<string,mixed> $seen
 	 */
 	private function store_interaction( int $post_id, array $data, array &$seen ): void {
+		// Never store the owner's own silo account — a self-interaction is just
+		// our syndicated copy, not a reply worth surfacing.
+		if ( \NOP\IndieWeb\nop_indieweb_wm_is_self_author( $data['author_url'] ) ) {
+			$seen[ $data['platform_id'] ] = true;
+			return;
+		}
+
+		// Cross-dedup against Bridgy: if a webmention for this same silo event is
+		// already stored, don't add a second copy from the poll.
+		$silo_key = \NOP\IndieWeb\nop_indieweb_wm_silo_key( $data['type'], $data['source'], $data['author_url'] );
+		if ( \NOP\IndieWeb\nop_indieweb_wm_find_by_silo_key( $post_id, $silo_key ) ) {
+			$seen[ $data['platform_id'] ] = true;
+			return;
+		}
+
 		// strtotime returns false on an unparseable date — fall back to "now"
 		// rather than coercing false to 0 (which lands on 1970-01-01).
 		$ts       = $data['date'] ? strtotime( $data['date'] ) : false;
@@ -310,6 +325,7 @@ class Social_Backfeed {
 			add_comment_meta( $comment_id, 'webmention_source',        $data['source'],                   true );
 			add_comment_meta( $comment_id, 'webmention_author_photo',  $data['author_photo'] ?? '',       true );
 			add_comment_meta( $comment_id, 'webmention_author_handle', $data['author_handle'] ?? '',      true );
+			add_comment_meta( $comment_id, 'webmention_silo_key',      $silo_key,                         true );
 			$seen[ $data['platform_id'] ] = true;
 		}
 	}
