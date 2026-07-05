@@ -1188,6 +1188,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var tagsField = document.getElementById( 'tagsField' );
 	var quickTags = document.getElementById( 'quickTags' );
 
+	// The server-rendered most-used chips — restored whenever the tag field is
+	// empty, and swapped for live search matches while the user types.
+	var defaultQuickTags = quickTags ? quickTags.innerHTML : '';
+	var tagSearchSeq   = 0;   // guards against out-of-order search responses
+	var tagSearchTimer;
+
 	tagsField.addEventListener( 'click', function () { tagInput.focus(); } );
 
 	// Most-used tag chips: revealed only while the tag field is in use, so they
@@ -1213,8 +1219,58 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( idx === -1 ) { currentTags.push( tag ); } else { currentTags.splice( idx, 1 ); }
 			renderTags();
 			saveDraft();
+			// A tap commits a suggestion — clear the query and revert to most-used
+			// so the next tag starts from a clean panel.
+			tagInput.value = '';
+			clearTimeout( tagSearchTimer );
+			renderQuickTags( defaultQuickTags );
 			tagInput.focus(); // keep the panel open + keyboard up for more taps
 		} );
+	}
+
+	// Live tag search: while typing, the most-used panel becomes a matched-tags
+	// panel sourced from the site's existing tags (core wp/v2/tags?search=), so a
+	// tap completes an existing tag instead of silently minting a near-duplicate.
+	// Reverts to the most-used set when the field is cleared or empties out.
+	tagInput.addEventListener( 'input', function () {
+		if ( ! quickTags ) { return; }
+		var q = tagInput.value.trim();
+		clearTimeout( tagSearchTimer );
+		if ( q === '' ) { renderQuickTags( defaultQuickTags ); return; }
+		tagSearchTimer = setTimeout( function () { searchTags( q ); }, 180 );
+	} );
+
+	function renderQuickTags( html ) {
+		if ( ! quickTags ) { return; }
+		quickTags.innerHTML = html;
+		// Re-sync the "already added" state onto the freshly rendered chips.
+		quickTags.querySelectorAll( '.quick-tag' ).forEach( function (b) {
+			b.classList.toggle( 'is-used', currentTags.indexOf( b.dataset.tag ) !== -1 );
+		} );
+	}
+
+	function quickTagHtml( name ) {
+		return '<button type="button" class="quick-tag" data-tag="' + escAttr( name ) + '">' + escHtml( name ) + '</button>';
+	}
+
+	function searchTags( q ) {
+		if ( ! quickTags || ! NOP.tagsUrl ) { return; }
+		var seq = ++tagSearchSeq;
+		fetch(
+			NOP.tagsUrl + '?search=' + encodeURIComponent( q ) + '&per_page=8&orderby=count&order=desc&_fields=name',
+			{ headers: { 'X-WP-Nonce': NOP.nonce }, credentials: 'same-origin' }
+		)
+			.then( function (r) { return r.ok ? r.json() : []; } )
+			.then( function (list) {
+				if ( seq !== tagSearchSeq ) { return; }   // a newer keystroke already fired
+				var matches = Array.isArray( list ) ? list : [];
+				// No existing tag matches → fall back to the most-used chips (never
+				// leave the panel empty); Enter still mints the typed tag as new.
+				renderQuickTags( matches.length
+					? matches.map( function (t) { return quickTagHtml( t.name ); } ).join( '' )
+					: defaultQuickTags );
+			} )
+			.catch( function () { if ( seq === tagSearchSeq ) { renderQuickTags( defaultQuickTags ); } } );
 	}
 
 	tagInput.addEventListener( 'keydown', function (e) {
@@ -1240,6 +1296,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			saveDraft();
 		}
 		tagInput.value = '';
+		clearTimeout( tagSearchTimer );
+		renderQuickTags( defaultQuickTags );
 	}
 
 	function renderTags() {

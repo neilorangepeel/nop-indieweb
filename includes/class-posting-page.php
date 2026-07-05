@@ -313,6 +313,7 @@ function matchAnyVersion( url ) {
 		$drafts_url   = esc_url( rest_url( 'nop-indieweb/v1/drafts' ) );
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
+		$tags_url          = esc_url( rest_url( 'wp/v2/tags' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
@@ -917,6 +918,7 @@ window.NOP = {
 		draftsUrl:   <?php echo wp_json_encode( $drafts_url ); ?>,
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
+		tagsUrl:     <?php echo wp_json_encode( $tags_url ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		kindInfo:    <?php echo wp_json_encode( $kind_info ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,
