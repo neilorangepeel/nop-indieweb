@@ -1848,7 +1848,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// updatePostBtn — precisely so this can fire.)
 		var need = postReadiness();
 		if ( need ) {
-			showToast( need.hint, 'error' );
+			showToast( need.hint );
 			sendToField( need.focus );
 			return;
 		}
