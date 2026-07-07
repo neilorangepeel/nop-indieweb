@@ -169,7 +169,6 @@ $likes_panel_id   = 'nop-reveal-' . $post_id . '-likes';
 $reposts_panel_id = 'nop-reveal-' . $post_id . '-reposts';
 
 $rest_url = rest_url( 'nop-indieweb/v1/like' );
-$nonce    = wp_create_nonce( 'wp_rest' );
 
 // ── Post source ───────────────────────────────────────────────────────────────
 
@@ -190,7 +189,6 @@ $wrapper = get_block_wrapper_attributes( [
 	'class'         => 'nop-post-footer' . ( $liked ? ' is-liked' : '' ),
 	'data-post-id'  => (string) $post_id,
 	'data-endpoint' => $rest_url,
-	'data-nonce'    => $nonce,
 ] );
 ?>
 <div <?php echo wp_kses_data( $wrapper ); ?>>

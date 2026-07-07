@@ -12,6 +12,7 @@ global $wpdb;
 delete_option( 'nop_indieweb_settings' );
 delete_option( 'nop_indieweb_db_version' );
 delete_option( 'nop_indieweb_settings_autoload_off' );
+delete_option( 'nop_indieweb_profile_urls_migrated' );
 
 // Legacy standalone options written by early versions of the plugin.
 delete_option( 'nop_indieweb_mastodon_profile_url' );

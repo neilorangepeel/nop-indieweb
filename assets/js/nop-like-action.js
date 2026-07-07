@@ -5,6 +5,11 @@
  * element's data-* attributes, with optimistic count update, animation,
  * graceful rollback, and a polite live-region announcement for failures.
  *
+ * No nonce is sent: the /like route is public (permission_callback
+ * __return_true), and a page-cached nonce outlives its validity — a stale
+ * X-WP-Nonce header makes the REST cookie-auth layer reject the request
+ * outright, silently breaking likes on long-cached pages.
+ *
  * Used by both blocks/like-button/view.js (standalone heart pill) and
  * blocks/post-footer/view.js (compact interaction row). Without this shared
  * helper the two blocks would carry near-identical fetch/animation code.
@@ -13,7 +18,7 @@
  * call it without a build step.
  *
  * @param {Object}      cfg
- * @param {string}      cfg.rootSelector    Outer wrapper carrying data-endpoint, data-nonce, data-post-id.
+ * @param {string}      cfg.rootSelector    Outer wrapper carrying data-endpoint, data-post-id.
  * @param {string}      cfg.buttonSelector  The clickable element inside the wrapper.
  * @param {string}      cfg.countSelector   The count display inside the button.
  * @param {string}      cfg.iconSelector    The icon element animated on click (used to scope animationend).
@@ -54,15 +59,12 @@
 				return;
 			}
 
-			// keepEnabled: lock via an is-liked/is-busy class instead of the
-			// disabled attribute, so the button stays interactive after liking
-			// (post-footer reveals the facepile by clicking the count, which a
-			// disabled button would swallow). like-button keeps using disabled.
-			var alreadyLiked = cfg.keepEnabled
-				? btn.classList.contains( 'is-liked' )
-				: btn.disabled;
-
-			if ( alreadyLiked ) {
+			// Lock via an is-liked/is-busy class, never the disabled attribute:
+			// the button stays interactive after liking (post-footer reveals the
+			// facepile by clicking the count, which a disabled button would
+			// swallow) and keyboard/screen-reader focus isn't dropped by
+			// disabling the element that currently holds it.
+			if ( btn.classList.contains( 'is-liked' ) ) {
 				return;
 			}
 
@@ -79,15 +81,11 @@
 			} );
 
 			btn.addEventListener( 'click', function () {
-				if ( cfg.keepEnabled ) {
-					// Guard re-entry without disabling, so the count stays clickable.
-					if ( btn.classList.contains( 'is-busy' ) || btn.classList.contains( 'is-liked' ) ) {
-						return;
-					}
-					btn.classList.add( 'is-busy' );
-				} else {
-					btn.disabled = true;
+				// Guard re-entry without disabling, so the count stays clickable.
+				if ( btn.classList.contains( 'is-busy' ) || btn.classList.contains( 'is-liked' ) ) {
+					return;
 				}
+				btn.classList.add( 'is-busy' );
 				btn.classList.add( 'is-animating' );
 				statusEl.textContent = '';
 
@@ -100,13 +98,17 @@
 
 				fetch( el.dataset.endpoint, {
 					method:  'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce':   el.dataset.nonce,
-					},
+					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify( { post_id: parseInt( el.dataset.postId, 10 ) } ),
 				} )
-					.then( function ( r ) { return r.json(); } )
+					.then( function ( r ) {
+						// Treat error statuses (429 rate-limit, 5xx) as failures so
+						// the optimistic count rolls back instead of sticking.
+						if ( ! r.ok ) {
+							throw new Error( 'like failed: ' + r.status );
+						}
+						return r.json();
+					} )
 					.then( function ( data ) {
 						el.classList.add( 'is-liked' );
 						btn.classList.remove( 'is-busy' );
@@ -125,11 +127,7 @@
 						}
 					} )
 					.catch( function () {
-						if ( cfg.keepEnabled ) {
-							btn.classList.remove( 'is-busy' );
-						} else {
-							btn.disabled = false;
-						}
+						btn.classList.remove( 'is-busy' );
 						btn.classList.remove( 'is-animating' );
 						countEl.textContent = previousCount;
 						countEl.setAttribute( 'aria-label', formatLabel( previousCount ) );

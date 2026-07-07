@@ -319,12 +319,12 @@ class Auth_Endpoint {
 
 	private function describe_scopes( string $scope_string ): array {
 		$map = [
-			'create'   => 'Create new posts',
-			'update'   => 'Edit existing posts',
-			'delete'   => 'Delete posts',
-			'undelete' => 'Restore deleted posts',
-			'media'    => 'Upload media files',
-			'draft'    => 'Create draft posts',
+			'create'   => __( 'Create new posts', 'nop-indieweb' ),
+			'update'   => __( 'Edit existing posts', 'nop-indieweb' ),
+			'delete'   => __( 'Delete posts', 'nop-indieweb' ),
+			'undelete' => __( 'Restore deleted posts', 'nop-indieweb' ),
+			'media'    => __( 'Upload media files', 'nop-indieweb' ),
+			'draft'    => __( 'Create draft posts', 'nop-indieweb' ),
 		];
 
 		$scopes = array_filter( array_map( 'trim', explode( ' ', $scope_string ) ) );
@@ -333,6 +333,6 @@ class Auth_Endpoint {
 			$labels[] = $map[ $scope ] ?? ucfirst( $scope );
 		}
 
-		return $labels ?: [ 'Create new posts' ];
+		return $labels ?: [ __( 'Create new posts', 'nop-indieweb' ) ];
 	}
 }

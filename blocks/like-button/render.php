@@ -36,20 +36,19 @@ $endpoint  = new \NOP\IndieWeb\Webmention\Like_Endpoint();
 $count     = $endpoint->like_count( $post_id );
 $liked     = $endpoint->visitor_has_liked( $post_id );
 $rest_url  = rest_url( 'nop-indieweb/v1/like' );
-$nonce     = wp_create_nonce( 'wp_rest' );
 
+// No nonce: the /like route is public, and a nonce baked into page-cached HTML
+// outlives its validity — the stale header then 403s at the REST auth layer.
 $wrapper = get_block_wrapper_attributes( [
 	'class'         => 'nop-like-button' . ( $liked ? ' is-liked' : '' ),
 	'data-post-id'  => (string) $post_id,
 	'data-endpoint' => $rest_url,
-	'data-nonce'    => $nonce,
 ] );
 ?>
 <div <?php echo wp_kses_data( $wrapper ); ?>>
-	<button class="nop-like-button__btn"
+	<button class="nop-like-button__btn<?php echo $liked ? ' is-liked' : ''; ?>"
 	        type="button"
-	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
-	        <?php echo $liked ? 'disabled' : ''; ?>>
+	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>">
 		<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-like-button__label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
 	</button>

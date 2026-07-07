@@ -143,12 +143,12 @@ button.nop-post-footer__pill--like {
 /* Hover/active state for the like-style pills (dimmer red, then full red).
    The icon scales up a hair to telegraph interactivity — kept subtle so it
    doesn't compete with the actual click animation. */
-.nop-like-button__btn:hover:not(:disabled) {
+.nop-like-button__btn:hover:not(.is-liked) {
 	border-color: var(--nop-like-color);
 	color:        var(--nop-like-color-strong);
 }
 
-.nop-like-button__btn:hover:not(:disabled) .nop-like-button__icon {
+.nop-like-button__btn:hover:not(.is-liked) .nop-like-button__icon {
 	transform: scale(1.08);
 }
 

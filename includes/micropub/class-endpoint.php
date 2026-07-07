@@ -359,7 +359,7 @@ class Endpoint {
 		match( $prop ) {
 			'content'     => $args['post_content'] = $this->plain_text_to_block( (string) ( $values[0] ?? '' ), $post_id ),
 			'name'        => $args['post_title']   = sanitize_text_field( (string) ( $values[0] ?? '' ) ),
-			'post-status' => $args['post_status']  = sanitize_key( $values[0] ?? '' ),
+			'post-status' => $this->apply_status( sanitize_key( $values[0] ?? '' ), $args ),
 			'published'   => $this->apply_date( $values[0] ?? '', $args ),
 			'syndication' => update_post_meta( $post_id, 'nop_indieweb_syndication', array_map( 'esc_url_raw', $values ) ),
 			default       => null,
@@ -433,6 +433,14 @@ class Endpoint {
 		if ( 'syndication' === $prop ) {
 			$existing = (array) get_post_meta( $post_id, 'nop_indieweb_syndication', true );
 			update_post_meta( $post_id, 'nop_indieweb_syndication', array_values( array_diff( $existing, $values ) ) );
+		}
+	}
+
+	private function apply_status( string $status, array &$args ): void {
+		// Whitelist: an arbitrary status string would make the post invisible to
+		// every standard query rather than erroring.
+		if ( in_array( $status, [ 'publish', 'draft', 'private' ], true ) ) {
+			$args['post_status'] = $status;
 		}
 	}
 

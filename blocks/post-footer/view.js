@@ -1,8 +1,8 @@
 /**
  * Post Footer — front-end behaviour.
  *
- * Delegates the like fetch/animation/rollback to the shared helper (with
- * keepEnabled so the pill stays live after liking and its caret keeps working).
+ * Delegates the like fetch/animation/rollback to the shared helper (the pill
+ * stays live after liking so its caret keeps working).
  * The caret next to the like/share count reveals a facepile panel without
  * triggering the pill's own action. Plus the comment pill scroll-to-form and
  * the share pill's Web Share / clipboard fallback.
@@ -18,7 +18,6 @@
 			buttonSelector: '.nop-post-footer__pill--like',
 			countSelector:  '.nop-post-footer__pill-count',
 			statusClass:    'nop-post-footer__status',
-			keepEnabled:    true,
 			onLiked: function ( _el, btn ) {
 				btn.setAttribute( 'aria-label', __( 'Liked', 'nop-indieweb' ) );
 			},

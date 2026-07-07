@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.5
+Stable tag: 0.9.6
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,12 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.6 =
+* Fix: likes no longer break on long-cached pages. The like button stops sending a REST nonce (the /like route is public, and a nonce baked into page-cached HTML expires and then 403s every like) and error responses now roll the optimistic count back instead of sticking.
+* Accessibility: liking no longer disables the focused button — the lock is a class, so keyboard and screen-reader focus survives the interaction.
+* Security hardening: Micropub update requests can only set post-status to publish, draft or private; unknown statuses are ignored instead of written raw.
+* i18n: the IndieAuth consent screen's permission labels are now translatable.
 
 = 0.9.5 =
 * Security hardening: PKCE is now mandatory for IndieAuth. The authorization endpoint refuses to issue a code unless the request carries an S256 code_challenge, and the token endpoint always requires and verifies a matching code_verifier — closing the downgrade path where a client that omitted PKCE received an unprotected code. Modern Micropub clients already use PKCE and are unaffected.
