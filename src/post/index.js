@@ -426,11 +426,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// Device GPS → the /now endpoint (the server reverse-geocodes + fetches current
 	// weather with the plugin's existing keys, so nothing leaks client-side). Both
 	// the coordinates and the resolved payload are cached in localStorage: coords for
-	// 6h so iOS isn't re-prompted every visit, the payload for 30 min so the ticker
-	// paints instantly from cache then refreshes. Every failure path is silent — the
-	// item is simply omitted (permission denied / offline / no API keys configured).
+	// 10 min so location stays current between posts, the payload for 30 min so the
+	// ticker paints instantly from cache then refreshes. Every failure path is silent —
+	// the item is simply omitted (permission denied / offline / no API keys configured).
 	var GEO_KEY = 'nop_post_geo', NOW_KEY = 'nop_post_now';
-	var GEO_TTL = 6 * 60 * 60 * 1000, NOW_TTL = 30 * 60 * 1000;
+	var GEO_TTL = 10 * 60 * 1000, NOW_TTL = 30 * 60 * 1000;
 
 	// The current place, captured from the same /now resolution the ticker uses, so
 	// the opt-in geotag can attach it without a second lookup. Populated as coords
@@ -524,7 +524,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				// PERMISSION_DENIED=1 / POSITION_UNAVAILABLE=2 / TIMEOUT=3.
 				console.warn( '[nop /now] geolocation error', err && err.code, err && err.message );
 			},
-			{ enableHighAccuracy: false, timeout: 8000, maximumAge: GEO_TTL }
+			{ enableHighAccuracy: true, timeout: 10000, maximumAge: GEO_TTL }
 		);
 	}
 
@@ -1150,9 +1150,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		locationCheck.addEventListener( 'change', function () {
 			includeLocation = locationCheck.checked;
 			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
-			// First opt-in with no coords yet → ask for them now (this toggle is the tap
-			// gesture, so allowPrompt = true).
-			if ( includeLocation && geoLat == null ) { loadNow( true ); }
+			if ( includeLocation ) { loadNow( true ); }
 			updateLocationUI();
 			saveDraft();
 		} );
@@ -2534,6 +2532,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 		includeLocation = !! d.location;
 		if ( locationCheck ) { locationCheck.checked = includeLocation; }
+		if ( includeLocation ) { loadNow( true ); }
 		updateLocationUI();
 		if ( d.event ) {
 			if ( eventName )     { eventName.value     = d.event.name     || ''; }
@@ -2599,6 +2598,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			geoLocality = p.location.locality || ''; geoCountry = p.location.country || '';
 		}
 		if ( locationCheck ) { locationCheck.checked = includeLocation; }
+		if ( includeLocation ) { loadNow( true ); }
 		updateLocationUI();
 		// Photos / story media — the snapshot's blobs ARE the original File objects.
 		selectedFiles = []; photoAlts = [];
