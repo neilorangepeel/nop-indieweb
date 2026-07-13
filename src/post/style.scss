@@ -2145,19 +2145,25 @@ body::before {
 	box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent);
 }
 
-/* Both stamp rows (Options + Post to) wrap at the same 44px line height so the
-   ledger rhythm holds; the options column stacks the active details beneath. */
+/* Both stamp rows (Options + Post to) keep the ledger rhythm: symmetric block
+   padding means one line of stamps still closes at ~44px, and a wrapped second
+   line (or an unfolded detail) gets the same breathing room above and below the
+   hairlines instead of sitting flush against them. */
 .stamp-row,
 .syndicators {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
+	align-content: center;
 	gap: var(--space-2xs);
 	min-height: 44px;
+	padding-block: var(--space-2xs);
 }
 .option-stamps { display: flex; flex-direction: column; }
 
-/* Detail lines — one quiet readout per active stamp, in the same column. */
+/* Detail lines — one quiet readout per active stamp, in the same column. The
+   stamp row's own padding-bottom spaces them from the stamps; this bottom pad
+   keeps the closing rule at the same distance. */
 .opt-detail {
 	font-family: var(--readout);
 	font-size: var(--step--2);
