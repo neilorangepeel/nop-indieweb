@@ -1174,13 +1174,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			return;
 		}
 		box.innerHTML = synTo.map( function (s) {
-			var limit   = CHAR_LIMITS[ s.uid ];
 			var checked = ( s.uid in prev ) ? prev[ s.uid ] : true;
-			return '<label class="syndicator-item">'
+			return '<label class="stamp">'
 				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '"' + ( checked ? ' checked' : '' ) + '>'
-				+ '<span class="syndicator-box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>'
-				+ ' ' + escHtml( s.name )
-				+ ( limit ? '<span class="syndicator-item__limit">' + limit + '</span>' : '' )
+				+ '<span class="stamp__face">' + escHtml( s.name ) + '</span>'
 				+ '</label>';
 		} ).join( '' );
 		document.getElementById( 'fieldSyndicate' ).hidden = false;
@@ -2888,34 +2885,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var hasContent = TYPE_CONFIG[ currentType ].hasContent;
 		var len = hasContent ? contentInput.value.length : 0;
 
-		// Per-network truth: each ticked syndicator's chip shows how many characters
-		// it has LEFT (and by how much you're over) so you can see WHICH network is
-		// the constraint — not just the strictest count collapsed into one number.
-		updateSyndicatorChips( len );
-
 		if ( ! hasContent || ! len ) { el.hidden = true; return; }
 		var lim = currentLimit();   // smallest char limit among the ticked syndicators
 		el.hidden = false;
 		el.textContent = lim ? ( len + ' / ' + lim ) : ( len + ( len === 1 ? ' character' : ' characters' ) );
 		el.classList.toggle( 'is-over', !! lim && len > lim );
-	}
-
-	function updateSyndicatorChips( len ) {
-		document.querySelectorAll( '#syndicators .syndicator-item' ).forEach( function ( item ) {
-			var cb  = item.querySelector( 'input[type="checkbox"]' );
-			var out = item.querySelector( '.syndicator-item__limit' );
-			if ( ! cb || ! out ) { return; }
-			var limit = CHAR_LIMITS[ cb.value ];
-			if ( ! limit ) { item.classList.remove( 'is-over' ); return; }
-			if ( cb.checked && len ) {
-				var left = limit - len;
-				out.textContent = left < 0 ? '−' + ( -left ) : String( left );
-				item.classList.toggle( 'is-over', left < 0 );
-			} else {
-				out.textContent = String( limit );   // at rest the chip just shows the cap
-				item.classList.remove( 'is-over' );
-			}
-		} );
 	}
 
 	// ── Streak ─────────────────────────────────────────────────────────────────

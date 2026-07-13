@@ -837,48 +837,36 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
 				<div class="post-options" id="fieldOptions">
 
-					<!-- Order: Place · Privacy · Schedule · Post to (Tags lives in its own
-					     row above this group). The :has()/~ ledger rules below adapt to this
+					<!-- Order: Options · Post to (Tags/Categories live in their own rows
+					     above this group). The :has()/~ ledger rules below adapt to this
 					     DOM order, so the last visible group always closes the ledger. -->
 
-					<!-- Location (note, photo) — opt-in geotag. Off by default; when on it
-					     attaches the device's current place (reverse-geocoded by the /now
-					     endpoint) to the post. Coordinates are only read once you ask for
-					     them here, so a normal post never touches location. #fieldLocation
-					     id kept so switchType() still toggles it. -->
-					<div class="post-options__group field-row field-row--ledger" id="fieldLocation" role="group" aria-labelledby="optLocationLabel" hidden>
-						<span class="field-row__label" id="optLocationLabel"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></span>
-						<label class="location-toggle" id="locationToggle">
-							<input type="checkbox" id="locationCheck" class="sr-only">
-							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-							<span class="location-toggle__label"><?php esc_html_e( 'Add location', 'nop-indieweb' ); ?></span>
-							<span class="location-toggle__place" id="locationPlace" aria-live="polite" hidden></span>
-						</label>
-					</div>
-
-					<!-- Visibility (all kinds) — Private keeps the post out of syndication,
-					     webmentions and public feeds (server maps it to WP `private`). -->
-					<div class="post-options__group field-row field-row--ledger" id="fieldPrivate" role="group" aria-labelledby="optPrivateLabel">
-						<span class="field-row__label" id="optPrivateLabel"><?php esc_html_e( 'Privacy', 'nop-indieweb' ); ?></span>
-						<label class="location-toggle" id="privateToggle">
-							<input type="checkbox" id="privateCheck" class="sr-only">
-							<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-							<span class="location-toggle__label"><?php esc_html_e( 'Private — only you', 'nop-indieweb' ); ?></span>
-						</label>
-					</div>
-
-					<!-- Schedule (all kinds) — opt-in. Off = post now. On + a future date/time
-					     publishes later: the client sends `published` + post-status:publish, WP
-					     schedules it (status `future`), and it syndicates when it goes live. -->
-					<div class="post-options__group field-row field-row--ledger" id="fieldSchedule" role="group" aria-labelledby="optScheduleLabel">
-						<span class="field-row__label" id="optScheduleLabel"><?php esc_html_e( 'Schedule', 'nop-indieweb' ); ?></span>
-						<div class="field-row__field">
-							<label class="location-toggle" id="scheduleToggle">
-								<input type="checkbox" id="scheduleCheck" class="sr-only">
-								<span class="location-toggle__box" aria-hidden="true"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-								<span class="location-toggle__label"><?php esc_html_e( 'Post later', 'nop-indieweb' ); ?></span>
-							</label>
-							<div class="field-row__pair schedule-fields" id="scheduleFields" hidden>
+					<!-- Options (all kinds; Place only where the kind carries location) —
+					     the one-tap commitments as STAMPS: inked = it's happening, outline
+					     = it isn't. An active stamp unfolds its single detail line below
+					     (resolved place / privacy note / date+time). The checkbox inputs
+					     keep their ids so drafts, payload and switchType stay untouched;
+					     #fieldLocation now names the Place stamp itself. -->
+					<div class="post-options__group field-row field-row--ledger" id="fieldOptionsRow" role="group" aria-labelledby="optOptionsLabel">
+						<span class="field-row__label" id="optOptionsLabel"><?php esc_html_e( 'Options', 'nop-indieweb' ); ?></span>
+						<div class="field-row__field option-stamps">
+							<div class="stamp-row">
+								<label class="stamp" id="fieldLocation" hidden>
+									<input type="checkbox" id="locationCheck" class="sr-only">
+									<span class="stamp__face"><?php esc_html_e( 'Place', 'nop-indieweb' ); ?></span>
+								</label>
+								<label class="stamp">
+									<input type="checkbox" id="privateCheck" class="sr-only">
+									<span class="stamp__face"><?php esc_html_e( 'Private', 'nop-indieweb' ); ?></span>
+								</label>
+								<label class="stamp">
+									<input type="checkbox" id="scheduleCheck" class="sr-only">
+									<span class="stamp__face"><?php esc_html_e( 'Later', 'nop-indieweb' ); ?></span>
+								</label>
+							</div>
+							<span class="opt-detail" id="locationPlace" aria-live="polite" hidden></span>
+							<span class="opt-detail opt-detail--private"><?php esc_html_e( 'Only you — kept out of feeds, syndication and webmentions.', 'nop-indieweb' ); ?></span>
+							<div class="field-row__pair schedule-fields opt-detail" id="scheduleFields" hidden>
 								<input type="date" id="scheduleDate" class="text-field text-field--date" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule date', 'nop-indieweb' ); ?>">
 								<input type="time" id="scheduleTime" class="text-field text-field--time" autocomplete="off" aria-label="<?php esc_attr_e( 'Schedule time', 'nop-indieweb' ); ?>">
 							</div>
