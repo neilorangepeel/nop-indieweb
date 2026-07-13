@@ -580,7 +580,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var currentType   = 'note';
 	var selectedFiles = [];
 	var photoAlts     = [];
-	var currentTags   = [];
 	var currentRsvp   = 'yes';
 	var includeLocation = false;   // opt-in geotag for note/photo
 	var altWarningDismissed = false;   // one-shot: "Post anyway" past the missing-alt nudge
@@ -1189,146 +1188,178 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	renderSyndicators();
 
-	// ── Tags ─────────────────────────────────────────────────────────────────
+	// ── Tags & Categories ─────────────────────────────────────────────────────
+	// One chip-field implementation drives both ledger rows: solid chips plus a
+	// text input that adds on Enter/comma/blur and backspace-deletes, with a
+	// quick-chips panel showing most-used terms at rest and live REST matches
+	// (wp/v2/tags | wp/v2/categories) while typing.
 
-	var tagInput  = document.getElementById( 'tagInput' );
-	var tagsField = document.getElementById( 'tagsField' );
-	var quickTags = document.getElementById( 'quickTags' );
+	function makeChipField( ids, searchUrl ) {
+		var input   = document.getElementById( ids.input );
+		var field   = document.getElementById( ids.field );
+		var chipsEl = document.getElementById( ids.chips );
+		var quick   = document.getElementById( ids.quick );
+		var items   = [];
+		// The server-rendered most-used chips — restored whenever the input is
+		// empty, and swapped for live search matches while the user types.
+		var defaultQuick = quick ? quick.innerHTML : '';
+		var searchSeq = 0;   // guards against out-of-order search responses
+		var searchTimer;
 
-	// The server-rendered most-used chips — restored whenever the tag field is
-	// empty, and swapped for live search matches while the user types.
-	var defaultQuickTags = quickTags ? quickTags.innerHTML : '';
-	var tagSearchSeq   = 0;   // guards against out-of-order search responses
-	var tagSearchTimer;
-
-	tagsField.addEventListener( 'click', function () { tagInput.focus(); } );
-
-	// Most-used tag chips: revealed only while the tag field is in use, so they
-	// cost no space at rest. Tap to add, tap again to remove; stays in sync with
-	// the tag list however a tag was added/removed (see renderTags below).
-	if ( quickTags ) {
-		var quickTagsTimer;
-		tagInput.addEventListener( 'focus', function () {
-			clearTimeout( quickTagsTimer );
-			quickTags.classList.add( 'is-open' );
+		field.addEventListener( 'click', function (e) {
+			var btn = e.target.closest( '.tag-chip__remove' );
+			if ( btn ) {
+				items.splice( parseInt( btn.dataset.index, 10 ), 1 );
+				render();
+				saveDraft();
+				return;
+			}
+			input.focus();
 		} );
-		tagInput.addEventListener( 'blur', function () {
-			// Delay the fold so a chip tap (which momentarily blurs the input)
-			// doesn't collapse the panel mid-interaction — the click handler
-			// re-focuses the input, cancelling this.
-			quickTagsTimer = setTimeout( function () { quickTags.classList.remove( 'is-open' ); }, 200 );
-		} );
-		quickTags.addEventListener( 'click', function (e) {
-			var btn = e.target.closest( '.quick-tag' );
-			if ( ! btn ) return;
-			var tag = btn.dataset.tag;
-			var idx = currentTags.indexOf( tag );
-			if ( idx === -1 ) { currentTags.push( tag ); } else { currentTags.splice( idx, 1 ); }
-			renderTags();
-			saveDraft();
-			// A tap commits a suggestion — clear the query and revert to most-used
-			// so the next tag starts from a clean panel.
-			tagInput.value = '';
-			clearTimeout( tagSearchTimer );
-			renderQuickTags( defaultQuickTags );
-			tagInput.focus(); // keep the panel open + keyboard up for more taps
-		} );
-	}
 
-	// Live tag search: while typing, the most-used panel becomes a matched-tags
-	// panel sourced from the site's existing tags (core wp/v2/tags?search=), so a
-	// tap completes an existing tag instead of silently minting a near-duplicate.
-	// Reverts to the most-used set when the field is cleared or empties out.
-	tagInput.addEventListener( 'input', function () {
-		if ( ! quickTags ) { return; }
-		var q = tagInput.value.trim();
-		clearTimeout( tagSearchTimer );
-		if ( q === '' ) { renderQuickTags( defaultQuickTags ); return; }
-		tagSearchTimer = setTimeout( function () { searchTags( q ); }, 180 );
-	} );
-
-	function renderQuickTags( html ) {
-		if ( ! quickTags ) { return; }
-		quickTags.innerHTML = html;
-		// Re-sync the "already added" state onto the freshly rendered chips.
-		quickTags.querySelectorAll( '.quick-tag' ).forEach( function (b) {
-			b.classList.toggle( 'is-used', currentTags.indexOf( b.dataset.tag ) !== -1 );
-		} );
-	}
-
-	function quickTagHtml( name ) {
-		return '<button type="button" class="quick-tag" data-tag="' + escAttr( name ) + '">' + escHtml( name ) + '</button>';
-	}
-
-	function searchTags( q ) {
-		if ( ! quickTags || ! NOP.tagsUrl ) { return; }
-		var seq = ++tagSearchSeq;
-		fetch(
-			NOP.tagsUrl + '?search=' + encodeURIComponent( q ) + '&per_page=8&orderby=count&order=desc&_fields=name',
-			{ headers: { 'X-WP-Nonce': NOP.nonce }, credentials: 'same-origin' }
-		)
-			.then( function (r) { return r.ok ? r.json() : []; } )
-			.then( function (list) {
-				if ( seq !== tagSearchSeq ) { return; }   // a newer keystroke already fired
-				var matches = Array.isArray( list ) ? list : [];
-				// No existing tag matches → fall back to the most-used chips (never
-				// leave the panel empty); Enter still mints the typed tag as new.
-				renderQuickTags( matches.length
-					? matches.map( function (t) { return quickTagHtml( t.name ); } ).join( '' )
-					: defaultQuickTags );
-			} )
-			.catch( function () { if ( seq === tagSearchSeq ) { renderQuickTags( defaultQuickTags ); } } );
-	}
-
-	tagInput.addEventListener( 'keydown', function (e) {
-		if ( e.key === 'Enter' || e.key === ',' ) {
-			e.preventDefault();
-			addTag( tagInput.value );
-		} else if ( e.key === 'Backspace' && tagInput.value === '' && currentTags.length ) {
-			currentTags.pop();
-			renderTags();
-			saveDraft();
-		}
-	} );
-
-	tagInput.addEventListener( 'blur', function () {
-		addTag( tagInput.value );
-	} );
-
-	function addTag( raw ) {
-		var tag = raw.trim().replace( /^,+|,+$/g, '' ).trim();
-		if ( tag && ! currentTags.includes( tag ) ) {
-			currentTags.push( tag );
-			renderTags();
-			saveDraft();
-		}
-		tagInput.value = '';
-		clearTimeout( tagSearchTimer );
-		renderQuickTags( defaultQuickTags );
-	}
-
-	function renderTags() {
-		document.getElementById( 'tagChips' ).innerHTML = currentTags.map( function (tag, i) {
-			return '<span class="tag-chip">'
-				+ escHtml( tag )
-				+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( tag ) + '"><svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg></button>'
-				+ '</span>';
-		} ).join( '' );
-		if ( quickTags ) {
-			quickTags.querySelectorAll( '.quick-tag' ).forEach( function (b) {
-				b.classList.toggle( 'is-used', currentTags.indexOf( b.dataset.tag ) !== -1 );
+		// Most-used chips: revealed only while the field is in use, so they cost
+		// no space at rest. Tap to add, tap again to remove; stays in sync with
+		// the chip list however a term was added/removed (see render below).
+		if ( quick ) {
+			var foldTimer;
+			input.addEventListener( 'focus', function () {
+				clearTimeout( foldTimer );
+				quick.classList.add( 'is-open' );
+			} );
+			input.addEventListener( 'blur', function () {
+				// Delay the fold so a chip tap (which momentarily blurs the input)
+				// doesn't collapse the panel mid-interaction — the click handler
+				// re-focuses the input, cancelling this.
+				foldTimer = setTimeout( function () { quick.classList.remove( 'is-open' ); }, 200 );
+			} );
+			// Keep focus in the input while a chip is tapped. Without this the tap's
+			// mousedown blurs the input, whose blur handler re-renders the panel —
+			// detaching the tapped button before its click can fire (and minting any
+			// half-typed query as a real term on the way).
+			quick.addEventListener( 'mousedown', function (e) { e.preventDefault(); } );
+			quick.addEventListener( 'click', function (e) {
+				var btn = e.target.closest( '.quick-tag' );
+				if ( ! btn ) return;
+				var name = btn.dataset.tag;
+				var idx = items.indexOf( name );
+				if ( idx === -1 ) { items.push( name ); } else { items.splice( idx, 1 ); }
+				render();
+				saveDraft();
+				// A tap commits a suggestion — clear the query and revert to most-used
+				// so the next term starts from a clean panel.
+				input.value = '';
+				clearTimeout( searchTimer );
+				renderQuick( defaultQuick );
+				input.focus(); // keep the panel open + keyboard up for more taps
 			} );
 		}
+
+		// Live search: while typing, the most-used panel becomes a matched-terms
+		// panel sourced from the site's existing terms, so a tap completes an
+		// existing one instead of silently minting a near-duplicate. Reverts to
+		// the most-used set when the field is cleared or empties out.
+		input.addEventListener( 'input', function () {
+			if ( ! quick ) { return; }
+			var q = input.value.trim();
+			clearTimeout( searchTimer );
+			if ( q === '' ) { renderQuick( defaultQuick ); return; }
+			searchTimer = setTimeout( function () { search( q ); }, 180 );
+		} );
+
+		function renderQuick( html ) {
+			if ( ! quick ) { return; }
+			quick.innerHTML = html;
+			syncUsed();   // re-sync the "already added" state onto the fresh chips
+		}
+
+		function syncUsed() {
+			if ( ! quick ) { return; }
+			quick.querySelectorAll( '.quick-tag' ).forEach( function (b) {
+				b.classList.toggle( 'is-used', items.indexOf( b.dataset.tag ) !== -1 );
+			} );
+		}
+
+		function quickChipHtml( name ) {
+			return '<button type="button" class="quick-tag" data-tag="' + escAttr( name ) + '">' + escHtml( name ) + '</button>';
+		}
+
+		function search( q ) {
+			if ( ! quick || ! searchUrl ) { return; }
+			var seq = ++searchSeq;
+			fetch(
+				searchUrl + '?search=' + encodeURIComponent( q ) + '&per_page=8&orderby=count&order=desc&_fields=name',
+				{ headers: { 'X-WP-Nonce': NOP.nonce }, credentials: 'same-origin' }
+			)
+				.then( function (r) { return r.ok ? r.json() : []; } )
+				.then( function (list) {
+					if ( seq !== searchSeq ) { return; }   // a newer keystroke already fired
+					var matches = Array.isArray( list ) ? list : [];
+					// No existing term matches → fall back to the most-used chips (never
+					// leave the panel empty); Enter still mints the typed one as new.
+					renderQuick( matches.length
+						? matches.map( function (t) { return quickChipHtml( t.name ); } ).join( '' )
+						: defaultQuick );
+				} )
+				.catch( function () { if ( seq === searchSeq ) { renderQuick( defaultQuick ); } } );
+		}
+
+		input.addEventListener( 'keydown', function (e) {
+			if ( e.key === 'Enter' || e.key === ',' ) {
+				e.preventDefault();
+				add( input.value );
+			} else if ( e.key === 'Backspace' && input.value === '' && items.length ) {
+				items.pop();
+				render();
+				saveDraft();
+			}
+		} );
+
+		input.addEventListener( 'blur', function () {
+			add( input.value );
+		} );
+
+		function add( raw ) {
+			var name = raw.trim().replace( /^,+|,+$/g, '' ).trim();
+			if ( name && ! items.includes( name ) ) {
+				items.push( name );
+				render();
+				saveDraft();
+			}
+			input.value = '';
+			clearTimeout( searchTimer );
+			renderQuick( defaultQuick );
+		}
+
+		function render() {
+			chipsEl.innerHTML = items.map( function (name, i) {
+				return '<span class="tag-chip">'
+					+ escHtml( name )
+					+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( name ) + '"><svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg></button>'
+					+ '</span>';
+			} ).join( '' );
+			syncUsed();
+		}
+
+		return {
+			get: function () { return items; },
+			set: function ( next ) { items = next.slice(); render(); },
+		};
 	}
 
-	tagsField.addEventListener( 'click', function (e) {
-		var btn = e.target.closest( '.tag-chip__remove' );
-		if ( btn ) {
-			currentTags.splice( parseInt( btn.dataset.index, 10 ), 1 );
-			renderTags();
-			saveDraft();
-		}
-	} );
+	var tagField = makeChipField( { input: 'tagInput', field: 'tagsField', chips: 'tagChips', quick: 'quickTags' }, NOP.tagsUrl );
+	var catField = makeChipField( { input: 'catInput', field: 'catsField', chips: 'catChips', quick: 'quickCats' }, NOP.catsUrl );
+
+	// Per-kind default categories (mirrors the server's service settings). The
+	// composer pre-stamps them as removable chips; what's shown is exactly what
+	// the post gets — the server treats the sent list as authoritative.
+	function kindDefaultCats( type ) {
+		return ( NOP.kindCats || {} )[ type ] || [];
+	}
+	function catsDiffer() {
+		var d = kindDefaultCats( currentType ), c = catField.get();
+		return JSON.stringify( c.slice().sort() ) !== JSON.stringify( d.slice().sort() );
+	}
+	catField.set( kindDefaultCats( currentType ) );
 
 	// ── Type switching ────────────────────────────────────────────────────────
 
@@ -1356,8 +1387,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function switchType( type ) {
 		if ( ! TYPE_CONFIG[ type ] ) return;
+		var kindChanged = type !== currentType;
 		currentType = type;
 		var cfg = TYPE_CONFIG[ type ];
+
+		// Each kind files under its own default categories — re-stamp them on a
+		// real kind change (a draft restore overrides these right after).
+		if ( kindChanged ) { catField.set( kindDefaultCats( type ) ); }
 
 		app.dataset.type = type;
 		setInk( type );
@@ -1487,7 +1523,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( contentInput.value.trim() )   { return true; }
 		if ( storyVideo || storyPhoto )    { return true; }
 		if ( selectedFiles.length )        { return true; }
-		if ( currentTags.length )          { return true; }
+		if ( tagField.get().length )       { return true; }
+		if ( catsDiffer() )                { return true; }
 		if ( eventName && eventName.value.trim() )           { return true; }
 		if ( eventStartDate && eventStartDate.value )        { return true; }
 		if ( eventStartTime && eventStartTime.value )        { return true; }
@@ -1926,7 +1963,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				location: eventLocation ? eventLocation.value.trim() : '',
 				image:    eventImage ? eventImage.value.trim() : '',
 			},
-			tags:        currentTags.slice(),
+			tags:        tagField.get().slice(),
+			cats:        catField.get().slice(),
 			scheduledAt: getScheduledAt(),
 			location:    ( TYPE_CONFIG[ currentType ].hasLocation && includeLocation && geoLat != null )
 				? { lat: geoLat, lon: geoLon, locality: geoLocality, country: geoCountry }
@@ -2061,6 +2099,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			} );
 		}
 		if ( cfg.hasTags && post.tags.length ) { props.category = post.tags.slice(); }
+
+		// Categories: authoritative when present — the server files the post under
+		// exactly these (empty = no explicit category), falling back to the per-kind
+		// setting only for payloads that predate the field (old queued posts).
+		if ( post.cats ) { props[ 'post-category' ] = post.cats.slice(); }
 
 		// Opt-in geotag: the coordinates as a geo: URI (the Micropub-standard simple
 		// location value) plus the reverse-geocoded place as flat companions the
@@ -2355,7 +2398,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// tick state alone. The caller decides whether to also swap kind / bump
 	// serial / change view.
 	function clearFields() {
-		selectedFiles = []; photoAlts = []; currentTags = [];
+		selectedFiles = []; photoAlts = [];
+		tagField.set( [] );
+		catField.set( kindDefaultCats( currentType ) );   // a fresh form re-stamps the kind's defaults
 		altWarningDismissed = false;   // a fresh form is re-checked for missing alt
 		contentInput.value = ''; urlInput.value = '';
 		if ( quoteComment )   { quoteComment.value   = ''; }
@@ -2390,7 +2435,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( scheduleFields ) { scheduleFields.hidden = true; }
 		updatePostLabel();
 		activeDraftId = null;   // a cleared form is no longer editing a stored draft
-		renderTags();
 		updateSpecimen();
 		clearContextPreview();
 		fetchedContextUrl = '';
@@ -2486,7 +2530,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				cite:    citeAuthor ? citeAuthor.value : '',
 				quoteLink: quoteLink ? quoteLink.value : '',
 				isPrivate: !! ( privateCheck && privateCheck.checked ),
-				tags:    currentTags,
+				tags:    tagField.get(),
+				cats:    catField.get(),
 				rsvp:    currentRsvp,
 				location: includeLocation,
 				event:   {
@@ -2521,7 +2566,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( citeAuthor && typeof d.cite === 'string' ) citeAuthor.value = d.cite;
 		if ( quoteLink && typeof d.quoteLink === 'string' ) quoteLink.value = d.quoteLink;
 		if ( privateCheck ) { privateCheck.checked = !! d.isPrivate; }
-		if ( Array.isArray( d.tags ) ) { currentTags = d.tags.slice(); renderTags(); }
+		if ( Array.isArray( d.tags ) ) { tagField.set( d.tags ); }
+		if ( Array.isArray( d.cats ) ) { catField.set( d.cats ); }
 		if ( d.rsvp ) {
 			currentRsvp = d.rsvp;
 			document.querySelectorAll( '.rsvp-btn' ).forEach( function (b) {
@@ -2576,8 +2622,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( citeAuthor )   { citeAuthor.value   = p.cite || ''; }
 		if ( quoteLink )    { quoteLink.value    = p.quoteLink || ''; }
 		if ( privateCheck ) { privateCheck.checked = !! p.isPrivate; }
-		currentTags = Array.isArray( p.tags ) ? p.tags.slice() : [];
-		renderTags();
+		tagField.set( Array.isArray( p.tags ) ? p.tags : [] );
+		// Snapshots that predate the categories field keep the kind defaults
+		// switchType just stamped.
+		if ( Array.isArray( p.cats ) ) { catField.set( p.cats ); }
 		currentRsvp = p.rsvp || 'yes';
 		document.querySelectorAll( '.rsvp-btn' ).forEach( function ( b ) {
 			var on = b.dataset.rsvp === currentRsvp;

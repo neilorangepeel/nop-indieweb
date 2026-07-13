@@ -314,6 +314,7 @@ function matchAnyVersion( url ) {
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
 		$tags_url          = esc_url( rest_url( 'wp/v2/tags' ) );
+		$cats_url          = esc_url( rest_url( 'wp/v2/categories' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
@@ -397,6 +398,40 @@ function matchAnyVersion( url ) {
 		if ( is_array( $tag_terms ) ) {
 			$top_tags = array_map( static fn( $t ) => $t->name, $tag_terms );
 		}
+
+		// Most-used categories → the same one-tap chips beneath the categories field.
+		$top_cats  = [];
+		$cat_terms = get_terms( [
+			'taxonomy'   => 'category',
+			'orderby'    => 'count',
+			'order'      => 'DESC',
+			'number'     => 10,
+			'hide_empty' => true,
+		] );
+		if ( is_array( $cat_terms ) ) {
+			$top_cats = array_map( static fn( $t ) => $t->name, $cat_terms );
+		}
+
+		// Per-kind default categories — the same service settings the server falls
+		// back to for a payload with no explicit categories. The composer pre-stamps
+		// them as removable chips, so what's shown is exactly what the post gets.
+		$services_opt = nop_indieweb_get_option( 'services', [] );
+		$cats_setting = static fn( string $slug ): array => array_values( array_filter( array_map(
+			'trim',
+			explode( ',', (string) ( $services_opt[ $slug ]['post_category'] ?? '' ) )
+		) ) );
+		$entry_cats   = $cats_setting( 'entries' );
+		$kind_cats    = [
+			'note'     => $entry_cats,
+			'photo'    => $entry_cats,
+			'story'    => $entry_cats,
+			'reply'    => $cats_setting( 'reply' ),
+			'like'     => $cats_setting( 'like' ),
+			'bookmark' => $cats_setting( 'bookmark' ),
+			'repost'   => $cats_setting( 'repost' ),
+			'quote'    => $cats_setting( 'quote' ),
+			'rsvp'     => $cats_setting( 'rsvp' ),
+		];
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -769,6 +804,34 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
+				<!-- Categories (all kinds) — pre-stamped with the kind's default
+				     categories from settings, fully editable before posting. Shares
+				     the tag field's chip UI wholesale. -->
+				<div class="field-row field-row--ledger" id="fieldCats">
+					<label class="field-row__label" for="catInput"><?php esc_html_e( 'Categories', 'nop-indieweb' ); ?></label>
+					<div class="field-row__field">
+						<div class="tags-field" id="catsField">
+							<span id="catChips"></span>
+							<input
+								type="text"
+								id="catInput"
+								class="tag-input"
+								placeholder="<?php esc_attr_e( 'Add a category…', 'nop-indieweb' ); ?>"
+								autocomplete="off"
+								autocorrect="off"
+								autocapitalize="off"
+							>
+						</div>
+						<?php if ( $top_cats ) : ?>
+						<div class="quick-tags" id="quickCats" aria-label="<?php esc_attr_e( 'Most used categories', 'nop-indieweb' ); ?>">
+							<?php foreach ( $top_cats as $quick_cat ) : ?>
+							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_cat ); ?>"><?php echo esc_html( $quick_cat ); ?></button>
+							<?php endforeach; ?>
+						</div>
+						<?php endif; ?>
+					</div>
+				</div>
+
 				<!-- Post options — where/how this goes out: opt-in geotag + cross-post
 				     targets. One divided block of consistent toggle rows; the :has()
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
@@ -928,6 +991,8 @@ window.NOP = {
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
 		tagsUrl:     <?php echo wp_json_encode( $tags_url ); ?>,
+		catsUrl:     <?php echo wp_json_encode( $cats_url ); ?>,
+		kindCats:    <?php echo wp_json_encode( $kind_cats ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		kindInfo:    <?php echo wp_json_encode( $kind_info ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,

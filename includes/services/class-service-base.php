@@ -684,7 +684,41 @@ abstract class Service_Base {
 	 */
 	protected function category_ids_from_setting( string $csv, string $default = '' ): array {
 		$names = array_filter( array_map( 'trim', explode( ',', $csv ?: $default ) ) );
+		return $this->category_ids_from_names( $names );
+	}
+
+	/**
+	 * Resolves an array of category names into category IDs, creating any that
+	 * don't exist yet.
+	 */
+	protected function category_ids_from_names( array $names ): array {
 		return array_values( array_filter( array_map( [ $this, 'ensure_category' ], $names ) ) );
+	}
+
+	/**
+	 * Resolves the post's category IDs: an explicit list parsed from the payload
+	 * (the composer's `post-category`, authoritative even when empty) wins over
+	 * the service's configured default.
+	 */
+	protected function resolve_category_ids( ?array $explicit, string $setting_csv ): array {
+		return is_array( $explicit )
+			? $this->category_ids_from_names( $explicit )
+			: $this->category_ids_from_setting( $setting_csv );
+	}
+
+	/**
+	 * Parses the composer's `post-category` property: a sanitised list of names
+	 * when the property was sent (even empty), null when it wasn't — so callers
+	 * can tell "no categories, on purpose" from "not a composer payload".
+	 */
+	protected function categories_from_props( array $props ): ?array {
+		if ( ! isset( $props['post-category'] ) ) {
+			return null;
+		}
+		return array_values( array_filter( array_map(
+			'sanitize_text_field',
+			(array) $props['post-category']
+		) ) );
 	}
 
 	/**

@@ -40,6 +40,7 @@ abstract class Url_Response_Service extends Service_Base {
 				'sanitize_text_field',
 				(array) ( $props['category'] ?? [] )
 			) ) ),
+			'categories' => $this->categories_from_props( $props ),
 		];
 	}
 
@@ -63,7 +64,7 @@ abstract class Url_Response_Service extends Service_Base {
 		] );
 		$blocks = implode( "\n\n", $parts );
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
+		$category_ids = $this->resolve_category_ids( $parsed['categories'] ?? null, $settings['post_category'] ?? '' );
 
 		$args = [
 			'post_title'   => $this->domain_from_url( $parsed['url'] ),

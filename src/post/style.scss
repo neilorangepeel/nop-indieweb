@@ -1869,10 +1869,11 @@ body::before {
 .thumb__alt:focus { border-bottom-color: var(--accent); }
 .thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
 
-/* Tags — solid accent chips, knockout text, square remove. */
-/* Flat on the ledger — no box. The TAGS row's own hairline (.field-row--ledger
+/* Tags & Categories — solid accent chips, knockout text, square remove. Both
+   ledger rows share this chip UI wholesale (#fieldTags / #fieldCats). */
+/* Flat on the ledger — no box. The row's own hairline (.field-row--ledger
    border-bottom) is the field's underline, matching the box-free writing lines and
-   the checkbox rows; on focus that line goes accent (#fieldTags rule below). */
+   the checkbox rows; on focus that line goes accent (rule below). */
 .tags-field {
 	display: flex;
 	flex-wrap: wrap;
@@ -1882,11 +1883,13 @@ body::before {
 	min-height: 44px;
 	cursor: text;
 }
-#fieldTags:focus-within { border-bottom-color: var(--accent); }
-/* The chips live in a #tagChips wrapper; display:contents dissolves it so each
-   chip becomes a direct flex item of .tags-field, picking up its gap — otherwise
-   the gap only sits between the wrapper and the input, and chips touch. */
-#tagChips { display: contents; }
+#fieldTags:focus-within,
+#fieldCats:focus-within { border-bottom-color: var(--accent); }
+/* The chips live in a #tagChips/#catChips wrapper; display:contents dissolves it
+   so each chip becomes a direct flex item of .tags-field, picking up its gap —
+   otherwise the gap only sits between the wrapper and the input, and chips touch. */
+#tagChips,
+#catChips { display: contents; }
 .tag-chip {
 	display: inline-flex;
 	align-items: center;
@@ -2065,7 +2068,7 @@ body::before {
 /* When only the always-on Privacy row shows (e.g. Like / Repost with no tags, place or
    syndication), drop the margin rule — a vertical line beside a single row reads as a
    stray tick rather than a list binder. */
-.ledger:not(:has( :is(#fieldTags, #fieldLocation, #fieldSyndicate):not([hidden]) )) {
+.ledger:not(:has( :is(#fieldTags, #fieldCats, #fieldLocation, #fieldSyndicate):not([hidden]) )) {
 	background-image: none;
 }
 

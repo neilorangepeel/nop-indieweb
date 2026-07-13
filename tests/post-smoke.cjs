@@ -42,7 +42,9 @@ async function main() {
 	);
 
 	const idbCount = () => page.evaluate( () => new Promise( ( res ) => {
-		const r = indexedDB.open( 'nop_post_queue', 1 );
+		// No explicit version — open whatever the app created (a lower version
+		// than the live schema would throw VersionError and read as -1).
+		const r = indexedDB.open( 'nop_post_queue' );
 		r.onsuccess = () => { const db = r.result; if ( ! db.objectStoreNames.contains( 'posts' ) ) return res( 0 ); const c = db.transaction( 'posts', 'readonly' ).objectStore( 'posts' ).count(); c.onsuccess = () => res( c.result ); };
 		r.onerror = () => res( -1 );
 	} ) );
@@ -78,7 +80,9 @@ async function main() {
 	await page.click( '.type-btn[data-type="note"]' );
 	await page.evaluate( () => { const t = document.getElementById( 'content' ); t.value = 'smoke ' + Math.random(); t.dispatchEvent( new Event( 'input', { bubbles: true } ) ); } );
 	await page.click( '#postBtn' );
-	await page.waitForTimeout( 2500 );
+	// The send-undo grace window holds the real send for 5s — wait it out plus
+	// the mocked round-trip before expecting the success view.
+	await page.waitForTimeout( 9000 );
 	check( 'live post → success', await page.evaluate( () => ! document.getElementById( 'view-success' ).hidden ) );
 
 	// 5. Offline queue, then reconnect → replay drains.
