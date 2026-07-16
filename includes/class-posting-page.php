@@ -116,7 +116,7 @@ class Posting_Page {
 			'scope'            => $path,
 			'display'          => 'standalone',
 			'background_color' => '#F4EFE6',
-			'theme_color'      => '#20713A',
+			'theme_color'      => '#008935',
 			'icons'            => $icons,
 			// Register as a share target (Android/desktop) — sharing a page/text opens
 			// /post?title=&text=&url=, which the client maps to a bookmark/note. iOS has
