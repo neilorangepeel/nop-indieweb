@@ -104,9 +104,10 @@ class Posting_Page {
 		// Bundled app icon (the target mark on the ink tile) — a dedicated, consistent
 		// install icon rather than whatever the WordPress site icon happens to be. The
 		// full-bleed tile keeps the glyph inside the maskable safe zone.
+		$ver   = self::icon_version();
 		$icons = [
-			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
-			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-512.png' ), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-192.png?v=' . $ver ), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+			[ 'src' => esc_url_raw( NOP_INDIEWEB_URL . 'assets/icons/app-512.png?v=' . $ver ), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
 		];
 
 		echo wp_json_encode( [
@@ -144,6 +145,17 @@ class Posting_Page {
 	 * fold in the extracted CSS so any rebuild busts the ?ver (and with it the
 	 * service-worker shell and the browser's HTTP cache).
 	 */
+	/**
+	 * Cache-buster for the app icons. iOS fetches the apple-touch-icon through
+	 * Safari's HTTP cache, and the PNGs are served with a one-year max-age — a
+	 * recolored icon at the same URL never reaches the home screen. The file's
+	 * mtime changes on every git-pull deploy that touches it, minting a new URL.
+	 */
+	private static function icon_version(): string {
+		$mtime = @filemtime( NOP_INDIEWEB_DIR . 'assets/icons/app-192.png' );
+		return $mtime ? (string) $mtime : NOP_INDIEWEB_VERSION;
+	}
+
 	private function asset_version(): string {
 		$asset = file_exists( NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) ? ( include NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) : [];
 		$ver   = is_array( $asset ) && ! empty( $asset['version'] ) ? $asset['version'] : '1';
@@ -462,7 +474,7 @@ function matchAnyVersion( url ) {
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
 <meta name="robots" content="noindex, nofollow">
-<link rel="apple-touch-icon" href="<?php echo esc_url( NOP_INDIEWEB_URL . 'assets/icons/app-192.png' ); ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( NOP_INDIEWEB_URL . 'assets/icons/app-192.png?v=' . self::icon_version() ); ?>">
 <link rel="manifest" href="<?php echo esc_url( home_url( '/post?manifest=1' ) ); ?>">
 <link rel="preload" href="<?php echo esc_url( $font_dir . '/brandon-text_normal_500.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="<?php echo esc_url( $cond_dir . '/brandon-text-condensed_normal_700.woff2' ); ?>" as="font" type="font/woff2" crossorigin>
