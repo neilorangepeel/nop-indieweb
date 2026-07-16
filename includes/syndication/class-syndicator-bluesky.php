@@ -319,6 +319,27 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		];
 
 		$image = (string) get_post_meta( $post_id, 'nop_indieweb_cite_image', true );
+
+		// An RSVP cards the event, not a generic cite: the parsed event name and
+		// poster beat whatever cite meta the page yielded (often just the host +
+		// site icon), and when/where gives the card a description most event
+		// pages don't put in their meta tags.
+		if ( 'rsvp' === (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			$event = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_name', true );
+			if ( '' !== $event ) {
+				$external['title'] = $event;
+			}
+			$when  = \NOP\IndieWeb\nop_indieweb_format_event_datetime( (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true ) );
+			$where = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+			$desc  = trim( $when . ( '' !== $when && '' !== $where ? ' — ' : '' ) . $where );
+			if ( '' !== $desc ) {
+				$external['description'] = $desc;
+			}
+			$poster = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_image', true );
+			if ( '' !== $poster ) {
+				$image = $poster;
+			}
+		}
 		$thumb = '' !== $image
 			? $this->upload_image_blob( [ 'url' => $image, 'alt' => '', 'attachment_id' => 0, 'width' => 0, 'height' => 0 ], $session )
 			: null;

@@ -142,6 +142,37 @@ abstract class Syndicator_Base {
 			return '' !== $body ? $leads[ $kind ] . "\n\n" . $body : $leads[ $kind ];
 		}
 
+		// RSVP leads carry the event itself — name, date, venue — since the body
+		// is usually just a personal aside ("first time seeing them") that reads
+		// as a bare note without them. The event page is the response target, so
+		// the platform card unfurls the event; text and card reinforce each other.
+		if ( 'rsvp' === $kind ) {
+			$verbs = [
+				'yes'        => __( 'Going to', 'nop-indieweb' ),
+				'maybe'      => __( 'Maybe going to', 'nop-indieweb' ),
+				'interested' => __( 'Interested in', 'nop-indieweb' ),
+				'no'         => __( 'Not going to', 'nop-indieweb' ),
+			];
+			$value = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp', true );
+			$event = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_name', true );
+			if ( '' === $event ) {
+				$host  = (string) wp_parse_url( (string) get_post_meta( $post_id, 'nop_indieweb_in_reply_to', true ), PHP_URL_HOST );
+				$event = '' !== $host ? $host : $title;
+			}
+			$lead = '🎟️ ' . ( $verbs[ $value ] ?? $verbs['yes'] ) . ( '' !== $event ? ' ' . $event : '' );
+
+			$when  = \NOP\IndieWeb\nop_indieweb_format_event_datetime( (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_start', true ) );
+			$where = (string) get_post_meta( $post_id, 'nop_indieweb_rsvp_event_location', true );
+			if ( '' !== $when && '' !== $where ) {
+				$lead .= "\n" . '📅 ' . $when . ' — ' . $where;
+			} elseif ( '' !== $when ) {
+				$lead .= "\n" . '📅 ' . $when;
+			} elseif ( '' !== $where ) {
+				$lead .= "\n" . '📍 ' . $where;
+			}
+			return '' !== $body ? $lead . "\n\n" . $body : $lead;
+		}
+
 		if ( 'article' === $kind ) {
 			return '' !== $title ? $title : $body;
 		}
@@ -162,6 +193,7 @@ abstract class Syndicator_Base {
 			'repost'   => 'nop_indieweb_repost_of',
 			'reply'    => 'nop_indieweb_in_reply_to',
 			'quote'    => 'nop_indieweb_quote_of',
+			'rsvp'     => 'nop_indieweb_in_reply_to',
 		];
 		$kind = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
 		$key  = $map[ $kind ] ?? '';

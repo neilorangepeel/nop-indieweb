@@ -589,3 +589,22 @@ function nop_indieweb_maybe_disable_settings_autoload(): void {
 
 	update_option( 'nop_indieweb_settings_autoload_off', 1, false );
 }
+
+/**
+ * Formats a stored event datetime for display, falling back to the raw value
+ * when it can't be parsed. Date-only values (`YYYY-MM-DD`) stay time-less —
+ * the event parser deliberately returns date-only for sources that publish
+ * just a date, and emitting `· 00:00` would fabricate a midnight start.
+ */
+function nop_indieweb_format_event_datetime( string $value ): string {
+	$value = trim( $value );
+	if ( '' === $value ) {
+		return '';
+	}
+	$date_only = (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value );
+	$ts        = strtotime( $value );
+	if ( false === $ts ) {
+		return $value;
+	}
+	return date_i18n( $date_only ? 'j M Y' : 'j M Y · H:i', $ts );
+}
