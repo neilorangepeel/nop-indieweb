@@ -1924,7 +1924,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				await navigator.clipboard.writeText( post.content ).catch( function () {} );
 			}
 			await clearActiveDraft();   // a published draft leaves the drafts library
-			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt );
+			// Delivery receipts need the post ID — the response carries it only
+			// inside X-Edit-URL (…post.php?post=N). No syndication to watch for
+			// scheduled (nothing sent yet), private, or no-targets posts.
+			var idMatch   = /[?&]post=(\d+)/.exec( result.editUrl || '' );
+			var receiptId = ( idMatch && ! post.scheduledAt && ! post.isPrivate && post.syndicateTo.length ) ? +idMatch[1] : 0;
+			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt, receiptId );
 		} catch ( err ) {
 			// A dropped connection mid-send → queue it rather than lose the post.
 			if ( window.indexedDB && ( ! navigator.onLine || err instanceof TypeError ) ) {
@@ -2334,9 +2339,57 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Success ───────────────────────────────────────────────────────────────
 
-	function showSuccess( permalink, editUrl, photoUrls, scheduledAt ) {
+	// ── Delivery receipts ─────────────────────────────────────────────────────
+	// The syndication journal is written at queue time, so entries exist by the
+	// time the success view shows; each network flips pending → sent/failed as
+	// its cron target runs. Poll briefly with backoff — the polls themselves
+	// nudge WP-cron awake — and let a still-pending row stay honest ("…").
+	var DELIVERY_POLLS = [ 800, 1500, 2500, 4000, 6000, 9000, 13000 ];
+
+	function renderDelivery( items ) {
+		var box = document.getElementById( 'successDelivery' );
+		if ( ! items.length ) { box.hidden = true; box.innerHTML = ''; return false; }
+		box.innerHTML = items.map( function ( it ) {
+			var label = escHtml( it.label || it.slug );
+			if ( it.state === 'sent' ) {
+				return it.url
+					? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a></li>'
+					: '<li class="delivery__row is-sent">' + label + ' ✓</li>';
+			}
+			if ( it.state === 'failed' ) {
+				return '<li class="delivery__row is-failed" title="' + escAttr( it.error || '' ) + '">' + label + ' ✗</li>';
+			}
+			return '<li class="delivery__row is-pending">' + label + '…</li>';
+		} ).join( '' );
+		box.hidden = false;
+		return items.some( function ( it ) { return it.state === 'pending'; } );
+	}
+
+	function watchDelivery( postId ) {
+		var box = document.getElementById( 'successDelivery' );
+		box.hidden = true;
+		box.innerHTML = '';
+		if ( ! postId || ! NOP.syndicationStatusUrl ) { return; }
+		var step = 0;
+		var poll = function () {
+			// The author moved on ("Post another") — stop quietly.
+			if ( document.getElementById( 'view-success' ).hidden ) { return; }
+			fetch( NOP.syndicationStatusUrl + '?post_id=' + postId, { headers: { 'X-WP-Nonce': nonce } } )
+				.then( function ( r ) { return r.ok ? r.json() : []; } )
+				.then( function ( items ) {
+					var waiting = renderDelivery( Array.isArray( items ) ? items : [] );
+					step += 1;
+					if ( waiting && step < DELIVERY_POLLS.length ) { setTimeout( poll, DELIVERY_POLLS[ step ] ); }
+				} )
+				.catch( function () {} );
+		};
+		setTimeout( poll, DELIVERY_POLLS[ 0 ] );
+	}
+
+	function showSuccess( permalink, editUrl, photoUrls, scheduledAt, receiptId ) {
 		showView( 'success' );
 		clearDraft();
+		watchDelivery( receiptId || 0 );
 		if ( navigator.vibrate ) navigator.vibrate( 10 );
 
 		var streakEl = document.getElementById( 'successStreak' );

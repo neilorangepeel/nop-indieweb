@@ -325,6 +325,7 @@ function matchAnyVersion( url ) {
 		$drafts_url   = esc_url( rest_url( 'nop-indieweb/v1/drafts' ) );
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
+		$syndication_status_url = esc_url( rest_url( 'nop-indieweb/v1/syndication/status' ) );
 		$tags_url          = esc_url( rest_url( 'wp/v2/tags' ) );
 		$cats_url          = esc_url( rest_url( 'wp/v2/categories' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
@@ -939,6 +940,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				</div>
 				<div class="success-photos" id="successPhotos"></div>
 				<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
+				<ul class="delivery" id="successDelivery" aria-live="polite" hidden></ul>
 				<div class="success-actions">
 					<a class="btn btn-accent" id="editBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>
 						<?php esc_html_e( 'Open in editor →', 'nop-indieweb' ); ?>
@@ -990,6 +992,7 @@ window.NOP = {
 		draftsUrl:   <?php echo wp_json_encode( $drafts_url ); ?>,
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
+		syndicationStatusUrl: <?php echo wp_json_encode( $syndication_status_url ); ?>,
 		tagsUrl:     <?php echo wp_json_encode( $tags_url ); ?>,
 		catsUrl:     <?php echo wp_json_encode( $cats_url ); ?>,
 		kindCats:    <?php echo wp_json_encode( $kind_cats ); ?>,

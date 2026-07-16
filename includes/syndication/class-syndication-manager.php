@@ -347,12 +347,41 @@ class Syndication_Manager {
 			'args'                => [ 'post_id' => [ 'type' => 'integer', 'required' => true ] ],
 		] );
 
+		// Per-post delivery receipts for the /post success view — the status
+		// journal as-is, so the client can show pending → sent/failed live.
+		register_rest_route( 'nop-indieweb/v1', '/syndication/status', [
+			'methods'             => \WP_REST_Server::READABLE,
+			'callback'            => fn( \WP_REST_Request $r ) => new \WP_REST_Response( $this->delivery_status( (int) $r['post_id'] ), 200 ),
+			'permission_callback' => fn( \WP_REST_Request $r ) => current_user_can( 'edit_post', (int) $r['post_id'] ),
+			'args'                => [ 'post_id' => [ 'type' => 'integer', 'required' => true ] ],
+		] );
+
 		// Read-only aggregate of failing syndications for the Networks-tab health view.
 		register_rest_route( 'nop-indieweb/v1', '/syndication/health', [
 			'methods'             => \WP_REST_Server::READABLE,
 			'callback'            => fn() => new \WP_REST_Response( $this->failure_summary(), 200 ),
 			'permission_callback' => fn() => current_user_can( 'manage_options' ),
 		] );
+	}
+
+	/** @return array<int,array{slug:string,label:string,state:string,url:string,error:string}> */
+	private function delivery_status( int $post_id ): array {
+		$journal = get_post_meta( $post_id, self::STATUS_META, true );
+		$out     = [];
+		foreach ( is_array( $journal ) ? $journal : [] as $slug => $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			$syndicator = $this->get( (string) $slug );
+			$out[]      = [
+				'slug'  => (string) $slug,
+				'label' => $syndicator ? $syndicator->label() : (string) $slug,
+				'state' => (string) ( $entry['state'] ?? '' ),
+				'url'   => (string) ( $entry['url'] ?? '' ),
+				'error' => (string) ( $entry['error'] ?? '' ),
+			];
+		}
+		return $out;
 	}
 
 	public function handle_retry( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {

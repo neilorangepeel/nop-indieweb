@@ -2444,6 +2444,34 @@ body::before {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+/* Delivery receipts — one stamp per syndication target, echoing the compose
+   stamps: outline while sending, inked (and linked) once the copy is live,
+   red with the error in the tooltip on failure. */
+.delivery {
+	list-style: none;
+	margin: 0 0 var(--space-s);
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--space-2xs);
+}
+.delivery__row {
+	font-family: var(--display);
+	font-size: var(--step--1);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: var(--radius);
+	padding: 4px 10px;
+	color: color-mix( in srgb, var(--ink) 75%, var(--paper) );
+}
+.delivery__row a { color: inherit; text-decoration: none; display: block; }
+.delivery__row.is-sent { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.delivery__row.is-failed { border-color: var(--red); color: var(--red); }
+.delivery__row.is-pending { opacity: 0.6; }
+
 .success-actions { display: flex; flex-direction: column; gap: 10px; }
 
 /* Compose meta row — sits under the textarea, holding the word count (left)
