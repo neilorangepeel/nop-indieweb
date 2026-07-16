@@ -77,24 +77,24 @@ $fluid-max-vw: 820;
 	color-scheme: light dark;
 	--paper:    light-dark(#F4EFE6, #15140F);
 	/* Nine kind hues as ONE matched poster-paint set — bold primary tempera, not a
-	   scattered wheel. Every hue shares the SAME lightness + chroma per mode (light L0.55
-	   / dark L0.76, C0.19), set in OKLCH so the relationship is explicit: each hue pushed
-	   to a vivid, near-max saturation at a common tonal weight, told apart by HUE alone.
-	   Each kind keeps its identity hue, so the flavour (note=teal, like=red, reply=brand-
-	   orange…) is unchanged. The high chroma sits past the sRGB gamut for several hues
-	   (green/teal especially), so the browser clamps each to its own vivid edge — exactly
-	   the school-paint look, every colour as saturated as it can physically print. --red
-	   doubles as the error colour; --magenta is held near its old hue so the date-picker
-	   filter recipe still lands. */
-	--red:      light-dark( oklch(0.55 0.19 28),  oklch(0.76 0.18 28)  );   /* like */
-	--orange:   light-dark( oklch(0.55 0.19 56),  oklch(0.76 0.18 56)  );   /* reply */
-	--amber:    light-dark( oklch(0.55 0.19 88),  oklch(0.76 0.18 88)  );   /* quote */
-	--green:    light-dark( oklch(0.55 0.19 150), oklch(0.76 0.18 150) );   /* bookmark */
-	--teal:     light-dark( oklch(0.55 0.19 195), oklch(0.76 0.18 195) );   /* note */
-	--blue:     light-dark( oklch(0.55 0.19 250), oklch(0.76 0.18 250) );   /* photo */
-	--indigo:   light-dark( oklch(0.55 0.19 282), oklch(0.76 0.18 282) );   /* story */
-	--violet:   light-dark( oklch(0.55 0.19 312), oklch(0.76 0.18 312) );   /* repost */
-	--magenta:  light-dark( oklch(0.55 0.19 4),   oklch(0.76 0.18 4)   );   /* rsvp */
+	   scattered wheel. The baseline is shared lightness + chroma per mode (light L0.55
+	   / dark L0.76, C0.19), set in OKLCH; chroma past the sRGB gamut clamps to each
+	   hue's own vivid edge — the school-paint look, every colour as saturated as it
+	   can physically print. Three deliberate departures from the old wheel: --amber
+	   lifts to L0.61/0.80 at h78 — dark yellow at matched L renders mustard-olive, so
+	   quote becomes an intentional yellow-ochre instead; --magenta moves to h350 so
+	   rsvp reads PINK rather than a second red (the date-picker filter below is
+	   retargeted to match); story/photo/repost sit at h272/244/310 to spread the old
+	   blue-violet cluster. --red doubles as the error colour. */
+	--red:      light-dark( oklch(0.55 0.19 25),  oklch(0.76 0.18 25)  );   /* like */
+	--orange:   light-dark( oklch(0.55 0.19 55),  oklch(0.76 0.18 55)  );   /* reply */
+	--amber:    light-dark( oklch(0.61 0.19 78),  oklch(0.80 0.18 78)  );   /* quote */
+	--green:    light-dark( oklch(0.55 0.19 148), oklch(0.76 0.18 148) );   /* bookmark */
+	--teal:     light-dark( oklch(0.55 0.19 196), oklch(0.76 0.18 196) );   /* note */
+	--blue:     light-dark( oklch(0.55 0.19 244), oklch(0.76 0.18 244) );   /* photo */
+	--indigo:   light-dark( oklch(0.55 0.19 272), oklch(0.76 0.18 272) );   /* story */
+	--violet:   light-dark( oklch(0.55 0.19 310), oklch(0.76 0.18 310) );   /* repost */
+	--magenta:  light-dark( oklch(0.55 0.19 350), oklch(0.76 0.18 350) );   /* rsvp */
 	--charcoal: light-dark(#1A1A1A, #F4EFE6);
 
 	/* Two-tone risograph: ONE ink per screen, printed on paper. The ink-derived
@@ -1127,12 +1127,12 @@ body::before {
    `::-webkit-calendar-picker-indicator` pseudo accepts a filter, so we
    tint the icon to the magenta accent — the only kind that shows these
    fields is RSVP, so a fixed filter is fine.
-   Filter recipe targets #C81E66 (the light-mode --magenta value).
+   Filter recipe targets #BC3181 (the light-mode --magenta value).
    Dark-mode users see a slightly off-magenta variant, acceptable. */
 .field-row__pair .text-field--date::-webkit-calendar-picker-indicator,
 .field-row__pair .text-field--time::-webkit-calendar-picker-indicator {
 	cursor: pointer;
-	filter: invert(20%) sepia(83%) saturate(3500%) hue-rotate(322deg) brightness(89%) contrast(91%);
+	filter: invert(26%) sepia(65%) saturate(2900%) hue-rotate(305deg) brightness(79%) contrast(82%);
 }
 
 /* ── Docket / index card ─────────────────────────────────────────────────────
@@ -2274,11 +2274,12 @@ body::before {
 .btn-primary:disabled,
 .btn-primary.is-incomplete {
 	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
-	/* 70% paper, not 38%: the old mix sat at ~2:1 against the muted fill — under
-	   even the 3:1 large-text bar. 70% clears 3:1 for all nine inks in both modes
-	   (worst: bookmark light, 3.2) while staying well short of the charged state's
-	   full-paper knockout, so the "not charged" read is untouched. */
-	color: color-mix( in srgb, var(--on-accent) 70%, var(--device-ink) );
+	/* 73% paper, not 38%: the old mix sat at ~2:1 against the muted fill — under
+	   even the 3:1 large-text bar. 73% clears 3:1 for all nine inks in both modes
+	   (worst: quote light, 3.03 — its lifted L0.61 lightens the muted fill) while
+	   staying well short of the charged state's full-paper knockout, so the "not
+	   charged" read is untouched. */
+	color: color-mix( in srgb, var(--on-accent) 73%, var(--device-ink) );
 	border-color: transparent;
 	opacity: 1;
 	transform: none;
