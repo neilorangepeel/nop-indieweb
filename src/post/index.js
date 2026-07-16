@@ -1874,7 +1874,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		else { el.scrollIntoView( { block: 'center', behavior: prefersReduce.matches ? 'auto' : 'smooth' } ); }
 	}
 
+	// Re-entry guard: online, showView('progress') hides the button before the
+	// first await, but the offline path awaits queueAndAck with the compose view
+	// still up — a rapid double-tap would queue the same post twice.
+	var submitting = false;
 	async function submitPost() {
+		if ( submitting ) { return; }
 		// A premature tap explains itself rather than doing nothing: say what's
 		// missing and send the author to that field. (The button stays live — see
 		// updatePostBtn — precisely so this can fire.)
@@ -1901,10 +1906,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			return;
 		}
 
-		// Offline up front → straight to the queue (no point attempting the network).
-		if ( ! navigator.onLine && window.indexedDB ) { await queueAndAck( post ); return; }
-
+		submitting = true;
 		try {
+			// Offline up front → straight to the queue (no point attempting the network).
+			if ( ! navigator.onLine && window.indexedDB ) { await queueAndAck( post ); return; }
+
 			showView( 'progress' );
 			// A brief grace window before anything leaves the device — syndication to
 			// public networks can't be pulled back, so give a few seconds to catch a
@@ -1927,6 +1933,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				showView( 'compose' );
 				showToast( 'Something went wrong: ' + err.message, 'error', { label: 'Try again', onTap: submitPost } );
 			}
+		} finally {
+			submitting = false;
 		}
 	}
 	postBtn.addEventListener( 'click', submitPost );

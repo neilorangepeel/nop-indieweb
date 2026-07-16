@@ -1195,6 +1195,13 @@ body::before {
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
+/* 19px-tall boxes need a tap halo (same trick as .tag-chip__remove) to reach ~43px.
+   Horizontal reach stays at -4px — half the row gap — so the Save and Clear zones
+   meet but never overlap; a stray tap must not land on Clear. */
+.docket__clear,
+.docket__action { position: relative; }
+.docket__clear::after,
+.docket__action::after { content: ''; position: absolute; inset: -12px -4px; }
 .docket__clear:hover  { color: var(--ink); border-color: var(--ink-38); }
 .docket__clear:active { transform: translate(1px, 1px); }
 .docket__clear:focus-visible {
@@ -1915,9 +1922,10 @@ body::before {
 	cursor: pointer;
 }
 .tag-chip__remove svg { display: block; }
-/* Keep the 18px mark but extend the tap target to ~32px (Apple HIG) — a transparent
-   overlay inside the button, so the visual square and the layout are unchanged. */
-.tag-chip__remove::after { content: ''; position: absolute; inset: -7px; }
+/* Keep the 18px mark but extend the tap target to ~38px (Apple HIG) — a transparent
+   overlay inside the button, so the visual square and the layout are unchanged.
+   -10px is the ceiling: any wider and the zone collides with the neighbouring chip's. */
+.tag-chip__remove::after { content: ''; position: absolute; inset: -10px; }
 .tag-input {
 	flex: 1;
 	min-width: 80px;
@@ -1960,6 +1968,7 @@ body::before {
    the committed stamps) without the old web-pill weight: a hairline soft-accent outline,
    the same squared radius as the chip it becomes. */
 .quick-tag {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	min-height: 34px;
@@ -1974,6 +1983,10 @@ body::before {
 	cursor: pointer;
 	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
+/* Lift the 34px ghost stamps to a 44px hit height without growing them — visible
+   padding would also eat into .quick-tags.is-open's 240px max-height reveal cap.
+   Vertical only: the run's 8px gaps leave no horizontal room. */
+.quick-tag::after { content: ''; position: absolute; inset: -5px 0; }
 /* Already added (its solid chip shows above) — recede so the run reads as "remaining". */
 .quick-tag.is-used {
 	border-color: color-mix(in srgb, var(--accent) 16%, var(--paper));
@@ -2119,6 +2132,12 @@ body::before {
 	display: inline-flex;
 	cursor: pointer;
 	user-select: none;
+	/* The ~29px face alone under-fills its 44px row, so taps just off the face miss.
+	   Transparent padding grows the hit area to ~43px; the negative margin cancels it
+	   in layout so row height and the wrapped-line rhythm are untouched. Wrapped lines'
+	   zones overlap a few px mid-gap — the lower stamp wins there, which beats a dead zone. */
+	padding-block: 7px;
+	margin-block: -7px;
 }
 .stamp__face {
 	display: inline-flex;
@@ -2132,7 +2151,9 @@ body::before {
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
-	color: color-mix( in srgb, var(--ink) 65%, var(--paper) );
+	/* 75% ink, not 65%: at 11px caps the outline state fell below small-text contrast.
+	   The 38% border keeps the inked/outline weight difference doing the talking. */
+	color: color-mix( in srgb, var(--ink) 75%, var(--paper) );
 	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
 }
 .stamp:active .stamp__face { transform: scale(0.94); }
@@ -2166,7 +2187,9 @@ body::before {
    keeps the closing rule at the same distance. */
 .opt-detail {
 	font-family: var(--readout);
-	font-size: var(--step--2);
+	/* --step--1, not --step--2: these are read sentences (place, privacy, lapsed
+	   schedule), not display caps — matches the .schedule-note treatment. */
+	font-size: var(--step--1);
 	font-weight: 500;
 	opacity: 0.7;
 	padding-bottom: var(--space-2xs);
@@ -2251,7 +2274,11 @@ body::before {
 .btn-primary:disabled,
 .btn-primary.is-incomplete {
 	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
-	color: color-mix( in srgb, var(--on-accent) 38%, var(--device-ink) );
+	/* 70% paper, not 38%: the old mix sat at ~2:1 against the muted fill — under
+	   even the 3:1 large-text bar. 70% clears 3:1 for all nine inks in both modes
+	   (worst: bookmark light, 3.2) while staying well short of the charged state's
+	   full-paper knockout, so the "not charged" read is untouched. */
+	color: color-mix( in srgb, var(--on-accent) 70%, var(--device-ink) );
 	border-color: transparent;
 	opacity: 1;
 	transform: none;
