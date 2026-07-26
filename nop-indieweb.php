@@ -108,6 +108,8 @@ require_once NOP_INDIEWEB_DIR . 'includes/registrars/class-template-registrar.ph
 require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-facebook-timeline.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-twitter-titles.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-categories.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-details.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-checkin-maps.php';
@@ -136,6 +138,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb backfill-weather',            \NOP\IndieWeb\Cli\Backfill_Weather::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-facebook-venues',         \NOP\IndieWeb\Cli\Fix_Facebook_Venues::class );
 	\WP_CLI::add_command( 'nop-indieweb import-facebook-checkins',    \NOP\IndieWeb\Cli\Import_Facebook_Checkins::class );
+	\WP_CLI::add_command( 'nop-indieweb import-facebook-timeline',    \NOP\IndieWeb\Cli\Import_Facebook_Timeline::class );
+	\WP_CLI::add_command( 'nop-indieweb fix-twitter-titles',          \NOP\IndieWeb\Cli\Fix_Twitter_Titles::class );
 	\WP_CLI::add_command( 'nop-indieweb import-swarm-checkins',       \NOP\IndieWeb\Cli\Import_Swarm_Checkins::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-swarm-timestamps',        \NOP\IndieWeb\Cli\Fix_Swarm_Timestamps::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-micropub-timestamps',     \NOP\IndieWeb\Cli\Fix_Micropub_Timestamps::class );
