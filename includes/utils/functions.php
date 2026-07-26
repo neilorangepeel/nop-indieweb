@@ -319,6 +319,29 @@ function nop_indieweb_get_or_cache_exercise_map_image( int $post_id, float $lat,
 }
 
 /**
+ * The Geoapify base style shared by every map (check-in, flight, exercise) so
+ * they read as one family. Filterable so a theme can re-skin all maps at once.
+ */
+function nop_indieweb_map_style(): string {
+	return (string) apply_filters( 'nop_indieweb_map_style', 'osm-bright' );
+}
+
+/**
+ * The Geoapify styleCustomization applied on top of the base style — recolours
+ * osm-bright to a "klokantech" palette (warm beige land, flat steel-blue water,
+ * sage-green woods) while keeping its town labels. Pipe-delimited, with '#'
+ * pre-encoded as %23; returned ready to drop into the URL. Filterable.
+ */
+function nop_indieweb_map_style_customization(): string {
+	$default = 'water:%23a7c3d3|background:%23efe8da|land:%23efe8da'
+		. '|landcover_wood_fill:%23cad7b4|wood:%23cad7b4|forest:%23cad7b4|landcover:%23cad7b4'
+		. '|landcover_grass_fill:%23d9e3c6|grass:%23d9e3c6|park:%23d9e3c6|landuse_park:%23d9e3c6'
+		. '|water_pattern:none|water-pattern:none|waterway_pattern:none|water_shadow:none'
+		. '|ocean_pattern:none|water_intermittent:none|water_way:none|water_pattern_fill:none|ocean:none';
+	return (string) apply_filters( 'nop_indieweb_map_style_customization', $default );
+}
+
+/**
  * Shared implementation behind the check-in and exercise map cachers: fetch a
  * Geoapify static map at 2× the display size, store it under uploads/<subdir>/
  * as <prefix>-<post_id>.png and record the local URL in <meta_key>. Returns the
@@ -333,7 +356,9 @@ function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, in
 	$marker_color = apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
 
 	$api_url = sprintf(
-		'https://maps.geoapify.com/v1/staticmap?style=osm-carto&zoom=%d&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
+		'https://maps.geoapify.com/v1/staticmap?style=%s&styleCustomization=%s&zoom=%d&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
+		rawurlencode( nop_indieweb_map_style() ),
+		nop_indieweb_map_style_customization(),
 		$zoom,
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),

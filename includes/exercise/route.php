@@ -137,7 +137,7 @@ function nop_indieweb_render_route_map( int $post_id, array $points, string $api
 	$width  = (int) ( $opts['width'] ?? 800 );
 	$height = (int) ( $opts['height'] ?? 560 );
 	$color  = (string) ( $opts['color'] ?? 'e03232' );
-	$style  = (string) ( $opts['style'] ?? 'osm-bright' );
+	$style  = (string) ( $opts['style'] ?? nop_indieweb_map_style() );
 
 	// Fit the polyline coordinate string under a budget that keeps the whole
 	// URL comfortably below 2 KB, simplifying harder each pass if needed.
@@ -174,6 +174,7 @@ function nop_indieweb_render_route_map( int $post_id, array $points, string $api
 
 	$url = 'https://maps.geoapify.com/v1/staticmap'
 		. '?style=' . rawurlencode( $style )
+		. '&styleCustomization=' . nop_indieweb_map_style_customization()
 		. '&width=' . $width . '&height=' . $height . '&scaleFactor=2'
 		. '&area=rect:' . $area
 		. '&geometry=' . $geometry

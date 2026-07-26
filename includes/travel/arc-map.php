@@ -103,7 +103,7 @@ function nop_indieweb_render_flight_arc_map( int $post_id, array $from, array $t
 	// post: same base style and the shared brand marker colour.
 	$brand    = (string) apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
 	$line_col = (string) apply_filters( 'nop_indieweb_flight_arc_color', $brand );
-	$style    = (string) ( $opts['style'] ?? 'osm-carto' );
+	$style    = (string) ( $opts['style'] ?? nop_indieweb_map_style() );
 
 	$lats    = array_column( $points, 0 );
 	$lons    = array_column( $points, 1 );
@@ -122,6 +122,7 @@ function nop_indieweb_render_flight_arc_map( int $post_id, array $from, array $t
 
 	$url = 'https://maps.geoapify.com/v1/staticmap'
 		. '?style=' . rawurlencode( $style )
+		. '&styleCustomization=' . nop_indieweb_map_style_customization()
 		. '&width=' . $width . '&height=' . $height . '&scaleFactor=2'
 		. '&area=rect:' . $area
 		. '&geometry=' . $geometry
