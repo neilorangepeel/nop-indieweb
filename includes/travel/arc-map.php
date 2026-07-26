@@ -97,10 +97,13 @@ function nop_indieweb_render_flight_arc_map( int $post_id, array $from, array $t
 		return '';
 	}
 
-	$width     = (int) ( $opts['width'] ?? 620 );
-	$height    = (int) ( $opts['height'] ?? 310 );
-	$line_col  = (string) apply_filters( 'nop_indieweb_flight_arc_color', 'e03232' );
-	$style     = (string) ( $opts['style'] ?? 'osm-bright' );
+	$width    = (int) ( $opts['width'] ?? 620 );
+	$height   = (int) ( $opts['height'] ?? 310 );
+	// Match the single-marker checkin map so a flight looks at home on a checkin
+	// post: same base style and the shared brand marker colour.
+	$brand    = (string) apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
+	$line_col = (string) apply_filters( 'nop_indieweb_flight_arc_color', $brand );
+	$style    = (string) ( $opts['style'] ?? 'osm-carto' );
 
 	$lats    = array_column( $points, 0 );
 	$lons    = array_column( $points, 1 );
@@ -114,8 +117,8 @@ function nop_indieweb_render_flight_arc_map( int $post_id, array $from, array $t
 
 	$dep    = $points[0];
 	$arr    = $points[ count( $points ) - 1 ];
-	$marker = 'lonlat:' . round( $dep[1], 5 ) . ',' . round( $dep[0], 5 ) . ';type:awesome;color:%231f8f3b;icon:plane;size:medium'
-		. '|lonlat:' . round( $arr[1], 5 ) . ',' . round( $arr[0], 5 ) . ';type:awesome;color:%23' . $line_col . ';icon:flag;size:medium';
+	$marker = 'lonlat:' . round( $dep[1], 5 ) . ',' . round( $dep[0], 5 ) . ';type:awesome;color:%23' . $brand . ';icon:plane;size:medium'
+		. '|lonlat:' . round( $arr[1], 5 ) . ',' . round( $arr[0], 5 ) . ';type:awesome;color:%23' . $brand . ';icon:flag;size:medium';
 
 	$url = 'https://maps.geoapify.com/v1/staticmap'
 		. '?style=' . rawurlencode( $style )
