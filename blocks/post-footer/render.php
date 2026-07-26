@@ -179,9 +179,16 @@ $platform_labels = [
 	'mastodon' => 'Mastodon',
 	'bluesky'  => 'Bluesky',
 	'twitter'  => 'Twitter',
+	'facebook' => 'Facebook',
 ];
 
-$has_source = $source_url && $platform && 'entries' !== $platform;
+// Platforms with no reachable per-post URL — show the label without a link.
+// Facebook archive posts have no per-post URL; the Twitter account is deactivated
+// so every x.com/status link is dead.
+$link_less   = in_array( $platform, [ 'twitter', 'facebook' ], true );
+$origin_label = $platform_labels[ $platform ] ?? ( $platform ? ucfirst( $platform ) : '' );
+$has_source  = $origin_label && 'entries' !== $platform && ( $source_url || $link_less );
+$origin_link = ( $source_url && ! $link_less ) ? $source_url : '';
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -246,11 +253,15 @@ $wrapper = get_block_wrapper_attributes( [
 	<span class="nop-post-footer__sep" aria-hidden="true">·</span>
 	<span class="nop-post-footer__source">
 		<span class="nop-post-footer__source-label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
+		<?php if ( $origin_link ) : ?>
 		<a class="nop-post-footer__source-link u-syndication"
-		   href="<?php echo esc_url( $source_url ); ?>"
+		   href="<?php echo esc_url( $origin_link ); ?>"
 		   target="_blank" rel="noopener noreferrer me">
-			<?php echo esc_html( $platform_labels[ $platform ] ?? ucfirst( $platform ) ); ?>
+			<?php echo esc_html( $origin_label ); ?>
 		</a>
+		<?php else : ?>
+		<span class="nop-post-footer__source-link"><?php echo esc_html( $origin_label ); ?></span>
+		<?php endif; ?>
 	</span>
 	<?php endif; ?>
 

@@ -30,9 +30,22 @@ if ( $source_url ) {
 	$syndication = array_filter( $syndication, fn( $u ) => $u !== $source_url );
 }
 
+$platform_labels = [
+	'mastodon' => 'Mastodon',
+	'bluesky'  => 'Bluesky',
+	'twitter'  => 'Twitter',
+	'facebook' => 'Facebook',
+];
+
+// Facebook archive posts have no per-post URL; the Twitter account is deactivated
+// so every x.com/status link is dead — show the label without a link for both.
+$link_less    = in_array( $platform, [ 'twitter', 'facebook' ], true );
+$origin_label = $platform_labels[ $platform ] ?? ( $platform ? ucfirst( $platform ) : '' );
+$origin_link  = ( $source_url && ! $link_less ) ? $source_url : '';
+
 // Twitter archive posts: always show the "Archived Tweet" label.
 // Other posts: hide when there's nothing to display.
-$has_source = $source_url && $platform && 'entries' !== $platform;
+$has_source = $origin_label && 'entries' !== $platform && ( $source_url || $link_less );
 $has_synds  = ! empty( $syndication );
 
 // Editor preview when no post context or the post has neither source nor
@@ -55,12 +68,6 @@ if ( ! $has_source && ! $has_synds && ! $is_twitter_archive ) {
 	return;
 }
 
-$platform_labels = [
-	'mastodon' => 'Mastodon',
-	'bluesky'  => 'Bluesky',
-	'twitter'  => 'Twitter',
-];
-
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] );
 ?>
 <div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
@@ -68,11 +75,15 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-post-source' ] 
 	<?php if ( $has_source ) : ?>
 	<span class="nop-post-source__item">
 		<span class="nop-post-source__label"><?php esc_html_e( 'Originally posted on', 'nop-indieweb' ); ?></span>
+		<?php if ( $origin_link ) : ?>
 		<a class="nop-post-source__link u-syndication"
-		   href="<?php echo esc_url( $source_url ); ?>"
+		   href="<?php echo esc_url( $origin_link ); ?>"
 		   target="_blank" rel="noopener noreferrer me">
-			<?php echo esc_html( $platform_labels[ $platform ] ?? ucfirst( $platform ) ); ?>
+			<?php echo esc_html( $origin_label ); ?>
 		</a>
+		<?php else : ?>
+		<span class="nop-post-source__link"><?php echo esc_html( $origin_label ); ?></span>
+		<?php endif; ?>
 	</span>
 	<?php endif; ?>
 
