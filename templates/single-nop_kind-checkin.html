@@ -93,6 +93,18 @@
 			<!-- /wp:paragraph --></div></div>
 			<!-- /wp:cover -->
 
+			<!-- wp:group {"className":"nop-flight","style":{"spacing":{"blockGap":"4px","margin":{"bottom":"var:preset|spacing|20"}}},"layout":{"type":"constrained"}} -->
+			<div class="wp-block-group nop-flight" style="margin-bottom:var(--wp--preset--spacing--20)">
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontStyle":"normal","fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small","fontFamily":"brandon-text-cond"} -->
+				<p class="nop-flight__route has-brandon-text-cond-font-family has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
+				<!-- /wp:paragraph -->
+
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
+				<p class="nop-flight__distance has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">294 km</p>
+				<!-- /wp:paragraph -->
+			</div>
+			<!-- /wp:group -->
+
 			<!-- wp:nop-indieweb/checkin-map /-->
 
 			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->

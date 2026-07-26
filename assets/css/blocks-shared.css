@@ -665,6 +665,27 @@ a.nop-post-footer__pill--link:focus-visible {
 	display: none;
 }
 
+/* Flight strip on a checkin — shown only when the checkin was paired into a
+   flight (block-bindings flight_route/flight_distance resolve empty otherwise,
+   so the whole group drops out). Sits just above the arc map. */
+.nop-flight:not( :has( .nop-flight__route:not( :empty ) ) ) {
+	display: none;
+}
+.nop-flight__route {
+	margin: 0;
+	text-wrap: balance;
+}
+.nop-flight__route::before {
+	content: "\2708\00a0\00a0"; /* ✈ */
+}
+.nop-flight__route:empty::before {
+	content: none;
+}
+.nop-flight__distance {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
 /* Opt-in geotag in the note/photo dateline. The bound paragraph renders empty
    when the post has no location → hide it (and let the flex gap collapse). When
    present, a leading middot folds it into the kind · tags · place rhythm. */

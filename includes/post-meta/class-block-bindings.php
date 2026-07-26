@@ -71,6 +71,9 @@ class Block_Bindings {
 		'venue_url_host_label'  => '',
 		'checkin_url_host_label' => '',
 		'venue_visit_number'    => '',
+		// Flight derived fields
+		'flight_route'          => '',
+		'flight_distance'       => '',
 		// Exercise derived fields
 		'exercise_distance'     => '',
 		'exercise_duration'     => '',
@@ -148,6 +151,8 @@ class Block_Bindings {
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
 		'venue_visit_number'              => '1st Visit',
+		'flight_route'                    => 'Belfast International Airport → Newcastle Airport',
+		'flight_distance'                 => '294 km',
 		// Full-key forms
 		'nop_indieweb_venue_name'         => 'The Crown Bar',
 		'nop_indieweb_venue_address'      => '46 Great Victoria Street',
@@ -293,6 +298,26 @@ class Block_Bindings {
 				}
 				/* translators: %s = ordinal number, e.g. "1st" */
 				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
+
+			case 'flight_route':
+				$from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
+				if ( '' === $from ) {
+					return null;
+				}
+				$to = (string) get_post_meta( $post_id, 'nop_indieweb_flight_to_name', true );
+				if ( '' === $to ) {
+					$to = (string) get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+				}
+				return $from . ' → ' . $to;
+
+			case 'flight_distance':
+				$from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
+				$km   = (string) get_post_meta( $post_id, 'nop_indieweb_flight_distance_km', true );
+				if ( '' === $from || '' === $km ) {
+					return null;
+				}
+				/* translators: %s = distance in kilometres */
+				return sprintf( __( '%s km', 'nop-indieweb' ), number_format( (int) $km ) );
 
 		}
 
