@@ -88,7 +88,7 @@ class Backfill_Flight_Arcs {
 				'name'    => $name,
 				'lat'     => (float) $lat,
 				'lng'     => (float) $lng,
-				'ts'      => (int) get_post_timestamp( $id, 'date_gmt' ),
+				'ts'      => (int) get_post_timestamp( $id, 'date' ),
 				'airport' => \NOP\IndieWeb\nop_indieweb_is_airport_venue( [ $name ] ),
 			];
 			if ( '' !== $source ) {
@@ -193,7 +193,7 @@ class Backfill_Flight_Arcs {
 			$to_lat    = isset( $to['lat'] ) ? (float) $to['lat'] : 0.0;
 			$to_lng    = isset( $to['lng'] ) ? (float) $to['lng'] : 0.0;
 			if ( '' === $from_name || '' === $to_name || ( 0.0 === $to_lat && 0.0 === $to_lng ) || ( 0.0 === $from_lat && 0.0 === $from_lng ) ) {
-				WP_CLI::warning( "  #{$post_id}: from/to each need name + lat + lng — skipped." );
+				WP_CLI::warning( "  #{$anchor_id}: from/to each need name + lat + lng — skipped." );
 				continue;
 			}
 

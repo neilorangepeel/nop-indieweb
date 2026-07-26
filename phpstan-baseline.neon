@@ -363,3 +363,39 @@ parameters:
 			identifier: nullCoalesce.offset
 			count: 1
 			path: includes/webmention/class-webmention-sender.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-maps.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-backfill-exercise-maps.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/cli/class-fix-twitter-titles.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-fix-twitter-titles.php
+
+		-
+			message: '#^Call to method tick\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-import-facebook-timeline.php
+
+		-
+			message: '#^Call to method finish\(\) on an unknown class cli\\progress\\Bar\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-import-facebook-timeline.php
