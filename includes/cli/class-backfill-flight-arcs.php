@@ -70,15 +70,19 @@ class Backfill_Flight_Arcs {
 		$ids = $this->checkin_ids( $service );
 		WP_CLI::log( sprintf( 'Scanning %d check-in(s)%s.', count( $ids ), $service ? " (service={$service})" : '' ) );
 
-		// Collect the timeline once: only check-ins with coordinates.
-		$rows = [];
+		// Collect the timeline once: only check-ins with coordinates. Index by the
+		// stable source URL too, so a manual map keyed by it resolves to the right
+		// post on any site (post IDs differ between local and production).
+		$rows      = [];
+		$by_source = [];
 		foreach ( $ids as $id ) {
 			$lat = (string) get_post_meta( $id, 'nop_indieweb_venue_lat', true );
 			$lng = (string) get_post_meta( $id, 'nop_indieweb_venue_lng', true );
 			if ( '' === $lat || '' === $lng ) {
 				continue;
 			}
-			$name = (string) get_post_meta( $id, 'nop_indieweb_venue_name', true );
+			$name   = (string) get_post_meta( $id, 'nop_indieweb_venue_name', true );
+			$source = (string) get_post_meta( $id, 'nop_indieweb_source_url', true );
 			$rows[ $id ] = [
 				'id'      => $id,
 				'name'    => $name,
@@ -87,6 +91,9 @@ class Backfill_Flight_Arcs {
 				'ts'      => (int) get_post_timestamp( $id, 'date_gmt' ),
 				'airport' => \NOP\IndieWeb\nop_indieweb_is_airport_venue( [ $name ] ),
 			];
+			if ( '' !== $source ) {
+				$by_source[ $source ] = $id;
+			}
 		}
 
 		// Flag airports so find_prior_airport_checkin() can see them.
@@ -101,7 +108,7 @@ class Backfill_Flight_Arcs {
 		$this->auto_pass( $rows, $window, $window_h, $api_key, $force, $dry_run );
 
 		if ( '' !== $map_path ) {
-			$this->manual_pass( $rows, $map_path, $api_key, $force, $dry_run );
+			$this->manual_pass( $rows, $by_source, $map_path, $api_key, $force, $dry_run );
 		}
 
 		WP_CLI::success( $dry_run ? '[DRY RUN] complete.' : 'Backfill complete.' );
@@ -151,7 +158,7 @@ class Backfill_Flight_Arcs {
 		WP_CLI::log( sprintf( '  → %d flight(s) %s.', $paired, $dry_run ? 'would pair' : 'paired' ) );
 	}
 
-	private function manual_pass( array $rows, string $map_path, string $api_key, bool $force, bool $dry_run ): void {
+	private function manual_pass( array $rows, array $by_source, string $map_path, string $api_key, bool $force, bool $dry_run ): void {
 		if ( ! file_exists( $map_path ) ) {
 			WP_CLI::error( "Map file not found: {$map_path}" );
 		}
@@ -163,10 +170,14 @@ class Backfill_Flight_Arcs {
 		WP_CLI::log( sprintf( 'MANUAL: %d departure(s) with a supplied destination.', count( $map ) ) );
 		$done = 0;
 
-		foreach ( $map as $post_id => $entry ) {
-			$anchor = $rows[ (int) $post_id ] ?? null;
+		foreach ( $map as $key => $entry ) {
+			// A numeric key is a post ID; anything else (e.g. a Facebook source URL)
+			// resolves via the stable source-URL index so the map is portable
+			// across sites whose post IDs differ.
+			$anchor_id = ctype_digit( (string) $key ) ? (int) $key : ( $by_source[ $key ] ?? 0 );
+			$anchor    = $anchor_id ? ( $rows[ $anchor_id ] ?? null ) : null;
 			if ( ! $anchor ) {
-				WP_CLI::warning( "  #{$post_id}: no check-in with coordinates found — skipped." );
+				WP_CLI::warning( "  {$key}: no matching check-in found — skipped." );
 				continue;
 			}
 
