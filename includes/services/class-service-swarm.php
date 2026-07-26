@@ -252,7 +252,12 @@ class Swarm extends Service_Base {
 			);
 
 			$geoapify_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
-			if ( $geoapify_key ) {
+
+			// Pair two consecutive airport checkins into a flight; the arc map
+			// then stands in for the single-marker map on the arrival post.
+			$paired = \NOP\IndieWeb\nop_indieweb_maybe_pair_flight( $post_id, $parsed, $cats, $geoapify_key );
+
+			if ( ! $paired && $geoapify_key ) {
 				\NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $geoapify_key );
 			}
 		}

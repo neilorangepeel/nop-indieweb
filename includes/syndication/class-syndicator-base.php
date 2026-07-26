@@ -114,10 +114,16 @@ abstract class Syndicator_Base {
 		$venue_name = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
 
 		if ( $venue_name ) {
-			$body    = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
-			/* translators: %s: venue name */
-			$checkin = '📍 ' . sprintf( __( 'Checked in at %s', 'nop-indieweb' ), $venue_name );
-			return '' !== $body ? $checkin . "\n\n" . $body : $checkin;
+			$body      = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
+			$from_name = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
+			if ( '' !== $from_name ) {
+				/* translators: 1: departure airport, 2: arrival airport */
+				$lead = '✈️ ' . sprintf( __( 'Flew from %1$s to %2$s', 'nop-indieweb' ), $from_name, $venue_name );
+			} else {
+				/* translators: %s: venue name */
+				$lead = '📍 ' . sprintf( __( 'Checked in at %s', 'nop-indieweb' ), $venue_name );
+			}
+			return '' !== $body ? $lead . "\n\n" . $body : $lead;
 		}
 		if ( ! $post ) {
 			return '';

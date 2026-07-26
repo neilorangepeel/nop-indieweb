@@ -82,6 +82,20 @@ if ( ! function_exists( 'wp_trim_words' ) ) {
 	}
 }
 
+if ( ! function_exists( 'apply_filters' ) ) {
+	/** Pure-logic stand-in: no filters are registered under test, so return the value unchanged. */
+	function apply_filters( $tag, $value, ...$args ) {
+		return $value;
+	}
+}
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+
 require_once dirname( __DIR__, 2 ) . '/includes/rsvp/class-event-parser.php';
 require_once dirname( __DIR__, 2 ) . '/includes/syndication/class-tumblr-client.php';
 require_once dirname( __DIR__, 2 ) . '/includes/utils/functions.php';
+require_once dirname( __DIR__, 2 ) . '/includes/exercise/route.php';
+require_once dirname( __DIR__, 2 ) . '/includes/travel/arc-map.php';
+require_once dirname( __DIR__, 2 ) . '/includes/travel/flight-pairing.php';

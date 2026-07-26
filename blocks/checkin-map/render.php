@@ -59,8 +59,14 @@ $map_url = sprintf(
 	rawurlencode( $lng )
 );
 
-/* translators: %s: venue name */
-$map_title   = $venue_name ? sprintf( __( 'Map showing %s', 'nop-indieweb' ), $venue_name ) : __( 'Location map', 'nop-indieweb' );
+$flight_from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
+if ( '' !== $flight_from && $venue_name ) {
+	/* translators: 1: departure airport, 2: arrival airport */
+	$map_title = sprintf( __( 'Flight from %1$s to %2$s', 'nop-indieweb' ), $flight_from, $venue_name );
+} else {
+	/* translators: %s: venue name */
+	$map_title = $venue_name ? sprintf( __( 'Map showing %s', 'nop-indieweb' ), $venue_name ) : __( 'Location map', 'nop-indieweb' );
+}
 $map_img_url = '';
 $map_w       = 0;
 $map_h       = 0;

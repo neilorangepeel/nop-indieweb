@@ -136,6 +136,40 @@ class Registry {
 				'description' => 'Postal code.',
 			] ),
 
+			// Flight / travel — a checkin at an airport carries the is_airport
+			// flag so a later arrival airport checkin can pair with it; the
+			// flight_from_* fields denormalise the departure onto the arrival
+			// post, which renders the arc (into nop_indieweb_map_url) and leads
+			// syndication with it.
+			'nop_indieweb_venue_is_airport' => array_merge( $string, [
+				'label'       => __( 'Is Airport', 'nop-indieweb' ),
+				'description' => "'1' when the checkin venue is an airport.",
+			] ),
+			'nop_indieweb_flight_from_post' => array_merge( $string, [
+				'label'       => __( 'Flight Departure Post', 'nop-indieweb' ),
+				'description' => 'Post ID of the departure airport checkin this flight was paired with.',
+			] ),
+			'nop_indieweb_flight_from_name' => array_merge( $string, [
+				'label'       => __( 'Flight Departure Name', 'nop-indieweb' ),
+				'description' => 'Departure airport venue name.',
+			] ),
+			'nop_indieweb_flight_from_lat'  => array_merge( $string, [
+				'label'       => __( 'Flight Departure Latitude', 'nop-indieweb' ),
+				'description' => 'Departure airport latitude.',
+			] ),
+			'nop_indieweb_flight_from_lng'  => array_merge( $string, [
+				'label'       => __( 'Flight Departure Longitude', 'nop-indieweb' ),
+				'description' => 'Departure airport longitude.',
+			] ),
+			'nop_indieweb_flight_from_locality' => array_merge( $string, [
+				'label'       => __( 'Flight Departure Locality', 'nop-indieweb' ),
+				'description' => 'Departure airport city or town.',
+			] ),
+			'nop_indieweb_flight_distance_km' => array_merge( $string, [
+				'label'       => __( 'Flight Distance (km)', 'nop-indieweb' ),
+				'description' => 'Great-circle distance between departure and arrival in kilometres.',
+			] ),
+
 			// ── Weather ──────────────────────────────────────────────────────────
 			// Snapshotted at post-create time from the venue lat/lng + post date.
 			// Populated by Weather_Fetcher for kinds where location is inherent

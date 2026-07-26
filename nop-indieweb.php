@@ -29,6 +29,8 @@ require_once NOP_INDIEWEB_DIR . 'includes/utils/functions.php';
 require_once NOP_INDIEWEB_DIR . 'includes/utils/block-content.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/route.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/class-exercise-endpoint.php';
+require_once NOP_INDIEWEB_DIR . 'includes/travel/arc-map.php';
+require_once NOP_INDIEWEB_DIR . 'includes/travel/flight-pairing.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-token-store.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-auth-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/indieauth/class-token-endpoint.php';
