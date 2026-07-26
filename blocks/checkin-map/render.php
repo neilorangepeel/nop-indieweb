@@ -60,9 +60,11 @@ $map_url = sprintf(
 );
 
 $flight_from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
-if ( '' !== $flight_from && $venue_name ) {
+$flight_to   = (string) get_post_meta( $post_id, 'nop_indieweb_flight_to_name', true );
+$flight_to   = '' !== $flight_to ? $flight_to : $venue_name;
+if ( '' !== $flight_from && $flight_to ) {
 	/* translators: 1: departure airport, 2: arrival airport */
-	$map_title = sprintf( __( 'Flight from %1$s to %2$s', 'nop-indieweb' ), $flight_from, $venue_name );
+	$map_title = sprintf( __( 'Flight from %1$s to %2$s', 'nop-indieweb' ), $flight_from, $flight_to );
 } else {
 	/* translators: %s: venue name */
 	$map_title = $venue_name ? sprintf( __( 'Map showing %s', 'nop-indieweb' ), $venue_name ) : __( 'Location map', 'nop-indieweb' );

@@ -43,8 +43,10 @@ function nop_indieweb_haversine_km( float $lat1, float $lng1, float $lat2, float
  * pairing window (default 18h), so an arrival airport checkin can be linked to
  * the departure it flew from. Returns the post ID or null.
  */
-function nop_indieweb_find_prior_airport_checkin( int $post_id, int $author, string $post_date ): ?int {
-	$window = (int) apply_filters( 'nop_indieweb_flight_pair_window_seconds', 18 * HOUR_IN_SECONDS );
+function nop_indieweb_find_prior_airport_checkin( int $post_id, int $author, string $post_date, int $window_override = 0 ): ?int {
+	$window = $window_override > 0
+		? $window_override
+		: (int) apply_filters( 'nop_indieweb_flight_pair_window_seconds', 18 * HOUR_IN_SECONDS );
 	$after  = gmdate( 'Y-m-d H:i:s', (int) strtotime( $post_date ) - $window );
 
 	$query = new \WP_Query( [

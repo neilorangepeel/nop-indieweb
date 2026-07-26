@@ -165,6 +165,21 @@ class Registry {
 				'label'       => __( 'Flight Departure Locality', 'nop-indieweb' ),
 				'description' => 'Departure airport city or town.',
 			] ),
+			// flight_to_* is set only when the arrival is NOT the post's own venue
+			// (e.g. a backfilled lone departure check-in that arcs to a named
+			// destination). When unset, the arc's arrival is the post's venue.
+			'nop_indieweb_flight_to_name'   => array_merge( $string, [
+				'label'       => __( 'Flight Arrival Name', 'nop-indieweb' ),
+				'description' => 'Arrival airport venue name, when distinct from the post venue.',
+			] ),
+			'nop_indieweb_flight_to_lat'    => array_merge( $string, [
+				'label'       => __( 'Flight Arrival Latitude', 'nop-indieweb' ),
+				'description' => 'Arrival airport latitude, when distinct from the post venue.',
+			] ),
+			'nop_indieweb_flight_to_lng'    => array_merge( $string, [
+				'label'       => __( 'Flight Arrival Longitude', 'nop-indieweb' ),
+				'description' => 'Arrival airport longitude, when distinct from the post venue.',
+			] ),
 			'nop_indieweb_flight_distance_km' => array_merge( $string, [
 				'label'       => __( 'Flight Distance (km)', 'nop-indieweb' ),
 				'description' => 'Great-circle distance between departure and arrival in kilometres.',

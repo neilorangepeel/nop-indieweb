@@ -117,8 +117,10 @@ abstract class Syndicator_Base {
 			$body      = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
 			$from_name = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
 			if ( '' !== $from_name ) {
+				$to_name = (string) get_post_meta( $post_id, 'nop_indieweb_flight_to_name', true );
+				$to_name = '' !== $to_name ? $to_name : $venue_name;
 				/* translators: 1: departure airport, 2: arrival airport */
-				$lead = '✈️ ' . sprintf( __( 'Flew from %1$s to %2$s', 'nop-indieweb' ), $from_name, $venue_name );
+				$lead = '✈️ ' . sprintf( __( 'Flew from %1$s to %2$s', 'nop-indieweb' ), $from_name, $to_name );
 			} else {
 				/* translators: %s: venue name */
 				$lead = '📍 ' . sprintf( __( 'Checked in at %s', 'nop-indieweb' ), $venue_name );
