@@ -71,6 +71,13 @@ class Event_Endpoint {
 		if ( 'publish' !== $new_status || 'post' !== $post->post_type ) {
 			return;
 		}
+		// Imported posts carry a source URL — we never archive on their behalf (the
+		// handler bails on them too). Guard here as well so a bulk publish/re-save of
+		// thousands of imported posts doesn't queue thousands of no-op cron events
+		// into the autoloaded `cron` option. Mirrors Webmention_Sender::maybe_schedule.
+		if ( get_post_meta( $post->ID, 'nop_indieweb_source_url', true ) ) {
+			return;
+		}
 		if ( ! wp_next_scheduled( self::ARCHIVE_EVENT, [ $post->ID ] ) ) {
 			wp_schedule_single_event( time(), self::ARCHIVE_EVENT, [ $post->ID ] );
 		}

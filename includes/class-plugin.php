@@ -217,6 +217,13 @@ class Plugin {
 		( new Social_Backfeed() )->register();
 		( new Webmention\Cite_Enricher() )->register();
 		( new Post_Filter() )->register();
+
+		// Imported archive posts (Facebook/Twitter/Swarm…) are static history — keep no
+		// revisions for them, so a bulk publish or backfill of thousands of posts doesn't
+		// bloat wp_posts with a revision each.
+		add_filter( 'wp_revisions_to_keep', static function ( int $num, \WP_Post $post ): int {
+			return get_post_meta( $post->ID, 'nop_indieweb_service', true ) ? 0 : $num;
+		}, 10, 2 );
 		( new Semantic_Markup() )->register();
 		( new Open_Graph() )->register();
 		( new MF2_Endpoint() )->register();
