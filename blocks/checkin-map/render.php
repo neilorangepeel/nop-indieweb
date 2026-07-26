@@ -110,7 +110,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 	<?php /* translators: %s: map title, e.g. "Map showing The Crown Bar" */ ?>
 	<a class="nop-checkin-map__link" href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( sprintf( __( '%s — View on OpenStreetMap', 'nop-indieweb' ), $map_title ) ); ?>">
 		<img class="nop-checkin-map__img"
-			src="<?php echo esc_url( $map_img_url ); ?>"
+			src="<?php echo esc_url( add_query_arg( 'v', NOP_INDIEWEB_VERSION, $map_img_url ) ); ?>"
 			width="<?php echo esc_attr( (string) $map_w ); ?>"
 			height="<?php echo esc_attr( (string) $map_h ); ?>"
 			alt=""

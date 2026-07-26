@@ -84,6 +84,13 @@ class Backfill_Checkin_Maps {
 				break;
 			}
 
+			// Flight check-ins keep an arc in nop_indieweb_map_url — never overwrite
+			// it with a single-marker map. backfill-flight-arcs re-renders those.
+			if ( '' !== (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true ) ) {
+				$cached++;
+				continue;
+			}
+
 			$existing = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
 			if ( ! $force && '' !== $existing ) {
 				$cached++;
