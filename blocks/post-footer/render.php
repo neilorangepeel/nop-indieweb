@@ -161,6 +161,14 @@ $repost_count    = count( $data['reposts'] );
 $likes_entries   = array_values( array_filter( $data['likes'],   $revealable ) );
 $reposts_entries = array_values( array_filter( $data['reposts'], $revealable ) );
 
+// Imported historical engagement — likes/reposts a post received on the
+// platform it originated on (Twitter archive backfeed). No reactor identities
+// come with these counts, so they add to the pill numbers but reveal no
+// facepile. The meta is absent (0) on native posts, so this is a no-op
+// everywhere except imported archive posts.
+$like_count   += (int) get_post_meta( $post_id, 'nop_indieweb_twitter_likes', true );
+$repost_count += (int) get_post_meta( $post_id, 'nop_indieweb_twitter_retweets', true );
+
 $has_like_reveal   = ! empty( $likes_entries );
 $has_repost_reveal = ! empty( $reposts_entries );
 
