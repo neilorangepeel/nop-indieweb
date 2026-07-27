@@ -161,15 +161,17 @@ $repost_count    = count( $data['reposts'] );
 $likes_entries   = array_values( array_filter( $data['likes'],   $revealable ) );
 $reposts_entries = array_values( array_filter( $data['reposts'], $revealable ) );
 
-// Imported historical engagement — likes/reposts/comments a post received on the
-// platform it originated on (Twitter, Instagram, …), folded into the one count
-// each pill already shows. One generic meta per metric, written by the importers/
-// backfills regardless of platform; no reactor identities come with these counts,
-// so they raise the pill numbers but reveal no facepile. Absent (0) on native
-// posts, so this is a no-op outside imported archive posts.
-$like_count   += (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes',    true );
-$repost_count += (int) get_post_meta( $post_id, 'nop_indieweb_imported_reposts',  true );
-$reply_count  += (int) get_post_meta( $post_id, 'nop_indieweb_imported_comments', true );
+// Imported historical engagement — likes/reposts a post received on the platform
+// it originated on (Twitter, Instagram, …), folded into the one count each pill
+// already shows. One generic meta per metric, written by the importers/backfills
+// regardless of platform; no reactor identities come with these counts, so they
+// raise the pill numbers but reveal no facepile. Absent (0) on native posts.
+//
+// Comments are deliberately NOT folded in: the archives give only a count, not
+// the actual comment content, so the comment pill counts only real, visible
+// comments (native + webmention) — no number when there's nothing to read.
+$like_count   += (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes',   true );
+$repost_count += (int) get_post_meta( $post_id, 'nop_indieweb_imported_reposts', true );
 
 $has_like_reveal   = ! empty( $likes_entries );
 $has_repost_reveal = ! empty( $reposts_entries );
