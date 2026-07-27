@@ -184,16 +184,19 @@ $platform   = (string) get_post_meta( $post_id, 'nop_indieweb_platform',   true 
 $source_url = (string) get_post_meta( $post_id, 'nop_indieweb_source_url', true );
 
 $platform_labels = [
-	'mastodon' => 'Mastodon',
-	'bluesky'  => 'Bluesky',
-	'twitter'  => 'Twitter',
-	'facebook' => 'Facebook',
+	'mastodon'  => 'Mastodon',
+	'bluesky'   => 'Bluesky',
+	'twitter'   => 'Twitter',
+	'facebook'  => 'Facebook',
+	'instagram' => 'Instagram',
+	'dribbble'  => 'Dribbble',
 ];
 
 // Platforms with no reachable per-post URL — show the label without a link.
 // Facebook archive posts have no per-post URL; the Twitter account is deactivated
-// so every x.com/status link is dead.
-$link_less   = in_array( $platform, [ 'twitter', 'facebook' ], true );
+// so every x.com/status link is dead; the Instagram export carries no per-post
+// permalink. (Dribbble keeps its real shot URL, so it stays linked.)
+$link_less   = in_array( $platform, [ 'twitter', 'facebook', 'instagram' ], true );
 $origin_label = $platform_labels[ $platform ] ?? ( $platform ? ucfirst( $platform ) : '' );
 $has_source  = $origin_label && 'entries' !== $platform && ( $source_url || $link_less );
 $origin_link = ( $source_url && ! $link_less ) ? $source_url : '';

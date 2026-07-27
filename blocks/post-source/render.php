@@ -31,15 +31,18 @@ if ( $source_url ) {
 }
 
 $platform_labels = [
-	'mastodon' => 'Mastodon',
-	'bluesky'  => 'Bluesky',
-	'twitter'  => 'Twitter',
-	'facebook' => 'Facebook',
+	'mastodon'  => 'Mastodon',
+	'bluesky'   => 'Bluesky',
+	'twitter'   => 'Twitter',
+	'facebook'  => 'Facebook',
+	'instagram' => 'Instagram',
+	'dribbble'  => 'Dribbble',
 ];
 
 // Facebook archive posts have no per-post URL; the Twitter account is deactivated
-// so every x.com/status link is dead — show the label without a link for both.
-$link_less    = in_array( $platform, [ 'twitter', 'facebook' ], true );
+// so every x.com/status link is dead; the Instagram export carries no per-post
+// permalink — show the label without a link for these. (Dribbble keeps its URL.)
+$link_less    = in_array( $platform, [ 'twitter', 'facebook', 'instagram' ], true );
 $origin_label = $platform_labels[ $platform ] ?? ( $platform ? ucfirst( $platform ) : '' );
 $origin_link  = ( $source_url && ! $link_less ) ? $source_url : '';
 
