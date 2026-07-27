@@ -218,6 +218,13 @@ class Import_Facebook_Timeline {
 			$meta['nop_indieweb_venue_address'] = $addr;
 		}
 
+		// Caption-less photo/video posts have empty content until attach_media()
+		// appends the image/video blocks — give wp_insert_post a placeholder space
+		// (it rejects an all-empty post) that attach_media's rtrim() then strips.
+		if ( '' === trim( $content ) && '' === $title ) {
+			$content = ' ';
+		}
+
 		$post_id = wp_insert_post( [
 			'post_title'    => $title,
 			'post_content'  => $content,
