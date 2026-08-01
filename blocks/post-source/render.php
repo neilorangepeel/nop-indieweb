@@ -39,10 +39,12 @@ $platform_labels = [
 	'dribbble'  => 'Dribbble',
 ];
 
-// Facebook archive posts have no per-post URL; the Twitter account is deactivated
-// so every x.com/status link is dead; the Instagram export carries no per-post
-// permalink — show the label without a link for these. (Dribbble keeps its URL.)
-$link_less    = in_array( $platform, [ 'twitter', 'facebook', 'instagram' ], true );
+// Platforms with no publicly reachable per-post URL — show the label as plain
+// text. Facebook and Instagram archive URLs are synthetic (nop-archive/<hash>,
+// stories/ig-<id>); the Twitter account is deactivated so every x.com/status
+// link is dead; Swarm check-in URLs sit behind a login wall. Dribbble, Tumblr,
+// Mastodon, Bluesky and Pixelfed all resolve publicly, so they stay linked.
+$link_less    = in_array( $platform, [ 'twitter', 'facebook', 'instagram', 'swarm' ], true );
 $origin_label = $platform_labels[ $platform ] ?? ( $platform ? ucfirst( $platform ) : '' );
 $origin_link  = ( $source_url && ! $link_less ) ? $source_url : '';
 

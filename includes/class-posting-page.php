@@ -726,6 +726,20 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<button type="button" class="story-picker__remove" id="storyRemove" hidden aria-label="<?php esc_attr_e( 'Remove media', 'nop-indieweb' ); ?>">
 							<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>
 						</button>
+						<span class="thumb__altflag" aria-hidden="true"><?php esc_html_e( 'ALT?', 'nop-indieweb' ); ?></span>
+					</div>
+					<!-- Alt text for a photo Story. Kept separate from the caption on
+					     purpose — the caption renders as a visible figcaption, so copying
+					     it into alt would announce the same sentence twice. "Same as
+					     caption" is there for when it genuinely does describe the photo. -->
+					<div class="alt-texts" id="storyAltTexts" hidden>
+						<div class="alt-text-row">
+							<div class="alt-text-head">
+								<span class="alt-text-label"><?php esc_html_e( 'Alt text', 'nop-indieweb' ); ?></span>
+								<button type="button" class="alt-same" id="storyAltSame" disabled><?php esc_html_e( 'Same as caption', 'nop-indieweb' ); ?></button>
+							</div>
+							<input type="text" id="storyAlt" class="thumb__alt" placeholder="<?php esc_attr_e( 'Describe it…', 'nop-indieweb' ); ?>" autocomplete="off" aria-label="<?php esc_attr_e( 'Alt text for the story photo', 'nop-indieweb' ); ?>">
+						</div>
 					</div>
 				</div>
 

@@ -420,11 +420,14 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 
 /* ── Underline link pattern (used by source/map/event links) ──────────────── */
 
+/* Anchor-scoped on purpose: an origin with no reachable permalink renders the
+   same class on a <span>, which must read as plain provenance text, not a link
+   that does nothing. */
 .nop-checkin-syndication a,
 .nop-film-meta__source,
 .nop-rsvp-meta__event a,
-.nop-post-footer__source-link,
-.nop-post-source__link {
+a.nop-post-footer__source-link,
+a.nop-post-source__link {
 	color:                 inherit;
 	text-decoration:       underline;
 	text-underline-offset: 2px;
@@ -435,8 +438,8 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	opacity: 0.7;
 }
 
-.nop-post-footer__source-link:hover,
-.nop-post-source__link:hover {
+a.nop-post-footer__source-link:hover,
+a.nop-post-source__link:hover {
 	color: var(--nop-text);
 }
 
@@ -462,8 +465,8 @@ a.nop-post-footer__pill--link:focus-visible {
 	border-radius:  2px;
 }
 
-.nop-post-footer__source-link:focus-visible,
-.nop-post-source__link:focus-visible {
+a.nop-post-footer__source-link:focus-visible,
+a.nop-post-source__link:focus-visible {
 	outline:        2px solid currentColor;
 	outline-offset: 2px;
 	border-radius:  2px;

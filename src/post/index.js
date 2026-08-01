@@ -916,6 +916,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var storyPreview  = document.getElementById( 'storyPreview' );
 	var storyPhotoPreview = document.getElementById( 'storyPhotoPreview' );
 	var storyRemove   = document.getElementById( 'storyRemove' );
+	var storyPicker   = document.getElementById( 'storyPicker' );
+	var storyAltWrap  = document.getElementById( 'storyAltTexts' );
+	var storyAlt      = document.getElementById( 'storyAlt' );
+	var storyAltSame  = document.getElementById( 'storyAltSame' );
 	var storyVideo      = null;   // { blob, name, type } — a picked clip
 	var storyPhoto      = null;   // { blob, name, type } — a picked still (alternative to the clip)
 	var storyPoster     = null;   // { blob, name, type } — captured first frame of a clip (optional)
@@ -1547,7 +1551,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( currentType === 'rsvp' ) { fetchEvent( urlInput.value ); }
 		else if ( isContextKind() ) { fetchContext( urlInput.value ); }
 	} );
-	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); syncStoryAlt(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// Markdown affordance (hardware keyboards): ⌘/Ctrl+B and ⌘/Ctrl+I wrap the
@@ -1671,6 +1675,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			storyPhotoPreview.src    = storyPreviewUrl;
 			storyPhotoPreview.hidden = false;
 		}
+		if ( storyAltWrap ) { storyAltWrap.hidden = false; }
+		syncStoryAlt();
 		if ( storyPrompt ) { storyPrompt.hidden = true; }
 		if ( storyRemove ) { storyRemove.hidden = false; }
 		updatePostBtn();
@@ -1713,7 +1719,27 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( storyPrompt ) { storyPrompt.hidden = false; }
 		if ( storyRemove ) { storyRemove.hidden = true; }
 		if ( storyInput )  { storyInput.value = ''; }
+		if ( storyAlt )     { storyAlt.value = ''; }
+		if ( storyAltWrap ) { storyAltWrap.hidden = true; }
+		syncStoryAlt();
 		updatePostBtn();
+	}
+
+	// Story alt conscience: the ALT? flag rides the preview while a picked still
+	// has no description, and "same as caption" only lights up once there's a
+	// caption to copy. A clip never flags — its caption IS the description.
+	function syncStoryAlt() {
+		var described = !! ( storyAlt && storyAlt.value.trim() );
+		if ( storyPicker )  { storyPicker.classList.toggle( 'is-missing-alt', !! storyPhoto && ! described ); }
+		if ( storyAltSame ) { storyAltSame.disabled = ! contentInput.value.trim(); }
+	}
+	if ( storyAlt ) { storyAlt.addEventListener( 'input', syncStoryAlt ); }
+	if ( storyAltSame ) {
+		storyAltSame.addEventListener( 'click', function () {
+			storyAlt.value = contentInput.value.trim();
+			syncStoryAlt();
+			storyAlt.focus();
+		} );
 	}
 
 	// Render the selected prints + their alt slips from selectedFiles/photoAlts.
@@ -1895,7 +1921,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// Alt-text conscience: alt is lost the moment a photo syndicates, so nudge
 		// once before sending if any selected print still has none. Soft — "Post
 		// anyway" proceeds; ignoring it leaves you on the form to fill them in.
-		if ( ! altWarningDismissed && TYPE_CONFIG[ currentType ].hasPhoto
+		if ( ! altWarningDismissed && ( TYPE_CONFIG[ currentType ].hasPhoto || TYPE_CONFIG[ currentType ].hasStoryMedia )
 			&& post.files.some( function ( f ) { return ! ( f.alt || '' ).trim(); } ) ) {
 			var missing = post.files.filter( function ( f ) { return ! ( f.alt || '' ).trim(); } ).length;
 			showToast(
@@ -1954,8 +1980,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			}
 		} else if ( TYPE_CONFIG[ currentType ].hasStoryMedia && storyPhoto ) {
 			// A photo Story rides the normal photo path (→ props.photo → wp:image,
-			// featured image); the caption stays as the post content.
-			files.push( { blob: storyPhoto.blob, name: storyPhoto.name || 'story.jpg', type: storyPhoto.type || 'image/jpeg', alt: '' } );
+			// featured image); the caption stays as the post content, with its own
+			// alt kept separate so the two aren't announced twice over.
+			files.push( { blob: storyPhoto.blob, name: storyPhoto.name || 'story.jpg', type: storyPhoto.type || 'image/jpeg', alt: ( storyAlt ? storyAlt.value.trim() : '' ) } );
 		}
 		return {
 			id:          'p' + Date.now() + '-' + Math.random().toString( 36 ).slice( 2, 7 ),
@@ -2715,7 +2742,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		renderThumbs();
 		if ( TYPE_CONFIG[ p.type ].hasStoryMedia ) {
 			if ( p.video && p.video.blob )    { setStoryVideo( p.video.blob ); }
-			else if ( p.files && p.files[0] ) { setStoryPhoto( p.files[0].blob ); }
+			else if ( p.files && p.files[0] ) {
+				setStoryPhoto( p.files[0].blob );
+				if ( storyAlt ) { storyAlt.value = p.files[0].alt || ''; syncStoryAlt(); }
+			}
 		}
 		if ( scheduleCheck ) {
 			if ( p.scheduledAt ) {
