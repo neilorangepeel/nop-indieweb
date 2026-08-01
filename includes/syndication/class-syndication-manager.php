@@ -123,18 +123,38 @@ class Syndication_Manager {
 			return;
 		}
 
+		$targets = $this->resolve_targets( $post_id );
+
 		// Don't POSSE backdated posts: a historical import/backfill (e.g. re-syndicated
 		// old check-ins via micropub) must not flood networks as if it were happening now.
 		// A live post publishes at ~now; a backfill carries an old published date. The
 		// /post composer doesn't send `published`, so offline-queue replays land at ~now
 		// and are unaffected. Filterable for the rare "syndicate this old post on purpose".
+		//
+		// Journalled rather than returning silently: a skip that leaves no trace is
+		// indistinguishable from a dropped cron job or a post that never triggered at
+		// all. 'skipped' is not 'failed', so it never sets the failure flag or reddens
+		// the health summary — it just makes the decision visible on the post.
 		$published = (int) get_post_time( 'U', true, $post_id );
 		$max_age   = (int) apply_filters( 'nop_indieweb_syndicate_max_age', DAY_IN_SECONDS, $post_id );
 		if ( $published && ( time() - $published ) > $max_age ) {
+			foreach ( $this->syndicators as $syndicator ) {
+				if ( ! in_array( $syndicator->slug(), $targets, true ) ) {
+					continue;
+				}
+				$this->update_status( $post_id, $syndicator->slug(), [
+					'state'   => 'skipped',
+					'reason'  => 'backdated',
+					'error'   => sprintf(
+						/* translators: %s: human-readable age, e.g. "3 days" */
+						__( 'Skipped — published %s ago, past the backdate cutoff.', 'nop-indieweb' ),
+						human_time_diff( $published )
+					),
+					'updated' => time(),
+				] );
+			}
 			return;
 		}
-
-		$targets = $this->resolve_targets( $post_id );
 
 		foreach ( $this->syndicators as $syndicator ) {
 			if ( in_array( $syndicator->slug(), $targets, true ) ) {

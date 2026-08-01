@@ -88,6 +88,24 @@
 			);
 		}
 
+		if ( entry.state === 'skipped' ) {
+			return el( 'div', { className: 'nop-syndication-status is-skipped' },
+				el( 'div', null,
+					el( 'span', { className: 'nop-syndication-status__icon is-skipped-icon', 'aria-hidden': 'true' }, '⊘' ),
+					el( 'span', { className: 'nop-syndication-status__text' }, syndicator.label )
+				),
+				entry.error ? el( 'div', { className: 'nop-syndication-status__error' }, entry.error ) : null,
+				el( Button, {
+					className: 'nop-syndication-status__retry',
+					variant:   'secondary',
+					size:      'small',
+					isBusy:    props.retrying,
+					disabled:  props.retrying,
+					onClick:   props.onRetry,
+				}, __( 'Syndicate anyway', 'nop-indieweb' ) )
+			);
+		}
+
 		return null;
 	}
 

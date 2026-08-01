@@ -71,6 +71,10 @@
 	color: #cc1818;
 }
 
+.nop-syndication-status__icon.is-skipped-icon {
+	color: #996800;
+}
+
 .nop-syndication-status__spinner.components-spinner {
 	margin: 0 6px 0 0;
 }
@@ -84,12 +88,17 @@
 	color:     #cc1818;
 }
 
+/* A skip is a decision, not a failure — mute it so it doesn't read as an error. */
+.nop-syndication-status.is-skipped .nop-syndication-status__error {
+	color: #646970;
+}
+
 .nop-syndication-status__retry {
 	align-self: flex-start;
 }
 
 /* Spinner + text sit on one line for pending rows */
-.nop-syndication-status:not(.is-failed) {
+.nop-syndication-status:not(.is-failed):not(.is-skipped) {
 	flex-direction: row;
 	align-items:    center;
 }
