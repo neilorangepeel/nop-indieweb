@@ -140,6 +140,49 @@ libx264's worker threads (`Generic error in an external library` otherwise). ffp
 stays the stock binary (probing needs no encoder). The CRF default (23) and budgets
 are filterable: `nop_indieweb_syndication_video_crf`, `..._video_max_bytes`.
 
+## Code audits — the lens set
+
+A "code audit" here means a pattern sweep across all PHP files under these lenses.
+Close every pass with an explicit verdict per finding — **fixed / left by design /
+open, low-value** — so the open list carries forward instead of being rediscovered.
+
+1. **Security.** Superglobals sanitised, `$wpdb` prepared, output escaped. Any
+   user- or sender-supplied URL fetched via `nop_indieweb_strict_remote_get()`
+   (`includes/utils/functions.php`), which re-validates every redirect hop —
+   `wp_safe_remote_get( redirection => 3 )` is a finding, not a fix. REST routes
+   enforce token scope *and* per-post `user_can`; `permission_callback =>
+   '__return_true'` is acceptable only where the callback authenticates itself
+   (the Micropub pattern). Inbound third-party HTML through `wp_kses_post`;
+   XML parsers `LIBXML_NONET`, never `NOENT`.
+2. **Correctness.** `strtotime()` guarded against `false`. Assumed-shaped API
+   bodies checked before dereference. Cursor/state writes that can't blank on a
+   missing field. Idempotent re-read-before-write on syndication.
+3. **Accessibility.** Not a hygiene footnote — a first-class lens, and exempt
+   from the simplification ladder. Accessible names on every control (not just
+   an icon or a count), `screen-reader-text` for visually-hidden copy,
+   `:focus-visible` on anything clickable, a keyboard path for every hover-only
+   affordance, `prefers-reduced-motion` on every animation, decorative images
+   as `alt=""` + `aria-hidden`. Aria-labels are user-facing copy, so they carry
+   the i18n rule below.
+4. **Privacy.** Webmentions store personal data about people who never used the
+   site — author name, URL, avatar URL, comment body. Core's exporter/eraser
+   handles the `wp_comments` columns but knows nothing about plugin comment
+   meta; `Webmention\Privacy` covers ours. Any new comment/user meta holding
+   third-party data must be added to its export and erase lists.
+5. **Performance and scale.** Ask what happens at 10× the posts. Unbounded
+   `posts_per_page => -1` outside a CLI/migration path, N+1 meta reads in
+   render loops, autoloaded options holding large or rarely-read values.
+6. **Hygiene.** i18n coverage, `readme.txt` `Stable tag` matching the plugin
+   header (a repeat offender), `.distignore` coherence.
+7. **Simplification.** Against the ladder above. Near-duplicate functions
+   collapse; run-once stable code (the CLI backfills) is left alone.
+8. **Operational rot.** Not code, but it's what actually breaks this plugin:
+   read the syndication-health failure surface and check credential expiry as
+   part of the pass, rather than waiting for a post to silently not syndicate.
+
+Findings get smoke-tested with `studio wp eval` (no local PHP — see above), and
+after pushing PHP you check `gh run list`, since PHPStan only runs in CI.
+
 ## i18n
 
 All user-facing strings in PHP — including button labels, aria-labels, status text, and any copy visible to users or assistive technology — must use `__()`, `_n()`, `_x()`, or their escaping equivalents (`esc_html__()`, `esc_attr_e()`, etc.) with text domain `'nop-indieweb'`. This applies to both the real render path and editor-preview branches.

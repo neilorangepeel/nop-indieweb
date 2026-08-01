@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.9.11
+ * Version:     0.9.12
  * Requires at least: 6.7
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NOP_INDIEWEB_VERSION', '0.9.11' );
+define( 'NOP_INDIEWEB_VERSION', '0.9.12' );
 define( 'NOP_INDIEWEB_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 
@@ -90,6 +90,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-endpoint.p
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-sender.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-social-backfeed.php';
+require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-privacy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-enricher.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-geoapify-geocoder.php';
 require_once NOP_INDIEWEB_DIR . 'includes/ai-policy/class-ai-policy.php';

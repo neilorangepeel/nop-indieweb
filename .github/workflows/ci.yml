@@ -68,3 +68,30 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
       - name: Static analysis
         run: composer phpstan
+
+  build:
+    name: Build artifacts match src
+    runs-on: ubuntu-latest
+    # Blocking: build/ is committed and production deploys by `git pull` with no
+    # npm step, so a src/ edit without `npm run build` would ship stale JS with
+    # nothing to catch it. Rebuild and fail if the committed output differs.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # .nvmrc is the single owner of the Node version — webpack output is
+          # byte-reproducible only when CI and local build on the same major.
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Rebuild
+        run: npm run build
+      - name: Committed build/ is up to date
+        run: |
+          if ! git diff --quiet -- build/; then
+            echo "::error::build/ is stale — run 'npm run build' and commit the result."
+            git diff --stat -- build/
+            exit 1
+          fi

@@ -51,6 +51,7 @@ use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
 use NOP\IndieWeb\Webmention\Social_Backfeed;
 use NOP\IndieWeb\Webmention\Comment_Filter;
+use NOP\IndieWeb\Webmention\Privacy;
 use NOP\IndieWeb\Registrars\Block_Registrar;
 use NOP\IndieWeb\Registrars\Pattern_Registrar;
 use NOP\IndieWeb\Registrars\Template_Registrar;
@@ -212,6 +213,7 @@ class Plugin {
 		( new Auth_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
 		( new Webmention_Sender() )->register();
+		( new Privacy() )->register();
 		( new WebSub() )->register();
 		( new Like_Endpoint() )->register();
 		( new Social_Backfeed() )->register();
