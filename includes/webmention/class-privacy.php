@@ -54,9 +54,10 @@ class Privacy {
 		$data     = [];
 
 		foreach ( $comments as $comment ) {
-			$fields = [];
+			$comment_id = (int) $comment->comment_ID;
+			$fields     = [];
 			foreach ( $this->exportable_fields() as $key => $label ) {
-				$value = (string) get_comment_meta( $comment->comment_ID, $key, true );
+				$value = (string) get_comment_meta( $comment_id, $key, true );
 				if ( '' !== $value ) {
 					$fields[] = [ 'name' => $label, 'value' => $value ];
 				}
@@ -69,7 +70,7 @@ class Privacy {
 			$data[] = [
 				'group_id'    => 'nop-indieweb-webmentions',
 				'group_label' => __( 'Webmentions and likes', 'nop-indieweb' ),
-				'item_id'     => 'webmention-' . $comment->comment_ID,
+				'item_id'     => 'webmention-' . $comment_id,
 				'data'        => $fields,
 			];
 		}
@@ -88,9 +89,10 @@ class Privacy {
 		$removed  = false;
 
 		foreach ( $comments as $comment ) {
+			$comment_id = (int) $comment->comment_ID;
 			foreach ( $this->erasable_keys() as $key ) {
-				if ( '' !== (string) get_comment_meta( $comment->comment_ID, $key, true ) ) {
-					delete_comment_meta( $comment->comment_ID, $key );
+				if ( '' !== (string) get_comment_meta( $comment_id, $key, true ) ) {
+					delete_comment_meta( $comment_id, $key );
 					$removed = true;
 				}
 			}
