@@ -166,13 +166,28 @@ class Posting_Page {
 		return $ver;
 	}
 
+	/**
+	 * Where /post loads its typefaces from.
+	 *
+	 * The plugin's own copies, deliberately. /post is a plugin feature and must
+	 * not stop working because someone switched theme — it used to read these
+	 * from `get_theme_file_uri()`, so activating any other theme 404'd every
+	 * face and dropped the authoring app to system fonts.
+	 *
+	 * Filterable for the one legitimate case: a theme that already serves the
+	 * same faces and would rather not have them fetched twice.
+	 */
+	private function font_base_uri(): string {
+		return (string) apply_filters( 'nop_indieweb_post_font_uri', NOP_INDIEWEB_URL . 'assets/fonts' );
+	}
+
 	private function render_service_worker(): void {
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/javascript; charset=utf-8' );
 			header( 'Service-Worker-Allowed: /' );
 		}
-		$font_dir = get_theme_file_uri( 'assets/fonts/brandon-text' );
-		$cond_dir = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
+		$font_dir = $this->font_base_uri() . '/brandon-text';
+		$cond_dir = $this->font_base_uri() . '/brandon-text-condensed';
 		$page     = home_url( '/post' );
 		$sw_ver   = $this->asset_version();
 		$shell    = [
@@ -190,7 +205,7 @@ class Posting_Page {
 // Bump on any change that demands a clean shell refresh on every device. The
 // activate handler deletes every cache whose name doesn't equal CACHE — so
 // changing this string is the textbook way to nuke a stuck precached shell.
-var CACHE = 'nop-post-v13';
+var CACHE = 'nop-post-v14';
 var PAGE  = <?php echo wp_json_encode( $page ); ?>;
 var SHELL = <?php echo wp_json_encode( $shell ); ?>;
 
@@ -332,8 +347,8 @@ function matchAnyVersion( url ) {
 		$cats_url          = esc_url( rest_url( 'wp/v2/categories' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
 		$site_name    = get_bloginfo( 'name' );
-		$font_dir     = get_theme_file_uri( 'assets/fonts/brandon-text' );
-		$cond_dir     = get_theme_file_uri( 'assets/fonts/brandon-text-condensed' );
+		$font_dir     = $this->font_base_uri() . '/brandon-text';
+		$cond_dir     = $this->font_base_uri() . '/brandon-text-condensed';
 
 		// One-line "what it is" per kind, surfaced inline when the kind title is
 		// tapped (see the docket filing line). Plain and short — just the gist.
