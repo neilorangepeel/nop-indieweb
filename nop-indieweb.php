@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.9.12
+ * Version:     0.9.13
  * Requires at least: 6.7
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth

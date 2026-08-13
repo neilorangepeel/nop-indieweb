@@ -376,6 +376,14 @@ class Syndication_Manager {
 			'args'                => [ 'post_id' => [ 'type' => 'integer', 'required' => true ] ],
 		] );
 
+		// The /post composer's Sent view: recent posts with their delivery journal,
+		// so status outlives the success screen the post was made on.
+		register_rest_route( 'nop-indieweb/v1', '/syndication/sent', [
+			'methods'             => \WP_REST_Server::READABLE,
+			'callback'            => fn() => new \WP_REST_Response( $this->recent_deliveries(), 200 ),
+			'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+		] );
+
 		// Read-only aggregate of failing syndications for the Networks-tab health view.
 		register_rest_route( 'nop-indieweb/v1', '/syndication/health', [
 			'methods'             => \WP_REST_Server::READABLE,
@@ -401,6 +409,66 @@ class Syndication_Manager {
 				'error' => (string) ( $entry['error'] ?? '' ),
 			];
 		}
+		return $out;
+	}
+
+	/**
+	 * Recent posts that carry a delivery journal, newest first — the Sent view's
+	 * list. Bounded and indexed on the journal's own meta key, so it costs one
+	 * meta read per row and never scans the whole archive.
+	 *
+	 * The route's edit_posts check only says "an author"; syndication URLs and
+	 * error strings are per-post, so each row is gated on edit_post as well —
+	 * a contributor never reads someone else's delivery.
+	 *
+	 * @return array<int,array{id:int,url:string,title:string,kind:string,published_gmt:string,targets:array<int,array<string,string>>}>
+	 */
+	private function recent_deliveries( int $limit = 20 ): array {
+		$ids = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => $limit,
+			'fields'         => 'ids',
+			'meta_key'       => self::STATUS_META, // phpcs:ignore WordPress.DB.SlowDBQuery -- indexed key, bounded by $limit.
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
+		] );
+
+		$out = [];
+		foreach ( $ids as $pid ) {
+			$pid  = (int) $pid;
+			$post = get_post( $pid );
+			if ( ! $post || ! current_user_can( 'edit_post', $pid ) ) {
+				continue;
+			}
+
+			$kind = (string) get_post_meta( $pid, 'nop_indieweb_post_kind', true );
+			if ( '' === $kind ) {
+				$terms = wp_get_object_terms( $pid, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY, [ 'fields' => 'slugs' ] );
+				$kind  = ( ! is_wp_error( $terms ) && $terms ) ? (string) $terms[0] : '';
+			}
+
+			// A note's title is generated from its own opening words, so pairing the
+			// two would stutter. The body is what was actually written; the title
+			// only stands in where there is no body (check-ins, likes, photos).
+			$label = trim( wp_strip_all_tags( $post->post_content ) );
+			if ( '' === $label ) {
+				// get_the_title() texturizes, and the client escapes what it renders,
+				// so decode here or a curly apostrophe reaches the list as "&#8217;".
+				$label = html_entity_decode( (string) get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
+			}
+
+			$out[] = [
+				'id'            => $pid,
+				'url'           => (string) get_permalink( $post ),
+				'title'         => wp_trim_words( $label, 14, '…' ),
+				'kind'          => $kind,
+				'published_gmt' => (string) $post->post_date_gmt,
+				'targets'       => $this->delivery_status( $pid ),
+			];
+		}
+
 		return $out;
 	}
 

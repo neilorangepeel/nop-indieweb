@@ -632,6 +632,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var draftsCount     = document.getElementById( 'draftsCount' );
 	var draftsList      = document.getElementById( 'draftsList' );
 	var draftsClose     = document.getElementById( 'draftsClose' );
+	var sentBtn         = document.getElementById( 'sentBtn' );
+	var sentCount       = document.getElementById( 'sentCount' );
+	var sentList        = document.getElementById( 'sentList' );
+	var sentClose       = document.getElementById( 'sentClose' );
 
 	// Apply (or clear) the hot-linked event poster: hidden input carries the URL
 	// through to the Micropub payload, the <figure> is just author confirmation
@@ -2369,33 +2373,51 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Delivery receipts ─────────────────────────────────────────────────────
 	// The syndication journal is written at queue time, so entries exist by the
 	// time the success view shows; each network flips pending → sent/failed as
-	// its cron target runs. Poll briefly with backoff — the polls themselves
-	// nudge WP-cron awake — and let a still-pending row stay honest ("…").
+	// its cron target runs. Poll briefly with backoff, then hand off to the Sent
+	// view — delivery routinely runs a minute or two behind publish (WP-cron
+	// won't spawn twice inside its 60s lock), which is far longer than anyone
+	// should be asked to watch a success screen.
 	var DELIVERY_POLLS = [ 800, 1500, 2500, 4000, 6000, 9000, 13000 ];
+
+	// One network's row, shared by the success receipts and the Sent view so the
+	// two never drift. `withRetry` arms the failed state with a retry button.
+	function deliveryRow( it, postId, withRetry ) {
+		var label = escHtml( it.label || it.slug );
+		if ( it.state === 'sent' ) {
+			return it.url
+				? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a></li>'
+				: '<li class="delivery__row is-sent">' + label + ' ✓</li>';
+		}
+		if ( it.state === 'failed' ) {
+			return '<li class="delivery__row is-failed" title="' + escAttr( it.error || '' ) + '">' + label + ' ✗'
+				+ ( withRetry
+					? '<button type="button" class="delivery__retry" data-post="' + escAttr( postId )
+						+ '" data-target="' + escAttr( it.slug ) + '">↻<span class="sr-only"> Retry ' + label + '</span></button>'
+					: '' )
+				+ '</li>';
+		}
+		// 'skipped' is a decision, not a wait (a backdated post never queues), so
+		// it must not sit there looking like it's still going.
+		if ( it.state === 'skipped' ) {
+			return '<li class="delivery__row is-skipped" title="' + escAttr( it.error || '' ) + '">' + label + ' –</li>';
+		}
+		return '<li class="delivery__row is-pending">' + label + '…</li>';
+	}
 
 	function renderDelivery( items ) {
 		var box = document.getElementById( 'successDelivery' );
 		if ( ! items.length ) { box.hidden = true; box.innerHTML = ''; return false; }
-		box.innerHTML = items.map( function ( it ) {
-			var label = escHtml( it.label || it.slug );
-			if ( it.state === 'sent' ) {
-				return it.url
-					? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a></li>'
-					: '<li class="delivery__row is-sent">' + label + ' ✓</li>';
-			}
-			if ( it.state === 'failed' ) {
-				return '<li class="delivery__row is-failed" title="' + escAttr( it.error || '' ) + '">' + label + ' ✗</li>';
-			}
-			return '<li class="delivery__row is-pending">' + label + '…</li>';
-		} ).join( '' );
+		box.innerHTML = items.map( function ( it ) { return deliveryRow( it, 0, false ); } ).join( '' );
 		box.hidden = false;
 		return items.some( function ( it ) { return it.state === 'pending'; } );
 	}
 
 	function watchDelivery( postId ) {
-		var box = document.getElementById( 'successDelivery' );
+		var box     = document.getElementById( 'successDelivery' );
+		var handoff = document.getElementById( 'deliveryHandoff' );
 		box.hidden = true;
 		box.innerHTML = '';
+		if ( handoff ) { handoff.hidden = true; }
 		if ( ! postId || ! NOP.syndicationStatusUrl ) { return; }
 		var step = 0;
 		var poll = function () {
@@ -2406,7 +2428,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				.then( function ( items ) {
 					var waiting = renderDelivery( Array.isArray( items ) ? items : [] );
 					step += 1;
-					if ( waiting && step < DELIVERY_POLLS.length ) { setTimeout( poll, DELIVERY_POLLS[ step ] ); }
+					if ( waiting && step < DELIVERY_POLLS.length ) {
+						setTimeout( poll, DELIVERY_POLLS[ step ] );
+					} else if ( waiting && handoff ) {
+						// Out of patience, not out of hope — point at where it lands.
+						handoff.hidden = false;
+					}
 				} )
 				.catch( function () {} );
 		};
@@ -2417,6 +2444,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		showView( 'success' );
 		clearDraft();
 		watchDelivery( receiptId || 0 );
+		if ( receiptId ) { refreshSentCount(); }
 		if ( navigator.vibrate ) navigator.vibrate( 10 );
 
 		var streakEl = document.getElementById( 'successStreak' );
@@ -2546,6 +2574,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
 			document.getElementById( 'view-progress' ).hidden = name !== 'progress';
 			document.getElementById( 'view-drafts'   ).hidden = name !== 'drafts';
+			document.getElementById( 'view-sent'     ).hidden = name !== 'sent';
 			document.getElementById( 'view-success'  ).hidden = name !== 'success';
 		}
 		// Cross-fade the swap where supported (Safari 18.2+); hard-swap otherwise, and
@@ -2890,6 +2919,100 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	function closeDrafts() { showView( 'compose' ); }
 
+	// ── Sent ──────────────────────────────────────────────────────────────────
+	// Where delivery lives once the success screen has moved on. Syndication runs
+	// on cron — a minute or two behind publish — so the post is away long before
+	// the networks confirm. This screen holds that truth for the last 20 posts,
+	// and is the one place a failed network can be sent again.
+
+	var sentTimer = 0;
+
+	function targetsIn( rows, states ) {
+		return rows.filter( function ( r ) {
+			return ( r.targets || [] ).some( function ( t ) { return states.indexOf( t.state ) !== -1; } );
+		} ).length;
+	}
+
+	function setSentBadge( n ) {
+		if ( ! sentCount ) { return; }
+		sentCount.textContent = n ? String( n ) : '';
+		sentCount.hidden = ! n;
+	}
+
+	function fetchSent() {
+		if ( ! NOP.syndicationSentUrl ) { return Promise.resolve( [] ); }
+		return fetch( NOP.syndicationSentUrl, { headers: { 'X-WP-Nonce': nonce } } )
+			.then( function ( r ) { return r.ok ? r.json() : []; } )
+			.then( function ( rows ) { return Array.isArray( rows ) ? rows : []; } )
+			.catch( function () { return []; } );
+	}
+
+	function renderSentList( rows ) {
+		if ( ! sentList ) { return; }
+		if ( ! rows.length ) { sentList.innerHTML = '<p class="drafts-view__empty">Nothing sent yet.</p>'; return; }
+		sentList.innerHTML = rows.map( function ( r ) {
+			// post_date_gmt arrives as "Y-m-d H:i:s" — make it a real UTC instant
+			// before handing it to the ticker's relative-time formatter.
+			var when = Date.parse( String( r.published_gmt || '' ).replace( ' ', 'T' ) + 'Z' );
+			return '<div class="sent-row">'
+				+ '<a class="sent-row__head" href="' + escAttr( r.url ) + '" target="_blank" rel="noopener noreferrer">'
+				+ '<span class="sent-row__kind">' + escHtml( r.kind || 'post' ) + '</span>'
+				+ ( isNaN( when ) ? '' : '<span class="sent-row__when">' + escHtml( tkAgo( Math.floor( when / 1000 ) ) ) + '</span>' )
+				+ '<span class="sent-row__title">' + escHtml( r.title || '(untitled)' ) + '</span>'
+				+ '</a>'
+				+ '<ul class="delivery">'
+				+ ( r.targets || [] ).map( function ( t ) { return deliveryRow( t, r.id, true ); } ).join( '' )
+				+ '</ul></div>';
+		} ).join( '' );
+	}
+
+	function refreshSent() {
+		return fetchSent().then( function ( rows ) {
+			renderSentList( rows );
+			setSentBadge( targetsIn( rows, [ 'pending', 'failed' ] ) );
+			// Keep watching only while something can still change on its own, and
+			// only while the view is actually on screen. A failed row waits for a tap.
+			clearTimeout( sentTimer );
+			if ( targetsIn( rows, [ 'pending' ] ) && ! document.getElementById( 'view-sent' ).hidden ) {
+				sentTimer = setTimeout( refreshSent, 10000 );
+			}
+		} );
+	}
+
+	// Badge-only refresh — the docket has to show there's something to look at
+	// without the view ever being opened.
+	function refreshSentCount() {
+		return fetchSent().then( function ( rows ) { setSentBadge( targetsIn( rows, [ 'pending', 'failed' ] ) ); } );
+	}
+
+	function openSent() {
+		if ( ! sentList ) { return; }
+		sentList.innerHTML = '<p class="drafts-view__empty">Loading…</p>';
+		showView( 'sent' );
+		refreshSent();
+	}
+	function closeSent() { clearTimeout( sentTimer ); showView( 'compose' ); }
+
+	if ( sentList ) {
+		sentList.addEventListener( 'click', function ( e ) {
+			var btn = e.target.closest( '.delivery__retry' );
+			if ( ! btn || ! NOP.syndicationRetryUrl ) { return; }
+			btn.disabled = true;
+			fetch( NOP.syndicationRetryUrl, {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+				body:    JSON.stringify( { post_id: +btn.dataset.post, target: btn.dataset.target } ),
+			} ).then( function ( r ) {
+				if ( ! r.ok ) { throw new Error( 'retry rejected' ); }
+				showToast( 'Retrying…' );
+				return refreshSent();
+			} ).catch( function () {
+				btn.disabled = false;
+				showToast( "Couldn't retry that one.", 'error' );
+			} );
+		} );
+	}
+
 	// Build a form snapshot from a server draft's Micropub source (?q=source). The
 	// source doesn't echo post-kind, so the drawer row's known kind is the fallback.
 	async function sourceToPost( url, kindHint ) {
@@ -2939,6 +3062,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	if ( saveDraftBtn ) { saveDraftBtn.addEventListener( 'click', saveCurrentDraft ); }
 	if ( draftsBtn )    { draftsBtn.addEventListener( 'click', openDrafts ); }
 	if ( draftsClose )  { draftsClose.addEventListener( 'click', closeDrafts ); }
+	if ( sentBtn )      { sentBtn.addEventListener( 'click', openSent ); }
+	if ( sentClose )    { sentClose.addEventListener( 'click', closeSent ); }
+	var deliveryHandoff = document.getElementById( 'deliveryHandoff' );
+	if ( deliveryHandoff ) { deliveryHandoff.addEventListener( 'click', openSent ); }
 	if ( draftsList ) {
 		draftsList.addEventListener( 'click', function ( e ) {
 			var row = e.target.closest( '.draft-row' ); if ( ! row ) { return; }
@@ -3067,6 +3194,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	if ( ! hadDraft ) { switchType( mruDefaultKind() ); }   // no draft → open on the last-used kind
 	applyShareParams();                                     // a share/Shortcut overrides the above
 	refreshDraftsCount();                                   // surface the saved-drafts badge
+	refreshSentCount();                                     // and anything still in flight
 	updateCounter();
 	syncPrompt();
 	autoGrowContent();

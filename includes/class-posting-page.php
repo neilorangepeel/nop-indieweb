@@ -326,6 +326,8 @@ function matchAnyVersion( url ) {
 		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
 		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
 		$syndication_status_url = esc_url( rest_url( 'nop-indieweb/v1/syndication/status' ) );
+		$syndication_sent_url   = esc_url( rest_url( 'nop-indieweb/v1/syndication/sent' ) );
+		$syndication_retry_url  = esc_url( rest_url( 'nop-indieweb/v1/syndication/retry' ) );
 		$tags_url          = esc_url( rest_url( 'wp/v2/tags' ) );
 		$cats_url          = esc_url( rest_url( 'wp/v2/categories' ) );
 		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
@@ -608,6 +610,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</button>
 					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
 					<span class="docket__date" id="docketDate" aria-hidden="true"></span>
+					<button type="button" class="docket__action" id="sentBtn">
+						<?php esc_html_e( 'Sent', 'nop-indieweb' ); ?><span class="docket__badge" id="sentCount" hidden></span>
+					</button>
 					<button type="button" class="docket__action" id="draftsBtn">
 						<?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?><span class="docket__badge" id="draftsCount" hidden></span>
 					</button>
@@ -955,6 +960,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<div class="success-photos" id="successPhotos"></div>
 				<a class="success-permalink" id="successLink" href="#" target="_blank" rel="noopener noreferrer"></a>
 				<ul class="delivery" id="successDelivery" aria-live="polite" hidden></ul>
+				<!-- Syndication outlives this screen (cron delivery runs 1–2 min behind
+				     publish), so once the short poll window is spent we stop pretending
+				     and point at the Sent view rather than sit on a frozen "…". -->
+				<button type="button" class="delivery__handoff" id="deliveryHandoff" hidden>
+					<?php esc_html_e( 'Still sending — check Sent →', 'nop-indieweb' ); ?>
+				</button>
 				<div class="success-actions">
 					<a class="btn btn-accent" id="editBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>
 						<?php esc_html_e( 'Open in editor →', 'nop-indieweb' ); ?>
@@ -991,6 +1002,20 @@ foreach ( [ '700', '800' ] as $weight ) {
 			</div>
 		</div>
 
+		<!-- Sent view — where a post's delivery lands once the success screen has
+		     moved on. Same paper as drafts; index.js swaps to it via showView('sent'). -->
+		<div id="view-sent" hidden>
+			<div class="drafts-view__scroll sent-view__scroll">
+				<header class="drafts-view__head">
+					<h2 class="drafts-view__title"><?php esc_html_e( 'Sent', 'nop-indieweb' ); ?></h2>
+				</header>
+				<div class="drafts-view__list sent-view__list" id="sentList" aria-live="polite"></div>
+			</div>
+			<div class="bottom-bar">
+				<button class="btn btn-secondary" id="sentClose" type="button"><?php esc_html_e( 'Back', 'nop-indieweb' ); ?></button>
+			</div>
+		</div>
+
 	</main><!-- .view-container -->
 
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1007,6 +1032,8 @@ window.NOP = {
 		fetchEventUrl: <?php echo wp_json_encode( $fetch_event_url ); ?>,
 		fetchContextUrl: <?php echo wp_json_encode( $fetch_context_url ); ?>,
 		syndicationStatusUrl: <?php echo wp_json_encode( $syndication_status_url ); ?>,
+		syndicationSentUrl: <?php echo wp_json_encode( $syndication_sent_url ); ?>,
+		syndicationRetryUrl: <?php echo wp_json_encode( $syndication_retry_url ); ?>,
 		tagsUrl:     <?php echo wp_json_encode( $tags_url ); ?>,
 		catsUrl:     <?php echo wp_json_encode( $cats_url ); ?>,
 		kindCats:    <?php echo wp_json_encode( $kind_cats ); ?>,
