@@ -9,24 +9,24 @@
 		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
 		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
 
-			<!-- wp:group {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","textTransform":"uppercase","letterSpacing":"2px"},"spacing":{"blockGap":"6px"}},"fontSize":"small","fontFamily":"brandon-text-cond","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
-			<div class="wp-block-group has-brandon-text-cond-font-family has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:2px;text-transform:uppercase">
+			<!-- wp:group {"style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"2px"},"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
+			<div class="wp-block-group has-small-font-size" style="font-weight:700;letter-spacing:2px;text-transform:uppercase">
 
 				<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"}},"layout":{"type":"flex","flexWrap":"wrap"}} -->
 				<div class="wp-block-group">
 					<!-- wp:nop-indieweb/kind-icon /-->
 
-					<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} -->
-					<p style="font-style:normal;font-weight:500"><a href="/kind/checkin/">Check-in</a></p>
+					<!-- wp:paragraph {} -->
+					<p><a href="/kind/checkin/">Check-in</a></p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:post-terms {"term":"nop_venue_category","prefix":"· ","suffix":"","separator":" ","style":{"typography":{"fontStyle":"normal","fontWeight":"500"}}} /-->
+					<!-- wp:post-terms {"term":"nop_venue_category","prefix":"· ","suffix":"","separator":" "} /-->
 				</div>
 				<!-- /wp:group -->
 
 				<!-- wp:group {"layout":{"type":"constrained","justifyContent":"right"}} -->
 				<div class="wp-block-group">
-					<!-- wp:post-date {"textAlign":"left","format":"G:i · d.m.Y","style":{"typography":{"fontStyle":"normal","fontWeight":"500"},"layout":{"selfStretch":"fill"}},"textColor":"contrast","fontFamily":"brandon-text-cond"} /-->
+					<!-- wp:post-date {"textAlign":"left","format":"G:i · d.m.Y","style":{"layout":{"selfStretch":"fill"}},"textColor":"contrast"} /-->
 				</div>
 				<!-- /wp:group -->
 
@@ -46,14 +46,14 @@
 			<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 			<div class="wp-block-group">
 
-				<!-- wp:post-title {"style":{"typography":{"lineHeight":"1","fontStyle":"normal","fontWeight":"800","letterSpacing":"-0.02em"}},"fontSize":"x-large","fontFamily":"brandon-text"} /-->
+				<!-- wp:post-title {"fontSize":"x-large"} /-->
 
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"style":{"typography":{"fontWeight":"400","fontStyle":"normal"}},"fontSize":"small"} -->
-				<p class="has-small-font-size" style="font-style:normal;font-weight:400">Address</p>
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"fontSize":"small"} -->
+				<p class="has-small-font-size">Address</p>
 				<!-- /wp:paragraph -->
 
-				<!-- wp:group {"style":{"spacing":{"blockGap":"6px","margin":{"top":"2px"}},"typography":{"fontWeight":"400","fontStyle":"normal"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-				<div class="wp-block-group has-small-font-size" style="margin-top:2px;font-style:normal;font-weight:400">
+				<!-- wp:group {"style":{"spacing":{"blockGap":"6px","margin":{"top":"2px"}}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
+				<div class="wp-block-group has-small-font-size" style="margin-top:2px">
 					<!-- wp:group {"style":{"spacing":{"padding":{"top":"0.3em"}}},"layout":{"type":"constrained"}} -->
 					<div class="wp-block-group" style="padding-top:0.3em">
 						<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
@@ -95,20 +95,20 @@
 
 			<!-- wp:group {"className":"nop-flight","style":{"spacing":{"blockGap":"4px","margin":{"bottom":"var:preset|spacing|20"}}},"layout":{"type":"constrained"}} -->
 			<div class="wp-block-group nop-flight" style="margin-bottom:var(--wp--preset--spacing--20)">
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontStyle":"normal","fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small","fontFamily":"brandon-text-cond"} -->
-				<p class="nop-flight__route has-brandon-text-cond-font-family has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small"} -->
+				<p class="nop-flight__route has-small-font-size" style="font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
 				<!-- /wp:paragraph -->
 
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
-				<p class="nop-flight__distance has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">294 km</p>
+				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","textColor":"accent-4","fontSize":"small"} -->
+				<p class="nop-flight__distance has-accent-4-color has-text-color has-small-font-size">294 km</p>
 				<!-- /wp:paragraph -->
 			</div>
 			<!-- /wp:group -->
 
 			<!-- wp:nop-indieweb/checkin-map /-->
 
-			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"textColor":"accent-4","fontSize":"small","fontFamily":"fira-code"} -->
-			<p class="has-accent-4-color has-text-color has-fira-code-font-family has-small-font-size">Coordinates</p>
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"textColor":"accent-4","fontSize":"small"} -->
+			<p class="has-accent-4-color has-text-color has-small-font-size">Coordinates</p>
 			<!-- /wp:paragraph -->
 
 		</div>
