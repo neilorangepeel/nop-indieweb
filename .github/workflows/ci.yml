@@ -31,6 +31,18 @@ jobs:
             -not -path './vendor/*' -not -path './node_modules/*' \
             -print0 | xargs -0 -n1 -P4 php -l
 
+  templates:
+    name: Block markup
+    runs-on: ubuntu-latest
+    # Blocking: an unclosed tag in a block template renders as "Block contains
+    # unexpected or invalid content" on every post the template serves, and the
+    # editor's fix is to rewrite your file. Cheap to catch here, expensive to
+    # find in the Site Editor.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate block templates
+        run: python3 bin/check-block-markup.py templates
+
   test:
     name: PHPUnit
     runs-on: ubuntu-latest
