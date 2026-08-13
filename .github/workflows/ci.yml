@@ -95,3 +95,18 @@ jobs:
             git diff --stat -- build/
             exit 1
           fi
+
+      # The version lives in three places and NOP_INDIEWEB_VERSION is the one
+      # that matters at runtime: it cache-busts every admin/*.js the editor
+      # loads. Left behind, the browser keeps serving yesterday's panel and the
+      # deploy looks like it did nothing. Drift has bitten twice, so it's a gate.
+      - name: Version is the same in all three places
+        run: |
+          header=$(sed -n 's/^ \* Version: *//p' nop-indieweb.php | head -1 | tr -d ' ')
+          constant=$(sed -n "s/^define( 'NOP_INDIEWEB_VERSION', '\(.*\)' );/\1/p" nop-indieweb.php | head -1)
+          stable=$(sed -n 's/^Stable tag: *//p' readme.txt | head -1 | tr -d ' ')
+          echo "plugin header: $header / NOP_INDIEWEB_VERSION: $constant / readme Stable tag: $stable"
+          if [ "$header" != "$constant" ] || [ "$header" != "$stable" ]; then
+            echo "::error::Version mismatch — the plugin header, NOP_INDIEWEB_VERSION and readme.txt Stable tag must all match."
+            exit 1
+          fi
