@@ -109,10 +109,12 @@
 		var postcode   = meta['nop_indieweb_venue_postcode'] || '';
 		var lat        = meta['nop_indieweb_venue_lat']      || '';
 		var lng        = meta['nop_indieweb_venue_lng']      || '';
-		// NOP: needs review — legacy fallback to the old meta-stored categories for
-		// posts predating the nop_venue_category taxonomy. Safe to drop once every
-		// post has been migrated; kept because that backfill status is your call.
-		var cats       = termNames.length > 0 ? termNames : ( meta['nop_indieweb_venue_categories'] || [] );
+		// Legacy fallback only. The taxonomy itself is now editable higher up the
+		// panel, so echoing its terms here would print the venue's type twice;
+		// this row is left for posts predating nop_venue_category, whose type
+		// lives in the old meta and has nowhere else to show.
+		// NOP: needs review — drop the row entirely once every post is migrated.
+		var cats       = termNames.length > 0 ? [] : ( meta['nop_indieweb_venue_categories'] || [] );
 		var checkinUrl = meta['nop_indieweb_checkin_url']   || '';
 		var service    = meta['nop_indieweb_service']       || '';
 		var photos     = meta['nop_indieweb_photos']        || [];
@@ -585,7 +587,6 @@
 			editorDispatch.editPost( update );
 		}
 
-		var hasFields   = config.fields && config.fields.length > 0;
 		var hasOffer    = !! ( offeredKind && KIND_CONFIG[ offeredKind ] );
 		var subPanel    = config.sub_panel || null;
 
@@ -596,7 +597,7 @@
 				value:                   kind,
 				options:                 DROPDOWN_OPTIONS,
 				onChange:                setKind,
-				__nextHasNoMarginBottom: ! hasFields && ! hasOffer && ! subPanel,
+				__nextHasNoMarginBottom: true,
 			} ),
 		];
 
@@ -617,9 +618,7 @@
 		}
 
 		if ( config.fields ) {
-			config.fields.forEach( function ( field, i ) {
-				var isLast = ( i === config.fields.length - 1 ) && ! subPanel;
-
+			config.fields.forEach( function ( field ) {
 				if ( field.type === 'select' ) {
 					children.push( el( SelectControl, {
 						key:                     field.key,
@@ -627,7 +626,7 @@
 						value:                   meta[ field.key ] || field.options[ 0 ].value,
 						options:                 field.options,
 						onChange:                function ( v ) { setMeta( field.key, v ); },
-						__nextHasNoMarginBottom: isLast,
+						__nextHasNoMarginBottom: true,
 					} ) );
 				} else {
 					children.push( el( TextControl, {
@@ -637,7 +636,7 @@
 						value:                   meta[ field.key ] || '',
 						placeholder:             'https://',
 						onChange:                function ( v ) { setMeta( field.key, v ); },
-						__nextHasNoMarginBottom: isLast,
+						__nextHasNoMarginBottom: true,
 					} ) );
 				}
 			} );
@@ -650,9 +649,7 @@
 		// costs nothing in fidelity and follows the kind for free.
 		if ( FlatTermSelector && config.taxonomies && config.taxonomies.length ) {
 			config.taxonomies.forEach( function ( taxonomySlug ) {
-				children.push( el( 'div', { key: 'taxonomy-' + taxonomySlug, className: 'nop-panel-row' },
-					el( FlatTermSelector, { slug: taxonomySlug } )
-				) );
+				children.push( el( FlatTermSelector, { key: 'taxonomy-' + taxonomySlug, slug: taxonomySlug } ) );
 			} );
 		}
 
@@ -680,7 +677,15 @@
 			} ) );
 		}
 
-		return el.apply( null, [ Panel, { name: 'nop-indieweb-post-kind', title: __( 'Post Kind', 'nop-indieweb' ) } ].concat( children ) );
+		// One owner for the vertical rhythm: the controls sit in a flex column
+		// with a single gap, rather than each carrying its own bottom margin.
+		// Core has been stripping those legacy margins (hence the __next flags),
+		// which had left every stacked control in this panel flush against the
+		// one above it — the kind select and its field touching edge to edge.
+		return el( Panel,
+			{ name: 'nop-indieweb-post-kind', title: __( 'Post Kind', 'nop-indieweb' ) },
+			el.apply( null, [ 'div', { className: 'nop-kind-panel' } ].concat( children ) )
+		);
 	}
 
 	plugins.registerPlugin( 'nop-indieweb-post-kinds-panel', { render: PostKindsPanel } );

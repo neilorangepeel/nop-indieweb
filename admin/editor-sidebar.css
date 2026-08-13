@@ -3,6 +3,18 @@
  * Follows native WP editor panel spacing and typography conventions.
  */
 
+/* Post Kind panel — the vertical rhythm for everything stacked inside it.
+   Core is removing the legacy per-control bottom margins (the __next flags
+   opt into that future), which left each control flush against the one above:
+   the kind select touching its URL field, and the taxonomy picker touching the
+   select. One gap here owns the spacing so no control has to. 16px is core's
+   own step between stacked controls (--grid-unit-20). */
+.nop-kind-panel {
+	display:        flex;
+	flex-direction: column;
+	gap:            16px;
+}
+
 /* Outer wrapper — adds top gap between the TextControl and the rows below */
 .nop-panel-fields {
 	display:        flex;
@@ -125,7 +137,6 @@
 	display:        flex;
 	flex-direction: column;
 	gap:            8px;
-	margin-top:     8px;
 }
 
 .nop-lookup-picker__results {
@@ -281,11 +292,8 @@
 	border-radius: 2px;
 }
 
-/* "Apply layout" offer card — shown after a kind change when the editor isn't empty */
-.nop-layout-offer {
-	margin-top: 8px;
-}
-
+/* "Apply layout" offer card — shown after a kind change when the editor isn't empty.
+   Spacing comes from .nop-kind-panel's gap, not a margin of its own. */
 .nop-layout-offer__hint {
 	margin:    4px 0 0;
 	font-size: 11px;
