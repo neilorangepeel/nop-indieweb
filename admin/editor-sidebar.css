@@ -292,12 +292,11 @@
 	border-radius: 2px;
 }
 
-/* "Apply layout" offer card — shown after a kind change when the editor isn't empty.
-   Spacing comes from .nop-kind-panel's gap, not a margin of its own. */
-.nop-layout-offer__hint {
-	margin:    4px 0 0;
-	font-size: 11px;
-	color:     #757575;
+/* Layout offer — shown after a kind change when the editor isn't empty.
+   A core Notice, so it only needs its stock margins dropping: .nop-kind-panel's
+   gap owns the spacing between everything in that panel. */
+.nop-layout-offer.components-notice {
+	margin: 0;
 }
 
 /* ── Syndication preview — per-network rendering of the composed post ───────── */

@@ -28,6 +28,7 @@
 	var TextControl     = components.TextControl;
 	var TextareaControl = components.TextareaControl;
 	var Button          = components.Button;
+	var Notice          = components.Notice;
 	var Spinner         = components.Spinner;
 	var ExternalLink    = components.ExternalLink;
 	var __              = i18n.__;
@@ -601,19 +602,25 @@
 			} ),
 		];
 
+		// A Notice, not a loose button: this is the editor's own idiom for an
+		// offer you can take or ignore, and it keeps the warning and the action
+		// in one object instead of a button with a caption floating under it.
+		// The message carries the consequence, so the action can stay one word.
 		if ( hasOffer ) {
 			children.push(
-				el( 'div', { key: 'layout-offer', className: 'nop-layout-offer' },
-					el( Button, {
-						variant: 'secondary',
-						size:    'small',
+				el( Notice, {
+					key:           'layout-offer',
+					status:        'info',
+					isDismissible: false,
+					className:     'nop-layout-offer',
+					actions:       [ {
+						label:   __( 'Replace', 'nop-indieweb' ),
 						onClick: function () { applyLayout( offeredKind ); },
-					/* translators: %s: post kind label, e.g. "Reply" */
-					}, i18n.sprintf( __( 'Apply %s layout', 'nop-indieweb' ), KIND_CONFIG[ offeredKind ].label ) ),
-					el( 'p', { className: 'nop-layout-offer__hint' },
-						__( 'Replaces current content.', 'nop-indieweb' )
-					)
-				)
+						variant: 'link',
+					} ],
+				},
+				/* translators: %s: post kind label, e.g. "Reply" */
+				sprintf( __( 'Replace the current content with the %s layout?', 'nop-indieweb' ), KIND_CONFIG[ offeredKind ].label ) )
 			);
 		}
 
