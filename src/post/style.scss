@@ -2550,7 +2550,7 @@ body::before {
    network stamps beneath it, left-aligned rather than centred like the success
    receipts (a list reads down the page; a receipt reads as one object). */
 .sent-row {
-	padding: var(--space-xs) 0;
+	padding: var(--space-2xs) 0;
 	border-bottom: var(--bw) solid var(--rule);
 }
 .sent-row__head {
@@ -2559,8 +2559,9 @@ body::before {
 	gap: var(--space-2xs);
 	color: inherit;
 	text-decoration: none;
-	margin-bottom: var(--space-2xs);
-	min-height: 44px;
+	/* Padding rather than min-height: it buys the same 44px target while the
+	   slack sits evenly around the line, instead of pooling under it. */
+	padding: 12px 0 10px;
 }
 .sent-row__head:focus-visible { outline: var(--bw-input) solid var(--ink); outline-offset: 2px; }
 .sent-row__kind {
@@ -2584,7 +2585,45 @@ body::before {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.sent-row .delivery { justify-content: flex-start; margin-bottom: 0; }
+/* In the list the destinations are an annotation, not a trophy — the solid
+   stamps of the success receipt would out-shout the post they belong to, and
+   four of them wrap to two lines. Here they collapse to one printed line of
+   small caps, separated by the masthead's own interpunct, distinguished by
+   weight and mark rather than by fill. */
+.sent-row .delivery {
+	justify-content: flex-start;
+	margin: 0;
+	gap: 0;
+	font-size: var(--step--2);
+	line-height: 1.5;
+}
+.sent-row .delivery__row {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	font-size: inherit;
+	letter-spacing: 0.04em;
+	color: color-mix( in srgb, var(--ink) 45%, var(--paper) );
+}
+.sent-row .delivery__row + .delivery__row::before {
+	content: '·';
+	/* inline-block so the skipped state's line-through can't reach the separator —
+	   a decoration doesn't draw through an atomic inline box. */
+	display: inline-block;
+	margin: 0 5px;
+	opacity: 0.5;
+}
+/* `display:block` on the base anchor would drop the label below its separator. */
+.sent-row .delivery__row a { display: inline; }
+.sent-row .delivery__row.is-sent { color: var(--ink); font-weight: 700; }
+.sent-row .delivery__row.is-failed { color: var(--red); font-weight: 700; }
+.sent-row .delivery__row.is-pending { opacity: 1; }
+.sent-row .delivery__row.is-skipped { opacity: 1; }
+/* On one tight line the retry's 44px target would reach up into the title link
+   and swallow its taps. Trim it to the line, and let the title win the overlap. */
+.sent-row__head { position: relative; z-index: 1; }
+.sent-row .delivery__retry::after { inset: -8px -10px; }
 
 .success-actions { display: flex; flex-direction: column; gap: 10px; }
 
