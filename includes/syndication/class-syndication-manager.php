@@ -163,8 +163,50 @@ class Syndication_Manager {
 		}
 	}
 
-	/** Cron callback: runs one platform's syndication attempt and handles retry/failure. */
+	/**
+	 * Runs one platform's syndication attempt and handles retry/failure. Reached
+	 * from cron and, while the author is watching the delivery poll, directly —
+	 * so it takes a lock first. The syndicator's own dedup only kicks in once a
+	 * URL is stored, which is too late to stop two concurrent runs both posting.
+	 */
 	public function run_target( int $post_id, string $slug, int $attempt ): void {
+		if ( ! $this->claim_target( $post_id, $slug ) ) {
+			return;
+		}
+
+		try {
+			$this->run_target_unguarded( $post_id, $slug, $attempt );
+		} finally {
+			$this->release_target( $post_id, $slug );
+		}
+	}
+
+	/**
+	 * The closest thing WP offers to an atomic test-and-set without assuming a
+	 * persistent object cache: add_option() fails when the row already exists.
+	 * A lock older than the longest plausible run (a fatal mid-syndication)
+	 * is taken over rather than blocking the platform forever.
+	 */
+	private function claim_target( int $post_id, string $slug ): bool {
+		$key = 'nop_syn_run_' . $post_id . '_' . $slug;
+
+		if ( add_option( $key, (string) time(), '', false ) ) {
+			return true;
+		}
+
+		if ( ( time() - (int) get_option( $key, 0 ) ) < 10 * MINUTE_IN_SECONDS ) {
+			return false;
+		}
+
+		update_option( $key, (string) time(), false );
+		return true;
+	}
+
+	private function release_target( int $post_id, string $slug ): void {
+		delete_option( 'nop_syn_run_' . $post_id . '_' . $slug );
+	}
+
+	private function run_target_unguarded( int $post_id, string $slug, int $attempt ): void {
 		$syndicator = $this->get( $slug );
 		if ( ! $syndicator ) {
 			$this->update_status( $post_id, $slug, null );
@@ -201,6 +243,101 @@ class Syndication_Manager {
 			'attempts' => $attempt,
 			'updated'  => time(),
 		] );
+	}
+
+	/**
+	 * Runs this post's already-due syndication events here and now, instead of
+	 * waiting for cron to be spawned.
+	 *
+	 * WP-cron only runs when a request spawns it, and it refuses to spawn twice
+	 * inside WP_CRON_LOCK_TIMEOUT (60s). The publish request itself takes that
+	 * lock *before* these events exist, so delivery reliably sits a minute or
+	 * two behind publish. The author watching the success screen is already
+	 * making authenticated requests every second or so — running the work there
+	 * skips the spawn dance entirely and lands delivery in a poll or two.
+	 *
+	 * Bounded on purpose: it stops starting new platforms once the budget is
+	 * spent (a dead network must not hang the poll), and it leaves posts
+	 * carrying video to cron, where a single-threaded ffmpeg re-encode can take
+	 * as long as it needs. Whatever isn't run here stays scheduled.
+	 *
+	 * @return int How many platforms were run.
+	 */
+	public function run_due_targets( int $post_id, int $budget_seconds = 8 ): int {
+		if ( ! apply_filters( 'nop_indieweb_inline_syndication', true, $post_id ) ) {
+			return 0;
+		}
+
+		// A transcode belongs on cron, not on the end of somebody's poll.
+		if ( $this->has_video( $post_id ) ) {
+			return 0;
+		}
+
+		$started = time();
+		$ran     = 0;
+
+		foreach ( $this->due_events( $post_id ) as $event ) {
+			if ( ( time() - $started ) >= $budget_seconds ) {
+				break;
+			}
+
+			// Claim it by unscheduling first: whoever removes the event owns the
+			// run, and run_target()'s lock catches anything that slips through.
+			wp_unschedule_event( $event['timestamp'], self::CRON_HOOK, $event['args'] );
+
+			$this->run_target(
+				(int) $event['args'][0],
+				(string) $event['args'][1],
+				(int) $event['args'][2]
+			);
+			++$ran;
+		}
+
+		return $ran;
+	}
+
+	/**
+	 * This post's scheduled syndication events that are already due.
+	 *
+	 * @return array<int,array{timestamp:int,args:array<int,mixed>}>
+	 */
+	private function due_events( int $post_id ): array {
+		$cron = _get_cron_array();
+		if ( ! is_array( $cron ) ) {
+			return [];
+		}
+
+		$now = time();
+		$out = [];
+		foreach ( $cron as $timestamp => $hooks ) {
+			if ( (int) $timestamp > $now || ! isset( $hooks[ self::CRON_HOOK ] ) ) {
+				continue;
+			}
+			foreach ( (array) $hooks[ self::CRON_HOOK ] as $event ) {
+				$args = isset( $event['args'] ) ? array_values( (array) $event['args'] ) : [];
+				if ( 3 !== count( $args ) || (int) $args[0] !== $post_id ) {
+					continue;
+				}
+				$out[] = [
+					'timestamp' => (int) $timestamp,
+					'args'      => $args,
+				];
+			}
+		}
+
+		return $out;
+	}
+
+	/** Whether this post carries a clip, which makes syndication slow enough to leave on cron. */
+	private function has_video( int $post_id ): bool {
+		$urls = get_post_meta( $post_id, 'nop_indieweb_videos', true );
+		if ( is_array( $urls ) && $urls ) {
+			return true;
+		}
+
+		$post = get_post( $post_id );
+		return $post instanceof \WP_Post
+			&& null !== \NOP\IndieWeb\nop_indieweb_block_video( (string) $post->post_content );
 	}
 
 	private function queue( int $post_id, string $slug, int $attempt, int $delay = 0, string $last_error = '' ): void {
@@ -369,9 +506,10 @@ class Syndication_Manager {
 
 		// Per-post delivery receipts for the /post success view — the status
 		// journal as-is, so the client can show pending → sent/failed live.
+		// The poll also *drives* delivery: see handle_status().
 		register_rest_route( 'nop-indieweb/v1', '/syndication/status', [
 			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => fn( \WP_REST_Request $r ) => new \WP_REST_Response( $this->delivery_status( (int) $r['post_id'] ), 200 ),
+			'callback'            => [ $this, 'handle_status' ],
 			'permission_callback' => fn( \WP_REST_Request $r ) => current_user_can( 'edit_post', (int) $r['post_id'] ),
 			'args'                => [ 'post_id' => [ 'type' => 'integer', 'required' => true ] ],
 		] );
@@ -390,6 +528,17 @@ class Syndication_Manager {
 			'callback'            => fn() => new \WP_REST_Response( $this->failure_summary(), 200 ),
 			'permission_callback' => fn() => current_user_can( 'manage_options' ),
 		] );
+	}
+
+	/**
+	 * The delivery poll, which does double duty: it runs whatever is already due
+	 * for this post before reporting, so watching the success screen is what
+	 * makes delivery happen rather than something that waits on cron.
+	 */
+	public function handle_status( \WP_REST_Request $request ): \WP_REST_Response {
+		$post_id = (int) $request['post_id'];
+		$this->run_due_targets( $post_id );
+		return new \WP_REST_Response( $this->delivery_status( $post_id ), 200 );
 	}
 
 	/** @return array<int,array{slug:string,label:string,state:string,url:string,error:string}> */
