@@ -262,6 +262,29 @@ body {
 	font-weight: 500;
 	-webkit-font-smoothing: antialiased;
 }
+/* iOS 26 status-bar guard — see the markup comment in class-posting-page.php.
+   The fixed box stays transparent (that is the whole point: it is what Safari
+   samples); the accent lives on the absolutely-positioned child, which Safari
+   does not read. Only ever present in the Home Screen app. */
+.status-guard { display: none; }
+.standalone .status-guard {
+	display: block;
+	position: fixed;
+	inset: 0 0 auto 0;
+	height: var(--safe-top);
+	background-color: transparent;
+	pointer-events: none;
+	z-index: 0;
+}
+.standalone .status-guard > span {
+	position: absolute;
+	inset: 0;
+	background-color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+	.standalone .status-guard > span { background-color: color-mix( in srgb, var(--ink) 45%, #000 ); }
+}
+
 /* Standalone (Home Screen app): full screen via 100vh; tab keeps 100dvh above. */
 .standalone body, .standalone .app { height: 100vh; }
 /* Standalone runs full-bleed UNDER the status bar (viewport-fit=cover), so the
