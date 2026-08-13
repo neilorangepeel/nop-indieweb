@@ -21,6 +21,9 @@
 	var useSelect     = data.useSelect;
 	var useDispatch   = data.useDispatch;
 	var Panel           = ( editor && editor.PluginDocumentSettingPanel ) || editPost.PluginDocumentSettingPanel;
+	// Core's own flat term picker, borrowed so kind-scoped taxonomies look and
+	// behave exactly as they did in the panel they were moved out of.
+	var FlatTermSelector = editor && editor.PostTaxonomiesFlatTermSelector;
 	var SelectControl   = components.SelectControl;
 	var TextControl     = components.TextControl;
 	var TextareaControl = components.TextareaControl;
@@ -637,6 +640,19 @@
 						__nextHasNoMarginBottom: isLast,
 					} ) );
 				}
+			} );
+		}
+
+		// Kind-scoped taxonomies (Exercise Types, Venue Categories). Kind_Scoping
+		// takes these out of the editor's own taxonomy panel list, because core
+		// offers no way to put a removed panel back and the list has to survive
+		// the kind changing mid-edit. Rendering core's own selector here instead
+		// costs nothing in fidelity and follows the kind for free.
+		if ( FlatTermSelector && config.taxonomies && config.taxonomies.length ) {
+			config.taxonomies.forEach( function ( taxonomySlug ) {
+				children.push( el( 'div', { key: 'taxonomy-' + taxonomySlug, className: 'nop-panel-row' },
+					el( FlatTermSelector, { slug: taxonomySlug } )
+				) );
 			} );
 		}
 

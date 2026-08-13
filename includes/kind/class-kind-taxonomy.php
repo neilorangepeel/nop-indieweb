@@ -418,6 +418,7 @@ class Kind_Taxonomy {
 				'layout'         => '',
 				'title_from_url' => false,
 				'sub_panel'      => 'venue',
+				'taxonomies'     => [ Venue_Category_Taxonomy::TAXONOMY ],
 			],
 			'exercise' => [
 				'label'          => __( 'Exercise', 'nop-indieweb' ),
@@ -425,6 +426,7 @@ class Kind_Taxonomy {
 				'layout'         => '',
 				'title_from_url' => false,
 				'sub_panel'      => 'exercise',
+				'taxonomies'     => [ Exercise_Type_Taxonomy::TAXONOMY ],
 			],
 			'watch' => [
 				'label'          => __( 'Watch', 'nop-indieweb' ),

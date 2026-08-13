@@ -205,6 +205,7 @@ class Plugin {
 		( new Kind_Taxonomy() )->register();
 		( new Venue_Category_Taxonomy() )->register();
 		( new Exercise_Type_Taxonomy() )->register();
+		( new \NOP\IndieWeb\Kind\Kind_Scoping() )->register();
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();

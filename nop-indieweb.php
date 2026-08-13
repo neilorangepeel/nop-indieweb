@@ -53,6 +53,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-rsvp.php';
 require_once NOP_INDIEWEB_DIR . 'includes/services/class-service-exercise.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-icons.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-taxonomy.php';
+require_once NOP_INDIEWEB_DIR . 'includes/kind/class-kind-scoping.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-venue-category-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-exercise-type-taxonomy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
