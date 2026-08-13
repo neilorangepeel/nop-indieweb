@@ -17,6 +17,26 @@ class Template_Registrar {
 	public function register(): void {
 		add_action( 'init', [ $this, 'register_templates' ] );
 		add_filter( 'single_template_hierarchy', [ $this, 'inject_kind_template' ] );
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_template_styles' ] );
+	}
+
+	/**
+	 * Loads the shared stylesheet on the routes these templates serve.
+	 *
+	 * `nop-blocks-shared` is registered as a dependency of the plugin's *blocks*,
+	 * so WordPress only enqueues it when one of those blocks renders. The kind
+	 * archives are built from core blocks alone, so they never triggered it —
+	 * which left classes like .nop-eyebrow and .nop-row with no rules at all.
+	 * The registrar owns these templates, so it owns getting their styles there.
+	 */
+	public function enqueue_template_styles(): void {
+		$serves = is_tax( \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY )
+			|| is_tax( \NOP\IndieWeb\Kind\Venue_Category_Taxonomy::TAXONOMY )
+			|| is_singular( 'post' );
+
+		if ( $serves ) {
+			wp_enqueue_style( 'nop-blocks-shared' );
+		}
 	}
 
 	public function inject_kind_template( array $templates ): array {
