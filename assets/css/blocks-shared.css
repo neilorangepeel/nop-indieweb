@@ -43,6 +43,8 @@
 	--nop-line:      color-mix(in srgb, currentColor 16%, transparent);
 	--nop-ink:       #111;
 	--nop-muted:     #6b7280;
+	--nop-divider-color: #e5e7eb;
+	--nop-text:      inherit;
 	--nop-radius-lg: 14px;
 
 	/* Per-kind riso inks — the public-facing kind identity (mirrors the /post
@@ -101,10 +103,8 @@
 	.nop-rsvp-meta,
 	.nop-syndication-panel
 ) {
-	/* Surfaces / text — neutral defaults; a theme overrides the --nop-* name. */
-	--nop-divider-color: #e5e7eb;
-	--nop-muted:         #6b7280;
-	--nop-text:          inherit;
+	/* Surfaces and text come from :root inside the nop-tokens layer, so a
+	   theme's own :root wins. Re-declaring them here would shadow it. */
 
 	/* Pill pattern — structural metrics, not brand. */
 	--nop-pill-padding:   0.375rem 0.875rem 0.375rem 0.75rem;
