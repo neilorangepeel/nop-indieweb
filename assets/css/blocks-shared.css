@@ -904,6 +904,17 @@ a.nop-post-source__link:focus-visible {
 	color:     var(--nop-muted, #6b7280);
 }
 
+/* The same role a step down, where a row already carries a lot. */
+.nop-meta--sm {
+	font-size: var(--nop-size-meta-sm, 0.75rem);
+	color:     var(--nop-muted, #6b7280);
+}
+
+/* Secondary text that takes its size from context and wants only the colour. */
+.nop-muted {
+	color: var(--nop-muted, #6b7280);
+}
+
 /* The rule between archive rows. Border lives here so a theme can restyle or
    remove it without editing a template it does not own. */
 .nop-row {
