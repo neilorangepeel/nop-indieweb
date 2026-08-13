@@ -2572,48 +2572,66 @@ body::before {
 /* Sent view — one filed carbon copy per post: the post's own line, then the
    network stamps beneath it, left-aligned rather than centred like the success
    receipts (a list reads down the page; a receipt reads as one object). */
+/* Two columns: a rail carrying the post's kind mark over its age, and the
+   content column carrying the title over its destinations. Because the rail is
+   a fixed width, every title starts at the same x down the page — which the old
+   inline layout couldn't do, LIKE and CHECKIN being different widths. */
 .sent-row {
-	padding: var(--space-2xs) 0;
-	border-bottom: var(--bw) solid var(--rule);
-}
-.sent-row__head {
-	display: flex;
+	display: grid;
+	grid-template-columns: var(--sent-rail) 1fr;
+	column-gap: var(--space-xs);
 	align-items: baseline;
-	gap: var(--space-2xs);
-	color: inherit;
-	text-decoration: none;
-	/* Padding rather than min-height: it buys the same 44px target while the
-	   slack sits evenly around the line, instead of pooling under it. */
-	padding: 12px 0 10px;
+	padding: var(--space-xs) 0;
+	border-bottom: var(--bw) solid var(--rule);
+	--sent-rail: 26px;
 }
-.sent-row__head:focus-visible { outline: var(--bw-input) solid var(--ink); outline-offset: 2px; }
-.sent-row__kind {
+.sent-row__rail {
+	grid-column: 1;
+	grid-row: 1 / span 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	color: color-mix( in srgb, var(--ink) 62%, var(--paper) );
+}
+.sent-row__icon { width: 20px; height: 20px; fill: currentColor; }
+/* Fallback for a kind with no mark in the sprite — its name, set to match the
+   age beneath it so the rail still reads as one quiet unit. */
+.sent-row__kind,
+.sent-row__when {
 	font-family: var(--display);
 	font-size: var(--step--2);
-	font-weight: 800;
+	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: var(--accent);
-	flex: none;
+	letter-spacing: 0.04em;
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+	line-height: 1.2;
 }
-.sent-row__when {
-	font-size: var(--step--2);
-	color: color-mix( in srgb, var(--ink) 50%, var(--paper) );
-	flex: none;
-}
+.sent-row__kind { color: inherit; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.sent-row__when { color: color-mix( in srgb, var(--ink) 45%, var(--paper) ); }
 .sent-row__title {
-	flex: 1;
+	grid-column: 2;
+	grid-row: 1;
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	color: inherit;
+	text-decoration: none;
+	/* Padding rather than min-height: it buys the 44px target while the slack
+	   sits evenly around the line, instead of pooling under it. */
+	padding: 11px 0;
 }
+.sent-row__title:focus-visible { outline: var(--bw-input) solid var(--ink); outline-offset: 2px; }
 /* In the list the destinations are an annotation, not a trophy — the solid
    stamps of the success receipt would out-shout the post they belong to, and
    four of them wrap to two lines. Here they collapse to one printed line of
    small caps, separated by the masthead's own interpunct, distinguished by
    weight and mark rather than by fill. */
 .sent-row .delivery {
+	grid-column: 2;
+	grid-row: 2;
 	justify-content: flex-start;
 	margin: 0;
 	gap: 0;
@@ -2645,7 +2663,7 @@ body::before {
 .sent-row .delivery__row.is-skipped { opacity: 1; }
 /* On one tight line the retry's 44px target would reach up into the title link
    and swallow its taps. Trim it to the line, and let the title win the overlap. */
-.sent-row__head { position: relative; z-index: 1; }
+.sent-row__title { position: relative; z-index: 1; }
 .sent-row .delivery__retry::after { inset: -8px -10px; }
 
 .success-actions { display: flex; flex-direction: column; gap: 10px; }

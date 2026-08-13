@@ -506,6 +506,16 @@ foreach ( [ '700', '800' ] as $weight ) {
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
 	<symbol id="nop-x" viewBox="0 0 24 24"><path d="M7 7 17 17 M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>
 	<symbol id="nop-check" viewBox="0 0 256 256"><path fill="currentColor" d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+	<?php
+	// Post-kind marks for the Sent list's rail, from the same source the
+	// kind-icon block draws from. A kind with no mark here simply isn't in the
+	// sprite, and the list falls back to printing its name.
+	foreach ( \NOP\IndieWeb\Kind\Kind_Icons::paths() as $kind_slug => $kind_path ) :
+		?>
+		<symbol id="nop-kind-<?php echo esc_attr( $kind_slug ); ?>" viewBox="0 0 256 256"><path fill="currentColor" d="<?php echo esc_attr( $kind_path ); ?>"/></symbol>
+		<?php
+	endforeach;
+	?>
 </svg>
 <!-- iOS 26 status-bar guard. Safari 26 builds its Liquid Glass tint by sampling
      background-color / backdrop-filter off any fixed or sticky element within

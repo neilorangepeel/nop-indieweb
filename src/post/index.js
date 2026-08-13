@@ -2947,18 +2947,39 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			.catch( function () { return []; } );
 	}
 
+	// The rail's mark, when the sprite carries one for this kind. Kinds with no
+	// mark (exercise has its own icon block; flight has none) print their name
+	// instead, so the column is never empty.
+	function kindMark( kind ) {
+		if ( kind && document.getElementById( 'nop-kind-' + kind ) ) {
+			return '<svg class="sent-row__icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">'
+				+ '<use href="#nop-kind-' + escAttr( kind ) + '"/></svg>';
+		}
+		return '<span class="sent-row__kind">' + escHtml( kind || 'post' ) + '</span>';
+	}
+
 	function renderSentList( rows ) {
 		if ( ! sentList ) { return; }
 		if ( ! rows.length ) { sentList.innerHTML = '<p class="drafts-view__empty">Nothing sent yet.</p>'; return; }
 		sentList.innerHTML = rows.map( function ( r ) {
 			// post_date_gmt arrives as "Y-m-d H:i:s" — make it a real UTC instant
 			// before handing it to the ticker's relative-time formatter.
-			var when = Date.parse( String( r.published_gmt || '' ).replace( ' ', 'T' ) + 'Z' );
+			var when  = Date.parse( String( r.published_gmt || '' ).replace( ' ', 'T' ) + 'Z' );
+			var ago   = isNaN( when ) ? '' : tkAgo( Math.floor( when / 1000 ) );
+			// The rail is one icon wide, so it carries "11w", not "11w ago" —
+			// the full phrase rides in the link's accessible name instead.
+			var stamp = ago.replace( / ?ago$/, '' );
+			var kind  = ( r.kind || '' ).toLowerCase();
+			// The rail duplicates what the link already announces, so it's hidden
+			// from assistive tech and the kind + age ride inside the link's name.
 			return '<div class="sent-row">'
-				+ '<a class="sent-row__head" href="' + escAttr( r.url ) + '" target="_blank" rel="noopener noreferrer">'
-				+ '<span class="sent-row__kind">' + escHtml( r.kind || 'post' ) + '</span>'
-				+ ( isNaN( when ) ? '' : '<span class="sent-row__when">' + escHtml( tkAgo( Math.floor( when / 1000 ) ) ) + '</span>' )
-				+ '<span class="sent-row__title">' + escHtml( r.title || '(untitled)' ) + '</span>'
+				+ '<div class="sent-row__rail" aria-hidden="true">'
+				+ kindMark( kind )
+				+ ( stamp ? '<span class="sent-row__when">' + escHtml( stamp ) + '</span>' : '' )
+				+ '</div>'
+				+ '<a class="sent-row__title" href="' + escAttr( r.url ) + '" target="_blank" rel="noopener noreferrer">'
+				+ escHtml( r.title || '(untitled)' )
+				+ '<span class="sr-only"> — ' + escHtml( kind || 'post' ) + ( ago ? ', ' + escHtml( ago ) : '' ) + '</span>'
 				+ '</a>'
 				+ '<ul class="delivery">'
 				+ ( r.targets || [] ).map( function ( t ) { return deliveryRow( t, r.id, true ); } ).join( '' )
