@@ -517,17 +517,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 	endforeach;
 	?>
 </svg>
-<!-- iOS 26 status-bar guard. Safari 26 builds its Liquid Glass tint by sampling
-     background-color / backdrop-filter off any fixed or sticky element within
-     ~4px of the viewport top, and — with the document parked at scrollY 0, as
-     this app's locked root always is — paints that sample back as a blurred
-     band bleeding down over the masthead. Handing it a fixed element that is
-     explicitly transparent leaves it nothing to blur; the accent it used to
-     take from the root is painted by the absolutely-positioned child instead,
-     so the strip looks exactly as it did. Home-screen app only: a Safari tab
-     already sits below the browser chrome. -->
-<div class="status-guard" aria-hidden="true"><span></span></div>
-
 <div class="app" id="app" data-type="note">
 
 	<!-- Faux iOS chrome — desktop floating-phone mock only -->
