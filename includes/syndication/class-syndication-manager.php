@@ -303,7 +303,7 @@ class Syndication_Manager {
 	 */
 	private function due_events( int $post_id ): array {
 		$cron = _get_cron_array();
-		if ( ! is_array( $cron ) ) {
+		if ( ! $cron ) {
 			return [];
 		}
 
