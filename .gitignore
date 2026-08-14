@@ -4,6 +4,10 @@
 # Claude Code
 .claude/
 
+# Python
+__pycache__/
+*.pyc
+
 # Editor
 *.swp
 *.swo

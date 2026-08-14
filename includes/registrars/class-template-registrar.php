@@ -128,6 +128,11 @@ class Template_Registrar {
 				'description' => __( 'Displays a story post with the self-hosted video as the primary content.', 'nop-indieweb' ),
 				'file'        => 'single-nop_kind-story.html',
 			],
+			'nop-indieweb//single-nop_kind-listen' => [
+				'title'       => __( 'Single – Listen', 'nop-indieweb' ),
+				'description' => __( 'Displays a listen post — music or audio, with the note as the primary content.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind-listen.html',
+			],
 
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
 			'nop-indieweb//taxonomy-nop_kind-watch' => [

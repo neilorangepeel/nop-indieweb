@@ -215,6 +215,39 @@ class Registry {
 				'description' => 'ISO8601 timestamp of when the weather lookup ran.',
 			] ),
 
+			// ── Cached map image ─────────────────────────────────────────────────
+			// Written by nop_indieweb_get_or_cache_map_image() and read in six
+			// places — the checkin map block, Open Graph, the Bluesky syndicator
+			// and Map_Cleanup among them. It went unregistered for a long time,
+			// which meant it was absent from REST, invisible to the editor and
+			// unbindable, despite being ordinary post data like everything here.
+			'nop_indieweb_map_url'          => array_merge( $string, [
+				'label'       => __( 'Cached Map URL', 'nop-indieweb' ),
+				'description' => 'Attachment URL of the cached static map or flight arc for this post.',
+			] ),
+
+			// ── Imported reaction counts ─────────────────────────────────────────
+			// Reactions that arrived with a post imported from another platform,
+			// which have no webmention behind them. post-footer adds these to the
+			// counts it derives from comments, so a like made on Facebook in 2014
+			// still shows on the post here.
+			'nop_indieweb_imported_likes'   => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Imported Likes', 'nop-indieweb' ),
+				'description'   => 'Like count carried over from the originating platform at import.',
+			],
+			'nop_indieweb_imported_reposts' => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Imported Reposts', 'nop-indieweb' ),
+				'description'   => 'Repost/share count carried over from the originating platform at import.',
+			],
+
 			// ── Syndication ──────────────────────────────────────────────────────
 			// Stored separately so we can query it directly without deserializing the array.
 			'nop_indieweb_source_url'       => array_merge( $string, [

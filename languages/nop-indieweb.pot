@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-14T10:44:42+00:00\n"
+"POT-Creation-Date: 2026-08-14T10:52:54+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nop-indieweb\n"
@@ -136,7 +136,7 @@ msgid "%s poster"
 msgstr ""
 
 #: blocks/film-meta/render.php:109
-#: includes/post-meta/class-meta-registry.php:375
+#: includes/post-meta/class-meta-registry.php:408
 #: blocks/film-meta/editor.js:144
 msgid "Rewatch"
 msgstr ""
@@ -608,7 +608,7 @@ msgstr ""
 #: includes/class-posting-page.php:617
 #: includes/kind/class-kind-taxonomy.php:91
 #: includes/kind/class-kind-taxonomy.php:416
-#: includes/post-meta/class-meta-registry.php:281
+#: includes/post-meta/class-meta-registry.php:314
 msgid "RSVP"
 msgstr ""
 
@@ -1019,7 +1019,7 @@ msgstr ""
 
 #: includes/kind/class-exercise-type-taxonomy.php:57
 #: includes/kind/class-exercise-type-taxonomy.php:60
-#: includes/post-meta/class-meta-registry.php:385
+#: includes/post-meta/class-meta-registry.php:418
 msgid "Exercise Type"
 msgstr ""
 
@@ -1357,221 +1357,233 @@ msgstr ""
 msgid "Weather Fetched At"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:221
+#: includes/post-meta/class-meta-registry.php:225
+msgid "Cached Map URL"
+msgstr ""
+
+#: includes/post-meta/class-meta-registry.php:239
+msgid "Imported Likes"
+msgstr ""
+
+#: includes/post-meta/class-meta-registry.php:247
+msgid "Imported Reposts"
+msgstr ""
+
+#: includes/post-meta/class-meta-registry.php:254
 msgid "Source URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:225
+#: includes/post-meta/class-meta-registry.php:258
 msgid "Checkin URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:229
+#: includes/post-meta/class-meta-registry.php:262
 msgid "Syndication URLs"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:233
+#: includes/post-meta/class-meta-registry.php:266
 msgid "Syndicate To"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:237
+#: includes/post-meta/class-meta-registry.php:270
 msgid "Skip Syndication"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:259
+#: includes/post-meta/class-meta-registry.php:292
 msgid "Syndication Status"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:265
+#: includes/post-meta/class-meta-registry.php:298
 msgid "Bookmark Of"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:269
+#: includes/post-meta/class-meta-registry.php:302
 msgid "In Reply To"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:273
+#: includes/post-meta/class-meta-registry.php:306
 msgid "Like Of"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:277
+#: includes/post-meta/class-meta-registry.php:310
 msgid "Repost Of"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:285
+#: includes/post-meta/class-meta-registry.php:318
 msgid "Quote Of"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:296
+#: includes/post-meta/class-meta-registry.php:329
 msgid "Event Name"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:300
+#: includes/post-meta/class-meta-registry.php:333
 msgid "Event Start"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:304
+#: includes/post-meta/class-meta-registry.php:337
 msgid "Event End"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:308
+#: includes/post-meta/class-meta-registry.php:341
 msgid "Event Location"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:312
+#: includes/post-meta/class-meta-registry.php:345
 msgid "Event Image"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:317
+#: includes/post-meta/class-meta-registry.php:350
 msgid "RSVP Note"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:325
+#: includes/post-meta/class-meta-registry.php:358
 msgid "Cite Title"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:329
+#: includes/post-meta/class-meta-registry.php:362
 msgid "Cite Author"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:333
+#: includes/post-meta/class-meta-registry.php:366
 msgid "Cite Author URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:337
+#: includes/post-meta/class-meta-registry.php:370
 msgid "Cite Author Photo"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:341
+#: includes/post-meta/class-meta-registry.php:374
 msgid "Cite Excerpt"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:345
+#: includes/post-meta/class-meta-registry.php:378
 msgid "Cite Image"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:349
+#: includes/post-meta/class-meta-registry.php:382
 msgid "Cite Site Name"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:355
+#: includes/post-meta/class-meta-registry.php:388
 msgid "Film Title"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:359
+#: includes/post-meta/class-meta-registry.php:392
 msgid "Film Year"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:363
+#: includes/post-meta/class-meta-registry.php:396
 msgid "Film Rating"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:367
+#: includes/post-meta/class-meta-registry.php:400
 msgid "Watch Date"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:371
+#: includes/post-meta/class-meta-registry.php:404
 msgid "Film Poster URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:379
+#: includes/post-meta/class-meta-registry.php:412
 msgid "TMDB ID"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:393
+#: includes/post-meta/class-meta-registry.php:426
 msgid "Distance (m)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:401
+#: includes/post-meta/class-meta-registry.php:434
 msgid "Duration (s)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:409
+#: includes/post-meta/class-meta-registry.php:442
 msgid "Moving Time (s)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:417
+#: includes/post-meta/class-meta-registry.php:450
 msgid "Elevation Gain (m)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:425
+#: includes/post-meta/class-meta-registry.php:458
 msgid "Elevation Loss (m)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:433
+#: includes/post-meta/class-meta-registry.php:466
 msgid "Avg Heart Rate (bpm)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:441
+#: includes/post-meta/class-meta-registry.php:474
 msgid "Max Heart Rate (bpm)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:449
+#: includes/post-meta/class-meta-registry.php:482
 msgid "Calories (kcal)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:453
+#: includes/post-meta/class-meta-registry.php:486
 msgid "Start Latitude"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:457
+#: includes/post-meta/class-meta-registry.php:490
 msgid "Start Longitude"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:461
+#: includes/post-meta/class-meta-registry.php:494
 msgid "Route (polyline)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:465
+#: includes/post-meta/class-meta-registry.php:498
 msgid "Exercise Source URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:469
+#: includes/post-meta/class-meta-registry.php:502
 msgid "Exercise Source ID"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:473
+#: includes/post-meta/class-meta-registry.php:506
 msgid "Exercise Map URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:477
+#: includes/post-meta/class-meta-registry.php:510
 msgid "Exercise GPX URL"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:481
+#: includes/post-meta/class-meta-registry.php:514
 msgid "Exercise Gear"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:489
+#: includes/post-meta/class-meta-registry.php:522
 msgid "Max Speed (m/s)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:497
+#: includes/post-meta/class-meta-registry.php:530
 msgid "Max Grade (%)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:505
+#: includes/post-meta/class-meta-registry.php:538
 msgid "Elevation High (m)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:513
+#: includes/post-meta/class-meta-registry.php:546
 msgid "Elevation Low (m)"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:520
+#: includes/post-meta/class-meta-registry.php:553
 #: includes/syndication/class-syndicator-bluesky.php:104
 #: admin/post-kinds-panel.js:165
 msgid "Photos"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:525
+#: includes/post-meta/class-meta-registry.php:558
 msgid "Photo IDs"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:531
+#: includes/post-meta/class-meta-registry.php:564
 msgid "Videos"
 msgstr ""
 
-#: includes/post-meta/class-meta-registry.php:535
+#: includes/post-meta/class-meta-registry.php:568
 msgid "Video IDs"
 msgstr ""
 
@@ -1775,123 +1787,131 @@ msgstr ""
 msgid "Displays a story post with the self-hosted video as the primary content."
 msgstr ""
 
-#: includes/registrars/class-template-registrar.php:134
-msgid "Archive – Film Diary"
+#: includes/registrars/class-template-registrar.php:132
+msgid "Single – Listen"
 msgstr ""
 
-#: includes/registrars/class-template-registrar.php:135
-msgid "Three-column poster grid for the watch kind. Shows poster, star rating, title, and watch date."
+#: includes/registrars/class-template-registrar.php:133
+msgid "Displays a listen post — music or audio, with the note as the primary content."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:139
-msgid "Archive – Notes"
+msgid "Archive – Film Diary"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:140
-msgid "Dense chronological stream for imported social posts. Shows content and platform attribution."
+msgid "Three-column poster grid for the watch kind. Shows poster, star rating, title, and watch date."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:144
-msgid "Archive – Checkins"
+msgid "Archive – Notes"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:145
-msgid "Venue list for Swarm checkin posts. Shows venue name, locality, and date."
+msgid "Dense chronological stream for imported social posts. Shows content and platform attribution."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:149
-msgid "Archive – Bookmarks"
+msgid "Archive – Checkins"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:150
-msgid "Reading list of bookmarked URLs with optional notes."
+msgid "Venue list for Swarm checkin posts. Shows venue name, locality, and date."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:154
-msgid "Archive – Likes"
+msgid "Archive – Bookmarks"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:155
-msgid "Compact list of liked posts across the web."
+msgid "Reading list of bookmarked URLs with optional notes."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:159
-msgid "Archive – Reposts"
+msgid "Archive – Likes"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:160
-msgid "Compact list of reposted content from Mastodon and Bluesky."
+msgid "Compact list of liked posts across the web."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:164
-msgid "Archive – Replies"
+msgid "Archive – Reposts"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:165
-msgid "Conversation list showing in-reply-to context and reply content."
+msgid "Compact list of reposted content from Mastodon and Bluesky."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:169
-msgid "Archive – RSVPs"
+msgid "Archive – Replies"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:170
-msgid "Event response list showing RSVP status and event link."
+msgid "Conversation list showing in-reply-to context and reply content."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:174
-msgid "Archive – Articles"
+msgid "Archive – RSVPs"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:175
-msgid "Chronological list of long-form articles with title, date, tags, and excerpt."
+msgid "Event response list showing RSVP status and event link."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:179
-msgid "Archive – Photos"
+msgid "Archive – Articles"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:180
-msgid "Square photo grid for the photo kind. Featured images link to each photo post."
+msgid "Chronological list of long-form articles with title, date, tags, and excerpt."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:184
-msgid "Archive – Quotes"
+msgid "Archive – Photos"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:185
-msgid "Chronological list of quotation posts with source attribution."
+msgid "Square photo grid for the photo kind. Featured images link to each photo post."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:189
-msgid "Archive – Videos"
+msgid "Archive – Quotes"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:190
-msgid "Chronological stream of video posts."
+msgid "Chronological list of quotation posts with source attribution."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:194
-msgid "Archive – Stories"
+msgid "Archive – Videos"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:195
-msgid "Poster grid of all story videos — the permanent archive the 24h rail falls back to."
+msgid "Chronological stream of video posts."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:199
-msgid "Archive – Exercise"
+msgid "Archive – Stories"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:200
-msgid "Activity log of workout posts with distance, duration, and date."
+msgid "Poster grid of all story videos — the permanent archive the 24h rail falls back to."
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:204
-msgid "Archive – Venue Category"
+msgid "Archive – Exercise"
 msgstr ""
 
 #: includes/registrars/class-template-registrar.php:205
+msgid "Activity log of workout posts with distance, duration, and date."
+msgstr ""
+
+#: includes/registrars/class-template-registrar.php:209
+msgid "Archive – Venue Category"
+msgstr ""
+
+#: includes/registrars/class-template-registrar.php:210
 msgid "Lists every check-in in a Foursquare venue category (Yoga Studios, Parks, Bars, etc.)."
 msgstr ""
 

@@ -86,17 +86,6 @@
 		font-size: 0.8em;
 	}
 
-	.nop-film-card .nop-film-star.is-full  { color: var(--nop-star-on); }
-	.nop-film-card .nop-film-star.is-empty { color: var(--nop-star-off); }
-
-	/* Half stars are one glyph filled left-to-right, which needs the gradient
-	   clipped to the text and the glyph itself made transparent. */
-	.nop-film-card .nop-film-star.is-half {
-		background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
-		-webkit-background-clip: text;
-		background-clip:         text;
-		color:                   transparent;
-	}
 
 	/* ── Title and meta ────────────────────────────────────────────────────── */
 

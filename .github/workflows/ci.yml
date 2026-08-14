@@ -40,8 +40,16 @@ jobs:
     # find in the Site Editor.
     steps:
       - uses: actions/checkout@v4
-      - name: Validate block templates
-        run: python3 bin/check-block-markup.py templates
+      # patterns/ as well as templates/: the-index.html is 389 lines of
+      # hand-authored markup, which is exactly what this catches.
+      - name: Validate block templates and patterns
+        run: python3 bin/check-block-markup.py templates patterns
+
+      # bin/check-block-validity.mjs is the other half of this — it catches
+      # markup that is well-formed but disagrees with the block's save(), which
+      # needs Gutenberg to answer. It cannot run here because it drives a real
+      # browser against a running site, so it stays a local gate. Run it before
+      # any commit that edits template markup by hand.
 
   test:
     name: PHPUnit

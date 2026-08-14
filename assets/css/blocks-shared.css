@@ -356,6 +356,32 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
    requirement. Layered so an unlayered theme rule — including anything
    theme.json emits — wins without having to out-specify it. */
 
+/* ── Film star rating ─────────────────────────────────────────────────────
+   Both film-meta and film-card render stars, and both load this file, so the
+   colours live here once rather than in each. They were duplicated before —
+   film-meta's copy was unscoped and would have covered film-card too, except a
+   film-card archive never loads film-meta's stylesheet.
+
+   Appearance, so layered. Sizing stays with each block, which wants a
+   different one. */
+@layer nop-appearance {
+	.nop-film-star.is-full,
+	.nop-film-star-glyph.is-full  { color: var(--nop-star-on); }
+
+	.nop-film-star.is-empty,
+	.nop-film-star-glyph.is-empty { color: var(--nop-star-off); }
+
+	/* Half stars are one glyph filled left-to-right, which needs the gradient
+	   clipped to the text and the glyph itself made transparent. */
+	.nop-film-star.is-half,
+	.nop-film-star-glyph.is-half {
+		background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
+		-webkit-background-clip: text;
+		background-clip:         text;
+		color:                   transparent;
+	}
+}
+
 /* ── Checkin map ──────────────────────────────────────────────────────────── */
 
 .nop-checkin-map {
