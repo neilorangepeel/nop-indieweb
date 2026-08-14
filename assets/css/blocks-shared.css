@@ -410,10 +410,26 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 
 /* When the editor sets an explicit aspect ratio on the wrapper, fill it and
    crop the cached 2:1 source rather than letting the img enforce its own
-   natural ratio. */
+   natural ratio.
+
+   Two things this needs that are easy to miss, and without either the block's
+   declared dimensions.aspectRatio support silently does nothing:
+
+   The link between wrapper and image is inline by default, so `height: 100%`
+   on the img resolves against a box with no height and the image keeps its
+   own — leaving the wrapper tall and empty with the attribution pill stranded
+   at the bottom of it.
+
+   And the 200px cap above still applies at lower specificity, so it has to be
+   lifted here or the image is capped inside a box it was told to fill. */
+.wp-block-nop-indieweb-checkin-map[style*="aspect-ratio"] .nop-checkin-map__link {
+	display: block;
+	height:  100%;
+}
 .wp-block-nop-indieweb-checkin-map[style*="aspect-ratio"] .nop-checkin-map__img {
 	width:      100%;
 	height:     100%;
+	max-height: none;
 	object-fit: cover;
 }
 
@@ -467,9 +483,14 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	height:  auto;
 }
 
+.wp-block-nop-indieweb-exercise-map[style*="aspect-ratio"] .nop-exercise-map__link {
+	display: block;
+	height:  100%;
+}
 .wp-block-nop-indieweb-exercise-map[style*="aspect-ratio"] .nop-exercise-map__img {
 	width:      100%;
 	height:     100%;
+	max-height: none;
 	object-fit: cover;
 }
 

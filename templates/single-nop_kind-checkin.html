@@ -1,48 +1,63 @@
 <!--
 	Checkin — single post.
 
-	Simplified in the Site Editor and ported back here, so this file is the
-	source of truth again. Kept in the editor's own compact formatting on
-	purpose: the next round-trip through the Site Editor then produces a clean
-	diff instead of a whitespace one.
+	Variant 6 from the proportion study: two thirds map, one third record, and
+	the map at its own 4:3 rather than filling the viewport.
 
-	The shape: map on the left at 55%, the record on the right at 45%. Those are
-	the half of a checkin that is always there — venue, coordinates and weather
-	sit at 100% coverage and the map at 99% — so they carry the page alone, and
-	71% of checkins have nothing else. No border, no separators: the whitespace
-	does that work.
+	That last part is the whole of it. Five ratios were measured for the empty
+	space under the record, and every ratio that narrowed the record column made
+	the hole BIGGER — the record is six rows and does not grow, so narrowing its
+	column only makes the leftover taller. Two thirds measured 122px worse than
+	55/45. Dropping the full-height constraint took the same two-thirds layout
+	from 571px of void to 40px.
 
-	Still open, and deliberately absent rather than forgotten:
-	  · the date, which left with the eyebrow bar — a checkin is a place at a
-	    time, and right now the page says only the place
-	  · kind and venue category, likewise
-	  · post-content, so the note or photograph on 478 checkins shows on none
-	  · post-footer / replies / comment-form, so there is no way to respond and
-	    no webmentions display
+	align:full with spacing|30 is exactly what parts/header.html carries, so the
+	map's left edge lands on the logo's left edge. Not eyeballed to match — the
+	same value.
+
+	The map is duotoned into the press through the block's own filter.duotone
+	support. The contrast stretch the mock used in front of it (brightness .48,
+	contrast 2.8) is deliberately NOT here: theme.json has no filter property
+	beyond duotone and this file carries no CSS. Without it the map reads pale.
+	The fix belongs at the source — the cached PNGs are generated through a
+	Geoapify styleCustomization already filterable via
+	nop_indieweb_map_style_customization, so the contrast can be baked into the
+	image rather than layered over it.
+
+	Still absent, and deliberately: post-footer / replies / comment-form, so
+	there is no way to respond and no webmentions display.
 -->
 <!-- wp:template-part {"slug":"header"} /-->
 
 <!-- wp:group {"metadata":{"name":"Main"},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:group {"metadata":{"name":"Checkin"},"align":"wide","style":{"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
-<div class="wp-block-group alignwide"><!-- wp:group {"layout":{"type":"default"}} -->
+<div class="wp-block-group"><!-- wp:group {"metadata":{"name":"Checkin"},"align":"full","backgroundColor":"surface","textColor":"brand","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|60","left":"var:preset|spacing|30","right":"var:preset|spacing|30"},"blockGap":"var:preset|spacing|50"}},"layout":{"type":"default"}} -->
+<div class="wp-block-group alignfull has-brand-color has-surface-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--60);padding-left:var(--wp--preset--spacing--30)"><!-- wp:group {"layout":{"type":"default"}} -->
 <div class="wp-block-group"><!-- wp:columns {"verticalAlignment":"top","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|40","left":"var:preset|spacing|50"}}}} -->
-<div class="wp-block-columns are-vertically-aligned-top"><!-- wp:column {"verticalAlignment":"top","width":"55%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
-<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:55%"><!-- wp:nop-indieweb/checkin-map /--></div>
+<div class="wp-block-columns are-vertically-aligned-top"><!-- wp:column {"verticalAlignment":"top","width":"66.66%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:66.66%"><!-- wp:nop-indieweb/checkin-map {"style":{"dimensions":{"aspectRatio":"4/3"},"color":{"duotone":"var:preset|duotone|orange"}}} /--><!-- wp:group {"className":"nop-checkin-content","style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}},"layout":{"type":"default"}} --><div class="wp-block-group nop-checkin-content" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:post-content {"layout":{"type":"default"}} /--></div><!-- /wp:group --></div>
 <!-- /wp:column -->
 
-<!-- wp:column {"verticalAlignment":"top","width":"45%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
-<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:45%"><!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
-<div class="wp-block-group"><!-- wp:post-title {"fontSize":"x-large"} /-->
+<!-- wp:column {"verticalAlignment":"top","width":"33.33%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:33.33%"><!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+<div class="wp-block-group"><!-- wp:post-title {"fontSize":"xx-large","fontFamily":"display","style":{"typography":{"fontWeight":"800","letterSpacing":"-0.02em","lineHeight":"1.12"}}} /-->
 
-<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"textColor":"muted","fontSize":"small"} -->
-<p class="has-muted-color has-text-color has-small-font-size">Address</p>
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"fontSize":"small"} -->
+<p class="has-small-font-size">Address</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"style":{"spacing":{"blockGap":"0","margin":{"top":"var:preset|spacing|30"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"default"}} -->
-<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;margin-top:var(--wp--preset--spacing--30)"><!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small","fontFamily":"display"} -->
-<p class="has-muted-color has-text-color has-display-font-family has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Weather</p>
+<!-- wp:group {"style":{"spacing":{"blockGap":"0","margin":{"top":"var:preset|spacing|30"}},"border":{"top":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"default"}} -->
+<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--brand);border-top-style:solid;border-top-width:1px;margin-top:var(--wp--preset--spacing--30)"><!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Date</p>
+<!-- /wp:paragraph -->
+<!-- wp:post-date {"format":"j M Y · H:i","fontSize":"x-small","fontFamily":"mono"} /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Weather</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"x-small","fontFamily":"mono","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
@@ -50,8 +65,8 @@
 
 <!-- wp:nop-indieweb/weather-temp {"fontSize":"x-small"} /-->
 
-<!-- wp:paragraph {"textColor":"muted"} -->
-<p class="has-muted-color has-text-color">·</p>
+<!-- wp:paragraph -->
+<p>·</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
@@ -60,9 +75,9 @@
 <!-- /wp:group --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
-<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Visits</p>
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Visits</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"fontSize":"x-small","fontFamily":"mono"} -->
@@ -70,9 +85,17 @@
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
-<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Coordinates</p>
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Category</p>
+<!-- /wp:paragraph -->
+<!-- wp:post-terms {"term":"nop_venue_category","separator":" · ","fontSize":"x-small","fontFamily":"mono"} /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Coordinates</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontSize":"x-small","fontFamily":"mono"} -->
@@ -80,9 +103,9 @@
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
-<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Source</p>
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Source</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_service"}}}},"style":{"typography":{"textTransform":"capitalize"}},"fontSize":"x-small","fontFamily":"mono"} -->
@@ -90,9 +113,9 @@
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"className":"nop-flight","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group nop-flight" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
-<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Route</p>
+<!-- wp:group {"className":"nop-flight","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|brand","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group nop-flight" style="border-bottom-color:var(--wp--preset--color--brand);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"fontSize":"x-small","fontFamily":"display","style":{"typography":{"fontWeight":"500","textTransform":"uppercase","letterSpacing":"0.1em"}}} -->
+<p class="has-display-font-family has-x-small-font-size" style="font-weight:500;letter-spacing:0.1em;text-transform:uppercase">Route</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","fontSize":"x-small","fontFamily":"mono"} -->
