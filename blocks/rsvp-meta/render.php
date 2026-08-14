@@ -21,19 +21,20 @@ $rsvp_labels = [
 	'no'         => __( 'Not going',  'nop-indieweb' ),
 ];
 
-$rsvp_colors = [
-	'yes'        => '#15803d', // green-700 — 4.6:1 on white
-	'maybe'      => '#92400e', // amber-800 — 5.1:1 on white (d97706 fails AA)
-	'interested' => '#1d4ed8', // blue-700  — 5.0:1 on white
-	'no'         => '#b91c1c', // red-700   — 5.0:1 on white
-];
+/*
+ * The response colours are NOT set here. They used to be — four hex values
+ * emitted as an inline `style="--rsvp-color: …"`, which no theme could reach and
+ * no global style could retone. They are now a modifier class per status, with
+ * the values declared as tokens in blocks-shared.css, where a theme can override
+ * them like any other. The contrast reasoning travels with them.
+ */
 
 if ( ! $post_id ) {
 	$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--preview' ] );
 	?>
 	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<p class="nop-rsvp-meta__status">
-			<span class="nop-rsvp-badge" style="--rsvp-color: #16a34a"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
+			<span class="nop-rsvp-badge nop-rsvp-badge--yes"><?php esc_html_e( 'Going', 'nop-indieweb' ); ?></span>
 		</p>
 		<p class="nop-rsvp-meta__event">
 			<?php esc_html_e( 'Event:', 'nop-indieweb' ); ?> <a href="#" onclick="return false;">IndieWebCamp 2025 — indieweb.org</a>
@@ -59,14 +60,14 @@ if ( ! $rsvp_value && ! $event_url && ! $event_name ) {
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 		$wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta nop-rsvp-meta--placeholder' ] );
 		echo '<div ' . wp_kses_data( $wrapper_attrs ) . '>';
-		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge" style="--rsvp-color:#9ca3af">' . esc_html__( 'Set RSVP in sidebar →', 'nop-indieweb' ) . '</span></p>';
+		echo '<p class="nop-rsvp-meta__status"><span class="nop-rsvp-badge nop-rsvp-badge--unset">' . esc_html__( 'Set RSVP in sidebar →', 'nop-indieweb' ) . '</span></p>';
 		echo '</div>';
 	}
 	return;
 }
 
 $rsvp_label = $rsvp_labels[ $rsvp_value ] ?? ucfirst( $rsvp_value );
-$rsvp_color = $rsvp_colors[ $rsvp_value ] ?? '#6b7280';
+$rsvp_slug = $rsvp_value ? sanitize_html_class( $rsvp_value ) : 'unset';
 
 $event_host  = $event_url ? ( wp_parse_url( $event_url, PHP_URL_HOST ) ?? $event_url ) : '';
 $event_label = '' !== $event_name ? $event_name : $event_host;
@@ -86,7 +87,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-rsvp-meta' ] );
 
 	<?php if ( $rsvp_value ) : ?>
 	<p class="nop-rsvp-meta__status">
-		<span class="nop-rsvp-badge" style="--rsvp-color: <?php echo esc_attr( $rsvp_color ); ?>">
+		<span class="nop-rsvp-badge nop-rsvp-badge--<?php echo esc_attr( $rsvp_slug ); ?>">
 			<?php echo esc_html( $rsvp_label ); ?>
 		</span>
 	</p>

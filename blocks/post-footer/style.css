@@ -26,7 +26,7 @@ a.nop-post-footer__pill--link:hover {
 /* ── Inline source attribution ────────────────────────────────────────────── */
 
 .nop-post-footer__sep {
-	color: var(--wp--preset--color--accent-4, #9ca3af);
+	color: var(--nop-muted-soft);
 }
 
 .nop-post-footer__source {
@@ -38,7 +38,7 @@ a.nop-post-footer__pill--link:hover {
 
 /* Brief success state after clipboard copy */
 .nop-post-footer__pill--share.is-copied {
-	color:        var(--wp--preset--color--accent-3, currentColor);
+	color:        currentColor;
 	border-color: currentColor;
 }
 
@@ -133,22 +133,22 @@ a.nop-post-footer__pill--link:hover {
 
 .nop-post-footer__reveal-panel .nop-webmentions__avatar,
 .nop-post-footer__reveal-panel .nop-webmentions__overflow {
-	box-shadow: 0 0 0 2px var(--wp--preset--color--base, #fff);
+	box-shadow: 0 0 0 2px var(--nop-paper);
 }
 
 /* Force the overflow bubble opaque — its token background can be translucent,
    which let the avatar behind it bleed through and look like a glitch. The
    base colour sits underneath the divider tint so it always reads solid. */
 .nop-post-footer__reveal-panel .nop-webmentions__overflow {
-	background-color: var(--wp--preset--color--base, #fff);
+	background-color: var(--nop-paper);
 	background-image: linear-gradient( var(--nop-divider-color), var(--nop-divider-color) );
 }
 
 /* Textarea invite — colour flash only (reduced motion) */
 @keyframes nop-textarea-color {
 	0%, 100% { background-color: transparent; }
-	25%, 65%  { background-color: var(--wp--preset--color--accent-6, rgba(0,0,0,0.05));
-	            border-color:     var(--wp--preset--color--accent-4, #9ca3af); }
+	25%, 65%  { background-color: var(--nop-wash);
+	            border-color:     var(--nop-muted-soft); }
 }
 
 .nop-textarea-invite {
@@ -170,8 +170,8 @@ a.nop-post-footer__pill--link:hover {
 			/* peak lift — floating above the page */
 			animation-timing-function: cubic-bezier(0.8, 0, 1, 0.75);
 			transform:        translateY(-8px) scale(1.06, 1.04);
-			background-color: var(--wp--preset--color--base, #fff);
-			border-color:     var(--wp--preset--color--accent-4, #9ca3af);
+			background-color: var(--nop-paper);
+			border-color:     var(--nop-muted-soft);
 			box-shadow:       0 12px 28px rgba(0,0,0,0.1);
 		}
 		65% {

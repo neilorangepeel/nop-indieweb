@@ -2,7 +2,23 @@
  * Replies block — threaded conversation list.
  * Avatar / facepile base styles live in assets/css/blocks-shared.css
  * (shared with the reactions block).
+ *
+ * Two tiers, and the split is the point:
+ *
+ *   Unlayered   — the block does not work without it. Structure, interactive
+ *                 state, focus. Always applies, on any theme.
+ *   @layer nop-appearance
+ *               — how it looks by default. Present so the block is presentable
+ *                 on a theme that says nothing about it, and layered so that any
+ *                 theme's own rules win without needing to out-specify us.
+ *
+ * That layer is why there is not an `!important` in this file. There used to be
+ * seven, all of them fighting a theme's global link colour at equal specificity.
+ * Layered CSS loses to unlayered CSS whatever the selectors say, so the fight
+ * is over: a theme that wants these links its own colour simply says so.
  */
+
+/* ═══ Structure and interaction — unlayered ══════════════════════════════════ */
 
 .nop-replies {
 	display:        flex;
@@ -10,44 +26,10 @@
 	gap:            var(--wp--preset--spacing--30, 1.25rem);
 }
 
-/* ── Section eyebrow ─────────────────────────────────────────────────────── */
-
-/* Quiet uppercase label — matches the "Leave a reply" eyebrow on the form, and
-   deliberately carries no count (the comment pill above already shows it). */
-.nop-replies__label {
-	margin:         0;
-	font-size:      0.6875rem;
-	font-weight:    600;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color:          var(--nop-muted);
-}
-
-/* ── Platform tag pill ───────────────────────────────────────────────────── */
-
 .nop-webmentions__via {
-	display:        inline-flex;
-	align-items:    center;
-	font-size:      0.75rem;
-	font-weight:    600;
-	letter-spacing: 0.02em;
-	padding:        2px 6px;
-	border-radius:  var(--nop-radius);
-	line-height:    1.5;
+	display:     inline-flex;
+	align-items: center;
 }
-
-.nop-webmentions__via--mastodon { background: rgba(99, 100, 255, 0.1); color: rgba(80, 82, 210, 0.9); }
-.nop-webmentions__via--bluesky  { background: rgba(0, 133, 255, 0.1);  color: rgba(0, 110, 215, 0.9); }
-.nop-webmentions__via--pixelfed { background: rgba(225, 48, 108, 0.1); color: rgba(190, 28, 80, 0.9); }
-
-.nop-webmentions__via-bridgy {
-	margin-inline-start: 0.15rem;
-	color:               var(--nop-muted);
-	font-size:           0.75rem;
-	font-weight:         400;
-}
-
-/* ── Replies list ────────────────────────────────────────────────────────── */
 
 .nop-webmentions__replies {
 	list-style:     none;
@@ -61,83 +43,35 @@
 	display:     flex;
 	gap:         1rem;
 	align-items: flex-start;
-	padding:     var(--wp--preset--spacing--30, 1.25rem) 0;
-	border-top:  1px solid var(--nop-divider-color);
 }
 
-.nop-webmentions__replies > .nop-webmentions__reply:first-child {
-	padding-top: 0;
-	border-top:  none;
-}
-
+/* Long handles and URLs would otherwise force the flex item wider than its
+   track and push the whole thread sideways. */
 .nop-webmentions__reply-body {
 	flex:      1;
 	min-width: 0;
 }
 
 .nop-webmentions__reply-meta {
-	margin:      0 0 0.5rem;
 	display:     flex;
 	flex-wrap:   wrap;
 	align-items: center;
 	gap:         0.25rem 0.5rem;
-	line-height: 1.4;
 }
 
-.nop-webmentions__reply-meta a {
-	text-decoration: none;
-	color:           inherit;
-}
-
-.nop-webmentions__reply-meta a:hover strong {
-	text-decoration: underline;
-}
-
-.nop-webmentions__reply-meta strong {
-	font-weight: 600;
-}
-
-.nop-webmentions__reply-handle {
-	font-size: 0.875em;
-	color:     var(--nop-muted);
-}
-
-.nop-webmentions__reply-time {
-	font-size:       0.8125rem;
-	color:           var(--nop-muted) !important;
-	text-decoration: none !important;
-}
-
-.nop-webmentions__reply-time:hover {
-	text-decoration: underline !important;
-}
-
-.nop-webmentions__reply-content {
-	margin:      0;
-	line-height: 1.6;
-}
-
-.nop-webmentions__reply-content p {
-	margin: 0;
-}
-
-/* ── Reply link (revealed on hover/focus) ────────────────────────────────── */
+/* ── Reply link: revealed on hover/focus ─────────────────────────────────────
+   The opacity transition and the reveal are the mechanism, not decoration — the
+   link is unreachable-looking without them, so they stay unlayered. */
 
 .nop-webmentions__reply-link {
-	font-size:       0.8125rem;
-	font-weight:     600;
-	color:           var(--nop-muted) !important;
-	text-decoration: none !important;
-	letter-spacing:  0.01em;
-	border-radius:   2px;
-	opacity:         0;
-	transition:      opacity 150ms ease, color 150ms ease;
+	opacity:    0;
+	transition: opacity 150ms ease, color 150ms ease;
 }
 
-.nop-webmentions__reply:hover         .nop-webmentions__reply-link,
-.nop-webmentions__reply:focus-within  .nop-webmentions__reply-link,
-.nop-webmentions__comment-reply:hover         .nop-webmentions__reply-link,
-.nop-webmentions__comment-reply:focus-within  .nop-webmentions__reply-link {
+.nop-webmentions__reply:hover                .nop-webmentions__reply-link,
+.nop-webmentions__reply:focus-within         .nop-webmentions__reply-link,
+.nop-webmentions__comment-reply:hover        .nop-webmentions__reply-link,
+.nop-webmentions__comment-reply:focus-within .nop-webmentions__reply-link {
 	opacity: 1;
 }
 
@@ -148,18 +82,14 @@
 	}
 }
 
-.nop-webmentions__reply-link:hover {
-	color: var(--nop-text) !important;
-}
-
+/* Focus must never be hidden behind a hover the keyboard cannot trigger. */
 .nop-webmentions__reply-link:focus-visible {
 	opacity:        1;
 	outline:        2px solid currentColor;
 	outline-offset: 2px;
-	color:          var(--nop-text) !important;
 }
 
-/* ── Nested WordPress comment replies ────────────────────────────────────── */
+/* ── Nested WordPress comment replies ─────────────────────────────────────── */
 
 .nop-webmentions__comment-replies {
 	list-style:     none;
@@ -168,7 +98,6 @@
 	display:        flex;
 	flex-direction: column;
 	gap:            0.75rem;
-	border-left:    2px solid var(--nop-divider-color);
 }
 
 .nop-webmentions__comment-reply {
@@ -177,16 +106,134 @@
 	align-items: flex-start;
 }
 
+/* Avatars arrive at whatever size the source served them. */
 .nop-webmentions__comment-reply-avatar img.nop-webmentions__avatar {
-	border-radius: 50%;
-	object-fit:    cover;
-	display:       block;
-	width:         28px;
-	height:        28px;
-	flex-shrink:   0;
+	display:     block;
+	width:       28px;
+	height:      28px;
+	object-fit:  cover;
+	flex-shrink: 0;
 }
 
 .nop-webmentions__comment-reply-body {
 	flex:      1;
 	min-width: 0;
+}
+
+/* ═══ Appearance — layered, so any theme outranks it ═════════════════════════ */
+
+@layer nop-appearance {
+
+	/* Quiet uppercase label — matches the "Leave a reply" eyebrow on the form,
+	   and deliberately carries no count (the comment pill above already shows
+	   it). */
+	.nop-replies__label {
+		margin:         0;
+		font-size:      0.6875rem;
+		font-weight:    600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color:          var(--nop-muted);
+	}
+
+	/* ── Platform tag pill ──────────────────────────────────────────────────── */
+
+	.nop-webmentions__via {
+		font-size:      0.75rem;
+		font-weight:    600;
+		letter-spacing: 0.02em;
+		padding:        2px 6px;
+		border-radius:  var(--nop-radius);
+		line-height:    1.5;
+	}
+
+	.nop-webmentions__via--mastodon { background: rgba(99, 100, 255, 0.1); color: rgba(80, 82, 210, 0.9); }
+	.nop-webmentions__via--bluesky  { background: rgba(0, 133, 255, 0.1);  color: rgba(0, 110, 215, 0.9); }
+	.nop-webmentions__via--pixelfed { background: rgba(225, 48, 108, 0.1); color: rgba(190, 28, 80, 0.9); }
+
+	.nop-webmentions__via-bridgy {
+		margin-inline-start: 0.15rem;
+		color:               var(--nop-muted);
+		font-size:           0.75rem;
+		font-weight:         400;
+	}
+
+	/* ── Thread rules ───────────────────────────────────────────────────────── */
+
+	.nop-webmentions__reply {
+		padding:    var(--wp--preset--spacing--30, 1.25rem) 0;
+		border-top: 1px solid var(--nop-divider-color);
+	}
+
+	.nop-webmentions__replies > .nop-webmentions__reply:first-child {
+		padding-top: 0;
+		border-top:  none;
+	}
+
+	.nop-webmentions__comment-replies {
+		border-left: 2px solid var(--nop-divider-color);
+	}
+
+	.nop-webmentions__comment-reply-avatar img.nop-webmentions__avatar {
+		border-radius: 50%;
+	}
+
+	/* ── Reply metadata ─────────────────────────────────────────────────────── */
+
+	.nop-webmentions__reply-meta {
+		margin:      0 0 0.5rem;
+		line-height: 1.4;
+	}
+
+	.nop-webmentions__reply-meta a {
+		text-decoration: none;
+		color:           inherit;
+	}
+
+	.nop-webmentions__reply-meta a:hover strong {
+		text-decoration: underline;
+	}
+
+	.nop-webmentions__reply-meta strong {
+		font-weight: 600;
+	}
+
+	.nop-webmentions__reply-handle {
+		font-size: 0.875em;
+		color:     var(--nop-muted);
+	}
+
+	.nop-webmentions__reply-time {
+		font-size:       0.8125rem;
+		color:           var(--nop-muted);
+		text-decoration: none;
+	}
+
+	.nop-webmentions__reply-time:hover {
+		text-decoration: underline;
+	}
+
+	.nop-webmentions__reply-content {
+		margin:      0;
+		line-height: 1.6;
+	}
+
+	.nop-webmentions__reply-content p {
+		margin: 0;
+	}
+
+	.nop-webmentions__reply-link {
+		font-size:       0.8125rem;
+		font-weight:     600;
+		color:           var(--nop-muted);
+		text-decoration: none;
+		letter-spacing:  0.01em;
+		border-radius:   2px;
+	}
+
+	.nop-webmentions__reply-link:hover,
+	.nop-webmentions__reply-link:focus-visible {
+		color: var(--nop-text);
+	}
+
 }

@@ -31,7 +31,7 @@
 
 .nop-film-meta__rating-value {
 	font-size:   0.8em;
-	color:       var(--wp--preset--color--contrast-2, #6b7280);
+	color:       var(--nop-muted);
 	font-weight: 500;
 }
 
@@ -109,7 +109,7 @@
 	flex-wrap:   wrap;
 	align-items: center;
 	gap:         0 0.75em;
-	color:       var(--wp--preset--color--contrast-2, #6b7280);
+	color:       var(--nop-muted);
 	font-size:   0.875em;
 }
 

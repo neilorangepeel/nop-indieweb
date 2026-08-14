@@ -98,7 +98,7 @@
 .nop-film-card__meta {
 	margin:    0;
 	font-size: 0.75em;
-	color:     var(--wp--preset--color--contrast-2, #6b7280);
+	color:     var(--nop-muted);
 }
 
 .nop-film-card--placeholder {

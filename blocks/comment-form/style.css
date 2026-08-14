@@ -115,8 +115,8 @@
 }
 
 .nop-webmentions__form-submit:hover {
-	background:   var(--wp--preset--color--contrast, currentColor);
-	color:        var(--wp--preset--color--base, #fff);
+	background:   currentColor;
+	color:        var(--nop-paper);
 	border-color: transparent;
 }
 

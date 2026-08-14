@@ -10,7 +10,7 @@
 
 .nop-rsvp-meta__event {
 	font-size: 0.875em;
-	color:     var(--wp--preset--color--contrast-2, #6b7280);
+	color:     var(--nop-muted);
 	margin:    0;
 }
 
@@ -21,7 +21,7 @@
 .nop-rsvp-meta__when,
 .nop-rsvp-meta__location {
 	font-size: 0.875em;
-	color:     var(--wp--preset--color--contrast-2, #6b7280);
+	color:     var(--nop-muted);
 	margin:    0.25em 0 0;
 }
 
@@ -78,3 +78,17 @@
 
 .nop-rsvp-meta--placeholder { opacity: 0.4; }
 .nop-rsvp-meta--preview     { opacity: 0.5; }
+
+/* ── Response colour ──────────────────────────────────────────────────────────
+ * One modifier class per RSVP status, replacing the inline `--rsvp-color` that
+ * render.php used to emit. Layered, so a theme can retone any response without
+ * out-specifying the plugin — and, unlike an inline style, it can reach it at
+ * all. Values live as tokens in blocks-shared.css. */
+
+@layer nop-appearance {
+	.nop-rsvp-badge--yes        { --rsvp-color: var(--nop-rsvp-yes); }
+	.nop-rsvp-badge--maybe      { --rsvp-color: var(--nop-rsvp-maybe); }
+	.nop-rsvp-badge--interested { --rsvp-color: var(--nop-rsvp-interested); }
+	.nop-rsvp-badge--no         { --rsvp-color: var(--nop-rsvp-no); }
+	.nop-rsvp-badge--unset      { --rsvp-color: var(--nop-rsvp-unset); }
+}

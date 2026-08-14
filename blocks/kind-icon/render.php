@@ -69,4 +69,4 @@ $wrapper_attrs = get_block_wrapper_attributes( [
 	'class' => 'wp-block-icon nop-kind-icon nop-kind-icon--' . sanitize_html_class( $kind ?: 'unknown' ),
 ] );
 ?>
-<span <?php echo wp_kses_data( $wrapper_attrs ); ?> style="display:inline-flex;width:1em;height:1em"><?php echo $svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Phosphor SVG constant, no user input ?></span>
+<span <?php echo wp_kses_data( $wrapper_attrs ); ?>><?php echo $svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Phosphor SVG constant, no user input ?></span>
