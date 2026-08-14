@@ -60,6 +60,9 @@
 		"shadow": true,
 		"filter": {
 			"duotone": true
+		},
+		"interactivity": {
+			"clientNavigation": true
 		}
 	},
 	"selectors": {
