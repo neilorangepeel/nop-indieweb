@@ -3,6 +3,16 @@
  * Pill base, like hover/animation, focus rings, visually-hidden helper,
  * underline link styling and prefers-reduced-motion live in
  * assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks. The pills are the block's
+ * `border` and `color.background` target in block.json, so a theme restyles
+ * them through theme.json rather than from here.
+ *
+ * The line to hold in this file: the reveal caret and its panel are a
+ * disclosure control — the [hidden] toggle and the rotate that says "open"
+ * are what makes it work, and stay unlayered. The liftoff animation is motion
+ * design and does not.
  */
 
 .nop-post-footer {
@@ -10,78 +20,29 @@
 	flex-wrap:   wrap;
 	align-items: center;
 	gap:         0.5rem;
-	font-size:   var(--wp--preset--font-size--small, 0.875rem);
 }
 
-/* Hover affordance for the comment-count link pill (border darkens) */
-a.nop-post-footer__pill--link:hover {
-	border-color: currentColor;
-}
-
-/* Tabular numbers so the count digits don't jump width when liked → unliked */
+/* Tabular numbers so the count digits don't jump width when liked → unliked. */
 .nop-post-footer__pill-count {
 	font-variant-numeric: tabular-nums;
-}
-
-/* ── Inline source attribution ────────────────────────────────────────────── */
-
-.nop-post-footer__sep {
-	color: var(--nop-muted-soft);
 }
 
 .nop-post-footer__source {
 	display:     inline-flex;
 	align-items: center;
 	gap:         0.25rem;
-	color:       var(--nop-muted);
-}
-
-/* Brief success state after clipboard copy */
-.nop-post-footer__pill--share.is-copied {
-	color:        currentColor;
-	border-color: currentColor;
-}
-
-/* ── Pill action hover ────────────────────────────────────────────────────
-   The like and share pills light up on hover so the icon+count reads as the
-   primary action — but NOT when the caret is hovered, so the "peek" control
-   stays visually separate from the "like / share" action. */
-.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) {
-	border-color: var(--nop-like-color);
-	color:        var(--nop-like-color-strong);
-}
-
-.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) {
-	border-color: var(--nop-repost-color);
-	color:        var(--nop-repost-color-strong);
-}
-
-/* Icon nudge is motion — gate it so reduced-motion users still get the colour. */
-@media (prefers-reduced-motion: no-preference) {
-	.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon,
-	.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon {
-		transform: scale(1.08);
-	}
 }
 
 /* ── Reveal caret (who liked / reposted) ──────────────────────────────────── */
 
-/* Sits inside the pill, after the count. Its own hit area + colour so it reads
-   as a distinct "peek" control separate from the pill's like/share action. */
+/* Sits inside the pill, after the count. Its own hit area so it reads as a
+   distinct "peek" control separate from the pill's like/share action. */
 .nop-post-footer__reveal {
-	display:        inline-flex;
-	align-items:    center;
+	display:             inline-flex;
+	align-items:         center;
 	margin-inline-start: 0.125rem;
-	padding:        2px;
-	border-radius:  var(--nop-radius, 2px);
-	color:          var(--nop-muted);
-	cursor:         pointer;
-	transition:     transform 150ms ease, color 150ms ease;
-}
-
-.nop-post-footer__reveal:hover,
-.nop-post-footer__reveal:focus-visible {
-	color: var(--nop-text);
+	padding:             2px;
+	cursor:              pointer;
 }
 
 .nop-post-footer__reveal:focus-visible {
@@ -89,6 +50,7 @@ a.nop-post-footer__pill--link:hover {
 	outline-offset: 1px;
 }
 
+/* The caret pointing the other way IS the open state — not decoration. */
 .nop-post-footer__reveal.is-open {
 	transform: rotate(180deg);
 }
@@ -101,99 +63,168 @@ a.nop-post-footer__pill--link:hover {
 	align-items: center;
 	flex-wrap:   wrap;
 	gap:         0.5rem 0.75rem;
-	margin:      0.6rem 0 0.35rem;
 }
 
+/* view.js drives this; without it the panel is always open. */
 .nop-post-footer__reveal-panel[hidden] {
 	display: none;
 }
 
-.nop-post-footer__reveal-names {
-	font-size: 0.8125rem;
-	color:     var(--nop-muted);
-}
+@layer nop-appearance {
 
-.nop-post-footer__reveal-names a {
-	color:           inherit;
-	text-decoration: none;
-}
+	.nop-post-footer {
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
+	}
 
-.nop-post-footer__reveal-names a:hover strong {
-	text-decoration: underline;
-}
+	/* Hover affordance for the comment-count link pill (border darkens). */
+	a.nop-post-footer__pill--link:hover {
+		border-color: currentColor;
+	}
 
-/* Gentle overlap + ring so the facepile reads as a cluster without crowding. */
-.nop-post-footer__reveal-panel .nop-webmentions__facepile {
-	gap: 0;
-}
+	.nop-post-footer__sep {
+		color: var(--nop-muted-soft);
+	}
 
-.nop-post-footer__reveal-panel .nop-webmentions__avatar-wrap:not(:first-child) {
-	margin-inline-start: -6px;
-}
+	.nop-post-footer__source {
+		color: var(--nop-muted);
+	}
 
-.nop-post-footer__reveal-panel .nop-webmentions__avatar,
-.nop-post-footer__reveal-panel .nop-webmentions__overflow {
-	box-shadow: 0 0 0 2px var(--nop-paper);
-}
+	/* Brief success state after clipboard copy. */
+	.nop-post-footer__pill--share.is-copied {
+		color:        currentColor;
+		border-color: currentColor;
+	}
 
-/* Force the overflow bubble opaque — its token background can be translucent,
-   which let the avatar behind it bleed through and look like a glitch. The
-   base colour sits underneath the divider tint so it always reads solid. */
-.nop-post-footer__reveal-panel .nop-webmentions__overflow {
-	background-color: var(--nop-paper);
-	background-image: linear-gradient( var(--nop-divider-color), var(--nop-divider-color) );
-}
+	/* ── Pill action hover ──────────────────────────────────────────────────
+	   The like and share pills light up on hover so the icon+count reads as
+	   the primary action — but NOT when the caret is hovered, so the "peek"
+	   control stays visually separate from the "like / share" action. */
+	.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) {
+		border-color: var(--nop-like-color);
+		color:        var(--nop-like-color-strong);
+	}
 
-/* Textarea invite — colour flash only (reduced motion) */
-@keyframes nop-textarea-color {
-	0%, 100% { background-color: transparent; }
-	25%, 65%  { background-color: var(--nop-wash);
-	            border-color:     var(--nop-muted-soft); }
-}
+	.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) {
+		border-color: var(--nop-repost-color);
+		color:        var(--nop-repost-color-strong);
+	}
 
-.nop-textarea-invite {
-	animation: nop-textarea-color 1s ease-out;
-}
-
-/* Liftoff + gravity fall for motion-on users.
-   Rise slow and proud, fall fast like gravity, squash on impact, tiny settle. */
-@media (prefers-reduced-motion: no-preference) {
-	@keyframes nop-textarea-liftoff {
-		0% {
-			/* spring launch easing carries it past the peak before snapping */
-			animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1.5);
-			transform:        translateY(0) scale(1);
-			background-color: transparent;
-			box-shadow:       none;
+	/* Icon nudge is motion — gate it so reduced-motion users still get the
+	   colour. */
+	@media (prefers-reduced-motion: no-preference) {
+		.nop-post-footer__pill--like:hover:not(.is-liked):not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon,
+		.nop-post-footer__pill--share:hover:not(:has( .nop-post-footer__reveal:hover )) .nop-post-footer__pill-icon {
+			transform: scale(1.08);
 		}
-		38% {
-			/* peak lift — floating above the page */
-			animation-timing-function: cubic-bezier(0.8, 0, 1, 0.75);
-			transform:        translateY(-8px) scale(1.06, 1.04);
-			background-color: var(--nop-paper);
-			border-color:     var(--nop-muted-soft);
-			box-shadow:       0 12px 28px rgba(0,0,0,0.1);
-		}
-		65% {
-			/* slam — gravity wins, squash on impact */
-			animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
-			transform:        translateY(0) scaleX(1.03) scaleY(0.92);
-			background-color: transparent;
-			box-shadow:       0 2px 6px rgba(0,0,0,0.06);
-		}
-		82% {
-			/* tiny spring rebound */
-			transform:        translateY(-3px) scale(1.005);
-			box-shadow:       none;
-		}
-		100% {
-			transform:        translateY(0) scale(1);
-			background-color: transparent;
-			box-shadow:       none;
-		}
+	}
+
+	.nop-post-footer__reveal {
+		border-radius: var(--nop-radius, 2px);
+		color:         var(--nop-muted);
+		transition:    transform 150ms ease, color 150ms ease;
+	}
+
+	.nop-post-footer__reveal:hover,
+	.nop-post-footer__reveal:focus-visible {
+		color: var(--nop-text);
+	}
+
+	.nop-post-footer__reveal-panel {
+		margin: 0.6rem 0 0.35rem;
+	}
+
+	.nop-post-footer__reveal-names {
+		font-size: 0.8125rem;
+		color:     var(--nop-muted);
+	}
+
+	.nop-post-footer__reveal-names a {
+		color:           inherit;
+		text-decoration: none;
+	}
+
+	.nop-post-footer__reveal-names a:hover strong {
+		text-decoration: underline;
+	}
+
+	/* Gentle overlap + ring so the facepile reads as a cluster without
+	   crowding. */
+	.nop-post-footer__reveal-panel .nop-webmentions__facepile {
+		gap: 0;
+	}
+
+	.nop-post-footer__reveal-panel .nop-webmentions__avatar-wrap:not(:first-child) {
+		margin-inline-start: -6px;
+	}
+
+	.nop-post-footer__reveal-panel .nop-webmentions__avatar,
+	.nop-post-footer__reveal-panel .nop-webmentions__overflow {
+		box-shadow: 0 0 0 2px var(--nop-paper);
+	}
+
+	/* Force the overflow bubble opaque — its token background can be
+	   translucent, which let the avatar behind it bleed through and look like a
+	   glitch. The base colour sits underneath the divider tint so it always
+	   reads solid. */
+	.nop-post-footer__reveal-panel .nop-webmentions__overflow {
+		background-color: var(--nop-paper);
+		background-image: linear-gradient( var(--nop-divider-color), var(--nop-divider-color) );
+	}
+
+	/* ── Textarea invite ────────────────────────────────────────────────────
+	   Colour flash only, for reduced motion. */
+	@keyframes nop-textarea-color {
+		0%, 100% { background-color: transparent; }
+		25%, 65%  { background-color: var(--nop-wash);
+		            border-color:     var(--nop-muted-soft); }
 	}
 
 	.nop-textarea-invite {
-		animation: nop-textarea-liftoff 1s ease-out;
+		animation: nop-textarea-color 1s ease-out;
 	}
+
+	/* Liftoff + gravity fall for motion-on users.
+	   Rise slow and proud, fall fast like gravity, squash on impact, tiny
+	   settle. */
+	@media (prefers-reduced-motion: no-preference) {
+		@keyframes nop-textarea-liftoff {
+			0% {
+				/* spring launch easing carries it past the peak before snapping */
+				animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1.5);
+				transform:        translateY(0) scale(1);
+				background-color: transparent;
+				box-shadow:       none;
+			}
+			38% {
+				/* peak lift — floating above the page */
+				animation-timing-function: cubic-bezier(0.8, 0, 1, 0.75);
+				transform:        translateY(-8px) scale(1.06, 1.04);
+				background-color: var(--nop-paper);
+				border-color:     var(--nop-muted-soft);
+				box-shadow:       0 12px 28px rgba(0,0,0,0.1);
+			}
+			65% {
+				/* slam — gravity wins, squash on impact */
+				animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
+				transform:        translateY(0) scaleX(1.03) scaleY(0.92);
+				background-color: transparent;
+				box-shadow:       0 2px 6px rgba(0,0,0,0.06);
+			}
+			82% {
+				/* tiny spring rebound */
+				transform:        translateY(-3px) scale(1.005);
+				box-shadow:       none;
+			}
+			100% {
+				transform:        translateY(0) scale(1);
+				background-color: transparent;
+				box-shadow:       none;
+			}
+		}
+
+		.nop-textarea-invite {
+			animation: nop-textarea-liftoff 1s ease-out;
+		}
+	}
+
 }

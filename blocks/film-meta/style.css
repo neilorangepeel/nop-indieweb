@@ -2,67 +2,43 @@
  * Film Meta block — block-specific styles only.
  * Section-divider rule, link underline pattern, star colour tokens
  * (--nop-star-on / --nop-star-off) live in assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks. The poster is the block's
+ * `border` target in block.json.
+ *
+ * The star picker is the interesting case here: it is an input, not an
+ * ornament, so its geometry stays unlayered while its colours do not.
  */
 
-.nop-film-meta {
-	font-size:   0.875em;
-	line-height: 1.6;
-}
-
-/* ── Film poster ─────────────────────────────────────────────────────────── */
-
 .nop-film-meta__poster {
-	display:       block;
-	width:         auto;
-	max-height:    220px;
-	margin-bottom: 1em;
-	border-radius: var(--nop-radius);
-	box-shadow:    0 2px 8px rgba(0, 0, 0, 0.15);
+	display: block;
+	width:   auto;
 }
-
-/* ── Rating row ──────────────────────────────────────────────────────────── */
 
 .nop-film-meta__rating {
-	display:       flex;
-	align-items:   center;
-	gap:           0.5em;
-	margin-bottom: 0.5em;
+	display:     flex;
+	align-items: center;
+	gap:         0.5em;
 }
-
-.nop-film-meta__rating-value {
-	font-size:   0.8em;
-	color:       var(--nop-muted);
-	font-weight: 500;
-}
-
-/* ── Static star display (frontend render.php) ───────────────────────────── */
 
 .nop-film-stars {
 	display:     inline-flex;
-	gap:         0.05em;
 	line-height: 1;
 }
 
 .nop-film-star {
-	font-size: 1.5em;
-	display:   inline-block;
+	display: inline-block;
 }
 
-.nop-film-star.is-full  { color: var(--nop-star-on); }
-.nop-film-star.is-empty { color: var(--nop-star-off); }
-
-.nop-film-star.is-half {
-	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
-	-webkit-background-clip: text;
-	background-clip:         text;
-	color:                   transparent;
-}
-
-/* ── Interactive star picker (editor only) ───────────────────────────────── */
+/* ── Interactive star picker (editor only) ─────────────────────────────────
+   Half-star ratings are set by clicking the left or right half of a glyph.
+   That works by layering two invisible hit zones over each star and taking
+   the glyph out of the event path — geometry that IS the interaction, so it
+   is not something a theme should be able to switch off. */
 
 .nop-film-star-picker {
 	display:     inline-flex;
-	gap:         0.05em;
 	line-height: 1;
 	cursor:      pointer;
 }
@@ -72,7 +48,6 @@
 	display:  inline-block;
 }
 
-/* Invisible hit zones — positioned over the glyph, split left/right */
 .nop-film-star-zone {
 	position: absolute;
 	top:      0;
@@ -84,54 +59,98 @@
 .nop-film-star-zone--left  { left:  0; }
 .nop-film-star-zone--right { right: 0; }
 
-/* The ★ glyph — pointer-events off so clicks pass through to the zones */
 .nop-film-star-glyph {
 	display:        block;
-	font-size:      1.5em;
 	pointer-events: none;
 	user-select:    none;
 }
-
-.nop-film-star-glyph.is-full  { color: var(--nop-star-on); }
-.nop-film-star-glyph.is-empty { color: var(--nop-star-off); }
-
-.nop-film-star-glyph.is-half {
-	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
-	-webkit-background-clip: text;
-	background-clip:         text;
-	color:                   transparent;
-}
-
-/* ── Meta row (date · rewatch · source) ──────────────────────────────────── */
 
 .nop-film-meta__row {
 	display:     flex;
 	flex-wrap:   wrap;
 	align-items: center;
 	gap:         0 0.75em;
-	color:       var(--nop-muted);
-	font-size:   0.875em;
 }
 
-.nop-film-meta__year {
-	font-weight: 500;
-	color:       var(--nop-text);
-	opacity:     0.6;
-}
-
-.nop-film-meta__rewatch {
-	display:        inline-block;
-	font-size:      0.75em;
-	font-weight:    600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	padding:        1px 7px;
-	border:         1px solid currentColor;
-	border-radius:  var(--nop-radius-pill);
-	opacity:        0.65;
-}
-
-/* ── State modifiers ─────────────────────────────────────────────────────── */
-
+/* Editor-only dimming that marks a stand-in as not-your-content. */
 .nop-film-meta--preview     { opacity: 0.5; }
 .nop-film-meta--placeholder { opacity: 0.4; }
+
+@layer nop-appearance {
+
+	.nop-film-meta {
+		font-size:   0.875em;
+		line-height: 1.6;
+	}
+
+	.nop-film-meta__poster {
+		max-height:    220px;
+		margin-bottom: 1em;
+		border-radius: var(--nop-radius);
+		box-shadow:    0 2px 8px rgba(0, 0, 0, 0.15);
+	}
+
+	.nop-film-meta__rating {
+		margin-bottom: 0.5em;
+	}
+
+	.nop-film-meta__rating-value {
+		font-size:   0.8em;
+		color:       var(--nop-muted);
+		font-weight: 500;
+	}
+
+	/* ── Stars ─────────────────────────────────────────────────────────────── */
+
+	.nop-film-stars,
+	.nop-film-star-picker {
+		gap: 0.05em;
+	}
+
+	.nop-film-star,
+	.nop-film-star-glyph {
+		font-size: 1.5em;
+	}
+
+	.nop-film-star.is-full,
+	.nop-film-star-glyph.is-full  { color: var(--nop-star-on); }
+
+	.nop-film-star.is-empty,
+	.nop-film-star-glyph.is-empty { color: var(--nop-star-off); }
+
+	/* Half stars are one glyph filled left-to-right, which needs the gradient
+	   clipped to the text and the glyph itself made transparent. */
+	.nop-film-star.is-half,
+	.nop-film-star-glyph.is-half {
+		background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
+		-webkit-background-clip: text;
+		background-clip:         text;
+		color:                   transparent;
+	}
+
+	/* ── Meta row (date · rewatch · source) ────────────────────────────────── */
+
+	.nop-film-meta__row {
+		color:     var(--nop-muted);
+		font-size: 0.875em;
+	}
+
+	.nop-film-meta__year {
+		font-weight: 500;
+		color:       var(--nop-text);
+		opacity:     0.6;
+	}
+
+	.nop-film-meta__rewatch {
+		display:        inline-block;
+		font-size:      0.75em;
+		font-weight:    600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding:        1px 7px;
+		border:         1px solid currentColor;
+		border-radius:  var(--nop-radius-pill);
+		opacity:        0.65;
+	}
+
+}

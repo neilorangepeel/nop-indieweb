@@ -2,93 +2,111 @@
  * RSVP Meta block — block-specific styles only.
  * Section-divider rule and underline link pattern live in
  * assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks. The badge is also declared as
+ * the block's `border` and `color.background` target in block.json, so a theme
+ * can restyle it through theme.json rather than from here.
  */
 
-.nop-rsvp-meta__status {
-	margin: 0 0 0.5em;
-}
-
-.nop-rsvp-meta__event {
-	font-size: 0.875em;
-	color:     var(--nop-muted);
-	margin:    0;
-}
-
+/* Event URLs are arbitrary and often long; without this one runs past the
+   column and takes the layout with it. */
 .nop-rsvp-meta__event a {
 	word-break: break-all;
 }
 
-.nop-rsvp-meta__when,
-.nop-rsvp-meta__location {
-	font-size: 0.875em;
-	color:     var(--nop-muted);
-	margin:    0.25em 0 0;
-}
-
-.nop-rsvp-meta__note {
-	margin: 0.5em 0 0;
-}
-
-/* ── Badge ───────────────────────────────────────────────────────────────── */
-
 .nop-rsvp-badge {
-	display:        inline-flex;
-	align-items:    center;
-	font-size:      0.8125em;
-	font-weight:    600;
-	padding:        3px 10px;
-	border-radius:  var(--nop-radius-pill);
-	border:         1.5px solid var(--rsvp-color, #6b7280);
-	color:          var(--rsvp-color, #6b7280);
-	letter-spacing: 0.01em;
+	display:     inline-flex;
+	align-items: center;
 }
 
-/* ── Interactive picker (editor only) ────────────────────────────────────── */
+/* ── Interactive picker (editor only) ──────────────────────────────────────
+   The picker is how the RSVP is set in the canvas, so its affordances are
+   mechanism: it has to look pressable and show which option is chosen. */
 
 .nop-rsvp-picker {
-	display:       flex;
-	gap:           0.5em;
-	flex-wrap:     wrap;
-	margin-bottom: 0.75em;
+	display:   flex;
+	gap:       0.5em;
+	flex-wrap: wrap;
 }
 
 .nop-rsvp-option {
-	cursor:         pointer;
-	font-size:      0.8125em;
-	font-weight:    600;
-	padding:        4px 12px;
-	border-radius:  var(--nop-radius-pill);
-	border:         1.5px solid var(--rsvp-color, #6b7280);
-	color:          var(--rsvp-color, #6b7280);
-	background:     transparent;
-	transition:     background 0.15s, color 0.15s;
-	letter-spacing: 0.01em;
+	cursor:     pointer;
+	background: transparent;
+	transition: background 0.15s, color 0.15s;
 }
 
-.nop-rsvp-option:hover {
-	background: color-mix(in srgb, var(--rsvp-color, #6b7280) 12%, transparent);
-}
-
-.nop-rsvp-option.is-active {
-	background: var(--rsvp-color, #6b7280);
-	color:      #fff;
-}
-
-/* ── State modifiers ─────────────────────────────────────────────────────── */
+/* ── State modifiers ──────────────────────────────────────────────────────
+   Editor-only dimming that marks "this is a placeholder, not your content". */
 
 .nop-rsvp-meta--placeholder { opacity: 0.4; }
 .nop-rsvp-meta--preview     { opacity: 0.5; }
 
-/* ── Response colour ──────────────────────────────────────────────────────────
- * One modifier class per RSVP status, replacing the inline `--rsvp-color` that
- * render.php used to emit. Layered, so a theme can retone any response without
- * out-specifying the plugin — and, unlike an inline style, it can reach it at
- * all. Values live as tokens in blocks-shared.css. */
-
 @layer nop-appearance {
+
+	.nop-rsvp-meta__status {
+		margin: 0 0 0.5em;
+	}
+
+	.nop-rsvp-meta__event {
+		font-size: 0.875em;
+		color:     var(--nop-muted);
+		margin:    0;
+	}
+
+	.nop-rsvp-meta__when,
+	.nop-rsvp-meta__location {
+		font-size: 0.875em;
+		color:     var(--nop-muted);
+		margin:    0.25em 0 0;
+	}
+
+	.nop-rsvp-meta__note {
+		margin: 0.5em 0 0;
+	}
+
+	.nop-rsvp-badge {
+		font-size:      0.8125em;
+		font-weight:    600;
+		padding:        3px 10px;
+		border-radius:  var(--nop-radius-pill);
+		border:         1.5px solid var(--rsvp-color, #6b7280);
+		color:          var(--rsvp-color, #6b7280);
+		letter-spacing: 0.01em;
+	}
+
+	.nop-rsvp-picker {
+		margin-bottom: 0.75em;
+	}
+
+	.nop-rsvp-option {
+		font-size:      0.8125em;
+		font-weight:    600;
+		padding:        4px 12px;
+		border-radius:  var(--nop-radius-pill);
+		border:         1.5px solid var(--rsvp-color, #6b7280);
+		color:          var(--rsvp-color, #6b7280);
+		letter-spacing: 0.01em;
+	}
+
+	.nop-rsvp-option:hover {
+		background: color-mix(in srgb, var(--rsvp-color, #6b7280) 12%, transparent);
+	}
+
+	.nop-rsvp-option.is-active {
+		background: var(--rsvp-color, #6b7280);
+		color:      var(--nop-paper);
+	}
+
+	/* ── Response colour ──────────────────────────────────────────────────────
+	 * One modifier class per RSVP status, replacing the inline `--rsvp-color`
+	 * that render.php used to emit — which no theme could reach at all. Values
+	 * live as tokens in blocks-shared.css. */
+
 	.nop-rsvp-badge--yes        { --rsvp-color: var(--nop-rsvp-yes); }
 	.nop-rsvp-badge--maybe      { --rsvp-color: var(--nop-rsvp-maybe); }
 	.nop-rsvp-badge--interested { --rsvp-color: var(--nop-rsvp-interested); }
 	.nop-rsvp-badge--no         { --rsvp-color: var(--nop-rsvp-no); }
 	.nop-rsvp-badge--unset      { --rsvp-color: var(--nop-rsvp-unset); }
+
 }

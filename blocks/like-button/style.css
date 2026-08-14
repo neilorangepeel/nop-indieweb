@@ -2,6 +2,9 @@
  * Like Button block — block-specific styles only.
  * Pill base, hover/liked colours, focus ring, animation, visually-hidden
  * helper and prefers-reduced-motion live in assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks.
  */
 
 /* The block fills its constrained-layout slot so it sits at the same
@@ -15,9 +18,18 @@
 	gap:         0.5rem;
 }
 
-/* Block-specific count styling (sits beside the pill, not inside it) */
+/* Tabular figures are not a preference here: the count changes in place when
+   the like posts, and proportional digits would shift the row as it does. */
 .nop-like-button__count {
-	font-size:            0.875rem;
 	font-variant-numeric: tabular-nums;
-	color:                var(--nop-muted);
+}
+
+@layer nop-appearance {
+
+	/* Sits beside the pill, not inside it — quieter than the action. */
+	.nop-like-button__count {
+		font-size: 0.875rem;
+		color:     var(--nop-muted);
+	}
+
 }

@@ -1,16 +1,10 @@
 /*
  * Syndication Panel block — block-specific styles only.
  * Section-divider rule and focus rings live in assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks.
  */
-
-.nop-syndication-panel__heading {
-	margin:         0 0 0.75rem;
-	font-size:      0.75rem;
-	font-weight:    600;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color:          var(--nop-muted);
-}
 
 .nop-syndication-panel__list {
 	display:    flex;
@@ -21,25 +15,14 @@
 	padding:    0;
 }
 
-.nop-syndication-panel__item {
-	margin: 0;
-}
-
 .nop-syndication-panel__link {
-	display:         inline-flex;
-	align-items:     center;
-	gap:             0.5rem;
-	color:           inherit;
-	text-decoration: none;
-	font-size:       0.9375rem;
-	line-height:     1.4;
+	display:     inline-flex;
+	align-items: center;
+	gap:         0.5rem;
 }
 
-.nop-syndication-panel__link:hover .nop-syndication-panel__label,
-.nop-syndication-panel__link:focus-visible .nop-syndication-panel__label {
-	text-decoration: underline;
-}
-
+/* The icon is a fixed circle holding one or two initials — it must not shrink
+   as the label beside it grows, and it must not collapse to the text's height. */
 .nop-syndication-panel__icon {
 	display:         inline-flex;
 	align-items:     center;
@@ -47,14 +30,50 @@
 	flex-shrink:     0;
 	width:           1.5rem;
 	height:          1.5rem;
-	border-radius:   50%;
-	background:      var(--nop-syndication-icon-bg, var(--nop-divider-color));
-	color:           var(--nop-syndication-icon-color, inherit);
-	font-size:       0.6875rem;
-	font-weight:     700;
-	line-height:     1;
 }
 
-.nop-syndication-panel__icon--bluesky  { --nop-syndication-icon-bg: #0085ff; --nop-syndication-icon-color: #fff; }
-.nop-syndication-panel__icon--mastodon { --nop-syndication-icon-bg: #6364ff; --nop-syndication-icon-color: #fff; }
-.nop-syndication-panel__icon--pixelfed { --nop-syndication-icon-bg: #110e30; --nop-syndication-icon-color: #fff; }
+@layer nop-appearance {
+
+	.nop-syndication-panel__heading {
+		margin:         0 0 0.75rem;
+		font-size:      0.75rem;
+		font-weight:    600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color:          var(--nop-muted);
+	}
+
+	.nop-syndication-panel__item {
+		margin: 0;
+	}
+
+	.nop-syndication-panel__link {
+		color:           inherit;
+		text-decoration: none;
+		font-size:       0.9375rem;
+		line-height:     1.4;
+	}
+
+	.nop-syndication-panel__link:hover .nop-syndication-panel__label,
+	.nop-syndication-panel__link:focus-visible .nop-syndication-panel__label {
+		text-decoration: underline;
+	}
+
+	.nop-syndication-panel__icon {
+		border-radius: 50%;
+		background:    var(--nop-syndication-icon-bg, var(--nop-divider-color));
+		color:         var(--nop-syndication-icon-color, inherit);
+		font-size:     0.6875rem;
+		font-weight:   700;
+		line-height:   1;
+	}
+
+	/* Platform marks. These are the services' own colours rather than this
+	   site's, which is the point of them — a Bluesky badge that isn't Bluesky
+	   blue stops being recognisable. Layered like everything else, so a theme
+	   that would rather tone them down still can. */
+	.nop-syndication-panel__icon--bluesky  { --nop-syndication-icon-bg: #0085ff; --nop-syndication-icon-color: #fff; }
+	.nop-syndication-panel__icon--mastodon { --nop-syndication-icon-bg: #6364ff; --nop-syndication-icon-color: #fff; }
+	.nop-syndication-panel__icon--pixelfed { --nop-syndication-icon-bg: #110e30; --nop-syndication-icon-color: #fff; }
+
+}

@@ -1,33 +1,60 @@
-.nop-cite-card {
-	border-left: 3px solid var(--nop-divider-color, currentColor);
-	padding:     0.625em 0 0.625em 1em;
-	margin:      0;
-}
+/*
+ * Cite Card block — the thing a like, bookmark, reply, repost or quote is about.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks. The block also declares
+ * `border` in block.json, so a theme can restyle the rule down its left edge
+ * through theme.json rather than by out-specifying this file.
+ */
 
+/* Cited titles and URLs are arbitrary remote strings — a long one with no
+   spaces overflows its column and pushes the layout sideways. break-word for
+   the title, which is prose; break-all for the URL, which is not. */
 .nop-cite-card__title {
-	display:         block;
-	font-weight:     600;
-	text-decoration: none;
-	color:           inherit;
-	word-break:      break-word;
+	display:    block;
+	word-break: break-word;
 }
 
-a.nop-cite-card__title:hover {
-	text-decoration:       underline;
-	text-underline-offset: 2px;
+.nop-cite-card__url {
+	word-break: break-all;
 }
 
+/* Focus is never removed, only restyled. */
 a.nop-cite-card__title:focus-visible {
 	outline:        2px solid currentColor;
 	outline-offset: 2px;
 	border-radius:  2px;
 }
 
-.nop-cite-card__url {
-	font-size:  0.8125em;
-	color:      var(--nop-muted, #6b7280);
-	margin:     0.25em 0 0;
-	word-break: break-all;
+/* Editor-only: the block previews itself when there is no post to read from,
+   and the dimming is what marks it as not-real-content. */
+.nop-cite-card--preview {
+	opacity: 0.45;
 }
 
-.nop-cite-card--preview { opacity: 0.45; }
+@layer nop-appearance {
+
+	.nop-cite-card {
+		border-left: 3px solid var(--nop-divider-color, currentColor);
+		padding:     0.625em 0 0.625em 1em;
+		margin:      0;
+	}
+
+	.nop-cite-card__title {
+		font-weight:     600;
+		text-decoration: none;
+		color:           inherit;
+	}
+
+	a.nop-cite-card__title:hover {
+		text-decoration:       underline;
+		text-underline-offset: 2px;
+	}
+
+	.nop-cite-card__url {
+		font-size: 0.8125em;
+		color:     var(--nop-muted, #6b7280);
+		margin:    0.25em 0 0;
+	}
+
+}

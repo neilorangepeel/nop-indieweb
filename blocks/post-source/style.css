@@ -1,6 +1,9 @@
 /*
  * Post Source block — block-specific styles only.
  * Underline link pattern lives in assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks.
  */
 
 .nop-post-source {
@@ -8,8 +11,6 @@
 	flex-wrap:   wrap;
 	align-items: center;
 	gap:         0.25rem 1rem;
-	font-size:   var(--wp--preset--font-size--small, 0.875rem);
-	color:       var(--nop-muted);
 }
 
 .nop-post-source__item {
@@ -18,6 +19,15 @@
 	gap:         0.25rem;
 }
 
-.nop-post-source__label {
-	color: var(--nop-muted);
+@layer nop-appearance {
+
+	.nop-post-source {
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
+		color:     var(--nop-muted);
+	}
+
+	.nop-post-source__label {
+		color: var(--nop-muted);
+	}
+
 }

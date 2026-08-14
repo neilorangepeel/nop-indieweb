@@ -2,6 +2,11 @@
  * Film Card block — block-specific styles only.
  * Star colour tokens (--nop-star-on / --nop-star-off), focus rings,
  * and prefers-reduced-motion live in assets/css/blocks-shared.css.
+ *
+ * Unlayered = the block breaks without it. @layer nop-appearance = how it
+ * looks by default, which any theme outranks. The poster is the block's
+ * `border` target in block.json, so a theme sets its radius through
+ * theme.json rather than from here.
  */
 
 .nop-film-card {
@@ -10,34 +15,25 @@
 	gap:            0.6em;
 }
 
-/* ── Poster ──────────────────────────────────────────────────────────────── */
-
 .nop-film-card__poster-wrap {
-	display:         block;
-	text-decoration: none;
+	display: block;
 }
 
+/* Posters arrive at whatever size TMDB served. 2/3 is the poster ratio and
+   object-fit stops a stray one distorting; without both, a grid of cards
+   ragged-bottoms as soon as one image differs. */
 .nop-film-card__poster {
-	display:       block;
-	width:         100%;
-	aspect-ratio:  2 / 3;
-	object-fit:    cover;
-	border-radius: var(--nop-radius);
-	box-shadow:    0 2px 10px rgba(0, 0, 0, 0.15);
-	transition:    box-shadow 0.2s, transform 0.2s;
+	display:      block;
+	width:        100%;
+	aspect-ratio: 2 / 3;
+	object-fit:   cover;
 }
 
-.nop-film-card:hover .nop-film-card__poster {
-	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-	transform:  translateY(-2px);
-}
-
+/* A film with no poster still has to occupy the slot, or the card collapses
+   and the grid row jumps. */
 .nop-film-card__poster--empty {
-	background: var(--nop-divider-color);
 	min-height: 200px;
 }
-
-/* ── Body ────────────────────────────────────────────────────────────────── */
 
 .nop-film-card__body {
 	display:        flex;
@@ -45,62 +41,92 @@
 	gap:            0.2em;
 }
 
-/* ── Stars (smaller variant for the card) ────────────────────────────────── */
-
 .nop-film-card .nop-film-stars {
 	display:     inline-flex;
-	gap:         0.05em;
 	line-height: 1;
 }
 
 .nop-film-card .nop-film-star {
-	font-size: 0.8em;
-	display:   inline-block;
+	display: inline-block;
 }
 
-.nop-film-card .nop-film-star.is-full  { color: var(--nop-star-on); }
-.nop-film-card .nop-film-star.is-empty { color: var(--nop-star-off); }
-
-.nop-film-card .nop-film-star.is-half {
-	background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
-	-webkit-background-clip: text;
-	background-clip:         text;
-	color:                   transparent;
-}
-
-/* ── Title ───────────────────────────────────────────────────────────────── */
-
-.nop-film-card__title {
-	margin:      0;
-	font-size:   0.875em;
-	font-weight: 600;
-	line-height: 1.3;
-}
-
-.nop-film-card__title a {
-	color:           inherit;
-	text-decoration: none;
-}
-
-.nop-film-card__title a:hover {
-	text-decoration:       underline;
-	text-underline-offset: 2px;
-}
-
-.nop-film-card__rewatch {
-	font-size:   0.75em;
-	opacity:     0.45;
-	margin-left: 0.2em;
-}
-
-/* ── Meta line ───────────────────────────────────────────────────────────── */
-
-.nop-film-card__meta {
-	margin:    0;
-	font-size: 0.75em;
-	color:     var(--nop-muted);
-}
-
+/* Editor-only: dims a card standing in for content that isn't there yet. */
 .nop-film-card--placeholder {
 	opacity: 0.4;
+}
+
+@layer nop-appearance {
+
+	.nop-film-card__poster-wrap {
+		text-decoration: none;
+	}
+
+	.nop-film-card__poster {
+		border-radius: var(--nop-radius);
+		box-shadow:    0 2px 10px rgba(0, 0, 0, 0.15);
+		transition:    box-shadow 0.2s, transform 0.2s;
+	}
+
+	.nop-film-card:hover .nop-film-card__poster {
+		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+		transform:  translateY(-2px);
+	}
+
+	.nop-film-card__poster--empty {
+		background: var(--nop-divider-color);
+	}
+
+	/* ── Stars (smaller variant for the card) ──────────────────────────────── */
+
+	.nop-film-card .nop-film-stars {
+		gap: 0.05em;
+	}
+
+	.nop-film-card .nop-film-star {
+		font-size: 0.8em;
+	}
+
+	.nop-film-card .nop-film-star.is-full  { color: var(--nop-star-on); }
+	.nop-film-card .nop-film-star.is-empty { color: var(--nop-star-off); }
+
+	/* Half stars are one glyph filled left-to-right, which needs the gradient
+	   clipped to the text and the glyph itself made transparent. */
+	.nop-film-card .nop-film-star.is-half {
+		background:              linear-gradient(to right, var(--nop-star-on) 50%, var(--nop-star-off) 50%);
+		-webkit-background-clip: text;
+		background-clip:         text;
+		color:                   transparent;
+	}
+
+	/* ── Title and meta ────────────────────────────────────────────────────── */
+
+	.nop-film-card__title {
+		margin:      0;
+		font-size:   0.875em;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+
+	.nop-film-card__title a {
+		color:           inherit;
+		text-decoration: none;
+	}
+
+	.nop-film-card__title a:hover {
+		text-decoration:       underline;
+		text-underline-offset: 2px;
+	}
+
+	.nop-film-card__rewatch {
+		font-size:   0.75em;
+		opacity:     0.45;
+		margin-left: 0.2em;
+	}
+
+	.nop-film-card__meta {
+		margin:    0;
+		font-size: 0.75em;
+		color:     var(--nop-muted);
+	}
+
 }
