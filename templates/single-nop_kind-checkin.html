@@ -3,8 +3,14 @@
 <!-- wp:group {"metadata":{"name":"Main"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
 
-	<!-- wp:group {"metadata":{"name":"Checkin"},"style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"layout":{"type":"constrained"}} -->
-	<div class="wp-block-group" style="border-style:solid;border-width:1px">
+	<!--
+		The card is flow, not constrained. A constrained container clamps every
+		unaligned child to contentSize, so an alignwide card would still have
+		rendered its contents in a 720px ribbon down the middle of a 1200px
+		border. Each row inside carries its own padding instead.
+	-->
+	<!-- wp:group {"metadata":{"name":"Checkin"},"align":"wide","style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
+	<div class="wp-block-group alignwide" style="border-style:solid;border-width:1px">
 
 		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
 		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
@@ -40,76 +46,115 @@
 		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
 		<!-- /wp:separator -->
 
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+		<!--
+			Flow layout, not constrained. A constrained group re-clamps every
+			unaligned child to contentSize, which put the columns back to 720px
+			inside a card that is 1200px wide and left the map at 356px.
+		-->
+		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"default"}} -->
+		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)">
 
-			<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
-			<div class="wp-block-group">
+			<!--
+				Map left, data right. The map and the data are the half of a checkin
+				that is always present — venue, coordinates and weather sit at 100%
+				coverage and the map at 99% — so they carry the page on their own.
+				Everything that only sometimes appears hangs below the map, where its
+				absence closes up instead of leaving a hole. 71% of checkins have no
+				content at all and simply end after these two columns.
 
-				<!-- wp:post-title {"fontSize":"x-large"} /-->
+				Columns stack below 782px on their own; no breakpoint of ours.
+			-->
+			<!-- wp:columns {"verticalAlignment":"top","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|40","left":"var:preset|spacing|50"}}}} -->
+			<div class="wp-block-columns are-vertically-aligned-top">
 
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"fontSize":"small"} -->
-				<p class="has-small-font-size">Address</p>
-				<!-- /wp:paragraph -->
+				<!-- wp:column {"verticalAlignment":"top","width":"55%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+				<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:55%">
 
-				<!-- wp:group {"style":{"spacing":{"blockGap":"6px","margin":{"top":"2px"}}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-				<div class="wp-block-group has-small-font-size" style="margin-top:2px">
-					<!-- wp:group {"style":{"spacing":{"padding":{"top":"0.3em"}}},"layout":{"type":"constrained"}} -->
-					<div class="wp-block-group" style="padding-top:0.3em">
-						<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
+					<!-- wp:nop-indieweb/checkin-map /-->
+
+					<!--
+						The note and the photographs both live in post_content and are
+						rendered here, directly under the map. In every one of the 194
+						checkins carrying both, the note is authored first and the
+						photograph second, so this reads map → note → photographs
+						without any reordering. A single photograph fills the column; a
+						gallery tiles into thumbnails beneath it.
+					-->
+					<!-- wp:post-content {"layout":{"type":"default"}} /-->
+
+				</div>
+				<!-- /wp:column -->
+
+				<!-- wp:column {"verticalAlignment":"top","width":"45%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+				<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:45%">
+
+					<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+					<div class="wp-block-group">
+
+						<!-- wp:post-title {"fontSize":"x-large"} /-->
+
+						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"textColor":"muted","fontSize":"small"} -->
+						<p class="has-muted-color has-text-color has-small-font-size">Address</p>
+						<!-- /wp:paragraph -->
+
 					</div>
 					<!-- /wp:group -->
 
-					<!-- wp:nop-indieweb/weather-temp {"fontSize":"small"} /-->
+					<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
+					<div class="wp-block-group has-small-font-size">
+						<!-- wp:group {"style":{"spacing":{"padding":{"top":"0.3em"}}},"layout":{"type":"constrained"}} -->
+						<div class="wp-block-group" style="padding-top:0.3em">
+							<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
+						</div>
+						<!-- /wp:group -->
 
-					<!-- wp:paragraph -->
-					<p>·</p>
+						<!-- wp:nop-indieweb/weather-temp {"fontSize":"small"} /-->
+
+						<!-- wp:paragraph {"textColor":"muted"} -->
+						<p class="has-muted-color has-text-color">·</p>
+						<!-- /wp:paragraph -->
+
+						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
+						<p>Light Rain</p>
+						<!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!--
+						The visit number is the one figure here that only exists because
+						the archive is nineteen years deep — Ormeau Park is on its 203rd
+						— so it is set apart rather than filed in with the rest.
+					-->
+					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"className":"nop-visit","style":{"typography":{"fontWeight":"800"}},"fontSize":"large"} -->
+					<p class="nop-visit has-large-font-size" style="font-weight:800">203rd Visit</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
-					<p>Light Rain</p>
+					<!--
+						Flights are 20 posts out of 1,631. Both bindings resolve to null
+						when the meta is absent, and the plugin's :has() rules close the
+						empty group up, so this costs the other 1,611 nothing.
+					-->
+					<!-- wp:group {"className":"nop-flight","style":{"spacing":{"blockGap":"4px"}},"layout":{"type":"constrained"}} -->
+					<div class="wp-block-group nop-flight">
+						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small"} -->
+						<p class="nop-flight__route has-small-font-size" style="font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
+						<!-- /wp:paragraph -->
+
+						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","textColor":"muted","fontSize":"small"} -->
+						<p class="nop-flight__distance has-muted-color has-text-color has-small-font-size">294 km</p>
+						<!-- /wp:paragraph -->
+					</div>
+					<!-- /wp:group -->
+
+					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontFamily":"mono","textColor":"muted","fontSize":"x-small"} -->
+					<p class="has-muted-color has-text-color has-mono-font-family has-x-small-font-size">Coordinates</p>
 					<!-- /wp:paragraph -->
 
-					<!-- wp:paragraph -->
-					<p>·</p>
-					<!-- /wp:paragraph -->
-
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}}} -->
-					<p>1st Visit</p>
-					<!-- /wp:paragraph -->
 				</div>
-				<!-- /wp:group -->
+				<!-- /wp:column -->
 
 			</div>
-			<!-- /wp:group -->
-
-			<!-- wp:spacer {"height":"var:preset|spacing|70"} -->
-			<div style="height:var(--wp--preset--spacing--70)" aria-hidden="true" class="wp-block-spacer"></div>
-			<!-- /wp:spacer -->
-
-			<!-- wp:cover {"useFeaturedImage":true,"dimRatio":0,"sizeSlug":"large","style":{"dimensions":{"aspectRatio":"2/1"},"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
-			<div class="wp-block-cover" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--50)"><span aria-hidden="true" class="wp-block-cover__background has-background-dim-0 has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:paragraph {"placeholder":"Write title…","style":{"typography":{"textAlign":"center"}},"fontSize":"large"} -->
-			<p class="has-text-align-center has-large-font-size"></p>
-			<!-- /wp:paragraph --></div></div>
-			<!-- /wp:cover -->
-
-			<!-- wp:group {"className":"nop-flight","style":{"spacing":{"blockGap":"4px","margin":{"bottom":"var:preset|spacing|20"}}},"layout":{"type":"constrained"}} -->
-			<div class="wp-block-group nop-flight" style="margin-bottom:var(--wp--preset--spacing--20)">
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small"} -->
-				<p class="nop-flight__route has-small-font-size" style="font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
-				<!-- /wp:paragraph -->
-
-				<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","fontSize":"small"} -->
-				<p class="nop-flight__distance has-small-font-size">294 km</p>
-				<!-- /wp:paragraph -->
-			</div>
-			<!-- /wp:group -->
-
-			<!-- wp:nop-indieweb/checkin-map /-->
-
-			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontSize":"small"} -->
-			<p class="has-small-font-size">Coordinates</p>
-			<!-- /wp:paragraph -->
+			<!-- /wp:columns -->
 
 		</div>
 		<!-- /wp:group -->
