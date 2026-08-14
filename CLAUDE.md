@@ -59,22 +59,40 @@ npm start           # watch mode during development
 composer step, so nothing here can reach runtime.
 
 ```bash
-composer install            # once, to pull the dev toolchain
-composer test               # PHPUnit — pure-logic unit tests in tests/php/
-composer phpstan            # static analysis (level 5, WP stubs)
-composer phpstan:baseline   # seed phpstan-baseline.neon from current findings
+composer install   # once, to pull the dev toolchain
+composer test      # PHPUnit — pure-logic unit tests in tests/php/
+composer phpstan   # static analysis (level 5, WP stubs)
 ```
 
 Notes:
-- **No local PHP in Studio.** Studio runs WordPress through WASM, so there's no
-  CLI `php`/`composer` here — these run in GitHub Actions (`.github/workflows/ci.yml`:
-  lint, PHPUnit, and PHPStan are all **blocking**). To smoke-test PHP changes
-  locally, use `studio wp eval` / `studio wp eval-file` (a fatal/parse error breaks
-  `studio wp eval 'echo "ok";'`).
-- **PHPStan is baselined.** `phpstan-baseline.neon` absorbs pre-existing findings,
-  so CI fails only on NEW type errors. After fixing baseline entries, regenerate it
-  by running the `phpstan-baseline` workflow (Actions tab → Run workflow) and
-  committing the uploaded artifact, or `composer phpstan:baseline` where PHP exists.
+- **There IS a local PHP.** This used to say otherwise, on the belief that Studio
+  runs WordPress through WASM. It does not: Studio ships a native static CLI
+  binary, and the full toolchain runs locally in about ten seconds.
+
+  ```bash
+  PHP=/Applications/Studio.app/Contents/Resources/php-bin/8.4.23-studio-1/php
+  $PHP -v                          # 8.4.23, with mbstring/intl/dom/sqlite3/zip
+  $PHP composer.phar install
+  $PHP vendor/bin/phpstan analyse --memory-limit=3G
+  $PHP vendor/bin/phpunit
+  $PHP -l some-file.php            # syntax check without booting WordPress
+  ```
+
+  There is no `composer` on PATH; fetch `composer.phar` from getcomposer.org and
+  verify it against the published `.sha256sum`. Pin the path to whatever version
+  is under `php-bin/` — it changes when Studio updates.
+
+  CI still runs the same checks (`.github/workflows/ci.yml`: lint, PHPUnit and
+  PHPStan, all **blocking**), but it is no longer the only place they can run.
+  `studio wp eval` remains the way to smoke-test behaviour that needs WordPress
+  loaded.
+- **PHPStan runs clean, with no baseline.** There was a 401-line
+  `phpstan-baseline.neon` absorbing 80 findings; the code was fixed instead and
+  the file deleted, so *any* new error fails the run. The handful of findings
+  that are deliberate — guards the WordPress stubs are too optimistic to see the
+  need for — are listed as `ignoreErrors` in `phpstan.neon`, each with the reason
+  it stays. Add to that list only when you can write the reason down; reach for a
+  baseline only if the count ever gets away from us again.
 - **Unit tests are WP-free.** `tests/php/bootstrap.php` stubs the handful of WP
   functions the code under test calls; only side-effect-free classes (parsers,
   formatters) belong in this suite. Anything needing the DB/network is out of scope.
@@ -180,8 +198,9 @@ open, low-value** — so the open list carries forward instead of being rediscov
    read the syndication-health failure surface and check credential expiry as
    part of the pass, rather than waiting for a post to silently not syndicate.
 
-Findings get smoke-tested with `studio wp eval` (no local PHP — see above), and
-after pushing PHP you check `gh run list`, since PHPStan only runs in CI.
+Findings get smoke-tested with `studio wp eval` when they need WordPress loaded.
+PHPStan and PHPUnit both run locally against Studio's PHP binary (see above), so
+run them before pushing rather than waiting on `gh run list`.
 
 ## i18n
 
