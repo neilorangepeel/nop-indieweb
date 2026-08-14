@@ -65,6 +65,8 @@ class Block_Bindings {
 	 * bindings on fields that don't have a backing meta key.
 	 */
 	private const DERIVED_MF2_CLASSES = [
+		// Kind derived fields
+		'kind_label'            => '',
 		'full_address'          => 'p-adr',
 		'locality_country'      => '',
 		'venue_coordinates'     => '',
@@ -175,6 +177,7 @@ class Block_Bindings {
 		'exercise_gear'                   => 'Vitus Zenium',
 		'exercise_type_archive_link'      => '<a href="#">Run</a>',
 		'exercise_personal_best'          => 'Longest run',
+		'kind_label'                      => '<a href="#">Liked</a>',
 	];
 
 	public function get_value( array $source_args, WP_Block $block ): ?string {
@@ -246,6 +249,32 @@ class Block_Bindings {
 		}
 
 		switch ( $field ) {
+			// The post's kind, in its reading voice, linked to its archive.
+			//
+			// Returns markup on purpose: WP_Block::replace_html() passes a bound
+			// value through wp_kses_post() before splicing it in, so an anchor
+			// survives. That is what lets one binding replace the hardcoded
+			// <a href="/kind/like/">Liked</a> that each of the fourteen kind
+			// templates carried — English that no translation could reach, and a
+			// root-relative href that broke outside a root install.
+			//
+			// get_term_link() means the URL follows the taxonomy's rewrite slug
+			// and the site's own path, rather than assuming both.
+			case 'kind_label': {
+				$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
+				if ( is_wp_error( $terms ) || ! $terms ) {
+					return null;
+				}
+				$term  = $terms[0];
+				$label = \NOP\IndieWeb\Kind\Kind_Taxonomy::eyebrow_labels()[ $term->slug ] ?? $term->name;
+
+				$url = get_term_link( $term );
+				if ( is_wp_error( $url ) ) {
+					return esc_html( $label );
+				}
+				return '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+			}
+
 			case 'full_address':
 				$parts = array_filter( [
 					get_post_meta( $post_id, 'nop_indieweb_venue_address',  true ),

@@ -62,6 +62,49 @@ class Kind_Taxonomy {
 	];
 
 	/**
+	 * How a kind announces itself at the top of a post (slug => label).
+	 *
+	 * Distinct from the term name and from the editor panel's label, both of
+	 * which are nouns. These are the reading voice — "Liked", not "Like" — and
+	 * several are not the noun at all: a reply says "In reply to", a checkin
+	 * says "Check-in".
+	 *
+	 * These strings lived in the fourteen single-nop_kind-*.html templates, one
+	 * hardcoded English phrase each, next to a hardcoded /kind/{slug}/ href.
+	 * Block templates are HTML and cannot hold translatable copy, so no
+	 * translation of this site could ever reach them, and the root-relative href
+	 * broke on any install in a subdirectory or with a different rewrite slug.
+	 * Surfaced through the kind_label binding instead.
+	 *
+	 * Not a const because __() cannot run at class-definition time.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function eyebrow_labels(): array {
+		return [
+			'note'       => __( 'Note',        'nop-indieweb' ),
+			'article'    => __( 'Article',     'nop-indieweb' ),
+			'bookmark'   => __( 'Bookmarked',  'nop-indieweb' ),
+			'reply'      => __( 'In reply to', 'nop-indieweb' ),
+			'like'       => __( 'Liked',       'nop-indieweb' ),
+			'repost'     => __( 'Reposted',    'nop-indieweb' ),
+			'rsvp'       => __( 'RSVP',        'nop-indieweb' ),
+			'checkin'    => __( 'Check-in',    'nop-indieweb' ),
+			'exercise'   => __( 'Exercise',    'nop-indieweb' ),
+			'watch'      => __( 'Watched',     'nop-indieweb' ),
+			'listen'     => __( 'Listened',    'nop-indieweb' ),
+			'photo'      => __( 'Photo',       'nop-indieweb' ),
+			'quote'      => __( 'Quote',       'nop-indieweb' ),
+			'video'      => __( 'Video',       'nop-indieweb' ),
+			'story'      => __( 'Story',       'nop-indieweb' ),
+			'collection' => __( 'Collection',  'nop-indieweb' ),
+			'music'      => __( 'Music',       'nop-indieweb' ),
+			'film'       => __( 'Film',        'nop-indieweb' ),
+			'book'       => __( 'Book',        'nop-indieweb' ),
+		];
+	}
+
+	/**
 	 * The curated topic categories (slug => display name).
 	 * Categories answer "what's it about?"; kinds answer "what is it?".
 	 */
