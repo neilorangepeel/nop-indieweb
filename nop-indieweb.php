@@ -10,6 +10,7 @@
  * Author URI:  https://neilorangepeel.com
  * License:     GPL-2.0-or-later
  * Text Domain: nop-indieweb
+ * Domain Path: /languages
  */
 
 declare( strict_types=1 );
