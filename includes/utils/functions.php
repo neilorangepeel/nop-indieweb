@@ -254,7 +254,7 @@ function nop_indieweb_walk_safe_redirects( string $url, array $hop_args, int $ma
 		}
 
 		$next = \WP_Http::make_absolute_url( $location, $url );
-		if ( ! is_string( $next ) || '' === $next ) {
+		if ( '' === $next ) {
 			return new \WP_Error( 'nop_bad_redirect', 'Could not resolve redirect target.' );
 		}
 

@@ -28,18 +28,12 @@ class Settings_API {
 	private const OPTION_KEY = 'nop_indieweb_settings';
 	private const SENTINEL   = '__redacted__';
 
-	private const SECRET_PATHS = [
-		[ 'syndicators', 'mastodon',  'access_token'       ],
-		[ 'syndicators', 'bluesky',   'app_password'        ],
-		[ 'syndicators', 'pixelfed',  'access_token'       ],
-		[ 'syndicators', 'tumblr',    'consumer_secret'    ],
-		[ 'syndicators', 'tumblr',    'access_token'       ],
-		[ 'syndicators', 'tumblr',    'refresh_token'      ],
-		[ 'maps',        null,        'geoapify_api_key'    ],
-		[ 'weather',     null,        'pirate_weather_api_key' ],
-		[ 'venue',       null,        'foursquare_api_key'  ],
-		[ 'lookups',     null,        'tmdb_api_key'        ],
-	];
+	// A SECRET_PATHS table used to live here. Nothing ever read it — redaction
+	// and restore are both written out per path (see get_settings() and
+	// sanitize_input()) — and a dead list of secrets is worse than none: it
+	// reads as authoritative, so adding a row to it would look like enabling
+	// redaction while changing nothing. It was also already wrong, listing the
+	// Tumblr tokens as redacted when they are never emitted at all.
 
 	private const VALID_STATUS   = [ 'publish', 'draft', 'private' ];
 	private const VALID_APPROVAL = [ 'bridgy_only', 'auto_all', 'manual_all' ];

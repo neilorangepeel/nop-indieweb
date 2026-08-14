@@ -84,10 +84,10 @@ class MF2_Endpoint {
 		// JSON consumers, which expect plain text, not HTML.
 		$all_terms  = array_map(
 			fn( $name ) => html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' ),
-			array_values( array_merge(
+			array_merge(
 				is_array( $categories ) ? $categories : [],
 				is_array( $tags )       ? $tags       : []
-			) )
+			)
 		);
 
 		$props = [

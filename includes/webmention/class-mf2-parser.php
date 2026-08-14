@@ -52,7 +52,11 @@ class MF2_Parser {
 		$nodes = $xpath->query(
 			'//*[' . $this->cls( 'h-entry' ) . ' or ' . $this->cls( 'h-cite' ) . ']'
 		);
-		return $nodes->length > 0 ? $nodes->item( 0 ) : null;
+		// query() returns false on a malformed expression, and item() is typed as
+		// ?DOMNode — the `//*` axis can only ever yield elements, but nothing in
+		// the signature says so, and the callers take DOMElement.
+		$node = ( false !== $nodes && $nodes->length > 0 ) ? $nodes->item( 0 ) : null;
+		return $node instanceof \DOMElement ? $node : null;
 	}
 
 	private function detect_type( ?\DOMElement $root, \DOMXPath $xpath ): string {
@@ -78,8 +82,9 @@ class MF2_Parser {
 			return $blank;
 		}
 
-		$card = $xpath->query( './/*[' . $this->cls( 'h-card' ) . ']', $root )->item( 0 );
-		if ( ! $card ) {
+		$cards = $xpath->query( './/*[' . $this->cls( 'h-card' ) . ']', $root );
+		$card  = false !== $cards ? $cards->item( 0 ) : null;
+		if ( ! $card instanceof \DOMElement ) {
 			return $blank;
 		}
 

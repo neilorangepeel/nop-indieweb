@@ -91,7 +91,7 @@ class Webmention_Sender {
 
 	private function extract_links( string $content ): array {
 		preg_match_all( '/href=["\']([^"\']+)["\']/', $content, $matches );
-		$urls = array_unique( $matches[1] ?? [] );
+		$urls = array_unique( $matches[1] );
 		return array_values( array_filter( $urls, static fn( string $u ) =>
 			str_starts_with( $u, 'http' ) && false !== filter_var( $u, FILTER_VALIDATE_URL )
 		) );

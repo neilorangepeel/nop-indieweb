@@ -277,7 +277,7 @@ class Social_Backfeed {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @param array{platform:string,type:string,platform_id:string,source:string,author:string,author_url:string,content:string,date:string} $data
+	 * @param array{platform:string,type:string,platform_id:string,source:string,author:string,author_url:string,author_photo:string,author_handle:string,content:string,date:string} $data
 	 * @param array<string,mixed> $seen
 	 */
 	private function store_interaction( int $post_id, array $data, array &$seen ): void {
@@ -323,8 +323,8 @@ class Social_Backfeed {
 			add_comment_meta( $comment_id, 'webmention_platform',      $data['platform'],                 true );
 			add_comment_meta( $comment_id, 'webmention_platform_id',   $data['platform_id'],              true );
 			add_comment_meta( $comment_id, 'webmention_source',        $data['source'],                   true );
-			add_comment_meta( $comment_id, 'webmention_author_photo',  $data['author_photo'] ?? '',       true );
-			add_comment_meta( $comment_id, 'webmention_author_handle', $data['author_handle'] ?? '',      true );
+			add_comment_meta( $comment_id, 'webmention_author_photo',  $data['author_photo'],             true );
+			add_comment_meta( $comment_id, 'webmention_author_handle', $data['author_handle'],            true );
 			add_comment_meta( $comment_id, 'webmention_silo_key',      $silo_key,                         true );
 			$seen[ $data['platform_id'] ] = true;
 		}

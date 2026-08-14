@@ -132,7 +132,7 @@ abstract class Syndicator_Base {
 		}
 
 		$kind  = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
-		$title = (string) ( $post->post_title ?? '' );
+		$title = (string) $post->post_title;
 		$body  = \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
 
 		// Response kinds lead with an emoji + verb (mirroring the 📍 check-in) so

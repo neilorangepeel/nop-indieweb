@@ -34,7 +34,11 @@ class Health_Check {
 
 	public function register(): void {
 		add_action( 'init',          [ $this, 'maybe_schedule' ] );
-		add_action( self::HOOK,      [ $this, 'run' ] );
+		// run() returns the status array for direct callers; an action callback
+		// must not return anything, so the value is discarded here.
+		add_action( self::HOOK,      function (): void {
+			$this->run();
+		} );
 		add_action( 'admin_notices', [ $this, 'render_notice' ] );
 	}
 

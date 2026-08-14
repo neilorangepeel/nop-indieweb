@@ -248,7 +248,7 @@ class Swarm extends Service_Base {
 				$post_id,
 				$lat,
 				$lng,
-				(int) get_post_timestamp( $post_id, 'date_gmt' )
+				(int) get_post_timestamp( $post_id )
 			);
 
 			$geoapify_key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );

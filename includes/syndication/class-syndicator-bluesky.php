@@ -492,8 +492,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 					'url'           => (string) $src[0],
 					'alt'           => '',
 					'attachment_id' => $thumbnail_id,
-					'width'         => (int) ( $src[1] ?? 0 ),
-					'height'        => (int) ( $src[2] ?? 0 ),
+					'width'         => (int) $src[1],
+					'height'        => (int) $src[2],
 				], $session );
 			}
 		}
@@ -512,8 +512,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			'url'           => (string) $src[0],
 			'alt'           => '',
 			'attachment_id' => $icon_id,
-			'width'         => (int) ( $src[1] ?? 0 ),
-			'height'        => (int) ( $src[2] ?? 0 ),
+			'width'         => (int) $src[1],
+			'height'        => (int) $src[2],
 		], $session );
 	}
 

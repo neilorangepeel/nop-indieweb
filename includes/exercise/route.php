@@ -312,7 +312,7 @@ function nop_indieweb_save_exercise_post( array $a, string $api_key = '' ) {
 		nop_indieweb_render_route_map( $post_id, $a['points'], $api_key, [ 'color' => 'e03232' ] );
 	}
 	if ( (float) $start[0] || (float) $start[1] ) {
-		\NOP\IndieWeb\Weather\Weather_Fetcher::enrich_post( $post_id, (float) $start[0], (float) $start[1], (int) get_post_timestamp( $post_id, 'date_gmt' ) );
+		\NOP\IndieWeb\Weather\Weather_Fetcher::enrich_post( $post_id, (float) $start[0], (float) $start[1], (int) get_post_timestamp( $post_id ) );
 	}
 
 	return $post_id;

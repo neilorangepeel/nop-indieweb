@@ -223,7 +223,16 @@ class Webmention_Endpoint {
 		// suppresses parse warnings from malformed third-party HTML.
 		@$dom->loadHTML( $html, LIBXML_NOERROR | LIBXML_NONET );
 		$xpath = new \DOMXPath( $dom );
-		foreach ( $xpath->query( '//a[@href]' ) as $link ) {
+		$links = $xpath->query( '//a[@href]' );
+		if ( false === $links ) {
+			return false;
+		}
+		foreach ( $links as $link ) {
+			// The `//a` axis yields only elements, but DOMNodeList is typed as
+			// holding DOMNode, which has no getAttribute().
+			if ( ! $link instanceof \DOMElement ) {
+				continue;
+			}
 			if ( rtrim( $link->getAttribute( 'href' ), '/' ) === $target_norm ) {
 				return true;
 			}
@@ -297,8 +306,10 @@ class Webmention_Endpoint {
 			'comment_approved'     => $approved,
 		] ) );
 
-		if ( ! $comment_id || is_wp_error( $comment_id ) ) {
-			return $comment_id ?: new \WP_Error( 'insert_failed', 'wp_insert_comment returned falsy.' );
+		// wp_insert_comment() returns int|false — never a WP_Error, so the only
+		// failure to test for is the falsy one.
+		if ( ! $comment_id ) {
+			return new \WP_Error( 'insert_failed', 'wp_insert_comment returned falsy.' );
 		}
 
 		$this->save_meta( $comment_id, $source, $target, $parsed );

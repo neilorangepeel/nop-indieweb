@@ -98,7 +98,7 @@ class Backfill_Weather {
 
 			$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
 			$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
-			$ts  = (int) get_post_timestamp( $post_id, 'date_gmt' );
+			$ts  = (int) get_post_timestamp( $post_id );
 
 			if ( ( 0.0 === $lat && 0.0 === $lng ) || $ts <= 0 ) {
 				$skipped++;

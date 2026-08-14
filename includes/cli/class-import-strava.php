@@ -246,7 +246,7 @@ class Import_Strava {
 				'post_status'    => 'inherit',
 				'post_parent'    => $post_id,
 			], $upload['file'], $post_id );
-			if ( ! $attach_id || is_wp_error( $attach_id ) ) {
+			if ( ! $attach_id ) {
 				continue;
 			}
 			wp_update_attachment_metadata( $attach_id, wp_generate_attachment_metadata( $attach_id, $upload['file'] ) );

@@ -16,7 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Comment_Filter {
 
 	public function register(): void {
-		add_filter( 'pre_get_comments', [ $this, 'exclude_webmentions_from_default_query' ] );
+		// pre_get_comments is do_action_ref_array() in core: the query is passed by
+		// reference and no return value is read.
+		add_action( 'pre_get_comments', [ $this, 'exclude_webmentions_from_default_query' ] );
 		add_filter( 'get_comments_number', [ $this, 'exclude_webmentions_from_count' ], 10, 2 );
 	}
 

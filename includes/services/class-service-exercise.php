@@ -179,7 +179,7 @@ class Exercise extends Service_Base {
 			$post_id,
 			$lat,
 			$lng,
-			(int) get_post_timestamp( $post_id, 'date_gmt' )
+			(int) get_post_timestamp( $post_id )
 		);
 
 		// Static map image for the workout start location.

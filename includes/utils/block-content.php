@@ -168,8 +168,8 @@ function nop_indieweb_image_from_block( array $block ): ?array {
 		$src = wp_get_attachment_image_src( $id, 'large' );
 		if ( $src ) {
 			$url = (string) $src[0];
-			$w   = (int) ( $src[1] ?? 0 );
-			$h   = (int) ( $src[2] ?? 0 );
+			$w   = (int) $src[1];
+			$h   = (int) $src[2];
 		}
 		$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
 	}

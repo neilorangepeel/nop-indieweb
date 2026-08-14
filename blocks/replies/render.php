@@ -19,6 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 
+/**
+ * WordPress injects these into a block's render scope.
+ *
+ * @var array<string, mixed> $attributes
+ * @var string               $content
+ * @var \WP_Block            $block
+ */
+
 $show_heading = ! isset( $attributes['showHeading'] ) || (bool) $attributes['showHeading'];
 
 $preview = nop_wm_is_editor_preview();

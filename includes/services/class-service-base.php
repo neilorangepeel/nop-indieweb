@@ -333,7 +333,7 @@ abstract class Service_Base {
 				return new WP_Error( 'nop_bad_redirect', '3xx without Location header.' );
 			}
 			$next = \WP_Http::make_absolute_url( $location, $url );
-			if ( ! is_string( $next ) || '' === $next ) {
+			if ( '' === $next ) {
 				wp_delete_file( $tmp );
 				return new WP_Error( 'nop_bad_redirect', 'Could not resolve redirect target.' );
 			}

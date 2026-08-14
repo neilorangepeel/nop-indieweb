@@ -105,14 +105,19 @@ class Media_Endpoint {
 			return new WP_Error( 'nop_indieweb_upload_failed', $uploaded['error'], [ 'status' => 400 ] );
 		}
 
+		// $wp_error = true. Without it wp_insert_attachment() reports failure by
+		// returning 0, the is_wp_error() branch below is unreachable, and a failed
+		// insert falls through to wp_update_attachment_metadata( 0, … ).
 		$attachment_id = wp_insert_attachment(
 			wp_slash( [
 				'post_mime_type' => $uploaded['type'],
 				'post_title'     => sanitize_file_name( $files['file']['name'] ),
 				'post_status'    => 'inherit',
-				'post_author'    => (int) ( $token['user_id'] ?? 0 ),
+				'post_author'    => (int) $token['user_id'],
 			] ),
-			$uploaded['file']
+			$uploaded['file'],
+			0,
+			true
 		);
 
 		if ( is_wp_error( $attachment_id ) ) {

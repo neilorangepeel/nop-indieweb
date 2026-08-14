@@ -101,7 +101,7 @@ class Like_Endpoint {
 			'comment_approved'     => 1,
 		] ) );
 
-		if ( ! $comment_id || is_wp_error( $comment_id ) ) {
+		if ( ! $comment_id ) {
 			return new \WP_Error( 'insert_failed', 'Could not save like.', [ 'status' => 500 ] );
 		}
 

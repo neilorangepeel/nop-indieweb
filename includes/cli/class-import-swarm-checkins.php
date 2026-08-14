@@ -188,10 +188,14 @@ class Import_Swarm_Checkins {
 					WP_CLI::log( "  ✓ #{$post_id} {$label} ({$date}){$photo_note}" );
 				}
 			}
-		}
 
-		$page_created = $counts['created'] - $page_start;
-		WP_CLI::log( "  Page {$page_num} done: {$page_created} created · " . ( count( $items ) - $page_created ) . " skipped" );
+			// Inside the page loop, where $page_start, $page_num and $items are
+			// in scope. It used to sit after the loop closed, which made "Page N
+			// done" describe only the last page — and left all three undefined
+			// when $pages was 0 or every page failed its fetch.
+			$page_created = $counts['created'] - $page_start;
+			WP_CLI::log( "  Page {$page_num} done: {$page_created} created · " . ( count( $items ) - $page_created ) . " skipped" );
+		}
 
 		$progress->finish();
 

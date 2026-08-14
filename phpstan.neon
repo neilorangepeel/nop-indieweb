@@ -1,6 +1,5 @@
 includes:
 	- vendor/szepeviktor/phpstan-wordpress/extension.neon
-	- phpstan-baseline.neon
 
 parameters:
 	level: 5
@@ -15,10 +14,51 @@ parameters:
 	bootstrapFiles:
 		- tests/php/phpstan-bootstrap.php
 	# WP-CLI symbols (WP_CLI class + WP_CLI\Utils helpers) for the includes/cli/ commands;
-	# the WordPress core stubs don't carry them. mf2-stubs declares the optional
-	# php-mf2 \Mf2\parse() symbol (guarded by function_exists at every call site).
+	# the WordPress core stubs don't carry them.
+	#
+	# wp-cli-tools-stubs carries the php-cli-tools classes that WP-CLI's own
+	# signatures return — \cli\progress\Bar above all, which every one of the
+	# fourteen CLI commands gets from make_progress_bar() and then calls tick()
+	# and finish() on. Without it those calls land on an unknown class and PHPStan
+	# reports 31 errors that are entirely an artefact of the missing stub.
+	#
+	# mf2-stubs declares the optional php-mf2 \Mf2\parse() symbol (guarded by
+	# function_exists at every call site).
 	scanFiles:
 		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-tools-stubs.php
 		- tests/php/mf2-stubs.php
 	# WordPress symbols come from szepeviktor/phpstan-wordpress (php-stubs/wordpress-stubs).
 	# The /post and /settings React apps are JS — analysed by `npm run lint:js`, not here.
+
+	# ── Deliberate guards ─────────────────────────────────────────────────────
+	# These are NOT suppressed debt. Each one is a runtime check that PHPStan can
+	# prove redundant only because a stub is more optimistic than the function it
+	# describes. Removing any of them would be a real regression, so they are
+	# listed here with a reason rather than parked in an anonymous baseline —
+	# which also means any *new* error fails the run instead of being absorbed.
+	ignoreErrors:
+		# WP_REST_Request::get_json_params() is stubbed as returning array, but it
+		# returns json_decode( $body, true ) unfiltered. A request body of `5`,
+		# `"hi"` or `null` is valid JSON that decodes to a scalar with
+		# JSON_ERROR_NONE, so core hands back a non-array and never notices.
+		# See wp-includes/rest-api/class-wp-rest-request.php::parse_json_params().
+		-
+			identifier: function.alreadyNarrowedType
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			paths:
+				- includes/admin/class-settings-api.php
+				- includes/micropub/class-auth.php
+		-
+			identifier: nullCoalesce.expr
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			path: includes/micropub/class-request.php
+		# $services is populated through the nop_indieweb_register_services filter,
+		# which the class docblock advertises as an extension point for other
+		# plugins and themes. phpstan-wordpress types apply_filters() as the type
+		# of its default, so it cannot see that a third party may return anything
+		# at all. The instanceof is what keeps a bad filter from fatalling here.
+		-
+			identifier: instanceof.alwaysTrue
+			message: '#^Instanceof between NOP\\IndieWeb\\Services\\Service_Base and NOP\\IndieWeb\\Services\\Service_Base will always evaluate to true\.$#'
+			path: includes/class-plugin.php

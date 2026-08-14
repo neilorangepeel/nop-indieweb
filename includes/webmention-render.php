@@ -71,19 +71,22 @@ function nop_wm_get_data( int $post_id ): array {
 	$webmention_ids = [];
 
 	foreach ( $webmentions as $wm ) {
-		$type             = get_comment_meta( $wm->comment_ID, 'webmention_type', true );
-		$webmention_ids[] = (int) $wm->comment_ID;
-		$source           = get_comment_meta( $wm->comment_ID, 'webmention_source', true );
+		// WP_Comment::$comment_ID is a string; get_comment_meta() wants an int.
+		// Cast once here rather than at each of the six call sites below.
+		$comment_id       = (int) $wm->comment_ID;
+		$type             = get_comment_meta( $comment_id, 'webmention_type', true );
+		$webmention_ids[] = $comment_id;
+		$source           = get_comment_meta( $comment_id, 'webmention_source', true );
 
 		$entry = [
-			'id'         => $wm->comment_ID,
+			'id'         => $comment_id,
 			'author'     => $wm->comment_author,
 			'author_url' => $wm->comment_author_url,
-			'photo'      => get_comment_meta( $wm->comment_ID, 'webmention_author_photo',  true ),
-			'handle'     => get_comment_meta( $wm->comment_ID, 'webmention_author_handle', true ),
-			'platform'   => get_comment_meta( $wm->comment_ID, 'webmention_platform',      true ),
+			'photo'      => get_comment_meta( $comment_id, 'webmention_author_photo',  true ),
+			'handle'     => get_comment_meta( $comment_id, 'webmention_author_handle', true ),
+			'platform'   => get_comment_meta( $comment_id, 'webmention_platform',      true ),
 			'via_bridgy' => $source && str_contains( $source, 'brid.gy' ),
-			'source'     => $source ?: ( get_comment_meta( $wm->comment_ID, 'webmention_original_url', true ) ?: $wm->comment_author_url ),
+			'source'     => $source ?: ( get_comment_meta( $comment_id, 'webmention_original_url', true ) ?: $wm->comment_author_url ),
 			'content'    => $wm->comment_content,
 			'date'       => $wm->comment_date_gmt,
 		];
@@ -138,8 +141,10 @@ function nop_wm_get_data( int $post_id ): array {
  * block-renderer request and only for a post the current user may edit.
  * Shared by the three blocks' render.php so their editor previews target the
  * post being authored rather than leaking arbitrary post data.
+ *
+ * @param \WP_Block $block The block instance WordPress injects into render.php.
  */
-function nop_wm_resolve_post_id( $block ): int {
+function nop_wm_resolve_post_id( \WP_Block $block ): int {
 	$post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 
 	$is_editor = defined( 'REST_REQUEST' ) && REST_REQUEST
