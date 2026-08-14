@@ -14,8 +14,41 @@
 	"supports": {
 		"html": false,
 		"align": false,
-		"spacing": { "margin": true, "padding": true },
-		"typography": { "fontSize": true, "lineHeight": true },
-		"color": { "text": true, "background": false, "link": true }
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": false,
+			"link": true,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
 	}
 }

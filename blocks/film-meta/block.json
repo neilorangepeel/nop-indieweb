@@ -11,11 +11,47 @@
 	"style": [ "file:./style.css", "nop-blocks-shared" ],
 	"render": "file:./render.php",
 	"usesContext": ["postId", "postType"],
+	"selectors": {
+		"border": ".wp-block-nop-indieweb-film-meta .nop-film-meta__poster"
+	},
 	"supports": {
 		"html": false,
 		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": false,
+			"link": false,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
 		"spacing": {
-			"margin": true
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
 		}
 	}
 }

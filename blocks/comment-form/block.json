@@ -11,6 +11,9 @@
 	"style": ["nop-blocks-shared", "file:./style.css"],
 	"render": "file:./render.php",
 	"usesContext": ["postId", "postType"],
+	"selectors": {
+		"border": ".wp-block-nop-indieweb-comment-form :is(.nop-webmentions__form-field input, .nop-webmentions__form-field textarea)"
+	},
 	"supports": {
 		"html": false,
 		"align": false,
@@ -21,15 +24,17 @@
 			"__experimentalFontStyle": true,
 			"__experimentalFontWeight": true,
 			"__experimentalLetterSpacing": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
 			"__experimentalDefaultControls": {
 				"fontSize": true
 			}
 		},
 		"color": {
 			"text": true,
-			"background": false,
+			"background": true,
 			"gradients": false,
-			"link": false,
+			"link": true,
 			"__experimentalDefaultControls": {
 				"text": true
 			}
@@ -38,8 +43,15 @@
 			"margin": true,
 			"padding": true,
 			"__experimentalDefaultControls": {
-				"margin": true
+				"margin": true,
+				"padding": true
 			}
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
 		}
 	}
 }

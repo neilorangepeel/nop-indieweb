@@ -6,7 +6,52 @@
 	"category": "nop-indieweb-conversations",
 	"icon": "admin-comments",
 	"description": "Compact interaction row: like, comment, and repost count pills alongside the post's syndication source.",
-	"supports": { "html": false },
+	"selectors": {
+		"border": ".wp-block-nop-indieweb-post-footer .nop-post-footer__pill",
+		"color": {
+			"background": ".wp-block-nop-indieweb-post-footer .nop-post-footer__pill"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontStyle": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": false,
+			"link": true,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"__experimentalDefaultControls": {
+				"margin": true,
+				"padding": true
+			}
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
+	},
 	"usesContext": [ "postId", "postType" ],
 	"render": "file:./render.php",
 	"editorScript": "file:./editor.js",

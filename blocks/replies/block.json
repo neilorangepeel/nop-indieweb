@@ -17,6 +17,9 @@
 			"default": false
 		}
 	},
+	"selectors": {
+		"border": ".wp-block-nop-indieweb-replies .nop-webmentions__reply"
+	},
 	"supports": {
 		"html": false,
 		"align": false,
@@ -27,15 +30,17 @@
 			"__experimentalFontStyle": true,
 			"__experimentalFontWeight": true,
 			"__experimentalLetterSpacing": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
 			"__experimentalDefaultControls": {
 				"fontSize": true
 			}
 		},
 		"color": {
 			"text": true,
-			"background": false,
+			"background": true,
 			"gradients": false,
-			"link": false,
+			"link": true,
 			"__experimentalDefaultControls": {
 				"text": true
 			}
@@ -44,8 +49,15 @@
 			"margin": true,
 			"padding": true,
 			"__experimentalDefaultControls": {
-				"margin": true
+				"margin": true,
+				"padding": true
 			}
+		},
+		"border": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
 		}
 	}
 }
