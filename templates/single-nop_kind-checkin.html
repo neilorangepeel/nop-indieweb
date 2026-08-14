@@ -12,8 +12,8 @@
 	<!-- wp:group {"metadata":{"name":"Checkin"},"align":"wide","style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
 	<div class="wp-block-group alignwide" style="border-style:solid;border-width:1px">
 
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
+		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--50)">
 
 			<!-- wp:group {"style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"2px"},"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
 			<div class="wp-block-group has-small-font-size" style="font-weight:700;letter-spacing:2px;text-transform:uppercase">
@@ -51,8 +51,8 @@
 			unaligned child to contentSize, which put the columns back to 720px
 			inside a card that is 1200px wide and left the map at 356px.
 		-->
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"default"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)">
+		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"default"}} -->
+		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--50)">
 
 			<!--
 				Map left, data right. The map and the data are the half of a checkin
@@ -72,16 +72,6 @@
 
 					<!-- wp:nop-indieweb/checkin-map /-->
 
-					<!--
-						The note and the photographs both live in post_content and are
-						rendered here, directly under the map. In every one of the 194
-						checkins carrying both, the note is authored first and the
-						photograph second, so this reads map → note → photographs
-						without any reordering. A single photograph fills the column; a
-						gallery tiles into thumbnails beneath it.
-					-->
-					<!-- wp:post-content {"layout":{"type":"default"}} /-->
-
 				</div>
 				<!-- /wp:column -->
 
@@ -100,56 +90,76 @@
 					</div>
 					<!-- /wp:group -->
 
-					<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
-					<div class="wp-block-group has-small-font-size">
-						<!-- wp:group {"style":{"spacing":{"padding":{"top":"0.3em"}}},"layout":{"type":"constrained"}} -->
-						<div class="wp-block-group" style="padding-top:0.3em">
-							<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
+						<!--
+							The record. Labels left, values right in mono tabular, a hairline
+							between each — a checkin is a place, a time and a temperature, and
+							setting those as data treats them honestly instead of padding them
+							into sentences. Every row here is on 99% of checkins or better, so
+							the list is the same height on almost every post.
+						-->
+						<!-- wp:group {"style":{"spacing":{"blockGap":"0","margin":{"top":"var:preset|spacing|30"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"default"}} -->
+						<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;margin-top:var(--wp--preset--spacing--30)">
+						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
+							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Weather</p>
+							<!-- /wp:paragraph -->
+							<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontFamily":"mono","fontSize":"x-small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
+							<div class="wp-block-group has-mono-font-family has-x-small-font-size">
+								<!-- wp:nop-indieweb/weather-icon {"fontSize":"x-small"} /-->
+								<!-- wp:nop-indieweb/weather-temp {"fontSize":"x-small"} /-->
+								<!-- wp:paragraph {"textColor":"muted"} -->
+								<p class="has-muted-color has-text-color">·</p>
+								<!-- /wp:paragraph -->
+								<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
+								<p>Overcast</p>
+								<!-- /wp:paragraph -->
+							</div>
+							<!-- /wp:group -->
 						</div>
 						<!-- /wp:group -->
-
-						<!-- wp:nop-indieweb/weather-temp {"fontSize":"small"} /-->
-
-						<!-- wp:paragraph {"textColor":"muted"} -->
-						<p class="has-muted-color has-text-color">·</p>
-						<!-- /wp:paragraph -->
-
-						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
-						<p>Light Rain</p>
-						<!-- /wp:paragraph -->
-					</div>
-					<!-- /wp:group -->
-
-					<!--
-						The visit number is the one figure here that only exists because
-						the archive is nineteen years deep — Ormeau Park is on its 203rd
-						— so it is set apart rather than filed in with the rest.
-					-->
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"className":"nop-visit","style":{"typography":{"fontWeight":"800"}},"fontSize":"large"} -->
-					<p class="nop-visit has-large-font-size" style="font-weight:800">203rd Visit</p>
-					<!-- /wp:paragraph -->
-
-					<!--
-						Flights are 20 posts out of 1,631. Both bindings resolve to null
-						when the meta is absent, and the plugin's :has() rules close the
-						empty group up, so this costs the other 1,611 nothing.
-					-->
-					<!-- wp:group {"className":"nop-flight","style":{"spacing":{"blockGap":"4px"}},"layout":{"type":"constrained"}} -->
-					<div class="wp-block-group nop-flight">
-						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"1px"}},"fontSize":"small"} -->
-						<p class="nop-flight__route has-small-font-size" style="font-weight:700;letter-spacing:1px;text-transform:uppercase">Belfast International Airport → Newcastle Airport</p>
-						<!-- /wp:paragraph -->
-
-						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_distance"}}}},"className":"nop-flight__distance","textColor":"muted","fontSize":"small"} -->
-						<p class="nop-flight__distance has-muted-color has-text-color has-small-font-size">294 km</p>
-						<!-- /wp:paragraph -->
-					</div>
-					<!-- /wp:group -->
-
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontFamily":"mono","textColor":"muted","fontSize":"x-small"} -->
-					<p class="has-muted-color has-text-color has-mono-font-family has-x-small-font-size">Coordinates</p>
-					<!-- /wp:paragraph -->
-
+						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
+							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Visits</p>
+							<!-- /wp:paragraph -->
+							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"fontFamily":"mono","fontSize":"x-small"} -->
+							<p class="has-mono-font-family has-x-small-font-size">203rd Visit</p>
+							<!-- /wp:paragraph -->
+						</div>
+						<!-- /wp:group -->
+						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
+							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Coordinates</p>
+							<!-- /wp:paragraph -->
+							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontFamily":"mono","fontSize":"x-small"} -->
+							<p class="has-mono-font-family has-x-small-font-size">54.583 ° N · 5.916 ° W</p>
+							<!-- /wp:paragraph -->
+						</div>
+						<!-- /wp:group -->
+						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
+							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Source</p>
+							<!-- /wp:paragraph -->
+							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_service"}}}},"fontFamily":"mono","fontSize":"x-small","style":{"typography":{"textTransform":"capitalize"}}} -->
+							<p class="has-mono-font-family has-x-small-font-size" style="text-transform:capitalize">Swarm</p>
+							<!-- /wp:paragraph -->
+						</div>
+						<!-- /wp:group -->
+						<!-- wp:group {"className":"nop-flight","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+						<div class="wp-block-group nop-flight" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
+							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Route</p>
+							<!-- /wp:paragraph -->
+							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","fontFamily":"mono","fontSize":"x-small"} -->
+							<p class="nop-flight__route has-mono-font-family has-x-small-font-size">Belfast International Airport → Newcastle Airport</p>
+							<!-- /wp:paragraph -->
+						</div>
+						<!-- /wp:group -->
+						</div>
+						<!-- /wp:group -->
 				</div>
 				<!-- /wp:column -->
 
@@ -159,12 +169,23 @@
 		</div>
 		<!-- /wp:group -->
 
+		<!--
+			Content — the note and the photographs. Deliberately undesigned for now:
+			it is on 29% of checkins and is being approached as its own problem. The
+			separator and this whole group drop out when post_content is empty.
+		-->
+		<!-- wp:group {"className":"nop-checkin-content","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"constrained"}} -->
+		<div class="wp-block-group nop-checkin-content" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--50)">
+			<!-- wp:post-content {"layout":{"type":"constrained"}} /-->
+		</div>
+		<!-- /wp:group -->
+
 		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} -->
 		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
 		<!-- /wp:separator -->
 
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
+		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--50)">
 			<!-- wp:nop-indieweb/post-footer /-->
 			<!-- wp:nop-indieweb/replies /-->
 			<!-- wp:nop-indieweb/comment-form /-->

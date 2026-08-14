@@ -762,6 +762,15 @@ a.nop-post-source__link:focus-visible {
 	display: none;
 }
 
+/* Checkin content section — the note and the photographs. core/post-content
+   emits nothing at all for an empty post, but its wrapping group still renders
+   its border and padding, which left a blank band on the 71% of checkins that
+   have no content. :empty will not do it: the group holds a whitespace text
+   node. */
+.nop-checkin-content:not( :has( * ) ) {
+	display: none;
+}
+
 /* Flight strip on a checkin — shown only when the checkin was paired into a
    flight (block-bindings flight_route/flight_distance resolve empty otherwise,
    so the whole group drops out). Sits just above the arc map. */
