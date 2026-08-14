@@ -1,216 +1,119 @@
+<!--
+	Checkin — single post.
+
+	Simplified in the Site Editor and ported back here, so this file is the
+	source of truth again. Kept in the editor's own compact formatting on
+	purpose: the next round-trip through the Site Editor then produces a clean
+	diff instead of a whitespace one.
+
+	The shape: map on the left at 55%, the record on the right at 45%. Those are
+	the half of a checkin that is always there — venue, coordinates and weather
+	sit at 100% coverage and the map at 99% — so they carry the page alone, and
+	71% of checkins have nothing else. No border, no separators: the whitespace
+	does that work.
+
+	Still open, and deliberately absent rather than forgotten:
+	  · the date, which left with the eyebrow bar — a checkin is a place at a
+	    time, and right now the page says only the place
+	  · kind and venue category, likewise
+	  · post-content, so the note or photograph on 478 checkins shows on none
+	  · post-footer / replies / comment-form, so there is no way to respond and
+	    no webmentions display
+-->
 <!-- wp:template-part {"slug":"header"} /-->
 
-<!-- wp:group {"metadata":{"name":"Main"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
+<!-- wp:group {"metadata":{"name":"Main"},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group"><!-- wp:group {"metadata":{"name":"Checkin"},"align":"wide","style":{"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide"><!-- wp:group {"layout":{"type":"default"}} -->
+<div class="wp-block-group"><!-- wp:columns {"verticalAlignment":"top","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|40","left":"var:preset|spacing|50"}}}} -->
+<div class="wp-block-columns are-vertically-aligned-top"><!-- wp:column {"verticalAlignment":"top","width":"55%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:55%"><!-- wp:nop-indieweb/checkin-map /--></div>
+<!-- /wp:column -->
 
-	<!--
-		The card is flow, not constrained. A constrained container clamps every
-		unaligned child to contentSize, so an alignwide card would still have
-		rendered its contents in a 720px ribbon down the middle of a 1200px
-		border. Each row inside carries its own padding instead.
-	-->
-	<!-- wp:group {"metadata":{"name":"Checkin"},"align":"wide","style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"layout":{"type":"default"}} -->
-	<div class="wp-block-group alignwide" style="border-style:solid;border-width:1px">
+<!-- wp:column {"verticalAlignment":"top","width":"45%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
+<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:45%"><!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
+<div class="wp-block-group"><!-- wp:post-title {"fontSize":"x-large"} /-->
 
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--50)">
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"textColor":"muted","fontSize":"small"} -->
+<p class="has-muted-color has-text-color has-small-font-size">Address</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
 
-			<!-- wp:group {"style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"2px"},"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
-			<div class="wp-block-group has-small-font-size" style="font-weight:700;letter-spacing:2px;text-transform:uppercase">
+<!-- wp:group {"style":{"spacing":{"blockGap":"0","margin":{"top":"var:preset|spacing|30"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"default"}} -->
+<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;margin-top:var(--wp--preset--spacing--30)"><!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small","fontFamily":"display"} -->
+<p class="has-muted-color has-text-color has-display-font-family has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Weather</p>
+<!-- /wp:paragraph -->
 
-				<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"}},"layout":{"type":"flex","flexWrap":"wrap"}} -->
-				<div class="wp-block-group">
-					<!-- wp:nop-indieweb/kind-icon /-->
+<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"x-small","fontFamily":"mono","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
+<div class="wp-block-group has-mono-font-family has-x-small-font-size"><!-- wp:nop-indieweb/weather-icon {"fontSize":"x-small"} /-->
 
-					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"kind_label"}}}}} -->
-					<p></p>
-					<!-- /wp:paragraph -->
+<!-- wp:nop-indieweb/weather-temp {"fontSize":"x-small"} /-->
 
-					<!-- wp:post-terms {"term":"nop_venue_category","prefix":"· ","suffix":"","separator":" "} /-->
-				</div>
-				<!-- /wp:group -->
+<!-- wp:paragraph {"textColor":"muted"} -->
+<p class="has-muted-color has-text-color">·</p>
+<!-- /wp:paragraph -->
 
-				<!-- wp:group {"layout":{"type":"constrained","justifyContent":"right"}} -->
-				<div class="wp-block-group">
-					<!-- wp:post-date {"textAlign":"left","format":"G:i · d.m.Y","style":{"layout":{"selfStretch":"fill"}}} /-->
-				</div>
-				<!-- /wp:group -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
+<p>Overcast</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
 
-			</div>
-			<!-- /wp:group -->
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
+<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Visits</p>
+<!-- /wp:paragraph -->
 
-		</div>
-		<!-- /wp:group -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"fontSize":"x-small","fontFamily":"mono"} -->
+<p class="has-mono-font-family has-x-small-font-size">203rd Visit</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
 
-		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} -->
-		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
-		<!-- /wp:separator -->
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
+<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Coordinates</p>
+<!-- /wp:paragraph -->
 
-		<!--
-			Flow layout, not constrained. A constrained group re-clamps every
-			unaligned child to contentSize, which put the columns back to 720px
-			inside a card that is 1200px wide and left the map at 356px.
-		-->
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"default"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--50)">
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontSize":"x-small","fontFamily":"mono"} -->
+<p class="has-mono-font-family has-x-small-font-size">54.583 ° N · 5.916 ° W</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
 
-			<!--
-				Map left, data right. The map and the data are the half of a checkin
-				that is always present — venue, coordinates and weather sit at 100%
-				coverage and the map at 99% — so they carry the page on their own.
-				Everything that only sometimes appears hangs below the map, where its
-				absence closes up instead of leaving a hole. 71% of checkins have no
-				content at all and simply end after these two columns.
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
+<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Source</p>
+<!-- /wp:paragraph -->
 
-				Columns stack below 782px on their own; no breakpoint of ours.
-			-->
-			<!-- wp:columns {"verticalAlignment":"top","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|40","left":"var:preset|spacing|50"}}}} -->
-			<div class="wp-block-columns are-vertically-aligned-top">
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_service"}}}},"style":{"typography":{"textTransform":"capitalize"}},"fontSize":"x-small","fontFamily":"mono"} -->
+<p class="has-mono-font-family has-x-small-font-size" style="text-transform:capitalize">Swarm</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
 
-				<!-- wp:column {"verticalAlignment":"top","width":"55%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
-				<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:55%">
+<!-- wp:group {"className":"nop-flight","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group nop-flight" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)"><!-- wp:paragraph {"style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}},"textColor":"muted","fontSize":"x-small"} -->
+<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Route</p>
+<!-- /wp:paragraph -->
 
-					<!-- wp:nop-indieweb/checkin-map /-->
-
-				</div>
-				<!-- /wp:column -->
-
-				<!-- wp:column {"verticalAlignment":"top","width":"45%","style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} -->
-				<div class="wp-block-column is-vertically-aligned-top" style="flex-basis:45%">
-
-					<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|20"}},"layout":{"type":"flex","orientation":"vertical"}} -->
-					<div class="wp-block-group">
-
-						<!-- wp:post-title {"fontSize":"x-large"} /-->
-
-						<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"full_address"}}}},"textColor":"muted","fontSize":"small"} -->
-						<p class="has-muted-color has-text-color has-small-font-size">Address</p>
-						<!-- /wp:paragraph -->
-
-					</div>
-					<!-- /wp:group -->
-
-						<!--
-							The record. Labels left, values right in mono tabular, a hairline
-							between each — a checkin is a place, a time and a temperature, and
-							setting those as data treats them honestly instead of padding them
-							into sentences. Every row here is on 99% of checkins or better, so
-							the list is the same height on almost every post.
-						-->
-						<!-- wp:group {"style":{"spacing":{"blockGap":"0","margin":{"top":"var:preset|spacing|30"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"default"}} -->
-						<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;margin-top:var(--wp--preset--spacing--30)">
-						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Weather</p>
-							<!-- /wp:paragraph -->
-							<!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontFamily":"mono","fontSize":"x-small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-							<div class="wp-block-group has-mono-font-family has-x-small-font-size">
-								<!-- wp:nop-indieweb/weather-icon {"fontSize":"x-small"} /-->
-								<!-- wp:nop-indieweb/weather-temp {"fontSize":"x-small"} /-->
-								<!-- wp:paragraph {"textColor":"muted"} -->
-								<p class="has-muted-color has-text-color">·</p>
-								<!-- /wp:paragraph -->
-								<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
-								<p>Overcast</p>
-								<!-- /wp:paragraph -->
-							</div>
-							<!-- /wp:group -->
-						</div>
-						<!-- /wp:group -->
-						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Visits</p>
-							<!-- /wp:paragraph -->
-							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_visit_number"}}}},"fontFamily":"mono","fontSize":"x-small"} -->
-							<p class="has-mono-font-family has-x-small-font-size">203rd Visit</p>
-							<!-- /wp:paragraph -->
-						</div>
-						<!-- /wp:group -->
-						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Coordinates</p>
-							<!-- /wp:paragraph -->
-							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"venue_coordinates"}}}},"fontFamily":"mono","fontSize":"x-small"} -->
-							<p class="has-mono-font-family has-x-small-font-size">54.583 ° N · 5.916 ° W</p>
-							<!-- /wp:paragraph -->
-						</div>
-						<!-- /wp:group -->
-						<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-						<div class="wp-block-group" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Source</p>
-							<!-- /wp:paragraph -->
-							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_service"}}}},"fontFamily":"mono","fontSize":"x-small","style":{"typography":{"textTransform":"capitalize"}}} -->
-							<p class="has-mono-font-family has-x-small-font-size" style="text-transform:capitalize">Swarm</p>
-							<!-- /wp:paragraph -->
-						</div>
-						<!-- /wp:group -->
-						<!-- wp:group {"className":"nop-flight","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-						<div class="wp-block-group nop-flight" style="border-bottom-color:var(--wp--preset--color--surface);border-bottom-style:solid;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-							<!-- wp:paragraph {"textColor":"muted","fontSize":"x-small","style":{"typography":{"fontWeight":"800","textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-							<p class="has-muted-color has-text-color has-x-small-font-size" style="font-weight:800;letter-spacing:0.08em;text-transform:uppercase">Route</p>
-							<!-- /wp:paragraph -->
-							<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","fontFamily":"mono","fontSize":"x-small"} -->
-							<p class="nop-flight__route has-mono-font-family has-x-small-font-size">Belfast International Airport → Newcastle Airport</p>
-							<!-- /wp:paragraph -->
-						</div>
-						<!-- /wp:group -->
-						</div>
-						<!-- /wp:group -->
-				</div>
-				<!-- /wp:column -->
-
-			</div>
-			<!-- /wp:columns -->
-
-		</div>
-		<!-- /wp:group -->
-
-		<!--
-			Content — the note and the photographs. Deliberately undesigned for now:
-			it is on 29% of checkins and is being approached as its own problem. The
-			separator and this whole group drop out when post_content is empty.
-		-->
-		<!-- wp:group {"className":"nop-checkin-content","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"top":{"color":"var:preset|color|surface","style":"solid","width":"1px"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group nop-checkin-content" style="border-top-color:var(--wp--preset--color--surface);border-top-style:solid;border-top-width:1px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--50)">
-			<!-- wp:post-content {"layout":{"type":"constrained"}} /-->
-		</div>
-		<!-- /wp:group -->
-
-		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} -->
-		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
-		<!-- /wp:separator -->
-
-		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
-		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--50)">
-			<!-- wp:nop-indieweb/post-footer /-->
-			<!-- wp:nop-indieweb/replies /-->
-			<!-- wp:nop-indieweb/comment-form /-->
-		</div>
-		<!-- /wp:group -->
-
-	</div>
-	<!-- /wp:group -->
-
-</div>
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"flight_route"}}}},"className":"nop-flight__route","fontSize":"x-small","fontFamily":"mono"} -->
+<p class="nop-flight__route has-mono-font-family has-x-small-font-size">Belfast International Airport → Newcastle Airport</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group --></div>
+<!-- /wp:group --></div>
+<!-- /wp:column --></div>
+<!-- /wp:columns --></div>
+<!-- /wp:group --></div>
+<!-- /wp:group --></div>
 <!-- /wp:group -->
 
 <!-- wp:group {"align":"wide","style":{"spacing":{"margin":{"top":"4rem","bottom":"4rem"}}},"layout":{"type":"default"}} -->
-<div class="wp-block-group alignwide" style="margin-top:4rem;margin-bottom:4rem">
-	<!-- wp:group {"align":"wide","className":"nop-row","layout":{"type":"constrained"}} -->
-	<div class="wp-block-group alignwide nop-row">
-		<!-- wp:group {"tagName":"nav","align":"wide","style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"},"ariaLabel":"Post navigation"} -->
-		<nav class="wp-block-group alignwide" aria-label="Post navigation" style="padding-top:2rem;padding-bottom:2rem">
-			<!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
-			<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
-		</nav>
-		<!-- /wp:group -->
-	</div>
-	<!-- /wp:group -->
-</div>
+<div class="wp-block-group alignwide" style="margin-top:4rem;margin-bottom:4rem"><!-- wp:group {"align":"wide","className":"nop-row","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide nop-row"><!-- wp:group {"tagName":"nav","align":"wide","style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"},"ariaLabel":"Post navigation"} -->
+<nav class="wp-block-group alignwide" aria-label="Post navigation" style="padding-top:2rem;padding-bottom:2rem"><!-- wp:post-navigation-link {"type":"previous","showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /-->
+
+<!-- wp:post-navigation-link {"showTitle":true,"arrow":"arrow","taxonomy":"nop_kind","inSameTerm":true} /--></nav>
+<!-- /wp:group --></div>
+<!-- /wp:group --></div>
 <!-- /wp:group -->
 
 <!-- wp:template-part {"slug":"footer"} /-->
