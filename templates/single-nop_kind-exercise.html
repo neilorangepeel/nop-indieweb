@@ -3,8 +3,8 @@
 <!-- wp:group {"metadata":{"name":"Main"},"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
 
-	<!-- wp:group {"metadata":{"name":"Exercise"},"style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"borderColor":"accent-6","layout":{"type":"constrained"}} -->
-	<div class="wp-block-group has-border-color has-accent-6-border-color" style="border-style:solid;border-width:1px">
+	<!-- wp:group {"metadata":{"name":"Exercise"},"style":{"border":{"style":"solid","width":"1px"},"spacing":{"blockGap":"0"}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group" style="border-style:solid;border-width:1px">
 
 		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->
 		<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
@@ -30,7 +30,7 @@
 				</div>
 				<!-- /wp:group -->
 
-				<!-- wp:post-date {"format":"G:i · d.m.Y","textColor":"contrast"} /-->
+				<!-- wp:post-date {"format":"G:i · d.m.Y"} /-->
 
 			</div>
 			<!-- /wp:group -->
@@ -38,8 +38,8 @@
 		</div>
 		<!-- /wp:group -->
 
-		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"backgroundColor":"accent-6"} -->
-		<hr class="wp-block-separator alignfull has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background is-style-default" style="margin-top:0;margin-bottom:0"/>
+		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} -->
+		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
 		<!-- /wp:separator -->
 
 		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"},"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->
@@ -47,8 +47,8 @@
 
 			<!-- wp:post-title {"fontSize":"x-large"} /-->
 
-			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_personal_best"}}}},"className":"nop-exercise-pb","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontWeight":"700"},"spacing":{"margin":{"top":"0"}}},"fontSize":"x-small","textColor":"accent-4"} -->
-			<p class="nop-exercise-pb has-accent-4-color has-text-color has-x-small-font-size" style="margin-top:0;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Longest run</p>
+			<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_personal_best"}}}},"className":"nop-exercise-pb","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontWeight":"700"},"spacing":{"margin":{"top":"0"}}},"fontSize":"x-small"} -->
+			<p class="nop-exercise-pb has-x-small-font-size" style="margin-top:0;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Longest run</p>
 			<!-- /wp:paragraph -->
 
 			<!-- wp:group {"metadata":{"name":"Media"},"style":{"spacing":{"blockGap":"0.75rem"}},"layout":{"type":"constrained"}} -->
@@ -65,42 +65,42 @@
 					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 					<div class="wp-block-group nop-stat">
 						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_distance"}}}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size">7.1 km</p><!-- /wp:paragraph -->
-						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Distance</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small"} --><p class="nop-stat__label has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Distance</p><!-- /wp:paragraph -->
 					</div>
 					<!-- /wp:group -->
 
 					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 					<div class="wp-block-group nop-stat">
 						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_duration"}}}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size">34:57</p><!-- /wp:paragraph -->
-						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Time</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small"} --><p class="nop-stat__label has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Time</p><!-- /wp:paragraph -->
 					</div>
 					<!-- /wp:group -->
 
 					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 					<div class="wp-block-group nop-stat">
 						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_pace"}}}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size">4:56 /km</p><!-- /wp:paragraph -->
-						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Pace</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small"} --><p class="nop-stat__label has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Pace</p><!-- /wp:paragraph -->
 					</div>
 					<!-- /wp:group -->
 
 					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 					<div class="wp-block-group nop-stat">
 						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_speed"}}}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size">22.4 km/h</p><!-- /wp:paragraph -->
-						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Speed</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small"} --><p class="nop-stat__label has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Speed</p><!-- /wp:paragraph -->
 					</div>
 					<!-- /wp:group -->
 
 					<!-- wp:group {"className":"nop-stat","style":{"spacing":{"blockGap":"0.15em"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 					<div class="wp-block-group nop-stat">
 						<!-- wp:paragraph {"className":"nop-stat__value","metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_elevation"}}}},"fontSize":"large"} --><p class="nop-stat__value has-large-font-size">+145 m</p><!-- /wp:paragraph -->
-						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small","textColor":"accent-4"} --><p class="nop-stat__label has-accent-4-color has-text-color has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Elevation</p><!-- /wp:paragraph -->
+						<!-- wp:paragraph {"className":"nop-stat__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em","fontWeight":"600"}},"fontSize":"small"} --><p class="nop-stat__label has-small-font-size" style="text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Elevation</p><!-- /wp:paragraph -->
 					</div>
 					<!-- /wp:group -->
 				</div>
 				<!-- /wp:group -->
 
-				<!-- wp:group {"metadata":{"name":"Secondary stats"},"className":"nop-stats-secondary","style":{"spacing":{"blockGap":"0.3em 1.25rem","padding":{"top":"0.7rem"}}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap"}} -->
-				<div class="wp-block-group nop-stats-secondary has-accent-4-color has-text-color has-small-font-size" style="padding-top:0.7rem">
+				<!-- wp:group {"metadata":{"name":"Secondary stats"},"className":"nop-stats-secondary","style":{"spacing":{"blockGap":"0.3em 1.25rem","padding":{"top":"0.7rem"}}},"fontSize":"small","layout":{"type":"flex","flexWrap":"wrap"}} -->
+				<div class="wp-block-group nop-stats-secondary has-small-font-size" style="padding-top:0.7rem">
 					<!-- wp:group {"className":"nop-stat-mini","style":{"spacing":{"blockGap":"0.3em"}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
 					<div class="wp-block-group nop-stat-mini">
 						<!-- wp:paragraph {"className":"nop-stat-mini__label","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.04em","fontWeight":"600"}}} --><p class="nop-stat-mini__label" style="text-transform:uppercase;letter-spacing:0.04em;font-weight:600">Avg HR</p><!-- /wp:paragraph -->
@@ -145,8 +145,8 @@
 				</div>
 				<!-- /wp:group -->
 
-				<!-- wp:group {"className":"nop-weather-row","style":{"spacing":{"blockGap":"0.4em"}},"fontSize":"small","textColor":"accent-4","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
-				<div class="wp-block-group nop-weather-row has-accent-4-color has-text-color has-small-font-size">
+				<!-- wp:group {"className":"nop-weather-row","style":{"spacing":{"blockGap":"0.4em"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
+				<div class="wp-block-group nop-weather-row has-small-font-size">
 					<!-- wp:nop-indieweb/weather-icon /-->
 					<!-- wp:nop-indieweb/weather-temp /-->
 					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
@@ -162,8 +162,8 @@
 		</div>
 		<!-- /wp:group -->
 
-		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"backgroundColor":"accent-6"} -->
-		<hr class="wp-block-separator alignfull has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background is-style-default" style="margin-top:0;margin-bottom:0"/>
+		<!-- wp:separator {"align":"full","className":"is-style-default","style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} -->
+		<hr class="wp-block-separator alignfull has-alpha-channel-opacity is-style-default" style="margin-top:0;margin-bottom:0"/>
 		<!-- /wp:separator -->
 
 		<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}},"layout":{"type":"constrained"}} -->

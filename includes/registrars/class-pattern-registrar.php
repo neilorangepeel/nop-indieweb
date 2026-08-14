@@ -194,7 +194,7 @@ HTML,
 <p class="has-text-color" style="color:#6b7280">Every piece of data this checkin carries, grouped by section. Copy any block into your real layout.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Identity</h4>
@@ -218,7 +218,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · post_tag (core)</p><!-- /wp:paragraph -->
 <!-- wp:post-terms {"term":"post_tag"} /-->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Venue</h4>
@@ -270,7 +270,7 @@ HTML,
 <!-- /wp:button -->
 </div><!-- /wp:buttons -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Check-in source</h4>
@@ -283,7 +283,7 @@ HTML,
 <!-- /wp:button -->
 </div><!-- /wp:buttons -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Weather</h4>
@@ -304,7 +304,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather temp °F (binding: key=nop_indieweb_weather_temp_f)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_temp_f"}}}}} --><p>48.7</p><!-- /wp:paragraph -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Visual</h4>
@@ -316,7 +316,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-featured-image (core)</p><!-- /wp:paragraph -->
 <!-- wp:post-featured-image /-->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Content</h4>
@@ -328,7 +328,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-excerpt (core)</p><!-- /wp:paragraph -->
 <!-- wp:post-excerpt /-->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Interactions</h4>
@@ -343,7 +343,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">comment-form (custom block — leave a reply)</p><!-- /wp:paragraph -->
 <!-- wp:nop-indieweb/comment-form /-->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Provenance</h4>
@@ -377,7 +377,7 @@ HTML,
 <p class="has-text-color" style="color:#6b7280">Every piece of data this workout carries, grouped by section. Copy any block into your real layout.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Identity</h4>
@@ -395,7 +395,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">post-terms · category (core)</p><!-- /wp:paragraph -->
 <!-- wp:post-terms {"term":"category"} /-->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Activity stats</h4>
@@ -440,7 +440,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">gear — when present (binding: field=exercise_gear)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"exercise_gear"}}}}} --><p>Vitus Zenium</p><!-- /wp:paragraph -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Route &amp; source</h4>
@@ -469,7 +469,7 @@ HTML,
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Weather (when enriched)</h4>
@@ -484,7 +484,7 @@ HTML,
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">summary (binding: key=nop_indieweb_weather_summary)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} --><p>Overcast</p><!-- /wp:paragraph -->
 
-<!-- wp:separator {"backgroundColor":"accent-6"} --><hr class="wp-block-separator has-text-color has-accent-6-color has-alpha-channel-opacity has-accent-6-background-color has-background"/><!-- /wp:separator -->
+<!-- wp:separator {} --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
 
 <!-- wp:heading {"level":4,"style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.1em","fontSize":"0.75rem"},"color":{"text":"#6b7280"}}} -->
 <h4 class="wp-block-heading has-text-color" style="color:#6b7280;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase">Media &amp; words</h4>
