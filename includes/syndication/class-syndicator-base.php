@@ -140,11 +140,12 @@ abstract class Syndicator_Base {
 		// name goes in the text — the response target is carried by the platform
 		// card / unfurl (see response_target_url()), which the captured cite title often
 		// mislabels anyway (a YouTube link reads "YouTube", not the video name).
+		// Quote is deliberately absent: its body already opens with “ and closes
+		// with an — attribution line, which says "quotation" without a lead.
 		$leads = [
 			'bookmark' => '🔖 ' . __( 'Bookmarked', 'nop-indieweb' ),
 			'like'     => '⭐ ' . __( 'Liked', 'nop-indieweb' ),
 			'repost'   => '🔁 ' . __( 'Reposted', 'nop-indieweb' ),
-			'quote'    => '💬 ' . __( 'Quoted', 'nop-indieweb' ),
 		];
 		if ( isset( $leads[ $kind ] ) ) {
 			return '' !== $body ? $leads[ $kind ] . "\n\n" . $body : $leads[ $kind ];

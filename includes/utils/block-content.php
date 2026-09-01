@@ -23,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Extracts a plain-text rendering of block content for syndication.
  *
  * Paragraphs are joined with "\n\n". <br> inside a block becomes "\n".
+ * Quote blocks render as “quotation” then “— attribution”.
  * Image, gallery, button, separator, and spacer blocks are skipped — they're
  * either handled separately (images) or have no useful text content.
  *
@@ -97,6 +98,24 @@ function nop_indieweb_walk_blocks_for_text( array $blocks ): array {
 			'core/embed',
 			'core/file',
 		], true ) ) {
+			continue;
+		}
+
+		// Quote blocks: the quotation lives in innerBlocks and the attribution in
+		// the wrapper's <cite>, so the leaf path below would keep only the cite.
+		// Curly quotes and an em-dash mark it as a quotation on plain-text
+		// networks that have no blockquote of their own.
+		if ( 'core/quote' === $name ) {
+			$quoted = implode( "\n\n", nop_indieweb_walk_blocks_for_text( $block['innerBlocks'] ?? [] ) );
+			if ( '' !== $quoted ) {
+				$parts[] = '“' . $quoted . '”';
+			}
+			if ( preg_match( '/<cite[^>]*>(.*?)<\/cite>/is', (string) ( $block['innerHTML'] ?? '' ), $m ) ) {
+				$cite = nop_indieweb_html_to_text( $m[1] );
+				if ( '' !== $cite ) {
+					$parts[] = '— ' . $cite;
+				}
+			}
 			continue;
 		}
 

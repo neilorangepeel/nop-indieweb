@@ -273,6 +273,13 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			return $this->build_cite_card( $post_id, $target, $session );
 		}
 
+		// A quote with no source URL has nothing external to card, and a card of
+		// our own permalink would only repeat the quotation the text already
+		// carries — the permalink facet in the text is the link back.
+		if ( 'quote' === (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return null;
+		}
+
 		$post        = get_post( $post_id );
 		$title       = $post->post_title ?: '';
 		$description = get_the_excerpt( $post );
