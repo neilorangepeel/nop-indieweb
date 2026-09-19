@@ -73,11 +73,17 @@ abstract class Syndicator_Base {
 			return $url;
 		}
 
-		// Re-read just before writing — another platform's cron event may have
-		// appended its own URL while this platform's HTTP calls were in flight.
-		$existing   = $this->stored_urls( $post_id );
-		$existing[] = $url;
-		update_post_meta( $post_id, 'nop_indieweb_syndication', $existing );
+		// Locked read-append-write — another platform's cron event may have
+		// appended its own URL while this platform's HTTP calls were in flight,
+		// and an unlocked re-read only narrows that window rather than closing it.
+		\NOP\IndieWeb\nop_indieweb_with_post_meta_lock( $post_id, 'synd', function () use ( $post_id, $url ) {
+			$existing = $this->stored_urls( $post_id );
+			if ( in_array( $url, $existing, true ) ) {
+				return;
+			}
+			$existing[] = $url;
+			update_post_meta( $post_id, 'nop_indieweb_syndication', $existing );
+		} );
 
 		return $url;
 	}

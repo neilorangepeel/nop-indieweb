@@ -352,20 +352,27 @@ class Syndication_Manager {
 
 	/** Writes one platform's entry in the status journal meta; null removes it. */
 	private function update_status( int $post_id, string $slug, ?array $entry ): void {
-		$status = get_post_meta( $post_id, 'nop_indieweb_syndication_status', true );
-		$status = is_array( $status ) ? $status : [];
+		$status = [];
 
-		if ( null === $entry ) {
-			unset( $status[ $slug ] );
-		} else {
-			$status[ $slug ] = $entry;
-		}
+		// Locked — every target writes its own key into this one shared array
+		// from its own cron request, so an unlocked read-append-write drops
+		// whichever platform finished a moment earlier.
+		\NOP\IndieWeb\nop_indieweb_with_post_meta_lock( $post_id, 'synd_status', function () use ( $post_id, $slug, $entry, &$status ) {
+			$status = get_post_meta( $post_id, 'nop_indieweb_syndication_status', true );
+			$status = is_array( $status ) ? $status : [];
 
-		if ( $status ) {
-			update_post_meta( $post_id, self::STATUS_META, $status );
-		} else {
-			delete_post_meta( $post_id, self::STATUS_META );
-		}
+			if ( null === $entry ) {
+				unset( $status[ $slug ] );
+			} else {
+				$status[ $slug ] = $entry;
+			}
+
+			if ( $status ) {
+				update_post_meta( $post_id, self::STATUS_META, $status );
+			} else {
+				delete_post_meta( $post_id, self::STATUS_META );
+			}
+		} );
 
 		$this->update_failure_flag( $post_id, $status );
 	}

@@ -633,3 +633,42 @@ function nop_indieweb_format_event_datetime( string $value ): string {
 	}
 	return date_i18n( $date_only ? 'j M Y' : 'j M Y · H:i', $ts );
 }
+
+/**
+ * Runs $mutate while holding a per-post lock, so concurrent cron events can't
+ * lose each other's writes to a shared serialized meta array. Each syndication
+ * target runs in its own request; two finishing in the same second would both
+ * read-append-write the same array and the later write would win outright.
+ *
+ * add_option() is the closest thing WP offers to an atomic test-and-set without
+ * assuming a persistent object cache — mirrors Syndication_Manager::claim_target().
+ * The post's meta cache is dropped inside the lock so the callback's own
+ * get_post_meta() reads the database rather than a copy cached before the other
+ * process wrote. A lock older than a plausible run is taken over, and the
+ * callback runs unlocked if one can't be had — a lost update beats a lost write.
+ */
+function nop_indieweb_with_post_meta_lock( int $post_id, string $name, callable $mutate ): void {
+	$key = 'nop_meta_lock_' . $name . '_' . $post_id;
+
+	for ( $attempt = 0; $attempt < 25; $attempt++ ) {
+		if ( add_option( $key, (string) time(), '', false ) ) {
+			try {
+				wp_cache_delete( $post_id, 'post_meta' );
+				$mutate();
+			} finally {
+				delete_option( $key );
+			}
+			return;
+		}
+
+		if ( ( time() - (int) get_option( $key, 0 ) ) > 5 * MINUTE_IN_SECONDS ) {
+			delete_option( $key );
+			continue;
+		}
+
+		usleep( 200000 );
+	}
+
+	wp_cache_delete( $post_id, 'post_meta' );
+	$mutate();
+}

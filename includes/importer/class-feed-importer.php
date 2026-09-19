@@ -633,11 +633,11 @@ class Feed_Importer {
 	// ── Shared helpers ──────────────────────────────────────────────────────────
 
 	/**
-	 * Returns true if the URL appears in any post's nop_indieweb_syndication meta,
+	 * Returns true if the URL appears in any post's outbound syndication meta,
 	 * meaning it was originally published on WordPress and then syndicated out.
-	 * Using a LIKE query on the serialized array is reliable here because
-	 * WordPress serialises URLs verbatim and URLs don't contain regex metacharacters
-	 * that would cause false positives in the escaped LIKE pattern.
+	 * Both the aggregate URL list and the per-target status map are consulted:
+	 * they are written by separate cron requests, and a post whose aggregate
+	 * list lost a URL would otherwise be re-imported as a duplicate of itself.
 	 */
 	private function was_syndicated_from_wordpress( string $url ): bool {
 		if ( null === $this->syndicated_urls ) {
@@ -652,22 +652,26 @@ class Feed_Importer {
 	 * for each imported item) with a single query plus O(1) membership checks.
 	 * No new syndication meta is written during an import run, so building this
 	 * once at first use is safe.
+	 *
+	 * Reads both meta keys: nop_indieweb_syndication holds a flat list of URLs,
+	 * nop_indieweb_syndication_status a slug => [ 'url' => ... ] map per target.
 	 */
 	private function load_syndicated_urls(): array {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- one read of a single meta key per import run; object cache offers nothing here
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- two meta keys read once per import run; object cache offers nothing here
 		$rows = $wpdb->get_col(
-			"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'nop_indieweb_syndication'"
+			"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key IN ( 'nop_indieweb_syndication', 'nop_indieweb_syndication_status' )"
 		);
 		$set = [];
 		foreach ( $rows as $raw ) {
-			// Defence-in-depth: this meta is written by the plugin as an array of
-			// URL strings, but decode with allowed_classes=false so a tampered row
-			// can never instantiate a PHP object (object-injection gadget).
+			// Defence-in-depth: this meta is written by the plugin, but decode with
+			// allowed_classes=false so a tampered row can never instantiate a PHP
+			// object (object-injection gadget).
 			$value = is_serialized( $raw )
 				? unserialize( $raw, [ 'allowed_classes' => false ] ) // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- guarded: is_serialized gate + allowed_classes=false blocks object injection
 				: $raw;
-			foreach ( (array) $value as $u ) {
+			foreach ( (array) $value as $entry ) {
+				$u = is_array( $entry ) ? ( $entry['url'] ?? '' ) : $entry;
 				if ( is_string( $u ) && '' !== $u ) {
 					$set[ $u ] = true;
 				}
