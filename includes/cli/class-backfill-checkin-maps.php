@@ -113,7 +113,8 @@ class Backfill_Checkin_Maps {
 				delete_post_meta( $post_id, 'nop_indieweb_map_url' );
 			}
 
-			$url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $api_key );
+			[ $mw, $mh ] = \NOP\IndieWeb\nop_indieweb_map_dimensions();
+			$url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, $mw, $mh, $api_key );
 			$api_calls++;
 			if ( '' === $url ) {
 				$failed++;

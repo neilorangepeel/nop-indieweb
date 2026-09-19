@@ -672,3 +672,18 @@ function nop_indieweb_with_post_meta_lock( int $post_id, string $name, callable 
 	wp_cache_delete( $post_id, 'post_meta' );
 	$mutate();
 }
+
+/**
+ * The display size of a check-in map, in CSS pixels, as [ width, height ].
+ *
+ * Both render paths, every generator and the backfill CLI ask here rather than
+ * repeating the ratio: the cached PNG and the template frame have to agree, and
+ * when they drift the only symptom is a silently cropped or letterboxed map.
+ * 3:2 matches templates/single-nop_kind-checkin.html. Flight arcs share this
+ * size because they render through the same block on the same template.
+ *
+ * @return array{0:int,1:int}
+ */
+function nop_indieweb_map_dimensions( int $width = 620 ): array {
+	return [ $width, (int) round( $width * 2 / 3 ) ];
+}

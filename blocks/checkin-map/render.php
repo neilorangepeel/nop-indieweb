@@ -77,9 +77,8 @@ if ( ! $is_editor ) {
 	$cached = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
 	if ( $cached ) {
 		// Hot path: image already exists. Skip global settings + regex + helper call.
-		$map_img_url = $cached;
-		$map_w       = 620;
-		$map_h       = 310;
+		$map_img_url          = $cached;
+		[ $map_w, $map_h ]    = \NOP\IndieWeb\nop_indieweb_map_dimensions();
 	} else {
 		$geoapify_key = trim( \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
 		if ( $geoapify_key ) {
@@ -88,7 +87,7 @@ if ( ! $is_editor ) {
 			if ( $content_size_raw && preg_match( '/^(\d+(?:\.\d+)?)px$/i', $content_size_raw, $csm ) ) {
 				$map_w = (int) round( (float) $csm[1] );
 			}
-			$map_h       = (int) round( $map_w / 2 );
+			[ $map_w, $map_h ] = \NOP\IndieWeb\nop_indieweb_map_dimensions( $map_w );
 			$map_img_url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image(
 				$post_id, (float) $lat, (float) $lng, $map_w, $map_h, $geoapify_key
 			);

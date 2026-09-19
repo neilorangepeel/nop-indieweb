@@ -489,7 +489,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
 			$key = trim( (string) \NOP\IndieWeb\nop_indieweb_get_option( 'maps.geoapify_api_key', '' ) );
 			if ( ( $lat || $lng ) && '' !== $key ) {
-				$map_url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $key );
+				[ $mw, $mh ] = \NOP\IndieWeb\nop_indieweb_map_dimensions();
+				$map_url = \NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, $mw, $mh, $key );
 			}
 		}
 

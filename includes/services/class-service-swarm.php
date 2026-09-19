@@ -258,7 +258,8 @@ class Swarm extends Service_Base {
 			$paired = \NOP\IndieWeb\nop_indieweb_maybe_pair_flight( $post_id, $parsed, $cats, $geoapify_key );
 
 			if ( ! $paired && $geoapify_key ) {
-				\NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, 620, 310, $geoapify_key );
+				[ $mw, $mh ] = \NOP\IndieWeb\nop_indieweb_map_dimensions();
+				\NOP\IndieWeb\nop_indieweb_get_or_cache_map_image( $post_id, $lat, $lng, $mw, $mh, $geoapify_key );
 			}
 		}
 

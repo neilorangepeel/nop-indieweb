@@ -97,8 +97,9 @@ function nop_indieweb_render_flight_arc_map( int $post_id, array $from, array $t
 		return '';
 	}
 
-	$width    = (int) ( $opts['width'] ?? 620 );
-	$height   = (int) ( $opts['height'] ?? 310 );
+	[ $def_w, $def_h ] = nop_indieweb_map_dimensions();
+	$width    = (int) ( $opts['width'] ?? $def_w );
+	$height   = (int) ( $opts['height'] ?? $def_h );
 	// Match the single-marker checkin map so a flight looks at home on a checkin
 	// post: same base style and the shared brand marker colour.
 	$brand    = (string) apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
