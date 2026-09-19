@@ -68,8 +68,10 @@ class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 
 	/**
 	 * Resolves the single Story media item to upload. Pixelfed Stories accept
-	 * JPEG/PNG or MP4 only; anything else (gif/webp/webm) yields null so the
-	 * caller fails cleanly. Mirrors the grid path's video-first, then image,
+	 * JPEG/PNG or MP4 only; another image format is re-encoded to JPEG, and only
+	 * bytes no image editor can read yield null so the caller fails cleanly.
+	 * Video is not re-containered here — that is the transcoder's job, and a
+	 * non-MP4 result still yields null. Mirrors the grid path's video-first, then image,
 	 * then nop_indieweb_photos-meta fallback (photos land in meta before the
 	 * block is injected into post_content).
 	 *
@@ -104,9 +106,58 @@ class Syndicator_Pixelfed extends Mastodon_Compatible_Syndicator {
 				$ext = 'image/png' === $fetched['mime'] ? 'png' : 'jpg';
 				return [ 'data' => $fetched['data'], 'mime' => $fetched['mime'], 'filename' => "story.{$ext}", 'duration' => 10 ];
 			}
+			// A picture saved from the web is usually WebP, which the Stories API
+			// rejects outright — re-encode it rather than fail a whole Story on a
+			// container the tray happens not to read.
+			$jpeg = $fetched ? $this->to_jpeg( $fetched['data'] ) : '';
+			if ( '' !== $jpeg ) {
+				return [ 'data' => $jpeg, 'mime' => 'image/jpeg', 'filename' => 'story.jpg', 'duration' => 10 ];
+			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Re-encodes image bytes as JPEG via core's image editor (GD or Imagick,
+	 * whichever the host offers), so WebP/GIF/AVIF can still become a Story.
+	 * Returns '' when no editor can read the bytes, leaving the caller to fail
+	 * with its own message. The editor works on files, not strings, so the bytes
+	 * round-trip through the temp dir and both files are always cleaned up.
+	 */
+	private function to_jpeg( string $data ): string {
+		if ( '' === $data ) {
+			return '';
+		}
+
+		$src = wp_tempnam( 'nop-story' );
+		if ( ! $src ) {
+			return '';
+		}
+
+		$out = '';
+		try {
+			if ( false === file_put_contents( $src, $data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- writing our own temp file for the image editor, not touching the uploads tree
+				return '';
+			}
+
+			$editor = wp_get_image_editor( $src );
+			if ( is_wp_error( $editor ) ) {
+				return '';
+			}
+
+			$saved = $editor->save( $src . '.jpg', 'image/jpeg' );
+			if ( is_wp_error( $saved ) || empty( $saved['path'] ) ) {
+				return '';
+			}
+
+			$out = (string) file_get_contents( $saved['path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- reading back the temp file just written above
+			wp_delete_file( $saved['path'] );
+		} finally {
+			wp_delete_file( $src );
+		}
+
+		return $out;
 	}
 
 	/**
