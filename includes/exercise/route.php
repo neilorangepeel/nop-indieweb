@@ -20,7 +20,7 @@ function nop_indieweb_parse_gpx( string $xml ): array {
 	$out = [ 'points' => [], 'start' => null, 'start_time' => '', 'end_time' => '' ];
 
 	$prev = libxml_use_internal_errors( true );
-	$sx   = simplexml_load_string( $xml );
+	$sx   = simplexml_load_string( $xml, \SimpleXMLElement::class, LIBXML_NONET );
 	libxml_use_internal_errors( $prev );
 	if ( false === $sx ) {
 		return $out;

@@ -125,7 +125,12 @@ class Exercise_Endpoint {
 
 		$type  = $this->activity_slug( (string) ( $w['name'] ?? '' ) );
 		$start = $points[0];
-		$gmt   = gmdate( 'Y-m-d H:i:s', strtotime( (string) ( $w['start'] ?? 'now' ) ) );
+		// Health Auto Export supplies this string; an unparseable one makes
+		// strtotime() return false, which gmdate() would read as epoch 0 and
+		// silently file the workout under 1 January 1970 — backdated out of
+		// syndication and buried at the foot of the archive. Fall back to now.
+		$start_ts = strtotime( (string) ( $w['start'] ?? 'now' ) );
+		$gmt      = gmdate( 'Y-m-d H:i:s', false !== $start_ts ? $start_ts : time() );
 
 		$meta = array_filter( [
 			'nop_indieweb_exercise_distance_m'       => $this->to_metres( $w['distance'] ?? null ),

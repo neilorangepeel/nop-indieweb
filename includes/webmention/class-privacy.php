@@ -130,19 +130,39 @@ class Privacy {
 	 */
 	private function exportable_fields(): array {
 		return [
-			'webmention_author_photo' => __( 'Author avatar URL', 'nop-indieweb' ),
-			'webmention_original_url' => __( 'Source permalink', 'nop-indieweb' ),
-			'webmention_platform'     => __( 'Source platform', 'nop-indieweb' ),
+			'webmention_author_photo'   => __( 'Author avatar URL', 'nop-indieweb' ),
+			'webmention_author_handle'  => __( 'Author handle', 'nop-indieweb' ),
+			'webmention_original_url'   => __( 'Source permalink', 'nop-indieweb' ),
+			'webmention_source'         => __( 'Source page URL', 'nop-indieweb' ),
+			'webmention_platform'       => __( 'Source platform', 'nop-indieweb' ),
+			'webmention_platform_id'    => __( 'Post ID on that platform', 'nop-indieweb' ),
 		];
 	}
 
 	/**
 	 * Platform ("mastodon", "bluesky") is not identifying, so it survives an
-	 * erasure — the avatar URL, the source permalink and the hashed IP do not.
+	 * erasure. Everything else here names the person or points at them: the
+	 * avatar URL, their handle, the permalink and source page of their post,
+	 * their id on that platform, and the hashed IP.
+	 *
+	 * webmention_silo_key goes too, though it is a dedup key rather than a
+	 * display field — for likes and reposts it is literally
+	 * "like:<their profile URL>". Dropping it means a later back-feed poll can
+	 * re-add the interaction as a new comment, which is the right outcome: that
+	 * would be re-read from their still-public action on the silo, whereas the
+	 * copy we were asked to erase is gone.
 	 *
 	 * @return array<int, string>
 	 */
 	private function erasable_keys(): array {
-		return [ 'webmention_author_photo', 'webmention_original_url', 'webmention_ip_hash' ];
+		return [
+			'webmention_author_photo',
+			'webmention_author_handle',
+			'webmention_original_url',
+			'webmention_source',
+			'webmention_platform_id',
+			'webmention_silo_key',
+			'webmention_ip_hash',
+		];
 	}
 }
