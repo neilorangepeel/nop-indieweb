@@ -96,6 +96,7 @@ if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
 require_once dirname( __DIR__, 2 ) . '/includes/rsvp/class-event-parser.php';
 require_once dirname( __DIR__, 2 ) . '/includes/syndication/class-tumblr-client.php';
 require_once dirname( __DIR__, 2 ) . '/includes/utils/functions.php';
+require_once dirname( __DIR__, 2 ) . '/includes/utils/block-content.php';
 require_once dirname( __DIR__, 2 ) . '/includes/exercise/route.php';
 require_once dirname( __DIR__, 2 ) . '/includes/travel/arc-map.php';
 require_once dirname( __DIR__, 2 ) . '/includes/travel/flight-pairing.php';

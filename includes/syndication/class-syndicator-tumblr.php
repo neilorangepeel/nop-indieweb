@@ -91,7 +91,7 @@ class Syndicator_Tumblr extends Syndicator_Base {
 			'tags'         => is_array( $tags ) ? $tags : [],
 			'cite'         => (string) get_post_meta( $post_id, 'nop_indieweb_cite', true ),
 			'target_url'   => $this->target_url( $post_id, $kind ),
-			'target_title' => (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true ),
+			'target_title' => \NOP\IndieWeb\nop_indieweb_html_to_text( (string) get_post_meta( $post_id, 'nop_indieweb_cite_title', true ) ),
 		];
 
 		$npf    = Tumblr_Client::build_npf( $text, $images, $kind, $ctx );

@@ -138,7 +138,9 @@ abstract class Syndicator_Base {
 		}
 
 		$kind  = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
-		$title = (string) $post->post_title;
+		// Both go out as plain text on every platform, so neither may carry an
+		// entity — a title saved as "B&amp;Q, Belfast" must syndicate as "B&Q".
+		$title = \NOP\IndieWeb\nop_indieweb_html_to_text( (string) $post->post_title );
 		$body  = \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content );
 
 		// Response kinds lead with an emoji + verb (mirroring the 📍 check-in) so

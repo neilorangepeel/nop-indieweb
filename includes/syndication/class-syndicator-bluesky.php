@@ -300,10 +300,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			$external['thumb'] = $thumb;
 		}
 
-		return [
-			'$type'    => 'app.bsky.embed.external',
-			'external' => $external,
-		];
+		return $this->external_embed( $external );
 	}
 
 	/**
@@ -357,10 +354,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			$external['thumb'] = $thumb;
 		}
 
-		return [
-			'$type'    => 'app.bsky.embed.external',
-			'external' => $external,
-		];
+		return $this->external_embed( $external );
 	}
 
 	/**
@@ -461,6 +455,24 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		return is_array( $data ) ? $data : [];
+	}
+
+	/**
+	 * Wraps a built card as an external embed, forcing its human-readable fields
+	 * to plain text. Bluesky renders title/description verbatim — no HTML — so an
+	 * entity reaches the card as literal "I&#8217;ve". get_the_excerpt() returns
+	 * texturized entities for every apostrophe, quote and dash, and scraped cite
+	 * meta carries whatever the source page encoded, so both need decoding here.
+	 */
+	private function external_embed( array $external ): array {
+		foreach ( [ 'title', 'description' ] as $field ) {
+			$external[ $field ] = \NOP\IndieWeb\nop_indieweb_html_to_text( (string) ( $external[ $field ] ?? '' ) );
+		}
+
+		return [
+			'$type'    => 'app.bsky.embed.external',
+			'external' => $external,
+		];
 	}
 
 	private function upload_thumb( int $post_id, array $session ): ?array {
