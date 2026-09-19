@@ -22,7 +22,10 @@ class Backfill_Checkin_Maps {
 	 * : Report what would happen without making API calls or writing files.
 	 *
 	 * [--force]
-	 * : Regenerate the map even when one is already cached.
+	 * : Regenerate the map even when one is already cached. Maps already at the
+	 * current aspect ratio are skipped without an API call, so repeated
+	 * --limit runs walk forward through the archive instead of redoing the
+	 * same batch.
 	 *
 	 * [--limit=<n>]
 	 * : Stop after generating this many map images. Re-run until complete.
@@ -97,6 +100,11 @@ class Backfill_Checkin_Maps {
 				continue;
 			}
 
+			if ( $force && '' !== $existing && $this->is_current_ratio( $post_id ) ) {
+				$cached++;
+				continue;
+			}
+
 			$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
 			$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
 			if ( ! $lat && ! $lng ) {
@@ -137,5 +145,31 @@ class Backfill_Checkin_Maps {
 			$failed,
 			$limit_note
 		) );
+	}
+
+	/**
+	 * Whether the cached PNG for this post is already at the shape the template
+	 * expects.
+	 *
+	 * Compares the ratio rather than the pixel dimensions on purpose: the 2×
+	 * retina factor is owned by nop_indieweb_cache_static_map(), and repeating
+	 * it here would re-create the drift that nop_indieweb_map_dimensions() was
+	 * added to close. Cropping is a ratio problem, so ratio is what we test.
+	 */
+	private function is_current_ratio( int $post_id ): bool {
+		$upload = wp_upload_dir();
+		$file   = $upload['basedir'] . "/checkin-maps/checkin-map-{$post_id}.png";
+		if ( ! is_readable( $file ) ) {
+			return false;
+		}
+
+		$size = @getimagesize( $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a truncated or non-image cache file should regenerate, not warn
+		if ( ! is_array( $size ) || empty( $size[1] ) ) {
+			return false;
+		}
+
+		[ $want_w, $want_h ] = \NOP\IndieWeb\nop_indieweb_map_dimensions();
+
+		return abs( ( (int) $size[0] / (int) $size[1] ) - ( $want_w / $want_h ) ) < 0.01;
 	}
 }

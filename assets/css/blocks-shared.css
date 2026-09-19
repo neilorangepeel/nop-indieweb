@@ -434,7 +434,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 }
 
 .nop-checkin-map__placeholder {
-	aspect-ratio:     2 / 1;
+	aspect-ratio:     3 / 2;
 	background-color: color-mix(in srgb, currentColor 8%, transparent);
 	border-radius:    var(--nop-radius);
 }
