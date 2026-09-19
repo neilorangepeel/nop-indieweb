@@ -47,7 +47,11 @@ class Template_Registrar {
 
 		$kind = get_post_meta( $post->ID, 'nop_indieweb_post_kind', true );
 		if ( $kind ) {
-			array_unshift( $templates, "single-nop_kind-{$kind}" );
+			// The kind's own template first, then the generic kind card, then
+			// whatever the theme offers. Without the middle rung a kind with no
+			// template of its own (Book, Collection, Film, Music) renders as an
+			// ordinary post, losing its kind header and interaction footer.
+			array_unshift( $templates, "single-nop_kind-{$kind}", 'single-nop_kind' );
 		}
 
 		return $templates;
@@ -134,6 +138,12 @@ class Template_Registrar {
 				'file'        => 'single-nop_kind-listen.html',
 			],
 
+			'nop-indieweb//single-nop_kind' => [
+				'title'       => __( 'Single – Any kind', 'nop-indieweb' ),
+				'description' => __( 'Fallback single for kinds with no template of their own — Book, Collection, Film, Music, and anything added later.', 'nop-indieweb' ),
+				'file'        => 'single-nop_kind.html',
+			],
+
 			// ── Kind archive templates (taxonomy-nop_kind-{slug}) ───────────────────────
 			'nop-indieweb//taxonomy-nop_kind-watch' => [
 				'title'       => __( 'Archive – Film Diary', 'nop-indieweb' ),
@@ -204,6 +214,11 @@ class Template_Registrar {
 				'title'       => __( 'Archive – Exercise', 'nop-indieweb' ),
 				'description' => __( 'Activity log of workout posts with distance, duration, and date.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-exercise.html',
+			],
+			'nop-indieweb//taxonomy-nop_kind' => [
+				'title'       => __( 'Archive – Any kind', 'nop-indieweb' ),
+				'description' => __( 'Fallback archive for kinds with no template of their own — Book, Collection, Film, Music, Listen, and anything added later.', 'nop-indieweb' ),
+				'file'        => 'taxonomy-nop_kind.html',
 			],
 			'nop-indieweb//taxonomy-nop_venue_category' => [
 				'title'       => __( 'Archive – Venue Category', 'nop-indieweb' ),
