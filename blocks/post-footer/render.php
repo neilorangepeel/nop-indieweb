@@ -31,7 +31,12 @@ $caret_icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
  */
 $caret = static function ( string $panel, string $label, string $controls ) use ( $caret_icon ): string {
 	return '<span class="nop-post-footer__reveal" role="button" tabindex="0"'
-	     . ' data-reveal="' . esc_attr( $panel ) . '"'
+	     . ' data-wp-interactive="nop-indieweb/post-footer"'
+	     . ' data-wp-context=\'' . wp_json_encode( [ 'panel' => $controls ] ) . '\''
+	     . ' data-wp-on--click="actions.toggleReveal"'
+	     . ' data-wp-on--keydown="actions.revealKey"'
+	     . ' data-wp-bind--aria-expanded="state.revealOpen"'
+	     . ' data-wp-class--is-open="state.revealOpen"'
 	     . ' aria-controls="' . esc_attr( $controls ) . '"'
 	     . ' aria-expanded="false"'
 	     . ' aria-label="' . esc_attr( $label ) . '">'
@@ -48,7 +53,8 @@ $panel = static function ( string $key, array $entries, int $total, string $name
 	$shown    = array_slice( $pool, 0, 7 );
 	$overflow = max( 0, $total - count( $shown ) );
 
-	$out  = '<div class="nop-post-footer__reveal-panel nop-post-footer__reveal-panel--' . esc_attr( $key ) . '" id="' . esc_attr( $dom_id ) . '" data-panel="' . esc_attr( $key ) . '" hidden>';
+	$out  = '<div class="nop-post-footer__reveal-panel nop-post-footer__reveal-panel--' . esc_attr( $key ) . '" id="' . esc_attr( $dom_id ) . '" data-panel="' . esc_attr( $key ) . '"'
+	      . ( $preview ? '' : ' data-wp-interactive="nop-indieweb/post-footer" data-wp-context=\'' . wp_json_encode( [ 'panel' => $dom_id ] ) . '\' data-wp-bind--hidden="!state.revealOpen"' ) . ' hidden>';
 	if ( $shown ) {
 		$out .= '<span class="nop-webmentions__facepile" aria-hidden="true">';
 		foreach ( $shown as $entry ) {
@@ -140,13 +146,11 @@ if ( ! isset( $counts[ $post_id ] ) ) {
 
 	$counts[ $post_id ] = [
 		'like'   => $endpoint->like_count( $post_id ),
-		'liked'  => $endpoint->visitor_has_liked( $post_id ),
 		'reply'  => $reply_wp + $reply_wm,
 	];
 }
 
 $like_count   = $counts[ $post_id ]['like'];
-$liked        = $counts[ $post_id ]['liked'];
 $reply_count  = $counts[ $post_id ]['reply'];
 
 // Reactor identities for the reveal panels — shares the per-request memo with
@@ -163,14 +167,14 @@ $reposts_entries = array_values( array_filter( $data['reposts'], $revealable ) )
 
 // Imported historical engagement — likes/reposts a post received on the platform
 // it originated on (Twitter, Instagram, …), folded into the one count each pill
-// already shows. One generic meta per metric, written by the importers/backfills
+// already shows (likes inside Like_Endpoint::like_count(), so the like store and
+// the REST response agree). One generic meta per metric, written by the importers/backfills
 // regardless of platform; no reactor identities come with these counts, so they
 // raise the pill numbers but reveal no facepile. Absent (0) on native posts.
 //
 // Comments are deliberately NOT folded in: the archives give only a count, not
 // the actual comment content, so the comment pill counts only real, visible
 // comments (native + webmention) — no number when there's nothing to read.
-$like_count   += (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes',   true );
 $repost_count += (int) get_post_meta( $post_id, 'nop_indieweb_imported_reposts', true );
 
 $has_like_reveal   = ! empty( $likes_entries );
@@ -180,7 +184,8 @@ $has_repost_reveal = ! empty( $reposts_entries );
 $likes_panel_id   = 'nop-reveal-' . $post_id . '-likes';
 $reposts_panel_id = 'nop-reveal-' . $post_id . '-reposts';
 
-$rest_url = rest_url( 'nop-indieweb/v1/like' );
+$endpoint = new \NOP\IndieWeb\Webmention\Like_Endpoint();
+$endpoint->seed_state( $post_id );
 
 // ── Post source ───────────────────────────────────────────────────────────────
 
@@ -208,30 +213,40 @@ $origin_link = ( $source_url && ! $link_less ) ? $source_url : '';
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
+// Likes come from the shared nop-indieweb/likes store; the reveals, comment
+// jump and share live in this block's own store, nested inside it.
 $wrapper = get_block_wrapper_attributes( [
-	'class'         => 'nop-post-footer' . ( $liked ? ' is-liked' : '' ),
-	'data-post-id'  => (string) $post_id,
-	'data-endpoint' => $rest_url,
+	'class'                   => 'nop-post-footer',
+	'data-wp-interactive'     => 'nop-indieweb/likes',
+	'data-wp-context'         => wp_json_encode( [ 'key' => 'p' . $post_id, 'postId' => $post_id, 'busy' => false, 'animating' => false, 'error' => '' ] ),
+	'data-wp-class--is-liked' => 'state.liked',
 ] );
 ?>
 <div <?php echo wp_kses_data( $wrapper ); ?>>
 
-	<button class="nop-post-footer__pill nop-post-footer__pill--like<?php echo $liked ? ' is-liked' : ''; ?>"
+	<button class="nop-post-footer__pill nop-post-footer__pill--like"
 	        type="button"
-	        aria-pressed="<?php echo $liked ? 'true' : 'false'; ?>"
-	        aria-label="<?php echo esc_attr( $liked ? __( 'Liked', 'nop-indieweb' ) : __( 'Like', 'nop-indieweb' ) ); ?>">
+	        data-wp-on--click="actions.like"
+	        data-wp-on--animationend="actions.endAnimation"
+	        data-wp-bind--aria-pressed="state.liked"
+	        data-wp-bind--aria-label="state.label"
+	        data-wp-class--is-liked="state.liked"
+	        data-wp-class--is-busy="context.busy"
+	        data-wp-class--is-animating="context.animating">
 		<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
-		      aria-label="<?php /* translators: %d: number of likes */ echo esc_attr( sprintf( _n( '%d like', '%d likes', $like_count, 'nop-indieweb' ), $like_count ) ); ?>"
-		      <?php echo 0 === $like_count ? 'hidden' : ''; ?>>
-			<?php echo esc_html( (string) $like_count ); ?>
-		</span>
+		      data-wp-text="state.count"
+		      data-wp-bind--aria-label="state.countLabel"
+		      data-wp-bind--hidden="!state.count"><?php echo esc_html( (string) $like_count ); ?></span>
 		<?php if ( $has_like_reveal ) {
 			echo $caret( 'likes', __( 'See who liked', 'nop-indieweb' ), $likes_panel_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source
 		} ?>
 	</button>
+	<span class="nop-post-footer__status" role="status" aria-live="polite" data-wp-text="context.error"></span>
 
 	<a class="nop-post-footer__pill nop-post-footer__pill--link"
+	   data-wp-interactive="nop-indieweb/post-footer"
+	   data-wp-on--click="actions.jumpToReply"
 	   href="#comments"
 	   aria-label="<?php
 	       echo esc_attr( $reply_count > 0
@@ -246,14 +261,22 @@ $wrapper = get_block_wrapper_attributes( [
 		</span>
 	</a>
 
-	<?php /* translators: %d: number of reposts */ ?>
+	<?php
+	$share_label = $repost_count > 0
+		/* translators: %d: number of reposts */
+		? sprintf( _n( 'Share · %d repost', 'Share · %d reposts', $repost_count, 'nop-indieweb' ), $repost_count )
+		: __( 'Share', 'nop-indieweb' );
+	?>
 	<button class="nop-post-footer__pill nop-post-footer__pill--share"
 	        type="button"
+	        data-wp-interactive="nop-indieweb/post-footer"
+	        data-wp-on--click="actions.share"
+	        data-wp-class--is-copied="context.copied"
+	        data-wp-bind--aria-label="state.shareLabel"
+	        data-wp-context='<?php echo esc_attr( (string) wp_json_encode( [ 'copied' => false, 'label' => $share_label, 'copiedLabel' => __( 'Copied!', 'nop-indieweb' ) ] ) ); ?>'
 	        data-url="<?php echo esc_attr( (string) get_permalink( $post_id ) ); ?>"
 	        data-title="<?php echo esc_attr( (string) get_the_title( $post_id ) ); ?>"
-	        aria-label="<?php echo esc_attr( $repost_count > 0
-	            ? sprintf( _n( 'Share · %d repost', 'Share · %d reposts', $repost_count, 'nop-indieweb' ), $repost_count )
-	            : __( 'Share', 'nop-indieweb' ) ); ?>">
+	        aria-label="<?php echo esc_attr( $share_label ); ?>">
 		<?php echo $repost_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 		<span class="nop-post-footer__pill-count"
 		      aria-hidden="true"

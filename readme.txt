@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.18
+Stable tag: 0.9.19
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,11 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.19 =
+* Interactivity API: the like button and post footer share one `nop-indieweb/likes` store, so a post's heart on a tile and its footer pill update together; imported likes now count everywhere, including after a like. Replaces the classic like-action script.
+* Interactivity API: the reply form posts in place (errors and "awaiting moderation" shown in the form), threads a reply from any Reply link without moving the form (comment-reply.js is no longer loaded), and offers "Show N new responses" when replies arrive while the post is open. The `/like` GET response gains a `responses` count for this.
+* The like button, post footer, replies and reply form now support client-side navigation, so themes can swap them in without full page loads.
 
 = 0.9.6 =
 * Fix: likes no longer break on long-cached pages. The like button stops sending a REST nonce (the /like route is public, and a nonce baked into page-cached HTML expires and then 403s every like) and error responses now roll the optimistic count back instead of sticking.

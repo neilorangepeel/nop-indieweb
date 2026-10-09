@@ -46,10 +46,6 @@ if ( ! $replies ) {
 	return;
 }
 
-if ( ! $preview && comments_open( $post_id ) ) {
-	wp_enqueue_script( 'comment-reply' );
-}
-
 $comments_open = ! $preview && comments_open( $post_id );
 
 // id="comments" gives the post-footer comment pill a real anchor target when
