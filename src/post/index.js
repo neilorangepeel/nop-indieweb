@@ -599,7 +599,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var fieldTags    = document.getElementById( 'fieldTags' );
 	var urlInput     = document.getElementById( 'typeUrl' );
 	var contentInput  = document.getElementById( 'content' );
-	var composePrompt = document.getElementById( 'composePrompt' );
 	var picker       = document.getElementById( 'photoPicker' );
 	var docket       = document.getElementById( 'docket' );
 	var docketKind   = document.getElementById( 'docketKind' );
@@ -749,9 +748,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 	}
 
-	// Big rotating prompt overlay — set its text, and fade it once typing starts.
-	function setPrompt( text ) { composePrompt.textContent = text; syncPrompt(); }
-	function syncPrompt() { composePrompt.classList.toggle( 'is-hidden', contentInput.value.length > 0 ); }
+	// The rotating prompt — the textarea's own placeholder, so it sits exactly where typed text will.
+	function setPrompt( text ) { contentInput.placeholder = text; }
 	// The note placeholder — one of a rotating set of openers.
 	function notePlaceholder() { return notePrompt; }
 	// Fallback for browsers without CSS field-sizing (Firefox today). Native
@@ -1494,7 +1492,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		contentInput.value = cfg.hasContent ? text : '';
 		restoring = false;
 
-		updateSpecimen(); updatePostBtn(); updateCounter(); autoGrowContent(); syncPrompt();
+		updateSpecimen(); updatePostBtn(); updateCounter(); autoGrowContent();
 		saveDraft();
 		// Strip the params so a reload/relaunch doesn't re-prefill the same share.
 		if ( window.history && history.replaceState ) { history.replaceState( {}, '', location.pathname ); }
@@ -1569,7 +1567,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( currentType === 'rsvp' ) { fetchEvent( urlInput.value ); }
 		else if ( isContextKind() ) { fetchContext( urlInput.value ); }
 	} );
-	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); syncPrompt(); autoGrowContent(); syncStoryAlt(); } );
+	contentInput.addEventListener( 'input', function () { updatePostBtn(); updateCounter(); saveDraftSoon(); autoGrowContent(); syncStoryAlt(); } );
 	document.getElementById( 'syndicators' ).addEventListener( 'change', updateCounter );
 
 	// Markdown affordance (hardware keyboards): ⌘/Ctrl+B and ⌘/Ctrl+I wrap the
@@ -3322,7 +3320,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	refreshDraftsCount();                                   // surface the saved-drafts badge
 	refreshSentCount();                                     // and anything still in flight
 	updateCounter();
-	syncPrompt();
 	autoGrowContent();
 	app.offsetHeight;                         // flush, then re-enable transitions
 	app.classList.remove( 'no-anim' );

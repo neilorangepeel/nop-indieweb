@@ -954,10 +954,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<!-- Content -->
 				<div class="field-group" id="fieldContent">
 					<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
-					<div class="compose-wrap">
-						<textarea class="compose-field" id="content" rows="4" aria-describedby="composePrompt"></textarea>
-						<span class="compose-prompt" id="composePrompt" aria-hidden="true"></span>
-					</div>
+					<textarea class="compose-field" id="content" rows="4"></textarea>
 					<div class="compose-meta">
 						<span class="char-count" id="charCount" aria-live="polite" hidden></span>
 					</div>

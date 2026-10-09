@@ -1603,7 +1603,6 @@ body::before {
    targets a real, shown following field — the break to the ledger itself is owned by
    .ledger's margin-top, so it's uniform across kinds. */
 #fieldContent:has( ~ .field-row:not([hidden]) ) { margin-bottom: var(--section-gap); }
-.compose-wrap { position: relative; }
 .compose-field {
 	display: block;
 	width: 100%;
@@ -1629,26 +1628,11 @@ body::before {
 	overflow: hidden;
 }
 
-/* Friendly prompt overlay — fades out once there's content. Shares the field's
-   exact text metrics (face, size, line-height, left/top) so it sits on the ruled
-   lines precisely where the typed text will, reading as a warm placeholder. */
-.compose-prompt {
-	position: absolute;
-	top: var(--lead);
-	left: 0;
-	right: 8px;
-	font-family: inherit;
-	font-size: var(--step-1);
-	font-weight: 500;
-	line-height: var(--baseline);
-	letter-spacing: 0;
-	/* A solid faint tint — not translucent ink — so the ruled lines and the
-	   page grain don't bleed through the letters; they sit behind the opaque
-	   glyphs and resume either side, like a label printed on ruled paper. */
-	color: var(--ink-soft);
-	pointer-events: none;
-}
-.compose-prompt.is-hidden { opacity: 0; }
+/* The rotating prompt is the textarea's own placeholder — not an overlay span — so
+   the engine sets it exactly where typed text lands, the same as every other
+   field's placeholder. (A span drifted ~1px from textarea text on iOS Safari.)
+   A solid tint, not translucent ink, so the rules don't show through the glyphs. */
+.compose-field::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Photo picker */
 .photo-picker {
