@@ -773,13 +773,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// layer cast at the seam (its mask stops sit at constant px, see style.scss),
 	// so it fades in over RAMP as you scroll and holds; it never deepens with the
 	// content's length. RAMP is the fade-in distance, not the shadow's pixel depth.
+	// Distance left to scroll → 0..1 shadow alpha, over the same 240px ramp on both
+	// axes so the shadows grow at one rate whichever way you scroll.
+	function setReveal( el, distance ) {
+		if ( el ) { el.style.setProperty( '--reveal', Math.min( Math.max( distance, 0 ) / 240, 1 ) ); }
+	}
 	function updateScrollFades() {
 		if ( hasScrollTimeline || ! composeScroll ) return;
-		var RAMP  = 240;
-		var top   = composeScroll.scrollTop;
-		var below = composeScroll.scrollHeight - composeScroll.clientHeight - top;
-		if ( fadeTop )    fadeTop.style.setProperty(    '--reveal', Math.min( Math.max( top,   0 ) / RAMP, 1 ) );
-		if ( fadeBottom ) fadeBottom.style.setProperty( '--reveal', Math.min( Math.max( below, 0 ) / RAMP, 1 ) );
+		var top = composeScroll.scrollTop;
+		setReveal( fadeTop, top );
+		setReveal( fadeBottom, composeScroll.scrollHeight - composeScroll.clientHeight - top );
 	}
 	// Vertical clip of the kind-strip edge-shadows. The box is anchored at the strip's
 	// resting top and runs --strip-extra px past it; --vclip hides that tail from the
@@ -884,14 +887,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var typeShadowRight = document.querySelector( '.type-shadow-right' );
 	function updateTypeFades() {
 		if ( hasScrollTimeline || ! typeBar ) { return; }
-		// Matches the vertical fade's RAMP so growth-per-finger-pixel is the
-		// same on both axes — the shadow rate feels consistent whether you're
-		// scrolling the compose body or the kind strip.
-		var RAMP  = 240;
-		var left  = typeBar.scrollLeft;
-		var right = typeBar.scrollWidth - typeBar.clientWidth - left;
-		if ( typeShadowLeft )  { typeShadowLeft.style.setProperty(  '--reveal', Math.min( Math.max( left,  0 ) / RAMP, 1 ) ); }
-		if ( typeShadowRight ) { typeShadowRight.style.setProperty( '--reveal', Math.min( Math.max( right, 0 ) / RAMP, 1 ) ); }
+		var left = typeBar.scrollLeft;
+		setReveal( typeShadowLeft, left );
+		setReveal( typeShadowRight, typeBar.scrollWidth - typeBar.clientWidth - left );
 	}
 	if ( ! hasScrollTimeline ) {
 		typeBar.addEventListener( 'scroll', updateTypeFades, { passive: true } );
@@ -1183,7 +1181,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		box.innerHTML = synTo.map( function (s) {
 			var checked = ( s.uid in prev ) ? prev[ s.uid ] : true;
 			return '<label class="stamp">'
-				+ '<input type="checkbox" class="sr-only" value="' + escAttr( s.uid ) + '"' + ( checked ? ' checked' : '' ) + '>'
+				+ '<input type="checkbox" class="sr-only" value="' + escHtml( s.uid ) + '"' + ( checked ? ' checked' : '' ) + '>'
 				+ '<span class="stamp__face">' + escHtml( s.name ) + '</span>'
 				+ '</label>';
 		} ).join( '' );
@@ -1291,7 +1289,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 
 		function quickChipHtml( name ) {
-			return '<button type="button" class="quick-tag" data-tag="' + escAttr( name ) + '">' + escHtml( name ) + '</button>';
+			return '<button type="button" class="quick-tag" data-tag="' + escHtml( name ) + '">' + escHtml( name ) + '</button>';
 		}
 
 		function search( q ) {
@@ -2409,14 +2407,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 		if ( it.state === 'sent' ) {
 			return it.url
-				? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗<span class="sr-only"> ' + escHtml( __( '(opens in a new tab)' ) ) + '</span></a></li>'
+				? '<li class="delivery__row is-sent"><a href="' + escHtml( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗<span class="sr-only"> ' + escHtml( __( '(opens in a new tab)' ) ) + '</span></a></li>'
 				: '<li class="delivery__row is-sent">' + label + mark( '✓', __( 'sent' ) ) + '</li>';
 		}
 		if ( it.state === 'failed' ) {
 			return '<li class="delivery__row is-failed">' + label + mark( '✗', __( 'failed' ) )
 				+ ( withRetry
-					? '<button type="button" class="delivery__retry" data-post="' + escAttr( postId )
-						+ '" data-target="' + escAttr( it.slug ) + '">↻<span class="sr-only"> ' + escHtml( sprintf( __( 'Retry %s' ), it.label || it.slug ) ) + '</span></button>'
+					? '<button type="button" class="delivery__retry" data-post="' + escHtml( postId )
+						+ '" data-target="' + escHtml( it.slug ) + '">↻<span class="sr-only"> ' + escHtml( sprintf( __( 'Retry %s' ), it.label || it.slug ) ) + '</span></button>'
 					: '' )
 				+ why( it.error )
 				+ '</li>';
@@ -2495,7 +2493,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 
 		document.getElementById( 'successPhotos' ).innerHTML = photoUrls.map( function (url) {
-			return '<img src="' + escAttr( url ) + '" alt="">';
+			return '<img src="' + escHtml( url ) + '" alt="">';
 		} ).join( '' );
 
 		var link = document.getElementById( 'successLink' );
@@ -2670,12 +2668,12 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 	}
 
+	// The one escaper — text and double-quoted attribute values alike.
 	function escHtml( str ) {
 		return String( str )
 			.replace( /&/g, '&amp;' ).replace( /</g, '&lt;' )
 			.replace( />/g, '&gt;' ).replace( /"/g, '&quot;' );
 	}
-	function escAttr( str ) { return String( str ).replace( /"/g, '&quot;' ); }
 
 	// ── Draft persistence ──────────────────────────────────────────────────────
 
@@ -2947,7 +2945,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! draftsList ) { return; }
 		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-view__empty">' + escHtml( __( 'No drafts yet.' ) ) + '</p>'; return; }
 		draftsList.innerHTML = rows.map( function ( r ) {
-			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '" data-kind="' + escAttr( r.type ) + '">'
+			return '<div class="draft-row" data-id="' + escHtml( r.id ) + '" data-url="' + escHtml( r.serverUrl ) + '" data-kind="' + escHtml( r.type ) + '">'
 				+ '<button type="button" class="draft-row__open">'
 				+ '<span class="draft-row__kind">' + escHtml( kindName( r.type ) ) + ( r.local ? '' : ' ·' ) + '</span>'
 				+ '<span class="draft-row__title">' + escHtml( r.title || __( '(untitled)' ) ) + '</span>'
@@ -3004,7 +3002,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function kindMark( kind ) {
 		if ( kind && document.getElementById( 'nop-kind-' + kind ) ) {
 			return '<svg class="sent-row__icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">'
-				+ '<use href="#nop-kind-' + escAttr( kind ) + '"/></svg>';
+				+ '<use href="#nop-kind-' + escHtml( kind ) + '"/></svg>';
 		}
 		return '<span class="sent-row__kind">' + escHtml( kindName( kind ) ) + '</span>';
 	}
@@ -3028,7 +3026,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				+ kindMark( kind )
 				+ ( stamp ? '<span class="sent-row__when">' + escHtml( stamp ) + '</span>' : '' )
 				+ '</div>'
-				+ '<a class="sent-row__title" href="' + escAttr( r.url ) + '" target="_blank" rel="noopener noreferrer">'
+				+ '<a class="sent-row__title" href="' + escHtml( r.url ) + '" target="_blank" rel="noopener noreferrer">'
 				+ escHtml( r.title || __( '(untitled)' ) )
 				+ '<span class="sr-only"> — ' + escHtml( kindName( kind ) ) + ( ago ? ', ' + escHtml( ago ) : '' ) + '</span>'
 				+ '</a>'

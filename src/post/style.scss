@@ -34,6 +34,36 @@ $fluid-max-vw: 820;
 		transparent calc( var(--baseline) - 1px ), transparent var(--baseline) );
 }
 
+/* Shared recipes — each written once and @extend-ed, so the compiled CSS groups the
+   selectors rather than repeating the declarations, and look-alike controls can't
+   drift apart. %stamp is the rubber-stamp control (Options, Post to, RSVP). */
+%caps-label {
+	font-family: var(--display);
+	font-size: var(--step--2);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+%stamp {
+	@extend %caps-label;
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 11px 5px;
+	border: var(--bw-input) solid var(--ink-38);
+	border-radius: var(--radius);
+	background: var(--field);
+	/* Full ink: at 11px caps the outline state is small text and needs 4.5:1.
+	   The 38% border keeps the inked/outline weight difference doing the talking. */
+	color: var(--ink);
+	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+}
+%stamp-inked { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+/* A transparent halo that grows a small control's tap target without moving layout.
+   The host must already be positioned. */
+@mixin tap-halo( $inset ) {
+	&::after { content: ''; position: absolute; inset: $inset; }
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Text selection inverts (ink fill, paper text). The page itself never scrolls
@@ -585,10 +615,6 @@ body::before {
 	background: var(--ink);
 }
 .brand__mark:active { transform: translateY(1px); }
-.brand__mark:focus-visible {
-	outline: var(--bw-input) solid var(--accent);
-	outline-offset: 2px;
-}
 .brand__mark svg,
 .brand__mark img { display: block; width: 26px; height: 26px; }
 .brand__mark svg path { fill: var(--paper); }
@@ -982,24 +1008,12 @@ body::before {
 	min-height: 44px;
 }
 .rsvp-btn {
+	@extend %stamp;
 	position: relative;
-	display: inline-flex;
-	align-items: center;
-	padding: 6px 11px 5px;
-	border: var(--bw-input) solid var(--ink-38);
-	border-radius: var(--radius);
-	background: var(--field);
-	color: var(--ink);
-	font-family: var(--display);
-	font-size: var(--step--2);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
 	cursor: pointer;
-	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+	@include tap-halo( -7px 0 );
 }
-.rsvp-btn::after { content: ''; position: absolute; inset: -7px 0; }
-.rsvp-btn.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rsvp-btn.is-active { @extend %stamp-inked; }
 .rsvp-btn:active { transform: scale(0.94); }
 
 /* RSVP event detail — a printed cover sheet: a stamped status line up top, an
@@ -1112,14 +1126,10 @@ body::before {
    ("REPLY · TK#1234 · 16/06/2026"). The 44px min-height + centred text optically
    aligns the label with the first 44px control row, however tall the control grows. */
 .field-row__label {
+	@extend %caps-label;
 	display: flex;
 	align-items: center;
 	min-height: 44px;
-	font-family: var(--display);
-	font-size: var(--step--2);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
 	color: var(--ink);
 	transition: color 0.15s ease;
 }
@@ -1179,6 +1189,7 @@ body::before {
 /* The filing line — small-caps, tracked, muted printed ink, under a hairline rule
    like a catalog card's head. Serial + date file to the right. */
 .docket__header {
+	@extend %caps-label;
 	display: flex;
 	align-items: center;
 	/* The filing line is a single row, always — kind · Clear … Sent · Drafts · Save
@@ -1194,11 +1205,6 @@ body::before {
 	min-height: calc( 30px + var(--space-2xs) + var(--bw-rule) );
 	padding-bottom: var(--space-2xs);
 	border-bottom: var(--bw-rule) solid var(--rule);
-	font-family: var(--display);
-	font-size: var(--step--2);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;
 }
@@ -1225,8 +1231,8 @@ body::before {
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
-.docket__clear::after,
-.docket__action::after { content: ''; position: absolute; inset: -7px -4px; }
+.docket__clear,
+.docket__action { @include tap-halo( -7px -4px ); }
 .docket__clear:hover,
 .docket__action:hover  { border-color: var(--ink); }
 .docket__clear:active,
@@ -1247,11 +1253,13 @@ body::before {
    scaffolding: a scroll region above a floating .bottom-bar. No backdrop, no blur —
    it reads as another page of the notebook rather than a pane hovering over a
    frosted copy of the one behind it. */
-.drafts-view__scroll {
+/* The Drafts / Sent / Success scroll regions — one recipe. The deep bottom padding
+   clears the floating bottom-bar pill (Back / Post another). */
+.drafts-view__scroll,
+.success-scroll {
 	flex: 1;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
-	/* Deep bottom padding clears the floating "Back" pill, matching .success-scroll. */
 	padding: var(--space-s) var(--pad-x) calc( var(--safe-bottom) + 88px );
 }
 .drafts-view__head {
@@ -1345,11 +1353,7 @@ body::before {
    so it reads as part of the label, not a separate accent mark. */
 .docket__kind-i { flex: none; }
 .docket__kind:hover { color: var(--ink); }
-.docket__kind:focus-visible {
-	outline: var(--bw-input) solid var(--accent);
-	outline-offset: 2px;
-	border-radius: 2px;
-}
+.docket__kind:focus-visible { border-radius: 2px; }   /* the shared ring, squared to the label */
 
 /* The revealed explainer — just a quiet line in readable sentence case (not the
    header's uppercase display), sitting tight under the title. No box, no rule,
@@ -1552,7 +1556,6 @@ body::before {
 	--line: var(--rule);
 	@include ruled(var(--line));
 }
-.text-field::placeholder { color: var(--ink-soft); opacity: 1; }
 /* Quote commentary — same ruled line, just multi-line: a small document with a real
    min-height. Inherits the shared rule + metrics from .text-field. */
 .text-field--note {
@@ -1632,7 +1635,10 @@ body::before {
    the engine sets it exactly where typed text lands, the same as every other
    field's placeholder. (A span drifted ~1px from textarea text on iOS Safari.)
    A solid tint, not translucent ink, so the rules don't show through the glyphs. */
-.compose-field::placeholder { color: var(--ink-soft); opacity: 1; }
+.compose-field::placeholder,
+.text-field::placeholder,
+.thumb__alt::placeholder,
+.tag-input::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Photo picker */
 .photo-picker {
@@ -1782,7 +1788,7 @@ body::before {
 	border-radius: var(--nop-radius-pill);
 	cursor: pointer;}
 .thumb__remove svg { display: block; }
-.thumb__remove::after { content: ''; position: absolute; inset: -9px; }
+.thumb__remove { @include tap-halo( -9px ); }
 /* Ordinal stamp — top-left, opposite the remove chip; ties each print to its
    "Alt text N" slip below. A quiet ink token, not a loud badge. */
 .thumb__num {
@@ -1846,7 +1852,7 @@ body::before {
 	text-underline-offset: 3px;
 	cursor: pointer;
 }
-.alt-same::after { content: ''; position: absolute; inset: -12px; }
+.alt-same { @include tap-halo( -12px ); }
 .alt-same:disabled { color: var(--text); opacity: 0.3; text-decoration: none; cursor: default; }
 .alt-text-label {
 	font-size: var(--step--3);
@@ -1870,7 +1876,6 @@ body::before {
 	min-height: 44px;
 }
 .thumb__alt:focus { border-bottom-color: var(--accent); }
-.thumb__alt::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Tags & Categories — solid accent chips, knockout text, square remove. Both
    ledger rows share this chip UI wholesale (#fieldTags / #fieldCats). */
@@ -1921,7 +1926,7 @@ body::before {
 /* Keep the 18px mark but extend the tap target to ~38px (Apple HIG) — a transparent
    overlay inside the button, so the visual square and the layout are unchanged.
    -10px is the ceiling: any wider and the zone collides with the neighbouring chip's. */
-.tag-chip__remove::after { content: ''; position: absolute; inset: -10px; }
+.tag-chip__remove { @include tap-halo( -10px ); }
 .tag-input {
 	flex: 1;
 	min-width: 80px;
@@ -1933,7 +1938,6 @@ body::before {
 	background: transparent;
 	padding: 2px 0;
 }
-.tag-input::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Most-used tags — quick-add chips that reveal only while the tag field is in
    use (focus-driven), so they cost no space at rest. Subtle accent wash by
@@ -1982,7 +1986,7 @@ body::before {
 /* Lift the 34px ghost stamps to a 44px hit height without growing them — visible
    padding would also eat into .quick-tags.is-open's 240px max-height reveal cap.
    Vertical only: the run's 8px gaps leave no horizontal room. */
-.quick-tag::after { content: ''; position: absolute; inset: -5px 0; }
+.quick-tag { @include tap-halo( -5px 0 ); }
 /* Already added (its solid chip shows above) — a dashed outline marks it as taken while
    the text stays legible; aria-pressed carries the same state to assistive tech. */
 .quick-tag.is-used {
@@ -2132,29 +2136,9 @@ body::before {
 	padding-block: 7px;
 	margin-block: -7px;
 }
-.stamp__face {
-	display: inline-flex;
-	align-items: center;
-	font-family: var(--display);
-	font-size: var(--step--2);
-	font-weight: 700;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	padding: 6px 11px 5px;
-	border: var(--bw-input) solid var(--ink-38);
-	border-radius: var(--radius);
-	background: var(--field);
-	/* Full ink: at 11px caps the outline state is small text and needs 4.5:1.
-	   The 38% border keeps the inked/outline weight difference doing the talking. */
-	color: var(--ink);
-	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
-}
+.stamp__face { @extend %stamp; }
 .stamp:active .stamp__face { transform: scale(0.94); }
-.stamp input:checked + .stamp__face {
-	background: var(--accent);
-	border-color: var(--accent);
-	color: var(--on-accent);
-}
+.stamp input:checked + .stamp__face { @extend %stamp-inked; }
 .stamp input:focus-visible + .stamp__face {
 	box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent);
 }
@@ -2350,13 +2334,6 @@ body::before {
 
 /* ── Success — poster moment ────────────────────────────────────────────── */
 
-.success-scroll {
-	flex: 1;
-	overflow-y: auto;
-	-webkit-overflow-scrolling: touch;
-	/* deep bottom padding clears the floating "Post another" button */
-	padding: var(--space-s) var(--pad-x) calc(var(--safe-bottom) + 88px);
-}
 .success-hero {
 	position: relative;
 	display: flex;
@@ -2457,7 +2434,7 @@ body::before {
 	color: var(--ink);
 }
 .delivery__row a { color: inherit; text-decoration: none; display: block; }
-.delivery__row.is-sent { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.delivery__row.is-sent { @extend %stamp-inked; }
 .delivery__row.is-failed { border-color: var(--red); color: var(--red); }
 /* Skipped is a decision, not a wait — struck through so it never reads as pending. */
 .delivery__row.is-skipped s { text-decoration-thickness: 1px; }
@@ -2524,7 +2501,6 @@ body::before {
 	text-underline-offset: 3px;
 	cursor: pointer;
 }
-.delivery__handoff:focus-visible { outline: var(--bw-input) solid var(--ink); outline-offset: 2px; }
 
 /* Sent view — one filed carbon copy per post: the post's own line, then the
    network stamps beneath it, left-aligned rather than centred like the success
@@ -2586,7 +2562,6 @@ body::before {
 	   sits evenly around the line, instead of pooling under it. */
 	padding: 11px 0;
 }
-.sent-row__title:focus-visible { outline: var(--bw-input) solid var(--ink); outline-offset: 2px; }
 /* In the list the destinations are an annotation, not a trophy — the solid
    stamps of the success receipt would out-shout the post they belong to, and
    four of them wrap to two lines. Here they collapse to one printed line of

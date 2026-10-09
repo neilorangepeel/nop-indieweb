@@ -357,6 +357,19 @@ class Posting_Page {
 		];
 	}
 
+	/**
+	 * Only the strings a translation actually changes — the client falls back to the
+	 * English source, so an English site sends an empty map instead of ~5 KB of
+	 * identical pairs on every load.
+	 */
+	private function changed_js_strings(): object {
+		return (object) array_filter(
+			$this->js_strings(),
+			static fn( string $translated, string $source ): bool => $translated !== $source,
+			ARRAY_FILTER_USE_BOTH
+		);
+	}
+
 	private function font_base_uri(): string {
 		return (string) apply_filters( 'nop_indieweb_post_font_uri', NOP_INDIEWEB_URL . 'assets/fonts' );
 	}
@@ -551,19 +564,22 @@ function matchAnyVersion( url ) {
 		$font_dir     = $this->font_base_uri() . '/brandon-text';
 		$cond_dir     = $this->font_base_uri() . '/brandon-text-condensed';
 
-		// One-line "what it is" per kind, surfaced inline when the kind title is
-		// tapped (see the docket filing line). Plain and short — just the gist.
-		$kind_info = [
-			'note'     => __( 'A quick thought in your own words — no link.', 'nop-indieweb' ),
-			'photo'    => __( 'Pictures with a caption, for your grid.', 'nop-indieweb' ),
-			'reply'    => __( 'Reply to a post by its link.', 'nop-indieweb' ),
-			'like'     => __( '♥ a post by its link — no words.', 'nop-indieweb' ),
-			'bookmark' => __( 'Save a link for later, just for you.', 'nop-indieweb' ),
-			'repost'   => __( 'Boost a post as-is — no comment.', 'nop-indieweb' ),
-			'quote'    => __( 'A passage plus your take on it.', 'nop-indieweb' ),
-			'story'    => __( 'A vertical photo or clip — gone in 24h.', 'nop-indieweb' ),
-			'rsvp'     => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ),
+		// The nine kinds the composer offers, in tile order — one list, so adding a kind
+		// is one line. `label` sits on the tile; `info` is the one-line gist revealed
+		// when the kind title is tapped; `cats` names the service setting that holds
+		// the kind's default categories.
+		$kinds = [
+			'note'     => [ 'label' => __( 'Note', 'nop-indieweb' ),     'cats' => 'entries',  'info' => __( 'A quick thought in your own words — no link.', 'nop-indieweb' ) ],
+			'photo'    => [ 'label' => __( 'Photo', 'nop-indieweb' ),    'cats' => 'entries',  'info' => __( 'Pictures with a caption, for your grid.', 'nop-indieweb' ) ],
+			'reply'    => [ 'label' => __( 'Reply', 'nop-indieweb' ),    'cats' => 'reply',    'info' => __( 'Reply to a post by its link.', 'nop-indieweb' ) ],
+			'like'     => [ 'label' => __( 'Like', 'nop-indieweb' ),     'cats' => 'like',     'info' => __( '♥ a post by its link — no words.', 'nop-indieweb' ) ],
+			'bookmark' => [ 'label' => __( 'Bookmark', 'nop-indieweb' ), 'cats' => 'bookmark', 'info' => __( 'Save a link for later, just for you.', 'nop-indieweb' ) ],
+			'repost'   => [ 'label' => __( 'Repost', 'nop-indieweb' ),   'cats' => 'repost',   'info' => __( 'Boost a post as-is — no comment.', 'nop-indieweb' ) ],
+			'quote'    => [ 'label' => __( 'Quote', 'nop-indieweb' ),    'cats' => 'quote',    'info' => __( 'A passage plus your take on it.', 'nop-indieweb' ) ],
+			'story'    => [ 'label' => __( 'Story', 'nop-indieweb' ),    'cats' => 'entries',  'info' => __( 'A vertical photo or clip — gone in 24h.', 'nop-indieweb' ) ],
+			'rsvp'     => [ 'label' => __( 'RSVP', 'nop-indieweb' ),     'cats' => 'rsvp',     'info' => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ) ],
 		];
+		$kind_info = array_map( static fn( array $kind ): string => $kind['info'], $kinds );
 
 		// Built app assets (CSS now, the app script next) — version-busted from the
 		// build's asset file so a new build invalidates the URL.
@@ -615,33 +631,21 @@ function matchAnyVersion( url ) {
 			);
 		}
 
-		// Most-used post tags → one-tap chips beneath the tag field. Display
-		// convenience only; tapping seeds the existing client tag list (posted
-		// as `category`). Names keep their original case — tags are case-sensitive.
-		$top_tags  = [];
-		$tag_terms = get_terms( [
-			'taxonomy'   => 'post_tag',
-			'orderby'    => 'count',
-			'order'      => 'DESC',
-			'number'     => 10,
-			'hide_empty' => true,
-		] );
-		if ( is_array( $tag_terms ) ) {
-			$top_tags = array_map( static fn( $t ) => $t->name, $tag_terms );
-		}
-
-		// Most-used categories → the same one-tap chips beneath the categories field.
-		$top_cats  = [];
-		$cat_terms = get_terms( [
-			'taxonomy'   => 'category',
-			'orderby'    => 'count',
-			'order'      => 'DESC',
-			'number'     => 10,
-			'hide_empty' => true,
-		] );
-		if ( is_array( $cat_terms ) ) {
-			$top_cats = array_map( static fn( $t ) => $t->name, $cat_terms );
-		}
+		// Most-used tags and categories → one-tap chips beneath each field. Display
+		// convenience only; tapping seeds the client's chip list. Names keep their
+		// original case — tags are case-sensitive.
+		$top_terms = static function ( string $taxonomy ): array {
+			$terms = get_terms( [
+				'taxonomy'   => $taxonomy,
+				'orderby'    => 'count',
+				'order'      => 'DESC',
+				'number'     => 10,
+				'hide_empty' => true,
+			] );
+			return is_array( $terms ) ? wp_list_pluck( $terms, 'name' ) : [];
+		};
+		$top_tags = $top_terms( 'post_tag' );
+		$top_cats = $top_terms( 'category' );
 
 		// Per-kind default categories — the same service settings the server falls
 		// back to for a payload with no explicit categories. The composer pre-stamps
@@ -651,18 +655,7 @@ function matchAnyVersion( url ) {
 			'trim',
 			explode( ',', (string) ( $services_opt[ $slug ]['post_category'] ?? '' ) )
 		) ) );
-		$entry_cats   = $cats_setting( 'entries' );
-		$kind_cats    = [
-			'note'     => $entry_cats,
-			'photo'    => $entry_cats,
-			'story'    => $entry_cats,
-			'reply'    => $cats_setting( 'reply' ),
-			'like'     => $cats_setting( 'like' ),
-			'bookmark' => $cats_setting( 'bookmark' ),
-			'repost'   => $cats_setting( 'repost' ),
-			'quote'    => $cats_setting( 'quote' ),
-			'rsvp'     => $cats_setting( 'rsvp' ),
-		];
+		$kind_cats    = array_map( static fn( array $kind ): array => $cats_setting( $kind['cats'] ), $kinds );
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -776,18 +769,8 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<?php
 				// One tile per kind, its mark drawn from the same Kind_Icons sprite as the Sent
 				// list and the site's kind-icon block, so a kind looks the same everywhere.
-				$kind_labels = [
-					'note'     => __( 'Note', 'nop-indieweb' ),
-					'photo'    => __( 'Photo', 'nop-indieweb' ),
-					'reply'    => __( 'Reply', 'nop-indieweb' ),
-					'like'     => __( 'Like', 'nop-indieweb' ),
-					'bookmark' => __( 'Bookmark', 'nop-indieweb' ),
-					'repost'   => __( 'Repost', 'nop-indieweb' ),
-					'quote'    => __( 'Quote', 'nop-indieweb' ),
-					'story'    => __( 'Story', 'nop-indieweb' ),
-					'rsvp'     => __( 'RSVP', 'nop-indieweb' ),
-				];
-				foreach ( $kind_labels as $kind_slug => $kind_label ) :
+				foreach ( $kinds as $kind_slug => $kind ) :
+					$kind_label = $kind['label'];
 					$is_note = 'note' === $kind_slug;
 					?>
 				<button class="type-btn<?php echo $is_note ? ' is-active' : ''; ?>" data-type="<?php echo esc_attr( $kind_slug ); ?>" aria-pressed="<?php echo $is_note ? 'true' : 'false'; ?>" type="button">
@@ -1245,7 +1228,7 @@ window.NOP = {
 		swUrl:       <?php echo wp_json_encode( home_url( '/post?sw=1' ) ); ?>,
 		swScope:     <?php echo wp_json_encode( wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post' ); ?>,
 		nonceUrl:    <?php echo wp_json_encode( home_url( '/post?nonce=1' ) ); ?>,
-		l10n:        <?php echo wp_json_encode( $this->js_strings() ); ?>,
+		l10n:        <?php echo wp_json_encode( $this->changed_js_strings() ); ?>,
 };
 </script>
 <script src="<?php echo esc_url( $post_js_url ); ?>" defer></script>
