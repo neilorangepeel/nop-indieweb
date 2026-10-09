@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Standalone mobile Micropub client at /post.
  *
  * Accessible to logged-in users with publish_posts capability. Supports
- * eight post types — Note, Photo, Reply, Like, Bookmark, Repost, Article,
+ * nine post kinds — Note, Photo, Reply, Like, Bookmark, Repost, Quote, Story,
  * RSVP — and routes all posts through the Micropub endpoint using WordPress
  * cookie + nonce auth. After posting the success screen links to both the
  * published permalink and the WordPress block editor.
@@ -117,7 +117,7 @@ class Posting_Page {
 			'scope'            => $path,
 			'display'          => 'standalone',
 			'background_color' => '#F4EFE6',
-			'theme_color'      => '#008935',
+			'theme_color'      => '#00777F',
 			'icons'            => $icons,
 			// Register as a share target (Android/desktop) — sharing a page/text opens
 			// /post?title=&text=&url=, which the client maps to a bookmark/note. iOS has
@@ -134,18 +134,6 @@ class Posting_Page {
 	}
 
 	/**
-	 * Service worker (served at /post?sw=1) — precaches the app shell (the page +
-	 * Brandon fonts) so /post installs and opens offline. Network-first for the
-	 * page so the nonce stays fresh online; cache-first for the static fonts; the
-	 * Micropub/now REST routes are never cached.
-	 */
-	/**
-	 * Cache-busting version for the built /post assets. The webpack asset file
-	 * hashes only the JS entry, so a style-only rebuild leaves it unchanged —
-	 * fold in the extracted CSS so any rebuild busts the ?ver (and with it the
-	 * service-worker shell and the browser's HTTP cache).
-	 */
-	/**
 	 * Cache-buster for the app icons. iOS fetches the apple-touch-icon through
 	 * Safari's HTTP cache, and the PNGs are served with a one-year max-age — a
 	 * recolored icon at the same URL never reaches the home screen. The file's
@@ -156,6 +144,12 @@ class Posting_Page {
 		return $mtime ? (string) $mtime : NOP_INDIEWEB_VERSION;
 	}
 
+	/**
+	 * Cache-busting version for the built /post assets. The webpack asset file
+	 * hashes only the JS entry, so a style-only rebuild leaves it unchanged —
+	 * fold in the extracted CSS so any rebuild busts the ?ver (and with it the
+	 * service-worker shell and the browser's HTTP cache).
+	 */
 	private function asset_version(): string {
 		$asset = file_exists( NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) ? ( include NOP_INDIEWEB_DIR . 'build/post/index.asset.php' ) : [];
 		$ver   = is_array( $asset ) && ! empty( $asset['version'] ) ? $asset['version'] : '1';
@@ -177,10 +171,202 @@ class Posting_Page {
 	 * Filterable for the one legitimate case: a theme that already serves the
 	 * same faces and would rather not have them fetched twice.
 	 */
+	/**
+	 * The composer's client-side copy, translated here and handed to the script as
+	 * NOP.l10n (English source => translation). Inline rather than via wp-i18n so
+	 * the offline app shell carries its strings with it. Keys must match the
+	 * __( '…' ) literals in src/post/index.js exactly — src/post/l10n.test.js
+	 * fails the build when one is missing.
+	 *
+	 * @return array<string,string>
+	 */
+	private function js_strings(): array {
+		return [
+			'What\'s happening?' => __( 'What\'s happening?', 'nop-indieweb' ),
+			'Seen anything good?' => __( 'Seen anything good?', 'nop-indieweb' ),
+			'A thought…' => __( 'A thought…', 'nop-indieweb' ),
+			'What\'s on your mind?' => __( 'What\'s on your mind?', 'nop-indieweb' ),
+			'Share something…' => __( 'Share something…', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Last: %s' => __( 'Last: %s', 'nop-indieweb' ),
+			'No.' => __( 'No.', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Golden: %s' => __( 'Golden: %s', 'nop-indieweb' ),
+			'Golden: now' => __( 'Golden: now', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Sunset: %s' => __( 'Sunset: %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Daylight: %s' => __( 'Daylight: %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Sunrise: %s' => __( 'Sunrise: %s', 'nop-indieweb' ),
+			'Blue: now' => __( 'Blue: now', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Blue: %s' => __( 'Blue: %s', 'nop-indieweb' ),
+			'new moon' => __( 'new moon', 'nop-indieweb' ),
+			'waxing crescent' => __( 'waxing crescent', 'nop-indieweb' ),
+			'first quarter' => __( 'first quarter', 'nop-indieweb' ),
+			'waxing gibbous' => __( 'waxing gibbous', 'nop-indieweb' ),
+			'full moon' => __( 'full moon', 'nop-indieweb' ),
+			'waning gibbous' => __( 'waning gibbous', 'nop-indieweb' ),
+			'last quarter' => __( 'last quarter', 'nop-indieweb' ),
+			'waning crescent' => __( 'waning crescent', 'nop-indieweb' ),
+			'just now' => __( 'just now', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%sm ago' => __( '%sm ago', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%sh ago' => __( '%sh ago', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%sd ago' => __( '%sd ago', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%sw ago' => __( '%sw ago', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s today' => __( '%s today', 'nop-indieweb' ),
+			'Spr Equinox' => __( 'Spr Equinox', 'nop-indieweb' ),
+			'Sum Solstice' => __( 'Sum Solstice', 'nop-indieweb' ),
+			'Aut Equinox' => __( 'Aut Equinox', 'nop-indieweb' ),
+			'Win Solstice' => __( 'Win Solstice', 'nop-indieweb' ),
+			'today' => __( 'today', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%sd' => __( '%sd', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Wk %s' => __( 'Wk %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Day %s' => __( 'Day %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Moon: %s' => __( 'Moon: %s', 'nop-indieweb' ),
+			'Offline' => __( 'Offline', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Queue: %s' => __( 'Queue: %s', 'nop-indieweb' ),
+			'NOW' => __( 'NOW', 'nop-indieweb' ),
+			'HERE' => __( 'HERE', 'nop-indieweb' ),
+			'LIGHT' => __( 'LIGHT', 'nop-indieweb' ),
+			'LOG' => __( 'LOG', 'nop-indieweb' ),
+			'Write a note…' => __( 'Write a note…', 'nop-indieweb' ),
+			'Write a note, or add a photo.' => __( 'Write a note, or add a photo.', 'nop-indieweb' ),
+			'What are we looking at?' => __( 'What are we looking at?', 'nop-indieweb' ),
+			'In reply to' => __( 'In reply to', 'nop-indieweb' ),
+			'Say your piece…' => __( 'Say your piece…', 'nop-indieweb' ),
+			'Paste the URL you\'re replying to' => __( 'Paste the URL you\'re replying to', 'nop-indieweb' ),
+			'Liking' => __( 'Liking', 'nop-indieweb' ),
+			'Paste the URL you\'re liking' => __( 'Paste the URL you\'re liking', 'nop-indieweb' ),
+			'Bookmarking' => __( 'Bookmarking', 'nop-indieweb' ),
+			'A note to future you…' => __( 'A note to future you…', 'nop-indieweb' ),
+			'Paste the URL to bookmark' => __( 'Paste the URL to bookmark', 'nop-indieweb' ),
+			'Reposting' => __( 'Reposting', 'nop-indieweb' ),
+			'Paste the URL you\'re reposting' => __( 'Paste the URL you\'re reposting', 'nop-indieweb' ),
+			'The quote itself…' => __( 'The quote itself…', 'nop-indieweb' ),
+			'Add the quote itself.' => __( 'Add the quote itself.', 'nop-indieweb' ),
+			'Add a caption (optional)…' => __( 'Add a caption (optional)…', 'nop-indieweb' ),
+			'Event' => __( 'Event', 'nop-indieweb' ),
+			'Add a word (optional)…' => __( 'Add a word (optional)…', 'nop-indieweb' ),
+			'Paste the event\'s URL' => __( 'Paste the event\'s URL', 'nop-indieweb' ),
+			'Post' => __( 'Post', 'nop-indieweb' ),
+			'Schedule' => __( 'Schedule', 'nop-indieweb' ),
+			'Paste a URL' => __( 'Paste a URL', 'nop-indieweb' ),
+			'Fetching event details…' => __( 'Fetching event details…', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Found via %s.' => __( 'Found via %s.', 'nop-indieweb' ),
+			'Found event details.' => __( 'Found event details.', 'nop-indieweb' ),
+			'Only the page title was readable — please fill in the details.' => __( 'Only the page title was readable — please fill in the details.', 'nop-indieweb' ),
+			'Couldn’t find event data — please fill in manually.' => __( 'Couldn’t find event data — please fill in manually.', 'nop-indieweb' ),
+			'Locating…' => __( 'Locating…', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Remove %s' => __( 'Remove %s', 'nop-indieweb' ),
+			'URL' => __( 'URL', 'nop-indieweb' ),
+			'Write…' => __( 'Write…', 'nop-indieweb' ),
+			'Pick a photo or a short clip.' => __( 'Pick a photo or a short clip.', 'nop-indieweb' ),
+			'Add at least one photo.' => __( 'Add at least one photo.', 'nop-indieweb' ),
+			'Paste a link first.' => __( 'Paste a link first.', 'nop-indieweb' ),
+			'Write something first.' => __( 'Write something first.', 'nop-indieweb' ),
+			'Cleared' => __( 'Cleared', 'nop-indieweb' ),
+			'Undo' => __( 'Undo', 'nop-indieweb' ),
+			'ALT?' => __( 'ALT?', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Remove photo %s' => __( 'Remove photo %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Alt text %s' => __( 'Alt text %s', 'nop-indieweb' ),
+			'Alt text' => __( 'Alt text', 'nop-indieweb' ),
+			'Describe it…' => __( 'Describe it…', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Alt text for photo %s' => __( 'Alt text for photo %s', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s selected' => __( '%s selected', 'nop-indieweb' ),
+			'Add photos' => __( 'Add photos', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s photo needs alt text' => __( '%s photo needs alt text', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s photos need alt text' => __( '%s photos need alt text', 'nop-indieweb' ),
+			'Post anyway' => __( 'Post anyway', 'nop-indieweb' ),
+			'Sharing…' => __( 'Sharing…', 'nop-indieweb' ),
+			'Caption copied to clipboard' => __( 'Caption copied to clipboard', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Something went wrong: %s' => __( 'Something went wrong: %s', 'nop-indieweb' ),
+			'Try again' => __( 'Try again', 'nop-indieweb' ),
+			/* translators: 1: photo number, 2: total photos */
+			'Uploading %1$s of %2$s…' => __( 'Uploading %1$s of %2$s…', 'nop-indieweb' ),
+			'Uploading video…' => __( 'Uploading video…', 'nop-indieweb' ),
+			'Posting…' => __( 'Posting…', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Posting failed (%s)' => __( 'Posting failed (%s)', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Upload failed (%s)' => __( 'Upload failed (%s)', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Couldn\'t save offline: %s' => __( 'Couldn\'t save offline: %s', 'nop-indieweb' ),
+			'Couldn\'t reach the server — saved and retrying…' => __( 'Couldn\'t reach the server — saved and retrying…', 'nop-indieweb' ),
+			'Saved — will post when you’re back online.' => __( 'Saved — will post when you’re back online.', 'nop-indieweb' ),
+			'Queued post published.' => __( 'Queued post published.', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'A queued post failed: %s' => __( 'A queued post failed: %s', 'nop-indieweb' ),
+			'Why?' => __( 'Why?', 'nop-indieweb' ),
+			'(opens in a new tab)' => __( '(opens in a new tab)', 'nop-indieweb' ),
+			'sent' => __( 'sent', 'nop-indieweb' ),
+			'failed' => __( 'failed', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Retry %s' => __( 'Retry %s', 'nop-indieweb' ),
+			'skipped' => __( 'skipped', 'nop-indieweb' ),
+			'sending' => __( 'sending', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Scheduled for %s' => __( 'Scheduled for %s', 'nop-indieweb' ),
+			'post today' => __( 'post today', 'nop-indieweb' ),
+			'Share from your Photos app instead.' => __( 'Share from your Photos app instead.', 'nop-indieweb' ),
+			'Web sharing isn\'t supported on this browser.' => __( 'Web sharing isn\'t supported on this browser.', 'nop-indieweb' ),
+			'Link copied' => __( 'Link copied', 'nop-indieweb' ),
+			'Couldn\'t copy — long-press the link above.' => __( 'Couldn\'t copy — long-press the link above.', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Posting in %s…' => __( 'Posting in %s…', 'nop-indieweb' ),
+			'Drafts aren\'t supported here.' => __( 'Drafts aren\'t supported here.', 'nop-indieweb' ),
+			'Nothing to save yet.' => __( 'Nothing to save yet.', 'nop-indieweb' ),
+			'Couldn\'t save the draft.' => __( 'Couldn\'t save the draft.', 'nop-indieweb' ),
+			'Draft saved.' => __( 'Draft saved.', 'nop-indieweb' ),
+			'No drafts yet.' => __( 'No drafts yet.', 'nop-indieweb' ),
+			'(untitled)' => __( '(untitled)', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'Delete draft: %s' => __( 'Delete draft: %s', 'nop-indieweb' ),
+			'Loading…' => __( 'Loading…', 'nop-indieweb' ),
+			'post' => __( 'post', 'nop-indieweb' ),
+			'Nothing sent yet.' => __( 'Nothing sent yet.', 'nop-indieweb' ),
+			'Retrying…' => __( 'Retrying…', 'nop-indieweb' ),
+			'Couldn\'t retry that one.' => __( 'Couldn\'t retry that one.', 'nop-indieweb' ),
+			'Couldn\'t open that draft.' => __( 'Couldn\'t open that draft.', 'nop-indieweb' ),
+			'Draft deleted' => __( 'Draft deleted', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s character' => __( '%s character', 'nop-indieweb' ),
+			/* translators: %s: a number, name or time filled in by the composer */
+			'%s characters' => __( '%s characters', 'nop-indieweb' ),
+			'Dismiss' => __( 'Dismiss', 'nop-indieweb' ),
+		];
+	}
+
 	private function font_base_uri(): string {
 		return (string) apply_filters( 'nop_indieweb_post_font_uri', NOP_INDIEWEB_URL . 'assets/fonts' );
 	}
 
+	/**
+	 * Service worker (served at /post?sw=1) — precaches the app shell (the page +
+	 * Brandon fonts) so /post installs and opens offline. Network-first for the
+	 * page so the nonce stays fresh online; cache-first for the static fonts; the
+	 * Micropub/now REST routes are never cached.
+	 */
 	private function render_service_worker(): void {
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/javascript; charset=utf-8' );
@@ -268,7 +454,9 @@ self.addEventListener( 'fetch', function ( e ) {
 				return fetchResilient( req ).then( function ( res ) {
 					if ( res && res.ok ) {
 						var copy = res.clone();
-						caches.open( CACHE ).then( function ( c ) { c.put( req, copy ); } );
+						caches.open( CACHE ).then( function ( c ) {
+							return c.put( req, copy ).then( function () { return pruneOtherVersions( c, url ); } );
+						} );
 						return res;
 					}
 					// Non-OK response — try the previous build's cached asset.
@@ -300,9 +488,20 @@ function fetchResilient( req ) {
 	} );
 }
 
+// Once a new build's asset is safely cached, drop every other ?ver= of the same
+// path — otherwise each deploy leaves another full copy of the app in the cache,
+// and the fallback below could hand back the oldest one instead of the last.
+function pruneOtherVersions( c, url ) {
+	return c.keys().then( function ( keys ) {
+		return Promise.all( keys.filter( function ( k ) {
+			try { var u = new URL( k.url ); return u.pathname === url.pathname && u.href !== url.href; } catch ( e ) { return false; }
+		} ).map( function ( k ) { return c.delete( k ); } ) );
+	} );
+}
+
 // Search the cache for any entry whose pathname matches — same asset, any
 // `?ver=` value — so a 503 on a freshly-deployed URL falls back to the
-// previously-cached version of the same asset.
+// previously-cached version of the same asset (pruning keeps that to one).
 function matchAnyVersion( url ) {
 	return caches.open( CACHE ).then( function ( c ) {
 		return c.keys().then( function ( keys ) {
@@ -334,18 +533,20 @@ function matchAnyVersion( url ) {
 		}
 
 		$nonce        = wp_create_nonce( 'wp_rest' );
-		$media_url    = esc_url( rest_url( 'wp/v2/media' ) );
-		$micropub_url = esc_url( rest_url( 'nop-indieweb/v1/micropub' ) );
-		$now_url      = esc_url( rest_url( 'nop-indieweb/v1/now' ) );
-		$drafts_url   = esc_url( rest_url( 'nop-indieweb/v1/drafts' ) );
-		$fetch_event_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-event' ) );
-		$fetch_context_url = esc_url( rest_url( 'nop-indieweb/v1/fetch-context' ) );
-		$syndication_status_url = esc_url( rest_url( 'nop-indieweb/v1/syndication/status' ) );
-		$syndication_sent_url   = esc_url( rest_url( 'nop-indieweb/v1/syndication/sent' ) );
-		$syndication_retry_url  = esc_url( rest_url( 'nop-indieweb/v1/syndication/retry' ) );
-		$tags_url          = esc_url( rest_url( 'wp/v2/tags' ) );
-		$cats_url          = esc_url( rest_url( 'wp/v2/categories' ) );
-		// Escaped at the point of output below (PHPCS can't track escaping through assignment).
+		$media_url    = esc_url_raw( rest_url( 'wp/v2/media' ) );
+		$micropub_url = esc_url_raw( rest_url( 'nop-indieweb/v1/micropub' ) );
+		$now_url      = esc_url_raw( rest_url( 'nop-indieweb/v1/now' ) );
+		$drafts_url   = esc_url_raw( rest_url( 'nop-indieweb/v1/drafts' ) );
+		$fetch_event_url = esc_url_raw( rest_url( 'nop-indieweb/v1/fetch-event' ) );
+		$fetch_context_url = esc_url_raw( rest_url( 'nop-indieweb/v1/fetch-context' ) );
+		$syndication_status_url = esc_url_raw( rest_url( 'nop-indieweb/v1/syndication/status' ) );
+		$syndication_sent_url   = esc_url_raw( rest_url( 'nop-indieweb/v1/syndication/sent' ) );
+		$syndication_retry_url  = esc_url_raw( rest_url( 'nop-indieweb/v1/syndication/retry' ) );
+		$tags_url          = esc_url_raw( rest_url( 'wp/v2/tags' ) );
+		$cats_url          = esc_url_raw( rest_url( 'wp/v2/categories' ) );
+		// The REST URLs above are esc_url_raw, not esc_url: they're emitted through
+		// wp_json_encode into a script, where esc_url's &#038; would break a
+		// plain-permalink (?rest_route=) site. The site name is escaped at output.
 		$site_name    = get_bloginfo( 'name' );
 		$font_dir     = $this->font_base_uri() . '/brandon-text';
 		$cond_dir     = $this->font_base_uri() . '/brandon-text-condensed';
@@ -486,7 +687,7 @@ function matchAnyVersion( url ) {
 	}
 } )();
 </script>
-<meta name="theme-color" id="themeColor" content="#00787F">
+<meta name="theme-color" id="themeColor" content="#00777F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -547,6 +748,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 	<!-- Masthead -->
 	<header class="masthead">
+		<h1 class="sr-only"><?php echo esc_html( sprintf( /* translators: %s: site name */ __( 'Post to %s', 'nop-indieweb' ), $site_name ) ); ?></h1>
 		<div class="masthead__bar">
 			<button type="button" class="brand__mark" id="nowBtn" aria-label="<?php esc_attr_e( 'Show local place and weather', 'nop-indieweb' ); ?>">
 				<svg viewBox="0 0 60 60" fill="none" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M30 5.45455C16.4439 5.45455 5.45455 16.4439 5.45455 30V35.4545C5.45455 45.9982 14.0018 54.5455 24.5455 54.5455H30C43.5561 54.5455 54.5455 43.5561 54.5455 30C54.5455 16.4439 43.5561 5.45455 30 5.45455ZM0 30C0 13.4315 13.4315 0 30 0C46.5685 0 60 13.4315 60 30C60 46.5685 46.5685 60 30 60H24.5455C10.9893 60 0 49.0107 0 35.4545V30ZM30 16.3636C22.4688 16.3636 16.3636 22.4688 16.3636 30C16.3636 37.5312 22.4688 43.6364 30 43.6364C37.5312 43.6364 43.6364 37.5312 43.6364 30C43.6364 22.4688 37.5312 16.3636 30 16.3636ZM10.9091 30C10.9091 19.4564 19.4564 10.9091 30 10.9091C40.5436 10.9091 49.0909 19.4564 49.0909 30C49.0909 40.5436 40.5436 49.0909 30 49.0909C19.4564 49.0909 10.9091 40.5436 10.9091 30ZM30.0775 27.3502C28.5713 27.3502 27.3502 28.5713 27.3502 30.0775C27.3502 31.5837 26.1292 32.8048 24.623 32.8048C23.1167 32.8048 21.8957 31.5837 21.8957 30.0775C21.8957 25.5589 25.5589 21.8957 30.0775 21.8957C34.5963 21.8957 38.2593 25.5589 38.2593 30.0775C38.2593 31.5837 37.0383 32.8048 35.5321 32.8048C34.0258 32.8048 32.8048 31.5837 32.8048 30.0775C32.8048 28.5713 31.5837 27.3502 30.0775 27.3502Z"/></svg>
@@ -571,60 +773,38 @@ foreach ( [ '700', '800' ] as $weight ) {
 
 			<div class="type-grid-wrap">
 				<div class="type-grid" id="typeBar" role="group" aria-label="<?php esc_attr_e( 'Post type', 'nop-indieweb' ); ?>">
-				<button class="type-btn is-active" data-type="note" aria-pressed="true" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,58.34l-32-32a8,8,0,0,0-11.32,0l-96,96A8,8,0,0,0,88,128v32a8,8,0,0,0,8,8h32a8,8,0,0,0,5.66-2.34l96-96A8,8,0,0,0,229.66,58.34ZM124.69,152H104V131.31l64-64L188.69,88ZM200,76.69,179.31,56,192,43.31,212.69,64ZM224,128v80a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32h80a8,8,0,0,1,0,16H48V208H208V128a8,8,0,0,1,16,0Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Note', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-note-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-note-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-note-t" startOffset="50%"><?php esc_html_e('Note', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-note-b" startOffset="50%"><?php esc_html_e('Note', 'nop-indieweb' ); ?></textPath></text></svg>
+				<?php
+				// One tile per kind, its mark drawn from the same Kind_Icons sprite as the Sent
+				// list and the site's kind-icon block, so a kind looks the same everywhere.
+				$kind_labels = [
+					'note'     => __( 'Note', 'nop-indieweb' ),
+					'photo'    => __( 'Photo', 'nop-indieweb' ),
+					'reply'    => __( 'Reply', 'nop-indieweb' ),
+					'like'     => __( 'Like', 'nop-indieweb' ),
+					'bookmark' => __( 'Bookmark', 'nop-indieweb' ),
+					'repost'   => __( 'Repost', 'nop-indieweb' ),
+					'quote'    => __( 'Quote', 'nop-indieweb' ),
+					'story'    => __( 'Story', 'nop-indieweb' ),
+					'rsvp'     => __( 'RSVP', 'nop-indieweb' ),
+				];
+				foreach ( $kind_labels as $kind_slug => $kind_label ) :
+					$is_note = 'note' === $kind_slug;
+					?>
+				<button class="type-btn<?php echo $is_note ? ' is-active' : ''; ?>" data-type="<?php echo esc_attr( $kind_slug ); ?>" aria-pressed="<?php echo $is_note ? 'true' : 'false'; ?>" type="button">
+					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" focusable="false"><use href="#nop-kind-<?php echo esc_attr( $kind_slug ); ?>"/></svg></span>
+					<span class="type-btn__label"><?php echo esc_html( $kind_label ); ?></span>
+					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-<?php echo esc_attr( $kind_slug ); ?>-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-<?php echo esc_attr( $kind_slug ); ?>-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-<?php echo esc_attr( $kind_slug ); ?>-t" startOffset="50%"><?php echo esc_html( $kind_label ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-<?php echo esc_attr( $kind_slug ); ?>-b" startOffset="50%"><?php echo esc_html( $kind_label ); ?></textPath></text></svg>
 				</button>
-				<button class="type-btn" data-type="photo" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Photo', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-photo-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-photo-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-photo-t" startOffset="50%"><?php esc_html_e('Photo', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-photo-b" startOffset="50%"><?php esc_html_e('Photo', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="reply" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Reply', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-reply-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-reply-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-reply-t" startOffset="50%"><?php esc_html_e('Reply', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-reply-b" startOffset="50%"><?php esc_html_e('Reply', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="like" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40ZM128,214.8C109.74,204.16,32,155.69,32,102A46.06,46.06,0,0,1,78,56c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,155.61,146.24,204.15,128,214.8Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Like', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-like-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-like-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-like-t" startOffset="50%"><?php esc_html_e('Like', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-like-b" startOffset="50%"><?php esc_html_e('Like', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="bookmark" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,177.57-51.77-32.35a8,8,0,0,0-8.48,0L72,209.57V48H184Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Bookmark', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-bookmark-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-bookmark-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-bookmark-t" startOffset="50%"><?php esc_html_e('Bookmark', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-bookmark-b" startOffset="50%"><?php esc_html_e('Bookmark', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="repost" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-repost-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-repost-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-repost-t" startOffset="50%"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-repost-b" startOffset="50%"><?php esc_html_e('Repost', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="quote" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M100,56H40A16,16,0,0,0,24,72v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,100,56Zm0,80H40V72h60ZM216,56H156a16,16,0,0,0-16,16v64a16,16,0,0,0,16,16h60v8a32,32,0,0,1-32,32,8,8,0,0,0,0,16,48.05,48.05,0,0,0,48-48V72A16,16,0,0,0,216,56Zm0,80H156V72h60Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-quote-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-quote-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-quote-t" startOffset="50%"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-quote-b" startOffset="50%"><?php esc_html_e('Quote', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="story" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,88h80v80H40Zm96-16V56h32V72Zm-16,0H88V56h32Zm0,112v16H88V184Zm16,0h32v16H136Zm0-16V88h80v80Zm80-96H184V56h32ZM72,56V72H40V56ZM40,184H72v16H40Zm176,16H184V184h32v16Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('Story', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-story-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-story-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-story-t" startOffset="50%"><?php esc_html_e('Story', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-story-b" startOffset="50%"><?php esc_html_e('Story', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
-				<button class="type-btn" data-type="rsvp" aria-pressed="false" type="button">
-					<span class="type-btn__icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-29.66-85.66a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L124,164.69l42.34-42.35A8,8,0,0,1,178.34,122.34Z"/></svg></span>
-					<span class="type-btn__label"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></span>
-					<svg class="type-btn__arc" viewBox="0 0 75 75" aria-hidden="true"><path id="arc-rsvp-t" fill="none" d="M14.5,37.5 A23,23 0 0 1 60.5,37.5"/><path id="arc-rsvp-b" fill="none" d="M60.5,37.5 A23,23 0 0 1 14.5,37.5"/><circle class="type-btn__seal" cx="14.5" cy="37.5" r="2"/><circle class="type-btn__seal" cx="60.5" cy="37.5" r="2"/><text text-anchor="middle"><textPath href="#arc-rsvp-t" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text><text text-anchor="middle"><textPath href="#arc-rsvp-b" startOffset="50%"><?php esc_html_e('RSVP', 'nop-indieweb' ); ?></textPath></text></svg>
-				</button>
+				<?php endforeach; ?>
 				</div><!-- .type-grid -->
 			</div><!-- .type-grid-wrap -->
 
 			<div class="compose-fields">
 				<div class="docket" id="docket">
 
-				<!-- Filing line — kind · serial · date · clear (filled by switchType).
-				     The clear button is the only interactive element on the filing
-				     line, so aria-hidden lives on the inner spans, not the wrapper. -->
+				<!-- Filing line — kind (+ Clear, kept well away from Save) on the left;
+				     Sent · Drafts · Save on the right. Serial and date live in the
+				     masthead ticker, so they aren't repeated here. -->
 				<div class="docket__header" id="docketHeader">
 					<!-- The kind label doubles as the explainer toggle: tap it to reveal
 					     a one-line "what & when" for the current kind (#kindInfo). -->
@@ -633,8 +813,9 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<svg class="docket__kind-i" width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-4,48a12,12,0,1,1-12,12A12,12,0,0,1,124,72Zm12,112a16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40a8,8,0,0,1,0,16Z"/></svg>
 						<span class="sr-only"><?php esc_html_e( '— what this kind is for', 'nop-indieweb' ); ?></span>
 					</button>
-					<span class="docket__serial" id="docketSerial" aria-hidden="true"></span>
-					<span class="docket__date" id="docketDate" aria-hidden="true"></span>
+					<button type="button" class="docket__clear" id="clearBtn" hidden>
+						<?php esc_html_e( 'Clear', 'nop-indieweb' ); ?>
+					</button>
 					<button type="button" class="docket__action" id="sentBtn">
 						<?php esc_html_e( 'Sent', 'nop-indieweb' ); ?><span class="docket__badge" id="sentCount" hidden></span>
 					</button>
@@ -643,9 +824,6 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</button>
 					<button type="button" class="docket__action" id="saveDraftBtn">
 						<?php esc_html_e( 'Save', 'nop-indieweb' ); ?>
-					</button>
-					<button type="button" class="docket__clear" id="clearBtn" hidden>
-						<?php esc_html_e( 'Clear', 'nop-indieweb' ); ?>
 					</button>
 				</div>
 				<!-- Inline kind explainer — populated/toggled from index.js. -->
@@ -747,7 +925,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 					<div class="story-picker" id="storyPicker">
 						<input type="file" id="storyInput" accept="image/*,video/*">
 						<button type="button" class="story-picker__prompt" id="storyPrompt">
-							<span class="story-picker__icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,88h80v80H40Zm96-16V56h32V72Zm-16,0H88V56h32Zm0,112v16H88V184Zm16,0h32v16H136Zm0-16V88h80v80Zm80-96H184V56h32ZM72,56V72H40V56ZM40,184H72v16H40Zm176,16H184V184h32v16Z"/></svg></span>
+							<span class="story-picker__icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" focusable="false"><use href="#nop-kind-story"/></svg></span>
 							<p><?php esc_html_e( 'Pick a photo or short clip', 'nop-indieweb' ); ?></p>
 							<small><?php esc_html_e( 'A photo or short vertical video', 'nop-indieweb' ); ?></small>
 						</button>
@@ -777,7 +955,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<div class="field-group" id="fieldContent">
 					<label class="sr-only" for="content"><?php esc_html_e( 'Content', 'nop-indieweb' ); ?></label>
 					<div class="compose-wrap">
-						<textarea class="compose-field" id="content" rows="4"></textarea>
+						<textarea class="compose-field" id="content" rows="4" aria-describedby="composePrompt"></textarea>
 						<span class="compose-prompt" id="composePrompt" aria-hidden="true"></span>
 					</div>
 					<div class="compose-meta">
@@ -789,12 +967,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 				     reply) as a quiet "Add photos" link; the photo kind lifts it back above
 				     the pad as the full hero dropzone (CSS order). -->
 				<div class="field-group is-conditional" id="fieldPhoto" hidden>
-					<div class="photo-picker" id="photoPicker">
-						<input type="file" id="photoInput" accept="image/*" multiple>
+					<input type="file" id="photoInput" accept="image/*" multiple hidden>
+					<button type="button" class="photo-picker" id="photoPicker">
 						<span class="photo-picker-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 256 256" fill="currentColor"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.65-3.56L100.28,48h55.44l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></svg></span>
-						<p><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></p>
-						<small><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></small>
-					</div>
+						<span class="photo-picker__label"><?php esc_html_e( 'Add photos', 'nop-indieweb' ); ?></span>
+						<span class="photo-picker__hint"><?php esc_html_e( 'Up to 10', 'nop-indieweb' ); ?></span>
+					</button>
 					<div class="thumbnails" id="thumbnails"></div>
 					<div class="alt-texts" id="altTexts"></div>
 				</div>
@@ -854,7 +1032,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<?php if ( $top_tags ) : ?>
 						<div class="quick-tags" id="quickTags" aria-label="<?php esc_attr_e( 'Most used tags', 'nop-indieweb' ); ?>">
 							<?php foreach ( $top_tags as $quick_tag ) : ?>
-							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_tag ); ?>"><?php echo esc_html( $quick_tag ); ?></button>
+							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_tag ); ?>" aria-pressed="false"><?php echo esc_html( $quick_tag ); ?></button>
 							<?php endforeach; ?>
 						</div>
 						<?php endif; ?>
@@ -882,7 +1060,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 						<?php if ( $top_cats ) : ?>
 						<div class="quick-tags" id="quickCats" aria-label="<?php esc_attr_e( 'Most used categories', 'nop-indieweb' ); ?>">
 							<?php foreach ( $top_cats as $quick_cat ) : ?>
-							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_cat ); ?>"><?php echo esc_html( $quick_cat ); ?></button>
+							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_cat ); ?>" aria-pressed="false"><?php echo esc_html( $quick_cat ); ?></button>
 							<?php endforeach; ?>
 						</div>
 						<?php endif; ?>
@@ -964,11 +1142,11 @@ foreach ( [ '700', '800' ] as $weight ) {
 		<div id="view-progress" hidden>
 			<div class="progress-view">
 				<div class="progress-spinner" aria-hidden="true"></div>
-				<p class="progress-status" id="progressStatus" aria-live="polite"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
-				<div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+				<p class="progress-status" id="progressStatus" aria-live="polite" tabindex="-1"><?php esc_html_e( 'Posting…', 'nop-indieweb' ); ?></p>
+				<div class="progress-bar-track" role="progressbar" aria-label="<?php esc_attr_e( 'Posting progress', 'nop-indieweb' ); ?>" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
 					<div class="progress-bar-fill" id="progressFill"></div>
 				</div>
-				<button type="button" class="progress-undo" id="progressUndo" hidden><?php esc_html_e( 'Undo', 'nop-indieweb' ); ?></button>
+				<button type="button" class="progress-undo" id="progressUndo" data-view-focus hidden><?php esc_html_e( 'Undo', 'nop-indieweb' ); ?></button>
 			</div>
 		</div>
 
@@ -978,7 +1156,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 				<div class="success-hero">
 					<div class="success-banner">
 						<span class="success-check" aria-hidden="true"><svg width="28" height="28" aria-hidden="true" focusable="false"><use href="#nop-check"/></svg></span>
-						<h2><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
+						<h2 tabindex="-1" data-view-focus><?php esc_html_e( 'Posted', 'nop-indieweb' ); ?></h2>
 					</div>
 					<p class="success-streak" id="successStreak" hidden></p>
 				</div>
@@ -1018,7 +1196,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 		<div id="view-drafts" hidden>
 			<div class="drafts-view__scroll">
 				<header class="drafts-view__head">
-					<h2 class="drafts-view__title"><?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?></h2>
+					<h2 class="drafts-view__title" tabindex="-1" data-view-focus><?php esc_html_e( 'Drafts', 'nop-indieweb' ); ?></h2>
 				</header>
 				<div class="drafts-view__list" id="draftsList"></div>
 			</div>
@@ -1032,7 +1210,7 @@ foreach ( [ '700', '800' ] as $weight ) {
 		<div id="view-sent" hidden>
 			<div class="drafts-view__scroll sent-view__scroll">
 				<header class="drafts-view__head">
-					<h2 class="drafts-view__title"><?php esc_html_e( 'Sent', 'nop-indieweb' ); ?></h2>
+					<h2 class="drafts-view__title" tabindex="-1" data-view-focus><?php esc_html_e( 'Sent', 'nop-indieweb' ); ?></h2>
 				</header>
 				<div class="drafts-view__list sent-view__list" id="sentList" aria-live="polite"></div>
 			</div>
@@ -1070,6 +1248,7 @@ window.NOP = {
 		swUrl:       <?php echo wp_json_encode( home_url( '/post?sw=1' ) ); ?>,
 		swScope:     <?php echo wp_json_encode( wp_parse_url( home_url( '/post' ), PHP_URL_PATH ) ?: '/post' ); ?>,
 		nonceUrl:    <?php echo wp_json_encode( home_url( '/post?nonce=1' ) ); ?>,
+		l10n:        <?php echo wp_json_encode( $this->js_strings() ); ?>,
 };
 </script>
 <script src="<?php echo esc_url( $post_js_url ); ?>" defer></script>

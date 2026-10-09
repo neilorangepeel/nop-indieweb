@@ -11,6 +11,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	var NOP = window.NOP || {};
 
+	// Translations arrive inline from PHP (NOP.l10n: English source → translated;
+	// see Posting_Page::js_strings), so they work offline with the cached shell. A
+	// missing entry falls back to the English source string.
+	var L10N = NOP.l10n || {};
+	function __( s ) { return L10N[ s ] || s; }
+	function sprintf( s ) {
+		var a = arguments, i = 1;
+		return s.replace( /%(?:(\d+)\$)?s/g, function ( m, n ) { return n ? a[ +n ] : a[ i++ ]; } );
+	}
+
 
 	// Register the service worker — installs the app shell so /post opens offline.
 	if ( 'serviceWorker' in navigator ) {
@@ -19,7 +29,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	var DRAFT_KEY    = 'nop_post_draft';
 	var CHAR_LIMITS  = { bluesky: 300, mastodon: 500, pixelfed: 500 };
-	var NOTE_PROMPTS = [ "What's happening?", "Seen anything good?", "A thought…", "What's on your mind?", "Share something…" ];
+	var NOTE_PROMPTS = [ __( "What's happening?" ), __( 'Seen anything good?' ), __( 'A thought…' ), __( "What's on your mind?" ), __( 'Share something…' ) ];
 	var notePrompt   = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
 	var restoring    = false;
 
@@ -34,8 +44,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Clock + time-of-day device ──────────────────────────────────────────────
 
-	var DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-	var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+	// Day + month names in the page's language (Intl), e.g. "Thu 8 Oct" in en-GB.
+	var DATE_FMT = new Intl.DateTimeFormat( document.documentElement.lang || undefined, { weekday: 'short', day: 'numeric', month: 'short' } );
 
 	var deviceTimeEl = document.getElementById( 'deviceTime' );
 	// The masthead serial — shown in the ticker; bumped by one each time a post is
@@ -74,14 +84,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function updateClock() {
 		var now  = new Date();
 		var time = String( now.getHours() ).padStart( 2, '0' ) + ':' + String( now.getMinutes() ).padStart( 2, '0' );
-		var date = DAYS[ now.getDay() ] + ' ' + now.getDate() + ' ' + MONTHS[ now.getMonth() ];
+		var date = DATE_FMT.format( now ).replace( ',', '' );
 		if ( time !== lastTime ) {
 			if ( deviceTimeEl ) { deviceTimeEl.textContent = time; }
 			tkTime = time;   // separate ticker items: date · time
 			tkDate = date;
 			setTk( 'tk-time', tkTime );
 			setTk( 'tk-date', tkDate );
-			if ( lastPostTs ) { setTk( 'tk-last', 'Last: ' + tkAgo( lastPostTs ) ); }
+			if ( lastPostTs ) { setTk( 'tk-last', sprintf( __( 'Last: %s' ), tkAgo( lastPostTs ) ) ); }
 			refreshLight();                                            // golden/daylight/blue tick; rebuild if the set changed
 			lastTime = time;
 		}
@@ -107,7 +117,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// resolved /now rebuilds once (renderTicker).
 	var tickerTrack = document.getElementById( 'tickerTrack' );
 	var TK_SPEED    = 24;                          // px/sec crawl (slow, ambient)
-	var TK_ID_PRE   = 'No. ';                 // spelled out — Brandon has no № glyph
+	var TK_ID_PRE   = __( 'No.' ) + ' ';                 // spelled out — Brandon has no № glyph
 	var tkTime = '', tkDate = '', tkPlace = '', tkTemp = '', tkSky = '';
 	var tkSunset   = 0;                            // Unix sunset (from /now) → golden hour
 	var tkSunrise  = 0;                            // Unix sunrise (from /now) → daylight / dawn
@@ -123,9 +133,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function tkGolden() {
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 ), start = tkSunset - 3600;
-		if ( now < start )    { return 'Golden: ' + tkDur( start - now ); }
-		if ( now < tkSunset ) { return 'Golden: now'; }
-		return 'Sunset: ' + tkClock( tkSunset );
+		if ( now < start )    { return sprintf( __( 'Golden: %s' ), tkDur( start - now ) ); }
+		if ( now < tkSunset ) { return __( 'Golden: now' ); }
+		return sprintf( __( 'Sunset: %s' ), tkClock( tkSunset ) );
 	}
 	// Daylight remaining by day; the next sunrise by night — the LIGHT group's
 	// anchor either side of dusk.
@@ -133,11 +143,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 );
 		if ( tkSunrise && now >= tkSunrise && now < tkSunset ) {
-			return 'Daylight: ' + tkDur( tkSunset - now );
+			return sprintf( __( 'Daylight: %s' ), tkDur( tkSunset - now ) );
 		}
 		if ( tkSunrise ) {
 			var sr = now >= tkSunset ? tkSunrise + 86400 : tkSunrise;   // past sunset → ~tomorrow's
-			return 'Sunrise: ' + tkClock( sr );
+			return sprintf( __( 'Sunrise: %s' ), tkClock( sr ) );
 		}
 		return '';
 	}
@@ -147,19 +157,19 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! tkSunset ) { return ''; }
 		var now = Math.floor( Date.now() / 1000 ), start = tkSunset + 10 * 60, end = tkSunset + 35 * 60;
 		if ( now < tkSunset - 3600 || now >= end ) { return ''; }
-		return now >= start ? 'Blue: now' : 'Blue: ' + tkClock( start );
+		return now >= start ? __( 'Blue: now' ) : sprintf( __( 'Blue: %s' ), tkClock( start ) );
 	}
 	// Pirate Weather moonPhase (0..1) → a plain phase name. Text, not a glyph:
 	// keeps the riso-icon count down and never doubles the sky item's night moon.
 	function moonLabel( p ) {
-		if ( p <= 0.02 || p > 0.98 ) { return 'new moon'; }
-		if ( p < 0.24 )  { return 'waxing crescent'; }
-		if ( p <= 0.26 ) { return 'first quarter'; }
-		if ( p < 0.49 )  { return 'waxing gibbous'; }
-		if ( p <= 0.51 ) { return 'full moon'; }
-		if ( p < 0.74 )  { return 'waning gibbous'; }
-		if ( p <= 0.76 ) { return 'last quarter'; }
-		return 'waning crescent';
+		if ( p <= 0.02 || p > 0.98 ) { return __( 'new moon' ); }
+		if ( p < 0.24 )  { return __( 'waxing crescent' ); }
+		if ( p <= 0.26 ) { return __( 'first quarter' ); }
+		if ( p < 0.49 )  { return __( 'waxing gibbous' ); }
+		if ( p <= 0.51 ) { return __( 'full moon' ); }
+		if ( p < 0.74 )  { return __( 'waning gibbous' ); }
+		if ( p <= 0.76 ) { return __( 'last quarter' ); }
+		return __( 'waning crescent' );
 	}
 	function tkClock( ts ) {
 		var d = new Date( ts * 1000 );
@@ -167,22 +177,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	function tkAgo( ts ) {
 		var s = Math.floor( Date.now() / 1000 ) - ts;
-		if ( s < 90 ) { return 'just now'; }
-		var m = Math.round( s / 60 ); if ( m < 60 ) { return m + 'm ago'; }
-		var h = Math.round( m / 60 ); if ( h < 24 ) { return h + 'h ago'; }
-		var d = Math.round( h / 24 ); if ( d < 7 )  { return d + 'd ago'; }
-		return Math.round( d / 7 ) + 'w ago';
+		if ( s < 90 ) { return __( 'just now' ); }
+		var m = Math.round( s / 60 ); if ( m < 60 ) { return sprintf( __( '%sm ago' ), m ); }
+		var h = Math.round( m / 60 ); if ( h < 24 ) { return sprintf( __( '%sh ago' ), h ); }
+		var d = Math.round( h / 24 ); if ( d < 7 )  { return sprintf( __( '%sd ago' ), d ); }
+		return sprintf( __( '%sw ago' ), Math.round( d / 7 ) );
 	}
-	function tkCadence() { return ordinal( postsToday + 1 ) + ' today'; }
+	function tkCadence() { return sprintf( __( '%s today' ), ordinal( postsToday + 1 ) ); }
 	// Days to the next solstice/equinox — an occasional seasonal note, surfaced
 	// only within a fortnight so it stays special. Approximate fixed dates.
 	function tkSeason() {
 		var now = new Date(), y = now.getFullYear();
-		var marks = [ [ 2, 20, 'Spr Equinox' ], [ 5, 21, 'Sum Solstice' ], [ 8, 22, 'Aut Equinox' ], [ 11, 21, 'Win Solstice' ] ];
+		var marks = [ [ 2, 20, __( 'Spr Equinox' ) ], [ 5, 21, __( 'Sum Solstice' ) ], [ 8, 22, __( 'Aut Equinox' ) ], [ 11, 21, __( 'Win Solstice' ) ] ];
 		var today = new Date( y, now.getMonth(), now.getDate() );
 		for ( var i = 0; i < marks.length; i++ ) {
 			var days = Math.round( ( new Date( y, marks[ i ][ 0 ], marks[ i ][ 1 ] ) - today ) / 86400000 );
-			if ( days >= 0 && days <= 14 ) { return marks[ i ][ 2 ] + ': ' + ( days === 0 ? 'today' : days + 'd' ); }
+			if ( days >= 0 && days <= 14 ) { return marks[ i ][ 2 ] + ': ' + ( days === 0 ? __( 'today' ) : sprintf( __( '%sd' ), days ) ); }
 		}
 		return '';
 	}
@@ -190,11 +200,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function tkWeek() {
 		var d = new Date(), t = new Date( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) );
 		t.setUTCDate( t.getUTCDate() + 4 - ( t.getUTCDay() || 7 ) );   // shift to the ISO week's Thursday
-		return 'Wk ' + Math.ceil( ( ( t - new Date( Date.UTC( t.getUTCFullYear(), 0, 1 ) ) ) / 86400000 + 1 ) / 7 );
+		return sprintf( __( 'Wk %s' ), Math.ceil( ( ( t - new Date( Date.UTC( t.getUTCFullYear(), 0, 1 ) ) ) / 86400000 + 1 ) / 7 ) );
 	}
 	function tkDayOfYear() {
 		var d = new Date();
-		return 'Day ' + Math.round( ( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) - Date.UTC( d.getFullYear(), 0, 0 ) ) / 86400000 );
+		return sprintf( __( 'Day %s' ), Math.round( ( Date.UTC( d.getFullYear(), d.getMonth(), d.getDate() ) - Date.UTC( d.getFullYear(), 0, 0 ) ) / 86400000 ) );
 	}
 	// The LIGHT group adapts to the time of day: golden hour always (once /now has
 	// resolved), daylight-left by day or the next sunrise by night, blue hour around
@@ -208,7 +218,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var dl = tkDaylight();
 		if ( dl ) { out.push( { c: 'tk-daylight', h: dl } ); }
 		var isNight = ! ( tkSunrise && now >= tkSunrise && now < tkSunset );
-		if ( isNight && tkMoon ) { out.push( { c: 'tk-moon', h: 'Moon: ' + tkMoon } ); }
+		if ( isNight && tkMoon ) { out.push( { c: 'tk-moon', h: sprintf( __( 'Moon: %s' ), tkMoon ) } ); }
 		return out;
 	}
 	// Four labelled clusters reading out of the logo: NOW (the moment) · HERE
@@ -224,23 +234,23 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( season ) { nowG.push( { c: 'tk-season', h: season } ); }
 
 		var here = [];
-		if ( tkPlace ) { here.push( { c: 'tk-place', h: tkPlace } ); }
+		if ( tkPlace ) { here.push( { c: 'tk-place', h: escHtml( tkPlace ) } ); }
 		if ( tkTemp )  { here.push( { c: 'tk-temp',  h: tkTemp } ); }
 		if ( tkSky )   { here.push( { c: 'tk-sky',   h: tkSky } ); }
 
 		var log = [];
-		if ( ! navigator.onLine ) { log.push( { c: 'tk-offline', h: 'Offline' } ); }
+		if ( ! navigator.onLine ) { log.push( { c: 'tk-offline', h: __( 'Offline' ) } ); }
 		log.push( { c: 'tk-id', h: TK_ID_PRE + nextSerial } );
-		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: 'Queue: ' + queueCount } ); }
+		if ( queueCount > 0 ) { log.push( { c: 'tk-queue', h: sprintf( __( 'Queue: %s' ), queueCount ) } ); }
 		log.push( { c: 'tk-cadence', h: tkCadence() } );
-		if ( lastPostTs ) { log.push( { c: 'tk-last', h: 'Last: ' + tkAgo( lastPostTs ) } ); }
+		if ( lastPostTs ) { log.push( { c: 'tk-last', h: sprintf( __( 'Last: %s' ), tkAgo( lastPostTs ) ) } ); }
 
 		var groups = [];
-		if ( nowG.length ) { groups.push( { label: 'NOW',  items: nowG } ); }
-		if ( here.length ) { groups.push( { label: 'HERE', items: here } ); }
+		if ( nowG.length ) { groups.push( { label: __( 'NOW' ),  items: nowG } ); }
+		if ( here.length ) { groups.push( { label: __( 'HERE' ), items: here } ); }
 		var light = tkLight();
-		if ( light.length ) { groups.push( { label: 'LIGHT', items: light } ); }
-		groups.push( { label: 'LOG', items: log } );
+		if ( light.length ) { groups.push( { label: __( 'LIGHT' ), items: light } ); }
+		groups.push( { label: __( 'LOG' ), items: log } );
 		return groups;
 	}
 	// Each group renders as: a tracked uppercase heading (the divider — no icon),
@@ -473,7 +483,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		tkSky = '';
 		if ( d.summary || d.icon ) {
 			var icon = WX_ICON[ d.icon ] || '';
-			tkSky = ( icon ? '<span class="ticker__icon" aria-hidden="true">' + icon + '</span>' : '' ) + ( d.summary || '' );
+			tkSky = ( icon ? '<span class="ticker__icon" aria-hidden="true">' + icon + '</span>' : '' ) + escHtml( d.summary || '' );
 		}
 		tkSunset  = d.sunset  ? Number( d.sunset )  : 0;   // golden hour / daylight derive from this
 		tkSunrise = d.sunrise ? Number( d.sunrise ) : 0;   // daylight-left + the dawn readout
@@ -540,11 +550,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var geo    = readJSON( GEO_KEY );
 		if ( geo && geo.lat != null ) { geoLat = geo.lat; geoLon = geo.lon; }   // seed coords for the geotag
 		var useful = cached && isUsefulNow( cached.data );
-		console.info( '[nop /now] startup', {
-			nowAgeMin: cached ? Math.round( ( Date.now() - cached.ts ) / 60000 ) : 'no-cache',
-			nowUseful: useful,
-			geoAgeMin: geo ? Math.round( ( Date.now() - geo.ts ) / 60000 ) : 'no-cache',
-		} );
 		if ( useful ) { renderNow( cached.data ); }                                          // paint instantly
 		if ( useful && ( Date.now() - cached.ts ) < NOW_TTL ) { return; }                    // still fresh
 		withCoords( fetchNow, allowPrompt );
@@ -566,15 +571,15 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Type configuration ────────────────────────────────────────────────────
 
 	var TYPE_CONFIG = {
-		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'Write a note…', contentHint: 'Write a note, or add a photo.' },
-		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: 'What are we looking at?' },
-		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: 'In reply to', contentPlaceholder: 'Say your piece…', urlHint: "Paste the URL you're replying to" },
-		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: 'Liking', urlHint: "Paste the URL you're liking" },
-		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: 'Bookmarking', contentPlaceholder: 'A note to future you…', urlHint: 'Paste the URL to bookmark' },
-		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: 'Reposting', urlHint: "Paste the URL you're reposting" },
-		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: 'The quote itself…', contentHint: 'Add the quote itself.' },
-		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasStoryMedia: true, hasLocation: true, contentPlaceholder: 'Add a caption (optional)…' },
-		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: 'Event', contentPlaceholder: 'Add a word (optional)…', hasRsvp: true, urlHint: "Paste the event's URL" },
+		note:     { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: __( 'Write a note…' ), contentHint: __( 'Write a note, or add a photo.' ) },
+		photo:    { urlProp: null,           hasContent: true,  hasTags: true,  hasPhoto: true, hasLocation: true, contentPlaceholder: __( 'What are we looking at?' ) },
+		reply:    { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, hasPhoto: true, urlLabel: __( 'In reply to' ), contentPlaceholder: __( 'Say your piece…' ), urlHint: __( "Paste the URL you're replying to" ) },
+		like:     { urlProp: 'like-of',      hasContent: false, hasTags: false, urlLabel: __( 'Liking' ), urlHint: __( "Paste the URL you're liking" ) },
+		bookmark: { urlProp: 'bookmark-of',  hasContent: true,  hasTags: true,  urlLabel: __( 'Bookmarking' ), contentPlaceholder: __( 'A note to future you…' ), urlHint: __( 'Paste the URL to bookmark' ) },
+		repost:   { urlProp: 'repost-of',    hasContent: false, hasTags: false, urlLabel: __( 'Reposting' ), urlHint: __( "Paste the URL you're reposting" ) },
+		quote:    { urlProp: null,           hasContent: true,  hasTags: true,  hasCite: true, hasQuoteLink: true, hasQuoteComment: true, contentPlaceholder: __( 'The quote itself…' ), contentHint: __( 'Add the quote itself.' ) },
+		story:    { urlProp: null,           hasContent: true,  hasTags: true,  hasStoryMedia: true, hasLocation: true, contentPlaceholder: __( 'Add a caption (optional)…' ) },
+		rsvp:     { urlProp: 'in-reply-to',  hasContent: true,  hasTags: false, urlLabel: __( 'Event' ), contentPlaceholder: __( 'Add a word (optional)…' ), hasRsvp: true, urlHint: __( "Paste the event's URL" ) },
 	};
 
 	var currentType   = 'note';
@@ -598,8 +603,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var picker       = document.getElementById( 'photoPicker' );
 	var docket       = document.getElementById( 'docket' );
 	var docketKind   = document.getElementById( 'docketKind' );
-	var docketSerial = document.getElementById( 'docketSerial' );
-	var docketDate   = document.getElementById( 'docketDate' );
 	var kindInfoToggle = document.getElementById( 'kindInfoToggle' );
 	var kindInfo       = document.getElementById( 'kindInfo' );
 	var clearBtn     = document.getElementById( 'clearBtn' );
@@ -626,7 +629,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	var scheduleTime    = document.getElementById( 'scheduleTime' );
 	var scheduleFields  = document.getElementById( 'scheduleFields' );
 	var postLabel       = document.querySelector( '.btn-primary__label' );
-	var postLabelText   = postLabel ? postLabel.textContent : 'Post';   // the i18n'd "Post"
+	var postLabelText   = postLabel ? postLabel.textContent : __( 'Post' );   // the i18n'd "Post"
 	var saveDraftBtn    = document.getElementById( 'saveDraftBtn' );
 	var draftsBtn       = document.getElementById( 'draftsBtn' );
 	var draftsCount     = document.getElementById( 'draftsCount' );
@@ -695,7 +698,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// The POST pill reads "Schedule" once a valid future time is set, else "Post".
 	function updatePostLabel() {
-		if ( postLabel ) { postLabel.textContent = getScheduledAt() ? 'Schedule' : postLabelText; }
+		if ( postLabel ) { postLabel.textContent = getScheduledAt() ? __( 'Schedule' ) : postLabelText; }
 		updateScheduleNote();
 	}
 
@@ -731,8 +734,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function fillDocketHeader( type ) {
 		var lbl = document.querySelector( '.type-btn[data-type="' + type + '"] .type-btn__label' );
 		if ( docketKind )   { docketKind.textContent = lbl ? lbl.textContent : type; }
-		if ( docketSerial ) { docketSerial.textContent = TK_ID_PRE + nextSerial; }
-		if ( docketDate )   { var n = new Date(), p = function ( v ) { return ( v < 10 ? '0' : '' ) + v; }; docketDate.textContent = p( n.getDate() ) + '/' + p( n.getMonth() + 1 ) + '/' + n.getFullYear(); }
 		// Refresh the inline explainer for the new kind (stays in sync whether the
 		// panel is open or closed, so flipping through kinds reads each one's blurb).
 		if ( kindInfo ) { kindInfo.textContent = ( NOP.kindInfo && NOP.kindInfo[ type ] ) || ''; }
@@ -983,7 +984,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} else {
 			specimenPath.hidden = true;
 			if ( specimenTitle ) { specimenTitle.hidden = true; }
-			specimenHint.textContent = cfg.urlHint || 'Paste a URL';
+			specimenHint.textContent = cfg.urlHint || __( 'Paste a URL' );
 			specimenGlyph.innerHTML = '';
 			var icon = document.querySelector( '.type-btn[data-type="' + currentType + '"] .type-btn__icon svg' );
 			if ( icon ) {
@@ -1015,14 +1016,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! eventStatus ) { return; }
 		var msg = '';
 		if ( state === 'loading' ) {
-			msg = 'Fetching event details…';
+			msg = __( 'Fetching event details…' );
 		} else if ( state === 'found' ) {
 			var label = EVENT_SOURCE_LABEL[ source ];
-			msg = label ? ( 'Found via ' + label + '.' ) : 'Found event details.';
+			msg = label ? sprintf( __( 'Found via %s.' ), label ) : __( 'Found event details.' );
 		} else if ( state === 'thin' ) {
-			msg = 'Only the page title was readable — please fill in the details.';
+			msg = __( 'Only the page title was readable — please fill in the details.' );
 		} else if ( state === 'empty' || state === 'error' ) {
-			msg = 'Couldn’t find event data — please fill in manually.';
+			msg = __( 'Couldn’t find event data — please fill in manually.' );
 		}
 		eventStatus.textContent = msg;
 		eventStatus.hidden      = ! msg;
@@ -1150,7 +1151,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 		var label = locationLabel();
 		locationPlace.hidden = false;
-		locationPlace.textContent = label || ( geoLat != null ? '…' : 'Locating…' );
+		locationPlace.textContent = label || ( geoLat != null ? '…' : __( 'Locating…' ) );
 	}
 
 	if ( locationCheck ) {
@@ -1217,6 +1218,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				items.splice( parseInt( btn.dataset.index, 10 ), 1 );
 				render();
 				saveDraft();
+				input.focus();   // the re-render removed the focused button; land somewhere sane
 				return;
 			}
 			input.focus();
@@ -1226,12 +1228,16 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// no space at rest. Tap to add, tap again to remove; stays in sync with
 		// the chip list however a term was added/removed (see render below).
 		if ( quick ) {
+			// Open while focus is anywhere in the row — the input OR a chip, so Tab can
+			// walk into the panel without it folding away under the keyboard.
 			var foldTimer;
-			input.addEventListener( 'focus', function () {
+			var row = quick.parentNode;
+			row.addEventListener( 'focusin', function () {
 				clearTimeout( foldTimer );
 				quick.classList.add( 'is-open' );
 			} );
-			input.addEventListener( 'blur', function () {
+			row.addEventListener( 'focusout', function ( e ) {
+				if ( row.contains( e.relatedTarget ) ) { return; }
 				// Delay the fold so a chip tap (which momentarily blurs the input)
 				// doesn't collapse the panel mid-interaction — the click handler
 				// re-focuses the input, cancelling this.
@@ -1280,7 +1286,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		function syncUsed() {
 			if ( ! quick ) { return; }
 			quick.querySelectorAll( '.quick-tag' ).forEach( function (b) {
-				b.classList.toggle( 'is-used', items.indexOf( b.dataset.tag ) !== -1 );
+				var used = items.indexOf( b.dataset.tag ) !== -1;
+				b.classList.toggle( 'is-used', used );
+				b.setAttribute( 'aria-pressed', used ? 'true' : 'false' );
 			} );
 		}
 
@@ -1319,7 +1327,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			}
 		} );
 
-		input.addEventListener( 'blur', function () {
+		input.addEventListener( 'blur', function ( e ) {
+			// Tabbing into the suggestions isn't "done typing" — committing here would
+			// re-render the panel and destroy the chip that's taking focus.
+			if ( quick && quick.contains( e.relatedTarget ) ) { return; }
 			add( input.value );
 		} );
 
@@ -1330,6 +1341,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				render();
 				saveDraft();
 			}
+			// Only reset the panel when a query had swapped it out — re-rendering an
+			// untouched panel on every blur would drop keyboard focus on the floor.
+			if ( raw === '' ) { return; }
 			input.value = '';
 			clearTimeout( searchTimer );
 			renderQuick( defaultQuick );
@@ -1339,7 +1353,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			chipsEl.innerHTML = items.map( function (name, i) {
 				return '<span class="tag-chip">'
 					+ escHtml( name )
-					+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="Remove ' + escAttr( name ) + '"><svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg></button>'
+					+ '<button class="tag-chip__remove" type="button" data-index="' + i + '" aria-label="' + escHtml( sprintf( __( 'Remove %s' ), name ) ) + '"><svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg></button>'
 					+ '</span>';
 			} ).join( '' );
 			syncUsed();
@@ -1444,9 +1458,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( docket ) { docket.classList.toggle( 'docket--body-only', ! cfg.urlProp && ! cfg.hasPhoto && ! cfg.hasRsvp ); }
 		fillDocketHeader( type );
 
-		if ( cfg.urlProp ) urlInput.setAttribute( 'aria-label', cfg.urlLabel || 'URL' );
+		if ( cfg.urlProp ) urlInput.setAttribute( 'aria-label', cfg.urlLabel || __( 'URL' ) );
 		if ( cfg.hasContent ) {
-			setPrompt( ( type === 'note' ) ? notePlaceholder() : ( cfg.contentPlaceholder || 'Write…' ) );
+			setPrompt( ( type === 'note' ) ? notePlaceholder() : ( cfg.contentPlaceholder || __( 'Write…' ) ) );
 		}
 
 		updateSpecimen();
@@ -1497,17 +1511,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function postReadiness() {
 		var cfg = TYPE_CONFIG[ currentType ];
 		if ( cfg.hasStoryMedia ) {
-			return ( storyVideo || storyPhoto ) ? null : { hint: 'Pick a photo or a short clip.', focus: storyPrompt };
+			return ( storyVideo || storyPhoto ) ? null : { hint: __( 'Pick a photo or a short clip.' ), focus: storyPrompt };
 		}
 		if ( currentType === 'photo' ) {
-			return selectedFiles.length > 0 ? null : { hint: 'Add at least one photo.', focus: picker };
+			return selectedFiles.length > 0 ? null : { hint: __( 'Add at least one photo.' ), focus: picker };
 		}
 		if ( cfg.urlProp ) {
-			return urlInput.value.trim().length > 0 ? null : { hint: cfg.urlHint || 'Paste a link first.', focus: urlInput };
+			return urlInput.value.trim().length > 0 ? null : { hint: cfg.urlHint || __( 'Paste a link first.' ), focus: urlInput };
 		}
 		// A note posts on text alone, or on an attached image alone.
 		if ( contentInput.value.trim().length > 0 || ( cfg.hasPhoto && selectedFiles.length > 0 ) ) { return null; }
-		return { hint: cfg.contentHint || 'Write something first.', focus: contentInput };
+		return { hint: cfg.contentHint || __( 'Write something first.' ), focus: contentInput };
 	}
 
 	function updatePostBtn() {
@@ -1624,7 +1638,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( navigator.vibrate ) { navigator.vibrate( 8 ); }
 			var snapshot = formToPost();   // keeps photo/story blobs + alts, unlike the saved draft
 			clearFields();
-			showToast( 'Cleared', null, { label: 'Undo', onTap: function () { restoreSnapshot( snapshot ); } } );
+			showToast( __( 'Cleared' ), null, { label: __( 'Undo' ), onTap: function () { restoreSnapshot( snapshot ); } } );
 		} );
 	}
 
@@ -1764,7 +1778,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			cell.appendChild( img );
 			var altFlag = document.createElement( 'span' );
 			altFlag.className   = 'thumb__altflag';
-			altFlag.textContent = 'ALT?';
+			altFlag.textContent = __( 'ALT?' );
 			altFlag.setAttribute( 'aria-hidden', 'true' );
 			cell.appendChild( altFlag );
 			// Ordinal badge — ties each print to its "Alt text N" slip below. Only when
@@ -1781,7 +1795,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			rm.className     = 'thumb__remove';
 			rm.dataset.index = i;
 			rm.innerHTML     = '<svg width="14" height="14" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>';
-			rm.setAttribute( 'aria-label', 'Remove photo ' + ( i + 1 ) );
+			rm.setAttribute( 'aria-label', sprintf( __( 'Remove photo %s' ), i + 1 ) );
 			cell.appendChild( rm );
 			thumbs.appendChild( cell );
 
@@ -1790,23 +1804,23 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var lbl   = document.createElement( 'span' );
 			lbl.className = 'alt-text-label';
 			lbl.textContent = selectedFiles.length > 1
-				? 'Alt text ' + ( i + 1 )
-				: 'Alt text';
+				? sprintf( __( 'Alt text %s' ), i + 1 )
+				: __( 'Alt text' );
 			var alt           = document.createElement( 'input' );
 			alt.type          = 'text';
 			alt.className     = 'thumb__alt';
-			alt.placeholder   = 'Describe it…';
+			alt.placeholder   = __( 'Describe it…' );
 			alt.autocomplete  = 'off';
 			alt.value         = photoAlts[ i ] || '';
 			alt.dataset.index = i;
-			alt.setAttribute( 'aria-label', 'Alt text for photo ' + ( i + 1 ) );
+			alt.setAttribute( 'aria-label', sprintf( __( 'Alt text for photo %s' ), i + 1 ) );
 			row.appendChild( lbl );
 			row.appendChild( alt );
 			altTexts.appendChild( row );
 		} );
-		picker.querySelector( 'p' ).textContent = selectedFiles.length
-			? selectedFiles.length + ' selected'
-			: 'Add photos';
+		picker.querySelector( '.photo-picker__label' ).textContent = selectedFiles.length
+			? sprintf( __( '%s selected' ), selectedFiles.length )
+			: __( 'Add photos' );
 		updatePostBtn();
 	}
 	function handleFiles( files ) {
@@ -1929,9 +1943,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			&& post.files.some( function ( f ) { return ! ( f.alt || '' ).trim(); } ) ) {
 			var missing = post.files.filter( function ( f ) { return ! ( f.alt || '' ).trim(); } ).length;
 			showToast(
-				missing + ( missing === 1 ? ' photo needs' : ' photos need' ) + ' alt text',
+				missing === 1 ? sprintf( __( '%s photo needs alt text' ), missing ) : sprintf( __( '%s photos need alt text' ), missing ),
 				'error',
-				{ label: 'Post anyway', onTap: function () { altWarningDismissed = true; submitPost(); } }
+				{ label: __( 'Post anyway' ), onTap: function () { altWarningDismissed = true; submitPost(); } }
 			);
 			return;
 		}
@@ -1948,10 +1962,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			if ( await gracePeriod() ) { showView( 'compose' ); return; }
 			var result = await sendPost( post, setProgress );
 			recordKindUse( post.type );   // float this kind to the front next time
-			setProgress( 'Sharing…', 0.97 );
+			setProgress( __( 'Sharing…' ), 0.97 );
 			await delay( 600 );
+			// The caption goes on the clipboard, ready to paste into a network that
+			// doesn't syndicate — but say so: a silent clipboard overwrite loses whatever
+			// the author had copied.
+			var captionCopied = false;
 			if ( post.type === 'photo' && post.content ) {
-				await navigator.clipboard.writeText( post.content ).catch( function () {} );
+				await navigator.clipboard.writeText( post.content ).then( function () { captionCopied = true; } ).catch( function () {} );
 			}
 			await clearActiveDraft();   // a published draft leaves the drafts library
 			// Delivery receipts need the post ID — the response carries it only
@@ -1960,13 +1978,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var idMatch   = /[?&]post=(\d+)/.exec( result.editUrl || '' );
 			var receiptId = ( idMatch && ! post.scheduledAt && ! post.isPrivate && post.syndicateTo.length ) ? +idMatch[1] : 0;
 			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt, receiptId );
+			if ( captionCopied ) { showToast( __( 'Caption copied to clipboard' ) ); }
 		} catch ( err ) {
 			// A dropped connection mid-send → queue it rather than lose the post.
 			if ( window.indexedDB && ( ! navigator.onLine || err instanceof TypeError ) ) {
 				await queueAndAck( post );
 			} else {
 				showView( 'compose' );
-				showToast( 'Something went wrong: ' + err.message, 'error', { label: 'Try again', onTap: submitPost } );
+				showToast( sprintf( __( 'Something went wrong: %s' ), err.message ), 'error', { label: __( 'Try again' ), onTap: submitPost } );
 			}
 		} finally {
 			submitting = false;
@@ -2025,7 +2044,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var photoUrls = [];
 		if ( post.files && post.files.length ) {
 			for ( var i = 0; i < post.files.length; i++ ) {
-				if ( onProgress ) { onProgress( 'Uploading ' + ( i + 1 ) + ' of ' + post.files.length + '…', ( i / post.files.length ) * 0.75 ); }
+				if ( onProgress ) { onProgress( sprintf( __( 'Uploading %1$s of %2$s…' ), i + 1, post.files.length ), ( i / post.files.length ) * 0.75 ); }
 				var up = await uploadMedia( post.files[ i ].blob, post.files[ i ].name, post.files[ i ].type );
 				photoUrls.push( up.source_url );
 			}
@@ -2034,13 +2053,13 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		// server reuses the attachment rather than re-downloading.
 		var media = { videoUrl: '', posterUrl: '' };
 		if ( post.video && post.video.blob ) {
-			if ( onProgress ) { onProgress( 'Uploading video…', 0.45 ); }
+			if ( onProgress ) { onProgress( __( 'Uploading video…' ), 0.45 ); }
 			media.videoUrl = ( await uploadMedia( post.video.blob, post.video.name, post.video.type ) ).source_url;
 			if ( post.poster && post.poster.blob ) {
 				try { media.posterUrl = ( await uploadMedia( post.poster.blob, post.poster.name, post.poster.type ) ).source_url; } catch ( e ) {}
 			}
 		}
-		if ( onProgress ) { onProgress( 'Posting…', 0.88 ); }
+		if ( onProgress ) { onProgress( __( 'Posting…' ), 0.88 ); }
 		var response = await fetch( NOP.micropubUrl, {
 			method:  'POST',
 			headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
@@ -2048,7 +2067,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 		if ( response.status !== 201 ) {
 			var errBody = await response.json().catch( function () { return {}; } );
-			throw new Error( errBody.message || 'Posting failed (' + response.status + ')' );
+			throw new Error( errBody.message || sprintf( __( 'Posting failed (%s)' ), response.status ) );
 		}
 		return {
 			permalink: response.headers.get( 'Location' ) || '',
@@ -2196,7 +2215,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		} );
 		if ( ! res.ok ) {
 			var err = await res.json().catch( function () { return {}; } );
-			throw new Error( err.message || 'Upload failed (' + res.status + ')' );
+			throw new Error( err.message || sprintf( __( 'Upload failed (%s)' ), res.status ) );
 		}
 		var body = await res.json().catch( function () { return {}; } );
 		return { source_url: body.source_url || '' };
@@ -2319,17 +2338,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	async function queueAndAck( post ) {
 		try { await qAdd( post ); }
-		catch ( e ) { showView( 'compose' ); showToast( "Couldn't save offline: " + e.message, 'error' ); return; }
+		catch ( e ) { showView( 'compose' ); showToast( sprintf( __( "Couldn't save offline: %s" ), e.message ), 'error' ); return; }
 		setQueueCount( queueCount + 1 );        // show "Queue: N" in the ticker
 		recordKindUse( post.type );
 		resetForm();
 		if ( navigator.onLine ) {
 			// Online, but the send threw (timed out / dropped request). Don't imply it
 			// published — it's saved to the queue so nothing is lost, and we retry now.
-			showToast( "Couldn't reach the server — saved and retrying…", 'info' );
+			showToast( __( "Couldn't reach the server — saved and retrying…" ), 'info' );
 			replayQueue();
 		} else {
-			showToast( 'Saved — will post when you’re back online.', 'info' );
+			showToast( __( 'Saved — will post when you’re back online.' ), 'info' );
 		}
 	}
 
@@ -2348,10 +2367,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 					postsToday  += 1;
 					lastPostTs   = Math.floor( Date.now() / 1000 );
 					renderTicker();
-					showToast( 'Queued post published.', 'info' );
+					showToast( __( 'Queued post published.' ), 'info' );
 				} catch ( e ) {
 					if ( ! navigator.onLine || e instanceof TypeError ) { break; }  // still offline — keep the queue intact
-					showToast( 'A queued post failed: ' + e.message, 'error' );       // server error — stop, leave it for inspection
+					showToast( sprintf( __( 'A queued post failed: %s' ), e.message ), 'error' );       // server error — stop, leave it for inspection
 					break;
 				}
 			}
@@ -2383,25 +2402,33 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// two never drift. `withRetry` arms the failed state with a retry button.
 	function deliveryRow( it, postId, withRetry ) {
 		var label = escHtml( it.label || it.slug );
+		// The glyph is the visual state; the words are what assistive tech hears.
+		function mark( glyph, state ) { return '<span aria-hidden="true"> ' + glyph + '</span><span class="sr-only"> — ' + escHtml( state ) + '</span>'; }
+		// The network's reason, one tap away — a title tooltip never reaches a phone
+		// or a screen reader.
+		function why( err ) {
+			return err ? '<details class="delivery__why"><summary>' + escHtml( __( 'Why?' ) ) + '</summary><span>' + escHtml( err ) + '</span></details>' : '';
+		}
 		if ( it.state === 'sent' ) {
 			return it.url
-				? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a></li>'
-				: '<li class="delivery__row is-sent">' + label + ' ✓</li>';
+				? '<li class="delivery__row is-sent"><a href="' + escAttr( it.url ) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗<span class="sr-only"> ' + escHtml( __( '(opens in a new tab)' ) ) + '</span></a></li>'
+				: '<li class="delivery__row is-sent">' + label + mark( '✓', __( 'sent' ) ) + '</li>';
 		}
 		if ( it.state === 'failed' ) {
-			return '<li class="delivery__row is-failed" title="' + escAttr( it.error || '' ) + '">' + label + ' ✗'
+			return '<li class="delivery__row is-failed">' + label + mark( '✗', __( 'failed' ) )
 				+ ( withRetry
 					? '<button type="button" class="delivery__retry" data-post="' + escAttr( postId )
-						+ '" data-target="' + escAttr( it.slug ) + '">↻<span class="sr-only"> Retry ' + label + '</span></button>'
+						+ '" data-target="' + escAttr( it.slug ) + '">↻<span class="sr-only"> ' + escHtml( sprintf( __( 'Retry %s' ), it.label || it.slug ) ) + '</span></button>'
 					: '' )
+				+ why( it.error )
 				+ '</li>';
 		}
 		// 'skipped' is a decision, not a wait (a backdated post never queues), so
 		// it must not sit there looking like it's still going.
 		if ( it.state === 'skipped' ) {
-			return '<li class="delivery__row is-skipped" title="' + escAttr( it.error || '' ) + '">' + label + ' –</li>';
+			return '<li class="delivery__row is-skipped"><s>' + label + '</s>' + mark( '–', __( 'skipped' ) ) + why( it.error ) + '</li>';
 		}
-		return '<li class="delivery__row is-pending">' + label + '…</li>';
+		return '<li class="delivery__row is-pending">' + label + '<span aria-hidden="true">…</span><span class="sr-only"> — ' + escHtml( __( 'sending' ) ) + '</span></li>';
 	}
 
 	function renderDelivery( items ) {
@@ -2451,14 +2478,14 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( scheduledAt ) {
 			// A scheduled post isn't live yet — show when it'll publish, and leave
 			// today's streak + ticker untouched (nothing went out).
-			streakEl.innerHTML = '<span class="success-streak__label">Scheduled for '
-				+ escHtml( new Date( scheduledAt ).toLocaleString() ) + '</span>';
+			streakEl.innerHTML = '<span class="success-streak__label">'
+				+ escHtml( sprintf( __( 'Scheduled for %s' ), new Date( scheduledAt ).toLocaleString() ) ) + '</span>';
 			streakEl.hidden = false;
 		} else {
 			var count = bumpStreak();
 			if ( count > 0 ) {
 				streakEl.innerHTML = '<span class="success-streak__num">' + ordinal( count ) + '</span>'
-					+ '<span class="success-streak__label">post today</span>';
+					+ '<span class="success-streak__label">' + escHtml( __( 'post today' ) ) + '</span>';
 				streakEl.hidden = false;
 			} else {
 				streakEl.hidden = true;
@@ -2484,9 +2511,9 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		shareBtn.onclick = async function () {
 			if ( navigator.canShare && navigator.canShare( { files: selectedFiles } ) ) {
 				try { await navigator.share( { files: selectedFiles } ); }
-				catch ( e ) { if ( e.name !== 'AbortError' ) showToast( 'Share from your Photos app instead.', 'error' ); }
+				catch ( e ) { if ( e.name !== 'AbortError' ) showToast( __( 'Share from your Photos app instead.' ), 'error' ); }
 			} else {
-				showToast( "Web sharing isn't supported on this browser.", 'info' );
+				showToast( __( "Web sharing isn't supported on this browser." ), 'info' );
 			}
 		};
 
@@ -2496,8 +2523,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( copyBtn ) {
 			copyBtn.hidden = ! permalink;
 			copyBtn.onclick = async function () {
-				try { await navigator.clipboard.writeText( permalink ); showToast( 'Link copied' ); }
-				catch ( e ) { showToast( "Couldn't copy — long-press the link above.", 'error' ); }
+				try { await navigator.clipboard.writeText( permalink ); showToast( __( 'Link copied' ) ); }
+				catch ( e ) { showToast( __( "Couldn't copy — long-press the link above." ), 'error' ); }
 			};
 		}
 
@@ -2537,7 +2564,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
 		} );
 		thumbs.innerHTML = ''; altTexts.innerHTML = ''; photoInput.value = '';
-		picker.querySelector( 'p' ).textContent = 'Add photos';
+		picker.querySelector( '.photo-picker__label' ).textContent = __( 'Add photos' );
 		includeLocation = false;
 		if ( locationCheck ) { locationCheck.checked = false; }
 		updateLocationUI();
@@ -2552,7 +2579,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		clearContextPreview();
 		fetchedContextUrl = '';
 		notePrompt = NOTE_PROMPTS[ Math.floor( Math.random() * NOTE_PROMPTS.length ) ];
-		setPrompt( ( currentType === 'note' ) ? notePrompt : ( TYPE_CONFIG[ currentType ].contentPlaceholder || 'Write…' ) );
+		setPrompt( ( currentType === 'note' ) ? notePrompt : ( TYPE_CONFIG[ currentType ].contentPlaceholder || __( 'Write…' ) ) );
 		autoGrowContent();
 		growAllFields();
 		updateCounter();
@@ -2569,13 +2596,29 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
+	// The compose control that led away (Post, Sent, Drafts) — focus returns to it
+	// when the author comes back, so a keyboard or screen-reader user keeps their place.
+	var viewOpener = null;
 	function showView( name ) {
+		var leaving = document.getElementById( 'view-compose' );
+		if ( name !== 'compose' && ! leaving.hidden && leaving.contains( document.activeElement ) ) {
+			viewOpener = document.activeElement;
+		}
 		function swap() {
 			document.getElementById( 'view-compose'  ).hidden = name !== 'compose';
 			document.getElementById( 'view-progress' ).hidden = name !== 'progress';
 			document.getElementById( 'view-drafts'   ).hidden = name !== 'drafts';
 			document.getElementById( 'view-sent'     ).hidden = name !== 'sent';
 			document.getElementById( 'view-success'  ).hidden = name !== 'success';
+			// Never leave focus on a control that just disappeared: land on the new
+			// screen's heading, or back on the control that opened it.
+			var target;
+			if ( name === 'compose' ) {
+				target = ( viewOpener && viewOpener.isConnected && viewOpener.offsetParent ) ? viewOpener : postBtn;
+			} else {
+				target = Array.prototype.find.call( document.querySelectorAll( '#view-' + name + ' [data-view-focus]' ), function ( el ) { return ! el.hidden; } );
+			}
+			if ( target ) { target.focus( { preventScroll: true } ); }
 		}
 		// Cross-fade the swap where supported (Safari 18.2+); hard-swap otherwise, and
 		// when the visitor prefers reduced motion — skipping the transition is cleaner
@@ -2608,17 +2651,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var tick, timer;
 			function finish( cancelled ) {
 				clearInterval( tick ); clearTimeout( timer );
-				if ( undoBtn ) { undoBtn.hidden = true; undoBtn.onclick = null; }
+				if ( undoBtn ) {
+					var hadFocus = document.activeElement === undoBtn;
+					undoBtn.hidden = true; undoBtn.onclick = null;
+					if ( hadFocus && ! cancelled ) { document.getElementById( 'progressStatus' ).focus(); }
+				}
 				resolve( cancelled );
 			}
 			// No countdown UI (older browsers) → resolve immediately, don't block posting.
 			if ( ! undoBtn ) { resolve( false ); return; }
 			undoBtn.hidden  = false;
 			undoBtn.onclick = function () { finish( true ); };
-			setProgress( 'Posting in ' + secs + '…', 0 );
+			undoBtn.focus();   // the one thing worth doing in the next five seconds
+			setProgress( sprintf( __( 'Posting in %s…' ), secs ), 0 );
 			tick = setInterval( function () {
 				secs -= 1;
-				if ( secs > 0 ) { setProgress( 'Posting in ' + secs + '…', ( GRACE_SECS - secs ) / GRACE_SECS ); }
+				if ( secs > 0 ) { setProgress( sprintf( __( 'Posting in %s…' ), secs ), ( GRACE_SECS - secs ) / GRACE_SECS ); }
 			}, 1000 );
 			timer = setTimeout( function () { finish( false ); }, GRACE_SECS * 1000 );
 		} );
@@ -2823,17 +2871,17 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// keeps photo blobs), then mirror its text to a server WP draft so it appears on
 	// other devices. The local copy is the source of truth for editing.
 	async function saveCurrentDraft() {
-		if ( ! window.indexedDB ) { showToast( "Drafts aren't supported here.", 'error' ); return; }
-		if ( ! hasFormContent() ) { showToast( 'Nothing to save yet.', 'info' ); return; }
+		if ( ! window.indexedDB ) { showToast( __( "Drafts aren't supported here." ), 'error' ); return; }
+		if ( ! hasFormContent() ) { showToast( __( 'Nothing to save yet.' ), 'info' ); return; }
 		var post     = formToPost();
 		var existing = activeDraftId ? await dGet( activeDraftId ) : null;
 		post.id        = activeDraftId || post.id;
 		post.savedAt   = Date.now();
 		post.serverUrl = ( existing && existing.serverUrl ) || '';
-		try { await dPut( post ); } catch ( e ) { showToast( "Couldn't save the draft.", 'error' ); return; }
+		try { await dPut( post ); } catch ( e ) { showToast( __( "Couldn't save the draft." ), 'error' ); return; }
 		activeDraftId = post.id;
 		clearDraft();                       // the rolling autosave slot becomes this stored draft
-		showToast( 'Draft saved.', 'info' );
+		showToast( __( 'Draft saved.' ), 'info' );
 		refreshDraftsCount();
 		if ( navigator.onLine ) {           // server mirror — best-effort; the local copy is safe
 			try {
@@ -2899,21 +2947,21 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function renderDraftsList( rows ) {
 		if ( ! draftsList ) { return; }
-		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-view__empty">No drafts yet.</p>'; return; }
+		if ( ! rows.length ) { draftsList.innerHTML = '<p class="drafts-view__empty">' + escHtml( __( 'No drafts yet.' ) ) + '</p>'; return; }
 		draftsList.innerHTML = rows.map( function ( r ) {
 			return '<div class="draft-row" data-id="' + escAttr( r.id ) + '" data-url="' + escAttr( r.serverUrl ) + '" data-kind="' + escAttr( r.type ) + '">'
 				+ '<button type="button" class="draft-row__open">'
-				+ '<span class="draft-row__kind">' + escHtml( r.type ) + ( r.local ? '' : ' ·' ) + '</span>'
-				+ '<span class="draft-row__title">' + escHtml( r.title || '(untitled)' ) + '</span>'
+				+ '<span class="draft-row__kind">' + escHtml( kindName( r.type ) ) + ( r.local ? '' : ' ·' ) + '</span>'
+				+ '<span class="draft-row__title">' + escHtml( r.title || __( '(untitled)' ) ) + '</span>'
 				+ '</button>'
-				+ '<button type="button" class="draft-row__delete" aria-label="Delete draft">&times;</button>'
+				+ '<button type="button" class="draft-row__delete" aria-label="' + escHtml( sprintf( __( 'Delete draft: %s' ), r.title || __( '(untitled)' ) ) ) + '">&times;</button>'
 				+ '</div>';
 		} ).join( '' );
 	}
 
 	async function openDrafts() {
 		if ( ! draftsList ) { return; }
-		draftsList.innerHTML = '<p class="drafts-view__empty">Loading…</p>';
+		draftsList.innerHTML = '<p class="drafts-view__empty">' + escHtml( __( 'Loading…' ) ) + '</p>';
 		showView( 'drafts' );
 		renderDraftsList( await listAllDrafts() );
 	}
@@ -2950,17 +2998,22 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// The rail's mark, when the sprite carries one for this kind. Kinds with no
 	// mark (exercise has its own icon block; flight has none) print their name
 	// instead, so the column is never empty.
+	// A kind's display name — the (translated) label on its tile, else the slug.
+	function kindName( kind ) {
+		var lbl = /^[a-z-]+$/.test( kind || '' ) && document.querySelector( '.type-btn[data-type="' + kind + '"] .type-btn__label' );
+		return lbl ? lbl.textContent : ( kind || __( 'post' ) );
+	}
 	function kindMark( kind ) {
 		if ( kind && document.getElementById( 'nop-kind-' + kind ) ) {
 			return '<svg class="sent-row__icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">'
 				+ '<use href="#nop-kind-' + escAttr( kind ) + '"/></svg>';
 		}
-		return '<span class="sent-row__kind">' + escHtml( kind || 'post' ) + '</span>';
+		return '<span class="sent-row__kind">' + escHtml( kindName( kind ) ) + '</span>';
 	}
 
 	function renderSentList( rows ) {
 		if ( ! sentList ) { return; }
-		if ( ! rows.length ) { sentList.innerHTML = '<p class="drafts-view__empty">Nothing sent yet.</p>'; return; }
+		if ( ! rows.length ) { sentList.innerHTML = '<p class="drafts-view__empty">' + escHtml( __( 'Nothing sent yet.' ) ) + '</p>'; return; }
 		sentList.innerHTML = rows.map( function ( r ) {
 			// post_date_gmt arrives as "Y-m-d H:i:s" — make it a real UTC instant
 			// before handing it to the ticker's relative-time formatter.
@@ -2978,8 +3031,8 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				+ ( stamp ? '<span class="sent-row__when">' + escHtml( stamp ) + '</span>' : '' )
 				+ '</div>'
 				+ '<a class="sent-row__title" href="' + escAttr( r.url ) + '" target="_blank" rel="noopener noreferrer">'
-				+ escHtml( r.title || '(untitled)' )
-				+ '<span class="sr-only"> — ' + escHtml( kind || 'post' ) + ( ago ? ', ' + escHtml( ago ) : '' ) + '</span>'
+				+ escHtml( r.title || __( '(untitled)' ) )
+				+ '<span class="sr-only"> — ' + escHtml( kindName( kind ) ) + ( ago ? ', ' + escHtml( ago ) : '' ) + '</span>'
 				+ '</a>'
 				+ '<ul class="delivery">'
 				+ ( r.targets || [] ).map( function ( t ) { return deliveryRow( t, r.id, true ); } ).join( '' )
@@ -3008,7 +3061,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 
 	function openSent() {
 		if ( ! sentList ) { return; }
-		sentList.innerHTML = '<p class="drafts-view__empty">Loading…</p>';
+		sentList.innerHTML = '<p class="drafts-view__empty">' + escHtml( __( 'Loading…' ) ) + '</p>';
 		showView( 'sent' );
 		refreshSent();
 	}
@@ -3025,11 +3078,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				body:    JSON.stringify( { post_id: +btn.dataset.post, target: btn.dataset.target } ),
 			} ).then( function ( r ) {
 				if ( ! r.ok ) { throw new Error( 'retry rejected' ); }
-				showToast( 'Retrying…' );
+				showToast( __( 'Retrying…' ) );
 				return refreshSent();
 			} ).catch( function () {
 				btn.disabled = false;
-				showToast( "Couldn't retry that one.", 'error' );
+				showToast( __( "Couldn't retry that one." ), 'error' );
 			} );
 		} );
 	}
@@ -3072,7 +3125,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				try { await dPut( post ); } catch ( e ) {}
 			}
 		}
-		if ( ! post ) { showToast( "Couldn't open that draft.", 'error' ); return; }
+		if ( ! post ) { showToast( __( "Couldn't open that draft." ), 'error' ); return; }
 		clearFields();
 		restoreSnapshot( post );
 		activeDraftId = post.id;
@@ -3092,10 +3145,23 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			var row = e.target.closest( '.draft-row' ); if ( ! row ) { return; }
 			var id = row.getAttribute( 'data-id' ), url = row.getAttribute( 'data-url' ), kind = row.getAttribute( 'data-kind' );
 			if ( e.target.closest( '.draft-row__delete' ) ) {
-				if ( id )  { dDelete( id ); }
-				if ( url && navigator.onLine ) { mpFetch( { action: 'delete', url: url } ).catch( function () {} ); }
-				if ( id && id === activeDraftId ) { activeDraftId = null; }
-				row.remove(); refreshDraftsCount();
+				// Hide now, delete once the Undo toast goes away — there's no server-side
+				// undelete, so the only safe undo is not having deleted yet.
+				row.hidden = true;
+				showToast( __( 'Draft deleted' ), null, {
+					label: __( 'Undo' ),
+					onTap: function () {
+						row.hidden = false;
+						row.querySelector( '.draft-row__open' ).focus();
+					},
+					onDismiss: function () {
+						if ( id )  { dDelete( id ); }
+						if ( url && navigator.onLine ) { mpFetch( { action: 'delete', url: url } ).catch( function () {} ); }
+						if ( id && id === activeDraftId ) { activeDraftId = null; }
+						row.remove(); refreshDraftsCount();
+					},
+				} );
+				document.querySelector( '#toast .toast__action' ).focus();
 				return;
 			}
 			reopenDraft( id, url, kind );
@@ -3127,7 +3193,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( ! hasContent || ! len ) { el.hidden = true; return; }
 		var lim = currentLimit();   // smallest char limit among the ticked syndicators
 		el.hidden = false;
-		el.textContent = lim ? ( len + ' / ' + lim ) : ( len + ( len === 1 ? ' character' : ' characters' ) );
+		el.textContent = lim ? ( len + ' / ' + lim ) : ( len === 1 ? sprintf( __( '%s character' ), len ) : sprintf( __( '%s characters' ), len ) );
 		el.classList.toggle( 'is-over', !! lim && len > lim );
 	}
 
@@ -3146,34 +3212,56 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// ── Toast ──────────────────────────────────────────────────────────────────
 
 	var toastTimer;
+	// An action toast can defer work until it's dismissed (e.g. a draft delete that
+	// Undo can still call off) — it runs when the toast closes any way but Undo.
+	var toastOnDismiss = null;
 	function hideToast() {
 		var el = document.getElementById( 'toast' );
 		el.classList.remove( 'is-visible' );
 		clearTimeout( toastTimer );
+		var pending = toastOnDismiss;
+		toastOnDismiss = null;
+		if ( pending ) { pending(); }
 	}
 	// An optional `action` ({ label, onTap }) makes the toast tappable — Undo a
 	// clear, or post past a missing-alt warning. Setting textContent first wipes
-	// any button left over from a previous toast; a plain notice stays text-only
-	// and auto-dismisses, an actionable one lingers longer so there's time to tap.
+	// any button left over from a previous toast. A plain notice auto-dismisses; an
+	// actionable one stays until it's used or dismissed — a timed-out action can't
+	// be reached by anyone slower than the timer (keyboard, switch, screen reader).
+	// Errors are announced assertively (role=alert), notices politely.
 	function showToast( message, kind, action ) {
 		var el = document.getElementById( 'toast' );
+		if ( toastOnDismiss ) { var pending = toastOnDismiss; toastOnDismiss = null; pending(); }
+		el.setAttribute( 'role', kind === 'error' ? 'alert' : 'status' );
+		el.setAttribute( 'aria-live', kind === 'error' ? 'assertive' : 'polite' );
 		el.textContent = message;
 		if ( action && action.label ) {
 			var btn = document.createElement( 'button' );
 			btn.type        = 'button';
 			btn.className    = 'toast__action';
 			btn.textContent = action.label;
-			btn.addEventListener( 'click', function () { hideToast(); action.onTap(); } );
+			btn.addEventListener( 'click', function () { toastOnDismiss = null; hideToast(); action.onTap(); } );
 			el.appendChild( btn );
+			var close = document.createElement( 'button' );
+			close.type      = 'button';
+			close.className = 'toast__close';
+			close.setAttribute( 'aria-label', __( 'Dismiss' ) );
+			close.innerHTML = '<svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#nop-x"/></svg>';
+			close.addEventListener( 'click', hideToast );
+			el.appendChild( close );
+			toastOnDismiss = action.onDismiss || null;
 		}
 		// display + @starting-style (CSS) drive the show/hide transition now — no
 		// forced reflow, no hidden-attribute toggling; just flip the class.
 		el.className   = 'toast is-visible' + ( kind === 'error' ? ' toast--error' : '' );
 		clearTimeout( toastTimer );
-		toastTimer = setTimeout( function () {
-			el.classList.remove( 'is-visible' );
-		}, action ? 6000 : 3500 );
+		if ( ! action ) {
+			toastTimer = setTimeout( function () { el.classList.remove( 'is-visible' ); }, 3500 );
+		}
 	}
+	document.addEventListener( 'keydown', function ( e ) {
+		if ( e.key === 'Escape' && document.getElementById( 'toast' ).classList.contains( 'is-visible' ) ) { hideToast(); }
+	} );
 
 	// ── Kind order ───────────────────────────────────────────────────────────────
 	// The tile order is FIXED (the source order in the markup) so it stays put for

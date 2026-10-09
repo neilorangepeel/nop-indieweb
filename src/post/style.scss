@@ -85,14 +85,17 @@ $fluid-max-vw: 820;
 	   quote becomes an intentional yellow-ochre instead; --magenta moves to h350 so
 	   rsvp reads PINK rather than a second red (the date-picker filter below is
 	   retargeted to match); story/photo/repost sit at h272/244/310 to spread the old
-	   blue-violet cluster. --red doubles as the error colour. */
+	   blue-violet cluster. --red doubles as the error colour.
+	   Light-mode lightness is set PER HUE: equal OKLCH L is not equal contrast
+	   (teal/green/amber read far lighter than red at the same L), so each is the
+	   brightest value that still clears 4.5:1 against --paper. */
 	--red:      light-dark( oklch(0.55 0.19 25),  oklch(0.76 0.18 25)  );   /* like */
-	--orange:   light-dark( oklch(0.55 0.19 55),  oklch(0.76 0.18 55)  );   /* reply */
-	--amber:    light-dark( oklch(0.61 0.19 78),  oklch(0.80 0.18 78)  );   /* quote */
-	--green:    light-dark( oklch(0.55 0.19 148), oklch(0.76 0.18 148) );   /* bookmark */
-	--teal:     light-dark( oklch(0.55 0.19 196), oklch(0.76 0.18 196) );   /* note */
-	--blue:     light-dark( oklch(0.55 0.19 244), oklch(0.76 0.18 244) );   /* photo */
-	--indigo:   light-dark( oklch(0.55 0.19 272), oklch(0.76 0.18 272) );   /* story */
+	--orange:   light-dark( oklch(0.54 0.19 55),  oklch(0.76 0.18 55)  );   /* reply */
+	--amber:    light-dark( oklch(0.53 0.19 85),  oklch(0.80 0.18 78)  );   /* quote */
+	--green:    light-dark( oklch(0.50 0.19 148), oklch(0.76 0.18 148) );   /* bookmark */
+	--teal:     light-dark( oklch(0.475 0.19 196), oklch(0.76 0.18 196) );   /* note */
+	--blue:     light-dark( oklch(0.515 0.19 244), oklch(0.76 0.18 244) );   /* photo */
+	--indigo:   light-dark( oklch(0.54 0.19 272), oklch(0.76 0.18 272) );   /* story */
 	--violet:   light-dark( oklch(0.55 0.19 310), oklch(0.76 0.18 310) );   /* repost */
 	--magenta:  light-dark( oklch(0.55 0.19 350), oklch(0.76 0.18 350) );   /* rsvp */
 	--charcoal: light-dark(#1A1A1A, #F4EFE6);
@@ -328,6 +331,10 @@ body::before {
 	   NOT transparent — a transparent border lets the dot grid show through the
 	   stroke and reads as visual noise; an opaque tone renders the stroke solid. */
 	--ink-30:   color-mix(in srgb, var(--ink) 30%, var(--paper));  /* dashed drop target (fainter) */
+	/* The one muted TEXT tint: ≥3:1 on paper. Placeholders, prompts and icon-only
+	   controls only — text that carries information prints in full --ink (≥4.5:1).
+	   Hierarchy comes from size, weight and caps, never from fading the ink. */
+	--ink-soft: color-mix(in srgb, var(--ink) 75%, var(--paper));
 	--ink-38:   color-mix(in srgb, var(--ink) 38%, var(--paper));  /* input & control borders, scrollbars */
 	--shadow:   4px 4px 0 var(--ink);
 	/* The kind ink a shade deeper — tones the faux iOS chrome and the frame border
@@ -644,7 +651,7 @@ body::before {
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
-	color: color-mix(in srgb, var(--text) 55%, transparent);
+	color: var(--text);
 	margin: 0;
 }
 /* Middots on BOTH sides of the head — same character + 9px-each-side rhythm as
@@ -872,7 +879,11 @@ body::before {
 	border: 0;
 	background: transparent;
 	color: var(--ink);
-	cursor: pointer;}
+	/* Round, like the disc it holds — so the shared focus ring traces the stamp
+	   rather than a square box around it. */
+	border-radius: 50%;
+	cursor: pointer;
+}
 /* The badge disc: an ink-ring circle, transparent so the fixed dot grid runs
    straight through it. Only the active kind fills (solid --accent disc). The
    pop scales the whole .type-btn so the disc + seal text move in proportion. */
@@ -969,7 +980,7 @@ body::before {
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
-	color: color-mix( in srgb, var(--ink) 72%, var(--paper) );
+	color: var(--ink);
 	font-family: var(--readout);
 	font-size: var(--step--1);
 	font-weight: 700;
@@ -1068,15 +1079,12 @@ body::before {
 	font-family: var(--readout);
 	font-size: var(--step--2);
 	line-height: 1.4;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	color: var(--ink);
 }
 .event-status.is-found { color: var(--accent); }
-/* Thin = only a page title came back. Same muted printed ink as the resting
+/* Thin = only a page title came back. Same printed ink as the resting
    state but italic, so it reads as a soft caveat rather than a green ✓. */
-.event-status.is-thin {
-	font-style: italic;
-	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
-}
+.event-status.is-thin { font-style: italic; }
 /* The field grid — one left small-caps label column + the control, shared by every
    labelled field (URL, GOING, TITLE/WHERE/WHEN, TAGS, LOCATION, POST TO) so labels
    and inputs all align to the same edges. Each field is its own grid (independent
@@ -1100,16 +1108,18 @@ body::before {
 	font-weight: 700;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	color: var(--ink);
 	transition: color 0.15s ease;
 }
-/* Focus cue — the label lights accent when its field is focused. Replaces the old
+/* Focus cue — the label is underlined when its field is focused. Replaces the old
    accent underline (which sat under the text and muddied the type): the label is off
-   to the side, so the active row stays obvious while the type reads clean.
+   to the side, so the active row stays obvious while the type reads clean. (Labels
+   already print in full ink, so a colour change alone would no longer show.)
    :has(:focus-visible) gives keyboard + click-into-field focus without flickering on
    stray taps that never land in an input. */
 .field-row:has( .text-field:focus-visible ) > .field-row__label {
-	color: var(--accent);
+	text-decoration: underline var(--bw-input);
+	text-underline-offset: 4px;
 }
 /* Wrapper for a cell that stacks more than the control (URL input + its reference
    line; tags-field + the quick-tags reveal). min-width:0 keeps long content from
@@ -1151,20 +1161,17 @@ body::before {
 .docket__header {
 	display: flex;
 	align-items: center;
-	/* The filing line is a single row, always — kind · serial · date · Drafts · Save ·
-	   Clear never stack. nowrap stops the flex line breaking; white-space:nowrap stops
-	   a label breaking inside its slot (e.g. "NO. 25750" splitting across two lines).
-	   The buttons lean on this gap for spacing (their own margins are zeroed) and the
-	   serial's margin-left:auto soaks up the slack, so the row stays tight on a phone. */
+	/* The filing line is a single row, always — kind · Clear … Sent · Drafts · Save
+	   never stack. nowrap stops the flex line breaking; white-space:nowrap stops a
+	   label breaking inside its slot. The buttons lean on this gap for spacing (their
+	   own margins are zeroed) and Sent's margin-left:auto soaks up the slack. */
 	flex-wrap: nowrap;
 	white-space: nowrap;
 	min-width: 0;
 	gap: var(--space-2xs);
-	/* Reserve the row height for the taller Clear stamp (≈1.2 line-height + 2px
-	   padding + 1px border ≈ 20px) plus this row's padding-bottom + border-bottom,
-	   so popping the stamp in never grows the filing line's height. align-items:center
-	   keeps the kind/serial/date labels from shifting vertically as the stamp appears. */
-	min-height: calc( 20px + var(--space-2xs) + var(--bw-rule) );
+	/* Reserve the row height for the action stamps (≈30px) plus this row's
+	   padding-bottom + border-bottom, so popping Clear in never grows the line. */
+	min-height: calc( 30px + var(--space-2xs) + var(--bw-rule) );
 	padding-bottom: var(--space-2xs);
 	border-bottom: var(--bw-rule) solid var(--rule);
 	font-family: var(--display);
@@ -1172,56 +1179,22 @@ body::before {
 	font-weight: 700;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	color: var(--ink);
 	font-variant-numeric: tabular-nums;
 }
-.docket__serial { margin-left: auto; }
-.docket__date   { letter-spacing: 0.06em; }
-/* Three action stamps (Sent · Drafts · Save) plus the filing detail outrun the
-   nowrap line on the narrowest phones, clipping Save. The date is the one thing
-   here the masthead already says, so it's what gives way — the row stays a row. */
-@media (max-width: 360px) {
-	.docket__date { display: none; }
-}
-/* Clear stamp — the only interactive element on the filing line. Same muted
-   printed-ink display-caps as the kind / serial / date labels, framed by a
-   hairline rule like a rubber-stamped action box. Hidden until the form has
-   anything to clear (JS toggles [hidden]); it collapses horizontally when empty,
-   while the row's min-height reserves only its height — no vertical re-flow. */
-.docket__clear {
-	appearance: none;
-	margin: 0;
-	padding: 2px var(--space-2xs);
-	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
-	border-radius: 2px;
-	background: transparent;
-	color: inherit;
-	font: inherit;
-	letter-spacing: 0.08em;
-	line-height: 1.2;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-}
-/* 19px-tall boxes need a tap halo (same trick as .tag-chip__remove) to reach ~43px.
-   Horizontal reach stays at -4px — half the row gap — so the Save and Clear zones
-   meet but never overlap; a stray tap must not land on Clear. */
+#sentBtn { margin-left: auto; }
+/* Filing-line action stamps — Clear, Sent, Drafts, Save. Printed display caps in a
+   hairline box, like a rubber-stamped action. ~30px tall with a tap halo out to
+   ~44px; the halo's horizontal reach stays at -4px (half the row gap) so
+   neighbouring zones meet but never overlap. Clear is hidden until the form has
+   anything to clear (JS toggles [hidden]). */
 .docket__clear,
-.docket__action { position: relative; }
-.docket__clear::after,
-.docket__action::after { content: ''; position: absolute; inset: -12px -4px; }
-.docket__clear:hover  { color: var(--ink); border-color: var(--ink-38); }
-.docket__clear:active { transform: translate(1px, 1px); }
-.docket__clear:focus-visible {
-	outline: var(--bw-input) solid var(--accent);
-	outline-offset: 2px;
-}
-
-/* Drafts / Save — same rubber-stamped action box as Clear, sat on the filing line. */
 .docket__action {
+	position: relative;
 	appearance: none;
 	margin: 0;
-	padding: 2px var(--space-2xs);
-	border: var(--bw-rule) solid color-mix( in srgb, var(--ink) 30%, var(--paper) );
+	padding: 6px var(--space-2xs) 5px;
+	border: var(--bw-rule) solid var(--ink-38);
 	border-radius: 2px;
 	background: transparent;
 	color: inherit;
@@ -1231,9 +1204,12 @@ body::before {
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
 }
-.docket__action:hover  { color: var(--ink); border-color: var(--ink-38); }
+.docket__clear::after,
+.docket__action::after { content: ''; position: absolute; inset: -7px -4px; }
+.docket__clear:hover,
+.docket__action:hover  { border-color: var(--ink); }
+.docket__clear:active,
 .docket__action:active { transform: translate(1px, 1px); }
-.docket__action:focus-visible { outline: var(--bw-input) solid var(--accent); outline-offset: 2px; }
 .docket__badge {
 	margin-left: 5px;
 	padding: 0 5px;
@@ -1273,7 +1249,7 @@ body::before {
 .drafts-view__empty {
 	padding: var(--space-xl) 0;
 	text-align: center;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	color: var(--ink);
 }
 .draft-row {
 	display: flex;
@@ -1317,7 +1293,7 @@ body::before {
 	appearance: none;
 	border: none;
 	background: transparent;
-	color: color-mix( in srgb, var(--ink) 45%, var(--paper) );
+	color: var(--ink-soft);
 	font-size: var(--step-1);
 	line-height: 1;
 	padding: 8px;
@@ -1367,7 +1343,7 @@ body::before {
 	line-height: 1.45;
 	letter-spacing: 0;
 	text-transform: none;
-	color: color-mix( in srgb, var(--ink) 55%, var(--paper) );
+	color: var(--ink);
 }
 
 .docket__fields { display: flex; flex-direction: column; gap: var(--space-s); }
@@ -1409,12 +1385,12 @@ body::before {
 	font-family: var(--readout);
 	font-size: var(--step--1);
 	line-height: 1.4;
-	color: color-mix( in srgb, var(--ink) 70%, var(--paper) );
+	color: var(--ink);
 }
 .slip-ref__host { font-weight: 700; }
-.slip-ref__path { opacity: 0.6; word-break: break-all; }
+.slip-ref__path { word-break: break-all; }
 .slip-ref__title { display: block; font-weight: 700; font-size: var(--step--1); }
-.slip-ref__excerpt { opacity: 0.7; font-size: var(--step--2); margin-top: var(--space-3xs); }
+.slip-ref__excerpt { font-size: var(--step--2); margin-top: var(--space-3xs); }
 
 /* Photo prints filed on the card — a printed rule frames the contact sheet once
    any are selected (the bordered thumbnails + per-photo alt slips read as prints). */
@@ -1552,7 +1528,7 @@ body::before {
 	--line: var(--rule);
 	@include ruled(var(--line));
 }
-.text-field::placeholder { color: var(--text); opacity: 0.4; }
+.text-field::placeholder { color: var(--ink-soft); opacity: 1; }
 /* Quote commentary — same ruled line, just multi-line: a small document with a real
    min-height. Inherits the shared rule + metrics from .text-field. */
 .text-field--note {
@@ -1576,29 +1552,13 @@ body::before {
    picker glyph just floats at the right edge of the line (tinted below). */
 
 /* The link IS the content on like / reply / bookmark / repost (and the event on
-   rsvp), so it's the hero — a contained field, not a metadata line. It breaks out of
-   the 64px label grid (label demoted to a caption above) and sets the text larger,
-   but it belongs to the ruled paper: a thin border in the same hairline ink as the
-   rules (no fill, no shadow), going accent on focus. */
-#fieldUrl { display: block; }
-#fieldUrl .field-row__label {
-	min-height: 0;
-	margin-bottom: var(--space-2xs);
-}
-#typeUrl {
-	font-size: var(--step-1);
-	min-height: 44px;
-	line-height: normal;
-	background-image: none;
-	border: var(--bw-rule) solid var(--rule);
-	border-radius: var(--radius);
-	padding: var(--space-xs);
-}
-#typeUrl:focus { border-color: var(--accent); }
+   rsvp), so it sets larger — but it stays on the same ruled line and 64px label
+   grid as every other field, so URL · GOING · TITLE · WHERE · WHEN read as one form. */
+#typeUrl { font-size: var(--step-1); }
 /* Keyboard focus. Line-style text fields keep their hairline a constant rule colour
    on focus — the caret marks the active field, and an accent line directly under the
-   text muddied the type, so the underline no longer recolours. The boxed URL field and
-   the GOING toggle keep their accent focus box (it sits clear of the text). */
+   text muddied the type, so the underline no longer recolours; the side label is
+   underlined instead (see .field-row:has). The GOING toggle keeps its accent box. */
 .text-field:focus-visible { outline: none; }
 .rsvp-btn:focus-visible {
 	outline: var(--bw-input) solid var(--accent);
@@ -1664,7 +1624,7 @@ body::before {
 	/* A solid faint tint — not translucent ink — so the ruled lines and the
 	   page grain don't bleed through the letters; they sit behind the opaque
 	   glyphs and resume either side, like a label printed on ruled paper. */
-	color: color-mix( in srgb, var(--ink) 42%, var(--paper) );
+	color: var(--ink-soft);
 	pointer-events: none;
 }
 .compose-prompt.is-hidden { opacity: 0; }
@@ -1678,14 +1638,17 @@ body::before {
 	border-radius: var(--radius);
 	padding: var(--space-l) var(--space-s);
 	text-align: center;
-	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
-	cursor: pointer;}
+	color: var(--ink);
+	display: block;
+	width: 100%;
+	font: inherit;
+	cursor: pointer;
+}
 .photo-picker:active,
 .photo-picker.drag-over { border-style: solid; border-color: var(--accent); }
-.photo-picker input[type="file"] { display: none; }
 .photo-picker-icon { display: block; margin-bottom: 8px; }
-.photo-picker p { font-family: var(--readout); font-size: var(--step-0); font-weight: 700; letter-spacing: 0; }
-.photo-picker small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; display: block; margin-top: 4px; }
+.photo-picker__label { display: block; font-family: var(--readout); font-size: var(--step-0); font-weight: 700; letter-spacing: 0; }
+.photo-picker__hint { font-size: var(--step--2); font-weight: 500; display: block; margin-top: 4px; }
 
 /* Photo affordance on the text-first kinds (note, reply) — the writing surface is the
    hero, so the dropzone drops its dashed well entirely and becomes a quiet inline
@@ -1714,10 +1677,10 @@ body::before {
 .app[data-type="reply"] .photo-picker-icon { display: flex; margin-bottom: 0; }
 .app[data-type="note"] .photo-picker-icon svg,
 .app[data-type="reply"] .photo-picker-icon svg { width: 16px; height: 16px; }
-.app[data-type="note"] .photo-picker p,
-.app[data-type="reply"] .photo-picker p { font-size: var(--step--1); font-weight: 600; }
-.app[data-type="note"] .photo-picker small,
-.app[data-type="reply"] .photo-picker small { display: none; }
+.app[data-type="note"] .photo-picker__label,
+.app[data-type="reply"] .photo-picker__label { font-size: var(--step--1); font-weight: 600; }
+.app[data-type="note"] .photo-picker__hint,
+.app[data-type="reply"] .photo-picker__hint { display: none; }
 
 /* Story video picker. Empty state is the same compact dashed dropzone as the photo
    picker; a chosen clip previews CONTAINED (not full-bleed) so it doesn't blow up the
@@ -1736,13 +1699,13 @@ body::before {
 	border: var(--bw-input) dashed var(--ink-30);
 	border-radius: var(--radius);
 	padding: var(--space-l) var(--space-s);
-	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
+	color: var(--ink);
 	font-family: var(--readout);
 	cursor: pointer;
 }
 .story-picker__prompt:active { border-style: solid; border-color: var(--accent); }
 .story-picker__prompt p     { font-size: var(--step-0); font-weight: 700; }
-.story-picker__prompt small { font-size: var(--step--2); font-weight: 500; opacity: 0.6; }
+.story-picker__prompt small { font-size: var(--step--2); font-weight: 500; }
 .story-picker:has( .story-picker__preview:not([hidden]) ) {
 	width: fit-content;
 	max-width: 100%;
@@ -1886,7 +1849,6 @@ body::before {
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
 	color: var(--text);
-	opacity: 0.5;
 }
 .thumb__alt {
 	width: 100%;
@@ -1903,7 +1865,7 @@ body::before {
 	min-height: 44px;
 }
 .thumb__alt:focus { border-bottom-color: var(--accent); }
-.thumb__alt::placeholder { color: var(--text); opacity: 0.35; }
+.thumb__alt::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Tags & Categories — solid accent chips, knockout text, square remove. Both
    ledger rows share this chip UI wholesale (#fieldTags / #fieldCats). */
@@ -1966,7 +1928,7 @@ body::before {
 	background: transparent;
 	padding: 2px 0;
 }
-.tag-input::placeholder { color: var(--text); opacity: 0.45; }
+.tag-input::placeholder { color: var(--ink-soft); opacity: 1; }
 
 /* Most-used tags — quick-add chips that reveal only while the tag field is in
    use (focus-driven), so they cost no space at rest. Subtle accent wash by
@@ -2016,10 +1978,11 @@ body::before {
    padding would also eat into .quick-tags.is-open's 240px max-height reveal cap.
    Vertical only: the run's 8px gaps leave no horizontal room. */
 .quick-tag::after { content: ''; position: absolute; inset: -5px 0; }
-/* Already added (its solid chip shows above) — recede so the run reads as "remaining". */
+/* Already added (its solid chip shows above) — a dashed outline marks it as taken while
+   the text stays legible; aria-pressed carries the same state to assistive tech. */
 .quick-tag.is-used {
-	border-color: color-mix(in srgb, var(--accent) 16%, var(--paper));
-	color: color-mix(in srgb, var(--accent) 42%, var(--paper));
+	border-style: dashed;
+	border-color: var(--ink-38);
 }
 
 /* URL specimen — the confirming mark on URL-only kinds (like, repost). Empty: the
@@ -2044,7 +2007,6 @@ body::before {
 	font-size: var(--step--1);
 	font-weight: 700;
 	letter-spacing: 0;
-	opacity: 0.5;
 }
 .url-specimen__host {
 	font-family: var(--display);
@@ -2058,7 +2020,6 @@ body::before {
 .url-specimen__path {
 	font-size: var(--step--1);
 	font-weight: 500;
-	opacity: 0.6;
 	word-break: break-all;
 	max-width: 100%;
 	display: -webkit-box;
@@ -2090,10 +2051,8 @@ body::before {
 .ledger {
 	display: flex;
 	flex-direction: column;
-	/* A deliberate section break before the metadata index, uniform on every kind
-	   (the content block above ends at a different element per kind, so the gap is
-	   owned here, not on the trailing field). Adds to the .compose-fields flow gap. */
-	margin-top: var(--section-gap);
+	/* The section break before the metadata index is just the .compose-fields flow
+	   gap — doubling it (an extra margin here) read as dead space on a phone. */
 	/* Full width — flush with the header and the writing column, so the metadata labels
 	   line up with the By/Link fields above (no left indent). */
 	/* The margin rule: a hairline vertical sitting in the gutter between the 64px
@@ -2149,7 +2108,7 @@ body::before {
 .schedule-note {
 	margin: 6px 0 0;
 	font-size: var(--step--1);
-	color: color-mix( in srgb, var(--ink) 62%, var(--paper) );
+	color: var(--ink);
 }
 
 /* Stamps — the one-tap commitments (Place / Private / Later and every Post-to
@@ -2180,9 +2139,9 @@ body::before {
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
-	/* 75% ink, not 65%: at 11px caps the outline state fell below small-text contrast.
+	/* Full ink: at 11px caps the outline state is small text and needs 4.5:1.
 	   The 38% border keeps the inked/outline weight difference doing the talking. */
-	color: color-mix( in srgb, var(--ink) 75%, var(--paper) );
+	color: var(--ink);
 	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
 }
 .stamp:active .stamp__face { transform: scale(0.94); }
@@ -2220,7 +2179,6 @@ body::before {
 	   schedule), not display caps — matches the .schedule-note treatment. */
 	font-size: var(--step--1);
 	font-weight: 500;
-	opacity: 0.7;
 	padding-bottom: var(--space-2xs);
 }
 /* The privacy note is static copy — CSS shows it only while PRIVATE is inked. */
@@ -2303,12 +2261,10 @@ body::before {
 .btn-primary:disabled,
 .btn-primary.is-incomplete {
 	background: color-mix( in srgb, var(--accent) 30%, var(--device-ink) );
-	/* 73% paper, not 38%: the old mix sat at ~2:1 against the muted fill — under
-	   even the 3:1 large-text bar. 73% clears 3:1 for all nine inks in both modes
-	   (worst: quote light, 3.03 — its lifted L0.61 lightens the muted fill) while
-	   staying well short of the charged state's full-paper knockout, so the "not
-	   charged" read is untouched. */
-	color: color-mix( in srgb, var(--on-accent) 73%, var(--device-ink) );
+	/* 90% paper: the 16px label is small text, so it needs 4.5:1 on the muted fill —
+	   90% clears it for all nine inks in both modes (worst ≈4.9) while staying short
+	   of the charged state's full-paper knockout, so the "not charged" read holds. */
+	color: color-mix( in srgb, var(--on-accent) 90%, var(--device-ink) );
 	border-color: transparent;
 	opacity: 1;
 	transform: none;
@@ -2448,7 +2404,6 @@ body::before {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
-	opacity: 0.6;
 }
 .success-photos {
 	display: grid;
@@ -2494,14 +2449,33 @@ body::before {
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	padding: 4px 10px;
-	color: color-mix( in srgb, var(--ink) 75%, var(--paper) );
+	color: var(--ink);
 }
 .delivery__row a { color: inherit; text-decoration: none; display: block; }
 .delivery__row.is-sent { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .delivery__row.is-failed { border-color: var(--red); color: var(--red); }
-.delivery__row.is-pending { opacity: 0.6; }
 /* Skipped is a decision, not a wait — struck through so it never reads as pending. */
-.delivery__row.is-skipped { opacity: 0.5; text-decoration: line-through; }
+.delivery__row.is-skipped s { text-decoration-thickness: 1px; }
+.delivery__why { display: inline; }
+.delivery__why summary {
+	display: inline;
+	margin-left: 6px;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	cursor: pointer;
+	list-style: none;
+}
+.delivery__why summary::-webkit-details-marker { display: none; }
+.delivery__why[open] > span {
+	display: block;
+	max-width: 36ch;
+	margin-top: 4px;
+	font-family: var(--readout);
+	font-weight: 500;
+	text-transform: none;
+	letter-spacing: 0;
+	text-align: left;
+}
 
 .delivery__retry {
 	appearance: none;
@@ -2540,7 +2514,7 @@ body::before {
 	font-size: var(--step--1);
 	font-weight: 700;
 	letter-spacing: 0.04em;
-	color: color-mix( in srgb, var(--ink) 60%, var(--paper) );
+	color: var(--ink);
 	text-decoration: underline;
 	text-underline-offset: 3px;
 	cursor: pointer;
@@ -2570,7 +2544,7 @@ body::before {
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	color: color-mix( in srgb, var(--ink) 62%, var(--paper) );
+	color: var(--ink);
 	/* The title's own padding pushes its cap height down; match it here so the
 	   mark's top edge sits on the same line as the top of the title's letters
 	   rather than floating above them. Each Phosphor glyph is inset differently
@@ -2593,7 +2567,7 @@ body::before {
 	line-height: 1.2;
 }
 .sent-row__kind { color: inherit; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.sent-row__when { color: color-mix( in srgb, var(--ink) 45%, var(--paper) ); }
+.sent-row__when { color: var(--ink); }
 .sent-row__title {
 	grid-column: 2;
 	grid-row: 1;
@@ -2629,7 +2603,7 @@ body::before {
 	background: none;
 	font-size: inherit;
 	letter-spacing: 0.04em;
-	color: color-mix( in srgb, var(--ink) 45%, var(--paper) );
+	color: var(--ink);
 }
 .sent-row .delivery__row + .delivery__row::before {
 	content: '·';
@@ -2674,7 +2648,6 @@ body::before {
 	font-size: var(--step--2);
 	font-weight: 700;
 	color: var(--text);
-	opacity: 0.5;
 	font-variant-numeric: tabular-nums;
 }
 /* Over the smallest connected network's limit — lift out of the muted state into a
@@ -2688,7 +2661,8 @@ body::before {
 .toast {
 	position: fixed;
 	left: 50%;
-	bottom: calc(var(--safe-bottom) + 20px);
+	/* Clear of the pinned Post button — a nudge about posting must not cover it. */
+	bottom: calc(var(--safe-bottom) + var(--post-btn-h) + 32px);
 	transform: translate(-50%, 12px);
 	max-width: 88%;
 	padding: 12px 16px;
@@ -2710,7 +2684,7 @@ body::before {
 	pointer-events: none;
 	text-align: center;
 }
-.toast.is-visible { display: block; opacity: 1; transform: translate(-50%, 0); }
+.toast.is-visible { display: flex; align-items: center; justify-content: center; opacity: 1; transform: translate(-50%, 0); }
 @starting-style {
 	.toast.is-visible { opacity: 0; transform: translate(-50%, 12px); }
 }
@@ -2720,8 +2694,9 @@ body::before {
    growing the toast pill. */
 .toast__action {
 	pointer-events: auto;
-	margin: -12px -16px -12px 14px;
-	padding: 12px 16px;
+	flex-shrink: 0;
+	margin: -12px 0 -12px 10px;
+	padding: 12px 8px;
 	background: none;
 	border: none;
 	color: var(--accent);
@@ -2731,6 +2706,17 @@ body::before {
 	text-underline-offset: 2px;
 	cursor: pointer;
 }
+.toast__close {
+	pointer-events: auto;
+	flex-shrink: 0;
+	margin: -12px -12px -12px 0;
+	padding: 14px 12px;
+	background: none;
+	border: none;
+	color: inherit;
+	cursor: pointer;
+}
+.toast__close svg { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
 	.btn-primary, .stamp__face { transition: none; }
@@ -2738,3 +2724,19 @@ body::before {
 	.toast { transition: opacity 0.01ms; }
 }
 
+/* ── Keyboard focus — one ring for every control ───────────────────────────
+   Zero-specificity :where() so any control with its own :focus-visible treatment
+   (stamps, retry, the URL box) keeps it; everything else — kind tiles, Post, chips,
+   remove buttons, draft rows, toast actions — gets the same accent ring, which
+   follows border-radius (round on the kind tiles) instead of the UA's square. */
+:where(.app) :where(button, a, [tabindex]:not([tabindex="-1"])):focus-visible {
+	outline: var(--bw-input) solid var(--accent);
+	outline-offset: 2px;
+}
+/* The writing pad has no side label to light, so it gets a faint dashed frame. */
+.compose-field:focus-visible {
+	outline: var(--bw-rule) dashed var(--ink-38);
+	outline-offset: 6px;
+}
+/* Screen headings take focus programmatically on a view swap — no ring there. */
+[data-view-focus][tabindex="-1"]:focus, #progressStatus:focus { outline: none; }
