@@ -971,24 +971,36 @@ body::before {
 	.type-btn.is-active { animation: none; }
 }
 
-/* RSVP response — a segmented yes/maybe/no control, sharing the tile's two-tone
-   active state so the choice reads in the kind ink. */
-.rsvp-toggle { display: flex; gap: var(--space-2xs); }
+/* RSVP response — Yes / Maybe / No as the same rubber stamps as Options and
+   Post to (see .stamp__face): outline = not chosen, inked = the answer. A ::after
+   halo grows each ~29px face to a ~43px tap target without changing layout. */
+.rsvp-toggle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2xs);
+	min-height: 44px;
+}
 .rsvp-btn {
-	flex: 1 1 0;
-	padding: var(--space-2xs);
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 11px 5px;
 	border: var(--bw-input) solid var(--ink-38);
 	border-radius: var(--radius);
 	background: var(--field);
 	color: var(--ink);
-	font-family: var(--readout);
-	font-size: var(--step--1);
+	font-family: var(--display);
+	font-size: var(--step--2);
 	font-weight: 700;
-	letter-spacing: 0;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 	cursor: pointer;
-	min-height: 44px;}
-.rsvp-btn.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--line); }
-.rsvp-btn:active { transform: translate(1px, 1px); }
+	transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+}
+.rsvp-btn::after { content: ''; position: absolute; inset: -7px 0; }
+.rsvp-btn.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rsvp-btn:active { transform: scale(0.94); }
 
 /* RSVP event detail — a printed cover sheet: a stamped status line up top, an
    optional hot-linked event poster, then labelled rows (TITLE · WHERE · WHEN)
@@ -1568,12 +1580,11 @@ body::before {
 /* Keyboard focus. Line-style text fields keep their hairline a constant rule colour
    on focus — the caret marks the active field, and an accent line directly under the
    text muddied the type, so the underline no longer recolours; the side label is
-   underlined instead (see .field-row:has). The GOING toggle keeps its accent box. */
+   underlined instead (see .field-row:has). */
 .text-field:focus-visible { outline: none; }
 .rsvp-btn:focus-visible {
-	outline: var(--bw-input) solid var(--accent);
-	outline-offset: 2px;
-	box-shadow: none;
+	outline: none;
+	box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent);   /* the stamps' ring */
 }
 
 /* Compose textarea is the hero — a flat legal-pad: faint ruled lines for the
