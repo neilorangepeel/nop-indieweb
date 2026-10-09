@@ -1132,6 +1132,14 @@ body::before {
 }
 .field-row__pair .text-field--date { flex: 2 1 0; min-width: 0; }
 .field-row__pair .text-field--time { flex: 1 1 0; min-width: 0; }
+/* The native date/time box adds ~2px of its own; pin it to the text-field line
+   height so the WHEN rule lines up with TITLE and WHERE. */
+.text-field--date,
+.text-field--time { height: calc( var(--lead) + var(--baseline) ); }
+/* Empty date/time: the native pattern reads as a placeholder, matching the text
+   fields beside it (JS toggles .is-empty — CSS can't see an empty date value). */
+.text-field--date.is-empty,
+.text-field--time.is-empty { color: var(--ink-soft); }
 
 /* Chrome / Edge's built-in calendar + clock glyphs at the right edge of
    date/time inputs ship as a black SVG that ignores CSS `color`. The
@@ -1199,7 +1207,8 @@ body::before {
 	background: transparent;
 	color: inherit;
 	font: inherit;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;   /* buttons don't inherit it; match the kind label + stamps */
 	line-height: 1.2;
 	cursor: pointer;
 	-webkit-tap-highlight-color: transparent;
@@ -1361,12 +1370,15 @@ body::before {
    (quote) and Title / Where / When (rsvp) stack tight on consecutive lines like an
    address block. Same recipe for both wrappers. */
 .docket__body > .field-row,
-.event-fields > .field-row {
+.event-fields > .field-row,
+#fieldUrl {
 	align-items: start;
 }
-/* Label rides the same first line as the value (shared 6px lead + baseline). */
+/* Label rides the same first line as the value (shared 6px lead + baseline). The URL
+   row joins in, so URL · TITLE · WHERE · WHEN share one rhythm. */
 .docket__body > .field-row > .field-row__label,
-.event-fields > .field-row > .field-row__label {
+.event-fields > .field-row > .field-row__label,
+#fieldUrl > .field-row__label {
 	min-height: 0;
 	line-height: var(--baseline);
 	padding-top: var(--lead);
@@ -1551,10 +1563,8 @@ body::before {
    the hairline like every other field. They inherit the .text-field line recipe; the
    picker glyph just floats at the right edge of the line (tinted below). */
 
-/* The link IS the content on like / reply / bookmark / repost (and the event on
-   rsvp), so it sets larger — but it stays on the same ruled line and 64px label
-   grid as every other field, so URL · GOING · TITLE · WHERE · WHEN read as one form. */
-#typeUrl { font-size: var(--step-1); }
+/* The link sits on the same ruled line, 64px label grid and type size as every
+   other field, so URL · GOING · TITLE · WHERE · WHEN read as one form. */
 /* Keyboard focus. Line-style text fields keep their hairline a constant rule colour
    on focus — the caret marks the active field, and an accent line directly under the
    text muddied the type, so the underline no longer recolours; the side label is
@@ -1678,7 +1688,7 @@ body::before {
 .app[data-type="note"] .photo-picker-icon svg,
 .app[data-type="reply"] .photo-picker-icon svg { width: 16px; height: 16px; }
 .app[data-type="note"] .photo-picker__label,
-.app[data-type="reply"] .photo-picker__label { font-size: var(--step--1); font-weight: 600; }
+.app[data-type="reply"] .photo-picker__label { font-size: var(--step--1); font-weight: 700; }   /* 700: no 600 face is loaded */
 .app[data-type="note"] .photo-picker__hint,
 .app[data-type="reply"] .photo-picker__hint { display: none; }
 

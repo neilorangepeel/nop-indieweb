@@ -3295,6 +3295,23 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// dd/mm/yyyy pattern, Safari shows today's date as a hint) — we don't try
 	// to override that. input.value is "" when the user hasn't picked, which is
 	// all every consumer downstream reads.
+	// An empty native date/time field prints its "mm/dd/yyyy" / "--:--" pattern as
+	// VALUE text, in full ink, beside text fields whose empty state is a faded
+	// placeholder. Mark empty ones so CSS can print the pattern like a placeholder.
+	// The value setter is wrapped too: drafts, Clear and the event fetch all set
+	// .value directly, which fires no input event.
+	var valueProp = Object.getOwnPropertyDescriptor( HTMLInputElement.prototype, 'value' );
+	document.querySelectorAll( '.text-field--date, .text-field--time' ).forEach( function ( el ) {
+		function sync() { el.classList.toggle( 'is-empty', ! valueProp.get.call( el ) ); }
+		Object.defineProperty( el, 'value', {
+			configurable: true,
+			get: function () { return valueProp.get.call( el ); },
+			set: function ( v ) { valueProp.set.call( el, v ); sync(); },
+		} );
+		el.addEventListener( 'input', sync );
+		el.addEventListener( 'change', sync );
+		sync();
+	} );
 	if ( eventStartDate ) { eventStartDate.value = ''; }
 	if ( eventStartTime ) { eventStartTime.value = ''; }
 	var hadDraft = false;
