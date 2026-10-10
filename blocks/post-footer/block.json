@@ -55,6 +55,12 @@
 			"clientNavigation": false
 		}
 	},
+	"attributes": {
+		"compact": {
+			"type": "boolean",
+			"default": false
+		}
+	},
 	"usesContext": [ "postId", "postType" ],
 	"render": "file:./render.php",
 	"editorScript": "file:./editor.js",

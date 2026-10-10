@@ -113,41 +113,61 @@ if ( ! $post_id ) {
 	return;
 }
 
-// Per-request memo so listing pages that render the same post twice only hit the DB once.
-static $counts = [];
-if ( ! isset( $counts[ $post_id ] ) ) {
-	$endpoint = new \NOP\IndieWeb\Webmention\Like_Endpoint();
+// Totals come from post meta, maintained by Webmention\Engagement_Counts on
+// every comment change. Counting them here cost ~6 queries per post, which is
+// why engagement could never appear in an archive loop.
+// Compact readouts appear in a loop, so they never fall back to counting — see
+// Engagement_Counts::get(). The full footer renders once per page and does.
+$is_compact = ! empty( $attributes['compact'] );
+$totals     = \NOP\IndieWeb\Webmention\Engagement_Counts::get( $post_id, ! $is_compact );
 
-	$reply_wp = (int) get_comments( [
-		'post_id' => $post_id,
-		'type'    => 'comment',
-		'status'  => 'approve',
-		'count'   => true,
-	] );
+$like_count   = $totals['likes'];
+$repost_count = $totals['reposts'];
+$reply_count  = $totals['replies'];
 
-	$reply_wm = (int) get_comments( [
-		'post_id'    => $post_id,
-		'type'       => 'webmention',
-		'status'     => 'approve',
-		'count'      => true,
-		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
-		'meta_query' => [ [
-			'relation' => 'OR',
-			[ 'key' => 'webmention_type', 'compare' => 'NOT EXISTS' ],
-			[ 'key' => 'webmention_type', 'value' => [ 'like', 'repost' ], 'compare' => 'NOT IN' ],
-		] ],
-	] );
+// ── Compact readout (archive cards) ───────────────────────────────────────────
+// Counts only: no like button, no facepile, no syndication source. It exists so
+// a listing can show engagement without the two things that make the full
+// footer expensive — visitor_has_liked() (keyed on an IP hash, so uncacheable)
+// and nop_wm_get_data() (fetches up to 100 comment rows for the facepile).
+// Neither is reached below.
+if ( $is_compact ) {
+	if ( 0 === $like_count + $repost_count + $reply_count ) {
+		return; // A quiet post says nothing, rather than "0 likes".
+	}
 
-	$counts[ $post_id ] = [
-		'like'   => $endpoint->like_count( $post_id ),
-		'liked'  => $endpoint->visitor_has_liked( $post_id ),
-		'reply'  => $reply_wp + $reply_wm,
+	$readouts = [
+		[ $like_count,   $heart_icon,   _n( '%d like',   '%d likes',   $like_count,   'nop-indieweb' ) ],
+		[ $reply_count,  $comment_icon, _n( '%d reply',  '%d replies', $reply_count,  'nop-indieweb' ) ],
+		[ $repost_count, $repost_icon,  _n( '%d repost', '%d reposts', $repost_count, 'nop-indieweb' ) ],
 	];
+
+	$compact_wrapper = get_block_wrapper_attributes( [ 'class' => 'nop-post-footer nop-post-footer--compact' ] );
+	?>
+	<p <?php echo wp_kses_data( $compact_wrapper ); ?>>
+		<?php foreach ( $readouts as [ $count, $icon, $label ] ) :
+			if ( 0 === $count ) {
+				continue;
+			} ?>
+			<span class="nop-post-footer__readout">
+				<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
+				<span class="nop-post-footer__readout-count" aria-hidden="true"><?php echo esc_html( (string) $count ); ?></span>
+				<span class="screen-reader-text"><?php echo esc_html( sprintf( $label, $count ) ); ?></span>
+			</span>
+		<?php endforeach; ?>
+	</p>
+	<?php
+	return;
 }
 
-$like_count   = $counts[ $post_id ]['like'];
-$liked        = $counts[ $post_id ]['liked'];
-$reply_count  = $counts[ $post_id ]['reply'];
+// Not cacheable: this one varies per visitor (it is keyed on an IP hash), so it
+// is the single query that has to stay. Memoized per request because a listing
+// page may render the same post's footer more than once.
+static $liked_memo = [];
+if ( ! isset( $liked_memo[ $post_id ] ) ) {
+	$liked_memo[ $post_id ] = ( new \NOP\IndieWeb\Webmention\Like_Endpoint() )->visitor_has_liked( $post_id );
+}
+$liked = $liked_memo[ $post_id ];
 
 // Reactor identities for the reveal panels — shares the per-request memo with
 // the replies block, so the facepiles cost no extra queries.
@@ -157,21 +177,18 @@ $data = nop_wm_get_data( $post_id );
 // a photo. Anonymous site-likes still count toward the pill, but have nothing
 // to reveal; without this filter the caret opens an empty "Liked by" panel.
 $revealable      = static fn( array $e ): bool => '' !== trim( (string) ( $e['author'] ?? '' ) ) || ! empty( $e['photo'] );
-$repost_count    = count( $data['reposts'] );
 $likes_entries   = array_values( array_filter( $data['likes'],   $revealable ) );
 $reposts_entries = array_values( array_filter( $data['reposts'], $revealable ) );
 
 // Imported historical engagement — likes/reposts a post received on the platform
-// it originated on (Twitter, Instagram, …), folded into the one count each pill
-// already shows. One generic meta per metric, written by the importers/backfills
-// regardless of platform; no reactor identities come with these counts, so they
-// raise the pill numbers but reveal no facepile. Absent (0) on native posts.
+// it originated on (Twitter, Instagram, …) — is already folded into the totals
+// above by Engagement_Counts::calculate(). Adding it here too would double it.
+// No reactor identities come with those counts, so they raise the pill numbers
+// but reveal no facepile, and a pill can legitimately show more than its panel.
 //
 // Comments are deliberately NOT folded in: the archives give only a count, not
 // the actual comment content, so the comment pill counts only real, visible
 // comments (native + webmention) — no number when there's nothing to read.
-$like_count   += (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes',   true );
-$repost_count += (int) get_post_meta( $post_id, 'nop_indieweb_imported_reposts', true );
 
 $has_like_reveal   = ! empty( $likes_entries );
 $has_repost_reveal = ! empty( $reposts_entries );

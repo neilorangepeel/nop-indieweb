@@ -248,6 +248,36 @@ class Registry {
 				'description'   => 'Repost/share count carried over from the originating platform at import.',
 			],
 
+			// ── Cached engagement totals ─────────────────────────────────────────
+			// Written by Webmention\Engagement_Counts on every comment change, and
+			// by the backfill-engagement CLI command. These fold the imported_*
+			// offsets above in, so a consumer reads one number and adds nothing.
+			// Absent means zero — nothing is stored for a post with no engagement.
+			'nop_engagement_likes'          => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Like Count', 'nop-indieweb' ),
+				'description'   => 'Cached total likes (webmention + site + imported).',
+			],
+			'nop_engagement_reposts'        => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Repost Count', 'nop-indieweb' ),
+				'description'   => 'Cached total reposts (webmention + imported).',
+			],
+			'nop_engagement_replies'        => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Reply Count', 'nop-indieweb' ),
+				'description'   => 'Cached total replies (native comments + non-like/repost webmentions).',
+			],
+
 			// ── Syndication ──────────────────────────────────────────────────────
 			// Stored separately so we can query it directly without deserializing the array.
 			'nop_indieweb_source_url'       => array_merge( $string, [

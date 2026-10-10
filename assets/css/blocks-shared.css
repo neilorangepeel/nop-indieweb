@@ -1046,3 +1046,74 @@ a.nop-post-source__link:focus-visible {
 }
 
 } /* end @layer nop-appearance */
+
+/* ----------------------------------------------------------------------- */
+/* nop-sheet :: the photo archive as a contact sheet                       */
+/*                                                                         */
+/* Frames butt together on a 2px rule so the page reads as one proof sheet  */
+/* rather than a row of cards, and the engagement readout sits over the     */
+/* image.                                                                   */
+/*                                                                         */
+/* Unlayered: the overlay's positioning and its reveal are what make it     */
+/* work. The fade is appearance and is layered, so a theme outranks it.     */
+/*                                                                         */
+/* Everything here is interaction. The layout — full width, column count,   */
+/* gutters, square frames — is native: theme.json wideSize and the grid's   */
+/* minimumColumnWidth, with aspectRatio on the featured image. Frame        */
+/* numbers were built here as CSS counters and removed: decorative, and no  */
+/* block emits a loop index, so they cost 18 lines to say nothing.          */
+/* ----------------------------------------------------------------------- */
+
+.nop-sheet > li {
+	margin: 0;
+}
+
+.nop-sheet__frame {
+	position: relative;
+	line-height: 0; /* kill the inline-image descender gap between frames */
+}
+
+.nop-sheet__frame img {
+	display: block;
+	width:   100%;
+}
+
+/* The readout, laid over the foot of the frame. */
+.nop-sheet__frame .nop-post-footer--compact {
+	position:        absolute;
+	inset:           auto 0 0 0;
+	display:         flex;
+	justify-content: flex-end;
+	gap:             0.75rem;
+	margin:          0;
+	padding:         2rem 0.625rem 0.5rem;
+	line-height:     1;
+	font-size:       0.75rem;
+	color:           #fff;
+	background:      linear-gradient( to top, rgb(0 0 0 / 0.55), transparent );
+	opacity:         0;
+	pointer-events:  none;
+}
+
+/* Revealed by pointer *and* by keyboard — the frame is a link, so focusing it
+   has to surface the same information a hover does. */
+.nop-sheet__frame:hover   .nop-post-footer--compact,
+.nop-sheet__frame:focus-within .nop-post-footer--compact {
+	opacity: 1;
+}
+
+/* No hover on a touch screen, so there is nothing to reveal: show it always.
+   Without this the counts are simply unreachable on a phone. */
+@media (hover: none), (pointer: coarse) {
+	.nop-sheet__frame .nop-post-footer--compact {
+		opacity: 1;
+	}
+}
+
+@layer nop-appearance {
+	@media (prefers-reduced-motion: no-preference) {
+		.nop-sheet__frame .nop-post-footer--compact {
+			transition: opacity 0.18s ease;
+		}
+	}
+}

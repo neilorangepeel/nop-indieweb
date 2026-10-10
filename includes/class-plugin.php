@@ -51,6 +51,7 @@ use NOP\IndieWeb\Webmention\Webmention_Sender;
 use NOP\IndieWeb\Webmention\Like_Endpoint;
 use NOP\IndieWeb\Webmention\Social_Backfeed;
 use NOP\IndieWeb\Webmention\Comment_Filter;
+use NOP\IndieWeb\Webmention\Engagement_Counts;
 use NOP\IndieWeb\Webmention\Privacy;
 use NOP\IndieWeb\Registrars\Block_Registrar;
 use NOP\IndieWeb\Registrars\Pattern_Registrar;
@@ -277,5 +278,6 @@ class Plugin {
 		( new Map_Cleanup() )->register();
 		( new Venue_Visit_Counter() )->register();
 		( new Comment_Filter() )->register();
+		( new Engagement_Counts() )->register();
 	}
 }

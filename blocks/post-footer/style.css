@@ -33,6 +33,26 @@
 	gap:         0.25rem;
 }
 
+/* ── Compact readout (archive cards) ──────────────────────────────────────── */
+
+/* Not a control: no pill, no hit area, nothing to click. It reports, and the
+   card's own link does the navigating. A card with no engagement renders no
+   element at all, so there is no empty state to style. */
+.nop-post-footer--compact {
+	display:   flex;
+	flex-wrap: wrap;
+	gap:       0.75rem;
+	margin:    0;
+	color:     var(--nop-meta-color, currentColor);
+}
+
+.nop-post-footer__readout {
+	display:              inline-flex;
+	align-items:          center;
+	gap:                  0.25rem;
+	font-variant-numeric: tabular-nums;
+}
+
 /* ── Reveal caret (who liked / reposted) ──────────────────────────────────── */
 
 /* Sits inside the pill, after the count. Its own hit area so it reads as a

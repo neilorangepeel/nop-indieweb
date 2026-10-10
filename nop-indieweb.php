@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.9.18
+ * Version:     0.9.20
  * Requires at least: 6.7
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NOP_INDIEWEB_VERSION', '0.9.18' );
+define( 'NOP_INDIEWEB_VERSION', '0.9.20' );
 define( 'NOP_INDIEWEB_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 
@@ -102,6 +102,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/class-posting-page.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-health-check.php';
 require_once NOP_INDIEWEB_DIR . 'includes/class-map-cleanup.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-comment-filter.php';
+require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-engagement-counts.php';
 require_once NOP_INDIEWEB_DIR . 'includes/discovery/class-link-discovery.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-oauth.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-venue-visit-counter.php';
@@ -132,8 +133,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-weather.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-health-check-cli.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-syndication-flag.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-engagement.php';
 	\WP_CLI::add_command( 'nop-indieweb health-check',                \NOP\IndieWeb\Cli\Health_Check_CLI::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-syndication-flag',   \NOP\IndieWeb\Cli\Backfill_Syndication_Flag::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-engagement',        \NOP\IndieWeb\Cli\Backfill_Engagement::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-checkin-maps',       \NOP\IndieWeb\Cli\Backfill_Checkin_Maps::class );

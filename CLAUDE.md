@@ -70,8 +70,8 @@ Notes:
   binary, and the full toolchain runs locally in about ten seconds.
 
   ```bash
-  PHP=/Applications/Studio.app/Contents/Resources/php-bin/8.4.23-studio-1/php
-  $PHP -v                          # 8.4.23, with mbstring/intl/dom/sqlite3/zip
+  PHP=/Applications/Studio.app/Contents/Resources/php-bin/8.4.24-studio-2/php
+  $PHP -v                          # 8.4.24, with mbstring/intl/dom/sqlite3/zip
   $PHP composer.phar install
   $PHP vendor/bin/phpstan analyse --memory-limit=3G
   $PHP vendor/bin/phpunit
