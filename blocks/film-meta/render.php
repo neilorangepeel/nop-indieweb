@@ -22,7 +22,7 @@ if ( ! $post_id ) {
 	<div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
 		<div class="nop-film-meta__rating">
 			<?php /* translators: %s: star rating out of 5, e.g. "4" */ ?>
-			<span class="nop-film-stars" aria-label="<?php echo esc_attr( sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), 4 ) ); ?>">
+			<span class="nop-film-stars" role="img" aria-label="<?php echo esc_attr( sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), 4 ) ); ?>">
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
 				<span class="nop-film-star is-full" aria-hidden="true">★</span>
@@ -58,7 +58,7 @@ if ( ! empty( $photo_ids[0] ) ) {
 
 /* translators: %s: numeric rating e.g. 4.5 */
 $star_label = $rating > 0 ? sprintf( __( '%s out of 5 stars', 'nop-indieweb' ), $rating ) : __( 'Not rated', 'nop-indieweb' );
-$stars_html = '<span class="nop-film-stars" aria-label="' . esc_attr( $star_label ) . '">';
+$stars_html = '<span class="nop-film-stars" role="img" aria-label="' . esc_attr( $star_label ) . '">';
 for ( $i = 1; $i <= 5; $i++ ) {
 	if ( $rating >= $i ) {
 		$class = 'is-full';
