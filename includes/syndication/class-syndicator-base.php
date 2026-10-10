@@ -131,7 +131,7 @@ abstract class Syndicator_Base {
 				/* translators: %s: venue name */
 				$lead = '📍 ' . sprintf( __( 'Checked in at %s', 'nop-indieweb' ), $venue_name );
 			}
-			return '' !== $body ? $lead . "\n\n" . $body : $lead;
+			return '' !== $body ? $lead . "\n" . $body : $lead;
 		}
 		if ( ! $post ) {
 			return '';
@@ -156,7 +156,7 @@ abstract class Syndicator_Base {
 			'repost'   => '🔁 ' . __( 'Reposted', 'nop-indieweb' ),
 		];
 		if ( isset( $leads[ $kind ] ) ) {
-			return '' !== $body ? $leads[ $kind ] . "\n\n" . $body : $leads[ $kind ];
+			return '' !== $body ? $leads[ $kind ] . "\n" . $body : $leads[ $kind ];
 		}
 
 		// RSVP leads carry the event itself — name, date, venue — since the body
@@ -187,7 +187,7 @@ abstract class Syndicator_Base {
 			} elseif ( '' !== $where ) {
 				$lead .= "\n" . '📍 ' . $where;
 			}
-			return '' !== $body ? $lead . "\n\n" . $body : $lead;
+			return '' !== $body ? $lead . "\n" . $body : $lead;
 		}
 
 		if ( 'article' === $kind ) {
@@ -218,18 +218,19 @@ abstract class Syndicator_Base {
 	}
 
 	/**
-	 * Composes `<text>\n\n<suffix>`, truncating $text so the whole thing fits in
+	 * Composes `<text><sep><suffix>`, truncating $text so the whole thing fits in
 	 * $limit. $suffix_cost is how many characters the suffix occupies against the
 	 * platform's budget — for Mastodon, URLs cost a flat 23 regardless of length;
 	 * for Bluesky a facet label costs its visible character count.
 	 *
+	 * The separator is a single newline after a one-line lead (check-in, like,
+	 * bookmark…) so the link hugs it, and a blank line after multi-line prose.
 	 * If $suffix is empty, no separator or suffix is appended.
 	 */
 	protected function compose_status( string $text, int $limit, string $suffix, int $suffix_cost ): string {
 		$has_suffix = '' !== $suffix;
-		$overhead   = $has_suffix ? 2 + $suffix_cost : 0;
 
-		$max_text = max( 0, $limit - $overhead );
+		$max_text = max( 0, $limit - ( $has_suffix ? 2 + $suffix_cost : 0 ) );
 		if ( mb_strlen( $text ) > $max_text ) {
 			$text = mb_substr( $text, 0, max( 0, $max_text - 1 ) ) . '…';
 		}
@@ -237,7 +238,10 @@ abstract class Syndicator_Base {
 		if ( ! $has_suffix ) {
 			return $text;
 		}
-		return ( '' === $text ) ? $suffix : ( $text . "\n\n" . $suffix );
+		if ( '' === $text ) {
+			return $suffix;
+		}
+		return $text . ( str_contains( $text, "\n" ) ? "\n\n" : "\n" ) . $suffix;
 	}
 
 	/**
