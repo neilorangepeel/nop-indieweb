@@ -83,6 +83,16 @@
 	display: block;
 }
 
+.nop-webmentions__cancel-reply[hidden],
+.nop-webmentions__fresh[hidden],
+.nop-webmentions__reply--sent[hidden] {
+	display: none;
+}
+
+.nop-webmentions__form-status:empty {
+	display: none;
+}
+
 @layer nop-appearance {
 
 	.nop-webmentions__form {
@@ -101,8 +111,7 @@
 		color:          var(--nop-muted);
 	}
 
-	/* Cancel reply link — shown by comment-reply.js when a threaded reply is
-	   active. */
+	/* Cancel reply link — shown while a threaded reply is active. */
 	.nop-webmentions__cancel-reply {
 		margin-bottom:   0.625rem;
 		font-size:       0.8125rem;
@@ -166,4 +175,33 @@
 		margin:    0;
 	}
 
+
+	.nop-webmentions__form-status {
+		margin:    0.625rem 0 0;
+		font-size: 0.8125rem;
+		color:     var(--nop-muted);
+	}
+
+	.nop-webmentions__reply--sent {
+		margin-top:  0.75rem;
+		padding-top: 0.75rem;
+		border-top:  1px solid var(--nop-divider-color);
+	}
+
+	.nop-webmentions__fresh {
+		margin-top:    0.75rem;
+		padding:       0.3em 0.85em;
+		border:        1px solid currentColor;
+		border-radius: var(--nop-radius-pill, 999px);
+		background:    none;
+		color:         inherit;
+		font:          inherit;
+		font-size:     0.8125rem;
+		cursor:        pointer;
+	}
+
+	.nop-webmentions__fresh:focus-visible {
+		outline:        2px solid currentColor;
+		outline-offset: 2px;
+	}
 }

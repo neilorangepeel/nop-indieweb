@@ -376,15 +376,54 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 	$commenter = wp_get_current_commenter();
 	$user      = $logged_in ? wp_get_current_user() : null;
 
+	// The nop-indieweb/responses store posts the form in place, threads a
+	// reply without moving the form, and offers new responses as they arrive.
+	// Without JavaScript it is a plain form posting to wp-comments-post.php.
+	$interactive = ! $force;
+	if ( $interactive ) {
+		wp_enqueue_script_module( 'nop-indieweb-responses' );
+		wp_interactivity_state( 'nop-indieweb/responses', [
+			'endpoint' => rest_url( 'nop-indieweb/v1/like' ),
+			'i18n'     => [
+				'heading'  => __( 'Leave a reply', 'nop-indieweb' ),
+				/* translators: %s: name of the person being replied to */
+				'replying' => __( 'Replying to %s', 'nop-indieweb' ),
+				'sending'  => __( 'Posting your reply…', 'nop-indieweb' ),
+				'posted'   => __( 'Your reply is posted.', 'nop-indieweb' ),
+				'held'     => __( 'Thanks — your reply is awaiting moderation.', 'nop-indieweb' ),
+				'failed'   => __( 'Your reply could not be posted. Please try again.', 'nop-indieweb' ),
+				/* translators: %d: number of new responses (one) */
+				'freshOne'   => __( 'Show %d new response', 'nop-indieweb' ),
+				/* translators: %d: number of new responses */
+				'freshOther' => __( 'Show %d new responses', 'nop-indieweb' ),
+			],
+		] );
+	}
+	$context = [
+		'postId'  => $post_id,
+		'known'   => $interactive ? ( new \NOP\IndieWeb\Webmention\Like_Endpoint() )->response_count( $post_id ) : 0,
+		'fresh'   => 0,
+		'parent'  => 0,
+		'replyTo' => '',
+		'sending' => false,
+		'status'  => '',
+		'me'      => $user ? $user->display_name : '',
+		'sent'    => [ 'author' => '', 'text' => '' ],
+	];
+
 	ob_start();
 	?>
-	<div id="respond" class="nop-webmentions__form">
+	<div id="respond" class="nop-webmentions__form"<?php if ( $interactive ) : ?>
+		data-wp-interactive="nop-indieweb/responses"
+		data-wp-context="<?php echo esc_attr( (string) wp_json_encode( $context ) ); ?>"
+		data-wp-init="callbacks.watch"
+		data-wp-on-document--click="actions.replyTo"<?php endif; ?>>
 		<?php if ( $show_heading ) : ?>
-		<p class="nop-webmentions__form-label"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
+		<p class="nop-webmentions__form-label" data-wp-text="state.heading"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
 		<?php endif; ?>
-		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo esc_url( $post_url . '#respond' ); ?>" style="display:none;"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
-		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>">
-			<?php if ( $logged_in && $user ) : ?>
+		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo esc_url( $post_url . '#respond' ); ?>" hidden data-wp-bind--hidden="!context.parent" data-wp-on--click="actions.cancelReply"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
+		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>" data-wp-on--submit="actions.submit" data-wp-bind--aria-busy="context.sending">
+			<?php if ( $user ) : ?>
 			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">
 				<?php
 				printf(
@@ -414,12 +453,22 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 			</p>
 			<?php endif; ?>
 			<input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( (string) $post_id ); ?>">
-			<input type="hidden" name="comment_parent" id="comment_parent" value="0">
+			<input type="hidden" name="comment_parent" id="comment_parent" value="0" data-wp-bind--value="context.parent">
 			<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $post_url ); ?>">
 			<p class="form-submit">
-				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post comment', 'nop-indieweb' ); ?>">
+				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post comment', 'nop-indieweb' ); ?>" data-wp-bind--disabled="context.sending">
 			</p>
 		</form>
+		<?php if ( $interactive ) : ?>
+		<p class="nop-webmentions__form-status" role="status" aria-live="polite" data-wp-text="context.status"></p>
+		<div class="nop-webmentions__reply nop-webmentions__reply--sent" hidden data-wp-bind--hidden="!context.sent.text">
+			<div class="nop-webmentions__reply-body">
+				<p class="nop-webmentions__reply-meta"><strong class="p-author p-name" data-wp-text="context.sent.author"></strong></p>
+				<div class="nop-webmentions__reply-content" data-wp-text="context.sent.text"></div>
+			</div>
+		</div>
+		<button type="button" class="nop-webmentions__fresh" hidden data-wp-bind--hidden="!context.fresh" data-wp-on--click="actions.showFresh" data-wp-text="state.freshLabel"></button>
+		<?php endif; ?>
 	</div>
 	<?php
 	return (string) ob_get_clean();

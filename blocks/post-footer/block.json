@@ -51,9 +51,7 @@
 			"style": true,
 			"width": true
 		},
-		"interactivity": {
-			"clientNavigation": false
-		}
+		"interactivity": true
 	},
 	"attributes": {
 		"compact": {
@@ -64,6 +62,6 @@
 	"usesContext": [ "postId", "postType" ],
 	"render": "file:./render.php",
 	"editorScript": "file:./editor.js",
-	"viewScript": [ "nop-like-action", "file:./view.js" ],
+	"viewScriptModule": [ "nop-indieweb-likes", "file:./view.js" ],
 	"style": [ "file:./style.css", "nop-blocks-shared" ]
 }

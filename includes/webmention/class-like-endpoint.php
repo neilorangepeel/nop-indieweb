@@ -64,8 +64,9 @@ class Like_Endpoint {
 		}
 
 		return new \WP_REST_Response( [
-			'count' => $this->like_count( $post_id ),
-			'liked' => $this->visitor_has_liked( $post_id ),
+			'count'     => $this->like_count( $post_id ),
+			'liked'     => $this->visitor_has_liked( $post_id ),
+			'responses' => $this->response_count( $post_id ),
 		] );
 	}
 
@@ -117,14 +118,79 @@ class Like_Endpoint {
 
 	// ── Public helpers (used by render.php) ───────────────────────────────────
 
+	/**
+	 * Likes shown on the pills: site and webmention likes, plus likes imported
+	 * from the platform the post first appeared on (which carry no identities).
+	 */
 	public function like_count( int $post_id ): int {
-		return (int) get_comments( [
+		return (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes', true ) + (int) get_comments( [
 			'post_id'    => $post_id,
 			'type'       => 'webmention',
 			'status'     => 'approve',
 			'count'      => true,
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- low-frequency meta/taxonomy lookup (import, admin, or per-post render cache), not a hot path
 			'meta_query' => [ [ 'key' => 'webmention_type', 'value' => 'like' ] ],
+		] );
+	}
+
+	/**
+	 * Every approved response — comments and webmentions of any kind — which is
+	 * what the replies area counts. Polled to offer "new responses".
+	 */
+	public function response_count( int $post_id ): int {
+		return (int) get_comments( [
+			'post_id'  => $post_id,
+			'type__in' => [ 'comment', 'webmention' ],
+			'status'   => 'approve',
+			'count'    => true,
+		] );
+	}
+
+	/**
+	 * Seeds the shared `nop-indieweb/likes` Interactivity store with this post's
+	 * count and the visitor's liked state, so every like control for the post —
+	 * a tile's heart, the post footer's pill — renders and updates as one.
+	 */
+	public function seed_state( int $post_id ): void {
+		static $seeded = [];
+		if ( isset( $seeded[ $post_id ] ) ) {
+			return;
+		}
+		$seeded[ $post_id ] = true;
+
+		// Derived state for the server's directive pass — the same getters
+		// assets/js/likes.js defines, so the markup is complete before JS loads.
+		$post = static function (): array {
+			$state = wp_interactivity_state( 'nop-indieweb/likes' );
+			$key   = (string) ( wp_interactivity_get_context()['key'] ?? '' );
+			return $state['posts'][ $key ] ?? [ 'count' => 0, 'liked' => false ];
+		};
+
+		wp_interactivity_state( 'nop-indieweb/likes', [
+			'liked'      => static fn(): bool => (bool) $post()['liked'],
+			'count'      => static fn(): int => (int) $post()['count'],
+			'label'      => static fn(): string => $post()['liked'] ? __( 'Liked', 'nop-indieweb' ) : __( 'Like', 'nop-indieweb' ),
+			'countLabel' => static function () use ( $post ): string {
+				$count = (int) $post()['count'];
+				/* translators: %d: number of likes */
+				return sprintf( _n( '%d like', '%d likes', $count, 'nop-indieweb' ), $count );
+			},
+			'endpoint' => rest_url( 'nop-indieweb/v1/like' ),
+			'i18n'     => [
+				'like'   => __( 'Like', 'nop-indieweb' ),
+				'liked'  => __( 'Liked', 'nop-indieweb' ),
+				/* translators: %d: number of likes (one) */
+				'one'    => __( '%d like', 'nop-indieweb' ),
+				/* translators: %d: number of likes */
+				'other'  => __( '%d likes', 'nop-indieweb' ),
+				'failed' => __( 'Could not save like. Please try again.', 'nop-indieweb' ),
+			],
+			'posts'    => [
+				'p' . $post_id => [
+					'count' => $this->like_count( $post_id ),
+					'liked' => $this->visitor_has_liked( $post_id ),
+				],
+			],
 		] );
 	}
 

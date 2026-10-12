@@ -54,7 +54,7 @@
 			"width": true
 		},
 		"interactivity": {
-			"clientNavigation": false
+			"clientNavigation": true
 		}
 	}
 }
