@@ -323,7 +323,7 @@ class Social_Backfeed {
 			add_comment_meta( $comment_id, 'webmention_platform',      $data['platform'],                 true );
 			add_comment_meta( $comment_id, 'webmention_platform_id',   $data['platform_id'],              true );
 			add_comment_meta( $comment_id, 'webmention_source',        $data['source'],                   true );
-			add_comment_meta( $comment_id, 'webmention_author_photo',  $data['author_photo'],             true );
+			add_comment_meta( $comment_id, 'webmention_author_photo',  \NOP\IndieWeb\Webmention\Avatar_Cache::cache( (string) $data['author_photo'] ),             true );
 			add_comment_meta( $comment_id, 'webmention_author_handle', $data['author_handle'],            true );
 			add_comment_meta( $comment_id, 'webmention_silo_key',      $silo_key,                         true );
 			$seen[ $data['platform_id'] ] = true;

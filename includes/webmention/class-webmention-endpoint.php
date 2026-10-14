@@ -325,7 +325,7 @@ class Webmention_Endpoint {
 		] ) );
 
 		update_comment_meta( $comment_id, 'webmention_type',         $parsed['type'] );
-		update_comment_meta( $comment_id, 'webmention_author_photo', $parsed['author_photo'] );
+		update_comment_meta( $comment_id, 'webmention_author_photo', Avatar_Cache::cache( (string) $parsed['author_photo'] ) );
 		update_comment_meta( $comment_id, 'webmention_original_url', $parsed['original_url'] );
 		update_comment_meta( $comment_id, 'webmention_platform',     $parsed['platform'] );
 	}
@@ -335,7 +335,7 @@ class Webmention_Endpoint {
 		add_comment_meta( $comment_id, 'webmention_target',       $target,                 true );
 		add_comment_meta( $comment_id, 'webmention_type',         $parsed['type'],         true );
 		add_comment_meta( $comment_id, 'webmention_platform',     $parsed['platform'],     true );
-		add_comment_meta( $comment_id, 'webmention_author_photo', $parsed['author_photo'], true );
+		add_comment_meta( $comment_id, 'webmention_author_photo', Avatar_Cache::cache( (string) $parsed['author_photo'] ), true );
 		add_comment_meta( $comment_id, 'webmention_original_url', $parsed['original_url'], true );
 		add_comment_meta( $comment_id, 'webmention_silo_key', \NOP\IndieWeb\nop_indieweb_wm_silo_key( $parsed['type'], $parsed['original_url'], $parsed['author_url'] ), true );
 	}

@@ -93,6 +93,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-endpoint.p
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-webmention-sender.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-like-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-social-backfeed.php';
+require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-avatar-cache.php';
 require_once NOP_INDIEWEB_DIR . 'includes/webmention/class-privacy.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-foursquare-enricher.php';
 require_once NOP_INDIEWEB_DIR . 'includes/venue/class-geoapify-geocoder.php';
@@ -136,6 +137,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-engagement.php';
 	\WP_CLI::add_command( 'nop-indieweb health-check',                \NOP\IndieWeb\Cli\Health_Check_CLI::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-syndication-flag',   \NOP\IndieWeb\Cli\Backfill_Syndication_Flag::class );
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-avatars.php';
+	\WP_CLI::add_command( 'nop-indieweb backfill-avatars',           \NOP\IndieWeb\Cli\Backfill_Avatars::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-engagement',        \NOP\IndieWeb\Cli\Backfill_Engagement::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-categories',   \NOP\IndieWeb\Cli\Backfill_Venue_Categories::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-details',      \NOP\IndieWeb\Cli\Backfill_Venue_Details::class );

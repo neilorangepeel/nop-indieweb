@@ -178,7 +178,13 @@ function nop_wm_avatar_wrap( array $entry, int $size ): string {
 	$wrap_class = 'nop-webmentions__avatar-wrap'
 	            . ( $platform ? ' nop-webmentions__avatar-wrap--' . sanitize_html_class( $platform ) : '' );
 
-	if ( $photo ) {
+	// Webmention authors' photos are shown only from a copy held on this site; a
+	// remote URL would let the author's host see who is reading. `wp
+	// nop-indieweb backfill-avatars` converts old ones. Gravatar, which commenters
+	// choose to have and the privacy page declares, is the one remote exception.
+	$photo_host = $photo ? (string) wp_parse_url( (string) $photo, PHP_URL_HOST ) : '';
+	$is_gravatar = 'gravatar.com' === $photo_host || str_ends_with( $photo_host, '.gravatar.com' );
+	if ( $photo && ( \NOP\IndieWeb\Webmention\Avatar_Cache::is_local( (string) $photo ) || $is_gravatar ) ) {
 		$avatar = '<img src="' . esc_url( $photo ) . '"'
 		        . ' alt=""'
 		        . ' class="nop-webmentions__avatar' . $size_class . '"'

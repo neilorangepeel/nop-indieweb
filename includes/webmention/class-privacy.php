@@ -28,6 +28,11 @@ class Privacy {
 	public function register(): void {
 		add_filter( 'wp_privacy_personal_data_exporters', [ $this, 'register_exporter' ] );
 		add_filter( 'wp_privacy_personal_data_erasers', [ $this, 'register_eraser' ] );
+
+		// Collect less in the first place: no commenter IP address or browser
+		// string is stored (core keeps both for every comment by default).
+		add_filter( 'pre_comment_user_ip', '__return_empty_string' );
+		add_filter( 'pre_comment_user_agent', '__return_empty_string' );
 	}
 
 	public function register_exporter( array $exporters ): array {
@@ -91,7 +96,11 @@ class Privacy {
 		foreach ( $comments as $comment ) {
 			$comment_id = (int) $comment->comment_ID;
 			foreach ( $this->erasable_keys() as $key ) {
-				if ( '' !== (string) get_comment_meta( $comment_id, $key, true ) ) {
+				$value = (string) get_comment_meta( $comment_id, $key, true );
+				if ( '' !== $value ) {
+					if ( 'webmention_author_photo' === $key ) {
+						Avatar_Cache::delete( $value );
+					}
 					delete_comment_meta( $comment_id, $key );
 					$removed = true;
 				}
