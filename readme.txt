@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.21
+Stable tag: 0.9.22
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.22 =
+* Fixes duplicate posts on Mastodon and Tumblr: the per-target and per-post locks used `add_option()`, which is not atomic (it succeeds whenever the stored value differs), so racing runs both posted and overwrote each other's syndication URLs. Both now use an atomic `INSERT IGNORE` lock. Mastodon and Pixelfed statuses also carry an `Idempotency-Key`.
 
 = 0.9.21 =
 * Merges the Interactivity API work (shared like store, in-place replies) with the cached engagement totals and compact post-footer readout. Totals on the full footer come from the cached `Engagement_Counts`; the like pill is seeded from the shared store.
