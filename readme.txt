@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.23
+Stable tag: 0.9.24
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,10 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.24 =
+* Cleaner syndication for every kind. Notes, articles, workouts, check-ins, photos, videos, stories, watches and listens go out as text plus the bare permalink with no link card; responses keep a card of the cited page and flight check-ins keep their arc map. Bluesky links back with the bare URL on every post. Workouts lead with distance, time and elevation, articles carry their excerpt, and the site-icon portrait is no longer used as a card/Open Graph fallback. Filter `nop_indieweb_quiet_post` restores cards.
+* A post whose photos or video fail to upload is retried instead of being sent text-only; the final attempt sends the text.
 
 = 0.9.23 =
 * The /post composer sends one id per composed post (kept across "Try again" and offline-queue replays) and Micropub returns the existing post for a repeated id, so a response lost after the post was created can no longer publish and syndicate it twice.
