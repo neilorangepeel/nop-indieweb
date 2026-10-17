@@ -193,7 +193,43 @@ class Endpoint {
 			);
 		}
 
-		$post_id = $service->handle( $payload, (int) $token['user_id'] );
+		// Idempotency for the /post composer: it sends one id per composed post and
+		// repeats it on "Try again" and offline-queue replays. If a response was lost
+		// after the post was created, the repeat answers with that post instead of
+		// publishing (and syndicating) a second one.
+		$client_id = $payload['properties']['mp-client-id'][0] ?? '';
+		$client_id = is_string( $client_id ) ? sanitize_key( $client_id ) : '';
+		$lock_key  = '';
+		if ( '' !== $client_id ) {
+			$lock_key = 'nop_mp_client_' . md5( $client_id );
+			for ( $i = 0; $i < 50 && ! \NOP\IndieWeb\nop_indieweb_lock_acquire( $lock_key, 2 * MINUTE_IN_SECONDS ); $i++ ) {
+				usleep( 200000 );
+			}
+			$existing = get_posts( [
+				'post_type'      => 'any',
+				'post_status'    => 'any',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => 'nop_indieweb_client_id', // phpcs:ignore WordPress.DB.SlowDBQuery -- one-row lookup on a replay guard.
+				'meta_value'     => $client_id,               // phpcs:ignore WordPress.DB.SlowDBQuery
+				'no_found_rows'  => true,
+			] );
+			if ( $existing ) {
+				\NOP\IndieWeb\nop_indieweb_lock_release( $lock_key );
+				return $this->created_response( (int) $existing[0] );
+			}
+		}
+
+		try {
+			$post_id = $service->handle( $payload, (int) $token['user_id'] );
+			if ( ! is_wp_error( $post_id ) && '' !== $client_id ) {
+				update_post_meta( $post_id, 'nop_indieweb_client_id', $client_id );
+			}
+		} finally {
+			if ( '' !== $lock_key ) {
+				\NOP\IndieWeb\nop_indieweb_lock_release( $lock_key );
+			}
+		}
 		if ( is_wp_error( $post_id ) ) {
 			\NOP\IndieWeb\nop_indieweb_log( 'Service handler error', $post_id->get_error_message() );
 			return $post_id;
@@ -225,7 +261,11 @@ class Endpoint {
 		// Phase 2 hook: POSSE syndication to Mastodon, Bluesky, etc. hangs off this.
 		do_action( 'nop_indieweb_post_created', $post_id, $payload, $service );
 
-		// Micropub spec: 201 Created with the new post URL in Location header.
+		return $this->created_response( $post_id );
+	}
+
+	/** Micropub spec: 201 Created with the new post URL in the Location header. */
+	private function created_response( int $post_id ): WP_REST_Response {
 		$response = new WP_REST_Response( null, 201 );
 		$response->header( 'Location', get_permalink( $post_id ) );
 		$response->header( 'X-Edit-URL', admin_url( 'post.php?post=' . $post_id . '&action=edit' ) );

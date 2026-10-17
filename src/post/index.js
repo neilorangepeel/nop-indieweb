@@ -1918,6 +1918,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// first await, but the offline path awaits queueAndAck with the compose view
 	// still up — a rapid double-tap would queue the same post twice.
 	var submitting = false;
+	var pendingClientId = '';
 	async function submitPost() {
 		if ( submitting ) { return; }
 		// A premature tap explains itself rather than doing nothing: say what's
@@ -1931,6 +1932,11 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 
 		var post = formToPost();
+		// One id per composed post, kept across "Try again" and the offline queue, so the
+		// server can recognise a repeat of a post it already created (a response lost
+		// after the post was made would otherwise publish and syndicate it twice).
+		if ( ! pendingClientId ) { pendingClientId = ( window.crypto && crypto.randomUUID ) ? crypto.randomUUID() : String( Date.now() ) + Math.random().toString( 16 ).slice( 2 ); }
+		post.clientId = pendingClientId;
 
 		// Alt-text conscience: alt is lost the moment a photo syndicates, so nudge
 		// once before sending if any selected print still has none. Soft — "Post
@@ -1973,6 +1979,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			// scheduled (nothing sent yet), private, or no-targets posts.
 			var idMatch   = /[?&]post=(\d+)/.exec( result.editUrl || '' );
 			var receiptId = ( idMatch && ! post.scheduledAt && ! post.isPrivate && post.syndicateTo.length ) ? +idMatch[1] : 0;
+			pendingClientId = '';
 			showSuccess( result.permalink, result.editUrl, result.photoUrls, post.scheduledAt, receiptId );
 			if ( captionCopied ) { showToast( __( 'Caption copied to clipboard' ) ); }
 		} catch ( err ) {
@@ -2099,6 +2106,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		media = media || {};
 
 		props[ 'post-kind' ] = [ post.type ];
+		if ( post.clientId ) { props[ 'mp-client-id' ] = [ post.clientId ]; }
 
 		// For a video story the caption rides as the clip's alt (→ figcaption under
 		// the video), so don't also emit it as the post content. A photo story keeps
@@ -2584,6 +2592,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	function resetForm() {
+		pendingClientId = '';   // the queued copy carries its own id
 		clearFields();
 		if ( nextSerial ) { setTk( 'tk-id', TK_ID_PRE + ( ++nextSerial ) ); }
 		switchType( 'note' );
