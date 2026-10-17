@@ -107,10 +107,10 @@ abstract class Syndicator_Base {
 
 	/**
 	 * A bare note: text only — no photo, clip, venue, response target or title of
-	 * its own. Its auto-generated title just repeats the body, so a link card (or a
-	 * backlink that makes the network build one) would show the same sentence three
-	 * times under an unrelated site-icon portrait. These go out as plain text.
-	 * Filter `nop_indieweb_note_backlink` to true to keep the permalink on them.
+	 * its own. Its auto-generated title just repeats the body, so a link *card*
+	 * would show the same sentence three times under an unrelated site-icon
+	 * portrait. These link back with their bare URL and no card.
+	 * Filter `nop_indieweb_note_backlink` to true to restore the old card treatment.
 	 */
 	protected function is_plain_note( int $post_id ): bool {
 		if ( apply_filters( 'nop_indieweb_note_backlink', false, $post_id ) ) {

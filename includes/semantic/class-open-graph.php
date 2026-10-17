@@ -123,6 +123,12 @@ class Open_Graph {
 			return $map;
 		}
 
+		// A bare note has no picture of its own; the author's portrait under every
+		// one is noise, so it gets a text-only card.
+		if ( 'note' === (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return '';
+		}
+
 		return (string) get_site_icon_url( 512 );
 	}
 

@@ -81,14 +81,14 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		$host  = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 		$label = '' !== $host ? $host : (string) get_permalink( $post_id );
 		if ( $this->is_plain_note( $post_id ) ) {
-			$label = '';
+			$label = (string) get_permalink( $post_id );
 		}
 		$body  = $this->build_full_text( $post_id );
 		return [
 			'slug'  => $this->slug(),
 			'label' => $this->label(),
 			'text'  => $this->compose_status( $body, 300, $label, mb_strlen( $label ) ),
-			'count' => mb_strlen( $body ) + ( '' !== $label ? 2 + mb_strlen( $label ) : 0 ),
+			'count' => mb_strlen( $body ) + 2 + mb_strlen( $label ),
 			'limit' => 300,
 			'badge' => $this->preview_badge( $post_id ),
 		];
@@ -157,13 +157,15 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// of embed type so the link treatment is consistent.
 		$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 		$label  = '' !== $host ? $host : $permalink;
-		// A bare note goes out as just its text: no backlink, no card (see is_plain_note()).
+		// A bare note links back with its full URL as the visible text and no card
+		// (see is_plain_note()) — the link says where it came from, the card would
+		// only repeat the note.
 		$plain  = $this->is_plain_note( $post_id );
 		if ( $plain ) {
-			$label = '';
+			$label = $permalink;
 		}
 		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
-		$facet  = '' !== $label ? $this->build_label_facet( $text, $label, $permalink ) : null;
+		$facet  = $this->build_label_facet( $text, $label, $permalink );
 		// Bluesky doesn't auto-link hashtags or mentions the way Mastodon does —
 		// each #tag and @handle the author typed needs an explicit facet.
 		$facets = array_merge(
