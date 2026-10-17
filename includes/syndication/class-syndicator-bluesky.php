@@ -175,6 +175,9 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		} elseif ( $images ) {
 			$media = $this->build_image_embed( $images, $session );
 		}
+		if ( ( $video || $images ) && ! $media && ! self::$text_only_ok ) {
+			return $this->media_failed();
+		}
 
 		// Embeds are mutually exclusive on Bluesky, so pick one:
 		//   quote → the quoted post (recordWithMedia when the post also has media)

@@ -96,6 +96,8 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		$media_ids = $this->upload_post_images( $post_id, $instance, $token );
 		if ( $media_ids ) {
 			$body['media_ids'] = $media_ids;
+		} elseif ( ! self::$text_only_ok && $this->expects_media( $post_id, true ) ) {
+			return $this->media_failed();
 		}
 
 		$response = wp_remote_post(

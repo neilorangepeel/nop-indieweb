@@ -203,6 +203,16 @@ class Syndication_Manager {
 
 		$result = $syndicator->syndicate( $post_id );
 
+		// Photos that wouldn't upload on any try: send the text rather than nothing.
+		if ( $attempt >= self::MAX_ATTEMPTS && is_wp_error( $result ) && 'nop_media_failed' === $result->get_error_code() ) {
+			Syndicator_Base::$text_only_ok = true;
+			try {
+				$result = $syndicator->syndicate( $post_id );
+			} finally {
+				Syndicator_Base::$text_only_ok = false;
+			}
+		}
+
 		if ( is_wp_error( $result ) ) {
 			// A permanent client error (4xx, bar 408/429) won't change on retry —
 			// fail it now instead of burning the remaining attempts. Errors with

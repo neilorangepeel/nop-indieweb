@@ -10,6 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 abstract class Syndicator_Base {
 
+	/**
+	 * Set by Syndication_Manager for the final attempt only: a post whose photos
+	 * would not upload on any earlier try goes out as text rather than never going out.
+	 */
+	public static bool $text_only_ok = false;
+
 	abstract public function slug(): string;
 
 	abstract public function label(): string;
@@ -103,6 +109,25 @@ abstract class Syndicator_Base {
 	 */
 	public function editor_preview( int $post_id ): ?array {
 		return null;
+	}
+
+	/**
+	 * Whether this post carries a clip or photos the network is expected to receive.
+	 * When it does and none upload (a CDN hiccup, a timeout), do_syndicate() returns
+	 * 'nop_media_failed' so the manager retries instead of posting without them.
+	 */
+	protected function expects_media( int $post_id, bool $include_featured = false ): bool {
+		if ( $this->collect_inline_video( $post_id ) || $this->collect_inline_images( $post_id, 1 ) ) {
+			return true;
+		}
+		if ( array_filter( (array) get_post_meta( $post_id, 'nop_indieweb_photos', true ) ) ) {
+			return true;
+		}
+		return $include_featured && (bool) get_post_thumbnail_id( $post_id );
+	}
+
+	protected function media_failed(): \WP_Error {
+		return new \WP_Error( 'nop_media_failed', __( 'The photos or video would not upload — will retry.', 'nop-indieweb' ) );
 	}
 
 	/** See nop_indieweb_is_quiet_post(): text + bare permalink, no link card. */
