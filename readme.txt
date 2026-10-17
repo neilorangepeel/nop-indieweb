@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.22
+Stable tag: 0.9.23
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.9.23 =
+* The /post composer sends one id per composed post (kept across "Try again" and offline-queue replays) and Micropub returns the existing post for a repeated id, so a response lost after the post was created can no longer publish and syndicate it twice.
 
 = 0.9.22 =
 * Fixes duplicate posts on Mastodon and Tumblr: the per-target and per-post locks used `add_option()`, which is not atomic (it succeeds whenever the stored value differs), so racing runs both posted and overwrote each other's syndication URLs. Both now use an atomic `INSERT IGNORE` lock. Mastodon and Pixelfed statuses also carry an `Idempotency-Key`.
