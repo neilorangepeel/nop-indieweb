@@ -182,28 +182,16 @@ class Syndication_Manager {
 	}
 
 	/**
-	 * The closest thing WP offers to an atomic test-and-set without assuming a
-	 * persistent object cache: add_option() fails when the row already exists.
-	 * A lock older than the longest plausible run (a fatal mid-syndication)
-	 * is taken over rather than blocking the platform forever.
+	 * An atomic claim (see nop_indieweb_lock_acquire()). A lock older than the
+	 * longest plausible run (a fatal mid-syndication) is taken over rather than
+	 * blocking the platform forever.
 	 */
 	private function claim_target( int $post_id, string $slug ): bool {
-		$key = 'nop_syn_run_' . $post_id . '_' . $slug;
-
-		if ( add_option( $key, (string) time(), '', false ) ) {
-			return true;
-		}
-
-		if ( ( time() - (int) get_option( $key, 0 ) ) < 10 * MINUTE_IN_SECONDS ) {
-			return false;
-		}
-
-		update_option( $key, (string) time(), false );
-		return true;
+		return \NOP\IndieWeb\nop_indieweb_lock_acquire( 'nop_syn_run_' . $post_id . '_' . $slug, 10 * MINUTE_IN_SECONDS );
 	}
 
 	private function release_target( int $post_id, string $slug ): void {
-		delete_option( 'nop_syn_run_' . $post_id . '_' . $slug );
+		\NOP\IndieWeb\nop_indieweb_lock_release( 'nop_syn_run_' . $post_id . '_' . $slug );
 	}
 
 	private function run_target_unguarded( int $post_id, string $slug, int $attempt ): void {

@@ -102,8 +102,11 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 			$instance . '/api/v1/statuses',
 			[
 				'headers' => [
-					'Authorization' => 'Bearer ' . $token,
-					'Content-Type'  => 'application/json',
+					'Authorization'   => 'Bearer ' . $token,
+					'Content-Type'    => 'application/json',
+					// The server replays the first result for a repeated key (for an hour),
+					// so a racing or retried-after-timeout POST can't create a second status.
+					'Idempotency-Key' => hash( 'sha256', home_url() . '|' . $this->slug() . '|' . $post_id ),
 				],
 				'body'    => wp_json_encode( $body ),
 				'timeout' => 30,

@@ -635,35 +635,74 @@ function nop_indieweb_format_event_datetime( string $value ): string {
 }
 
 /**
+ * Atomic test-and-set lock, stored as a row in the options table.
+ *
+ * add_option() is NOT usable for this: it issues INSERT … ON DUPLICATE KEY
+ * UPDATE, which reports success whenever the new value differs from the stored
+ * one, so two racing callers (different timestamps) both "win". INSERT IGNORE
+ * affects a row only for the caller that actually created it, and bypasses the
+ * object cache, which can serve a stale "not set" to a second process.
+ *
+ * A lock older than $ttl seconds (a fatal mid-run) is taken over with a
+ * compare-and-swap UPDATE, so only one caller can inherit a stale lock too.
+ */
+function nop_indieweb_lock_acquire( string $key, int $ttl ): bool {
+	global $wpdb;
+
+	$now = (string) time();
+
+	if ( 1 === (int) $wpdb->query( $wpdb->prepare(
+		"INSERT IGNORE INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'no')",
+		$key,
+		$now
+	) ) ) {
+		return true;
+	}
+
+	$held = (string) $wpdb->get_var( $wpdb->prepare(
+		"SELECT `option_value` FROM `$wpdb->options` WHERE `option_name` = %s",
+		$key
+	) );
+	if ( '' === $held || ( time() - (int) $held ) <= $ttl ) {
+		return false;
+	}
+
+	return 1 === (int) $wpdb->query( $wpdb->prepare(
+		"UPDATE `$wpdb->options` SET `option_value` = %s WHERE `option_name` = %s AND `option_value` = %s",
+		$now,
+		$key,
+		$held
+	) );
+}
+
+function nop_indieweb_lock_release( string $key ): void {
+	global $wpdb;
+	$wpdb->query( $wpdb->prepare( "DELETE FROM `$wpdb->options` WHERE `option_name` = %s", $key ) );
+}
+
+/**
  * Runs $mutate while holding a per-post lock, so concurrent cron events can't
  * lose each other's writes to a shared serialized meta array. Each syndication
  * target runs in its own request; two finishing in the same second would both
  * read-append-write the same array and the later write would win outright.
  *
- * add_option() is the closest thing WP offers to an atomic test-and-set without
- * assuming a persistent object cache — mirrors Syndication_Manager::claim_target().
  * The post's meta cache is dropped inside the lock so the callback's own
  * get_post_meta() reads the database rather than a copy cached before the other
- * process wrote. A lock older than a plausible run is taken over, and the
- * callback runs unlocked if one can't be had — a lost update beats a lost write.
+ * process wrote. The callback runs unlocked if a lock can't be had — a lost
+ * update beats a lost write.
  */
 function nop_indieweb_with_post_meta_lock( int $post_id, string $name, callable $mutate ): void {
 	$key = 'nop_meta_lock_' . $name . '_' . $post_id;
 
 	for ( $attempt = 0; $attempt < 25; $attempt++ ) {
-		if ( add_option( $key, (string) time(), '', false ) ) {
+		if ( nop_indieweb_lock_acquire( $key, 5 * MINUTE_IN_SECONDS ) ) {
 			try {
 				wp_cache_delete( $post_id, 'post_meta' );
 				$mutate();
 			} finally {
-				delete_option( $key );
+				nop_indieweb_lock_release( $key );
 			}
 			return;
-		}
-
-		if ( ( time() - (int) get_option( $key, 0 ) ) > 5 * MINUTE_IN_SECONDS ) {
-			delete_option( $key );
-			continue;
 		}
 
 		usleep( 200000 );
