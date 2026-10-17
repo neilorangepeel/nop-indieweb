@@ -51,7 +51,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		$target    = $this->response_target_url( $post_id );
 		$kind      = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
 		$threaded  = 'reply' === $kind && '' !== $target && ! str_contains( $target, 'bsky.app' );
-		$suffix    = $threaded ? '' : ( '' !== $target ? $target : $permalink );
+		$suffix    = ( $threaded || $this->is_plain_note( $post_id ) ) ? '' : ( '' !== $target ? $target : $permalink );
 		$body      = $this->build_full_text( $post_id );
 		$limit     = $this->char_limit();
 		return [
@@ -81,7 +81,7 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		// (in_reply_to_id) and drop the link suffix — the parent is shown inline,
 		// so re-linking it is noise. Otherwise post standalone as before.
 		$in_reply_to = $this->resolve_reply_status_id( $post_id, $target, $instance, $token );
-		$suffix      = '' !== $in_reply_to ? '' : $link;
+		$suffix      = ( '' !== $in_reply_to || $this->is_plain_note( $post_id ) ) ? '' : $link;
 
 		// URLs count as a flat 23 chars on Mastodon-compatible APIs regardless of
 		// the actual link length, so budget the suffix at 23 even though the

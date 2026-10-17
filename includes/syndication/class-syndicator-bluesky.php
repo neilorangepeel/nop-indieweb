@@ -80,12 +80,15 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		}
 		$host  = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 		$label = '' !== $host ? $host : (string) get_permalink( $post_id );
+		if ( $this->is_plain_note( $post_id ) ) {
+			$label = '';
+		}
 		$body  = $this->build_full_text( $post_id );
 		return [
 			'slug'  => $this->slug(),
 			'label' => $this->label(),
 			'text'  => $this->compose_status( $body, 300, $label, mb_strlen( $label ) ),
-			'count' => mb_strlen( $body ) + 2 + mb_strlen( $label ),
+			'count' => mb_strlen( $body ) + ( '' !== $label ? 2 + mb_strlen( $label ) : 0 ),
 			'limit' => 300,
 			'badge' => $this->preview_badge( $post_id ),
 		];
@@ -103,7 +106,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( $this->collect_inline_video( $post_id ) ) { return __( 'Video', 'nop-indieweb' ); }
 		if ( $this->collect_inline_images( $post_id, 1 ) ) { return __( 'Photos', 'nop-indieweb' ); }
 		$post = get_post( $post_id );
-		return ( $post && '' !== (string) $post->post_title )
+		return ( $post && '' !== (string) $post->post_title && ! $this->is_plain_note( $post_id ) )
 			? __( 'Link card → your post', 'nop-indieweb' )
 			: __( 'Text only', 'nop-indieweb' );
 	}
@@ -154,8 +157,13 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// of embed type so the link treatment is consistent.
 		$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
 		$label  = '' !== $host ? $host : $permalink;
+		// A bare note goes out as just its text: no backlink, no card (see is_plain_note()).
+		$plain  = $this->is_plain_note( $post_id );
+		if ( $plain ) {
+			$label = '';
+		}
 		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
-		$facet  = $this->build_label_facet( $text, $label, $permalink );
+		$facet  = '' !== $label ? $this->build_label_facet( $text, $label, $permalink ) : null;
 		// Bluesky doesn't auto-link hashtags or mentions the way Mastodon does —
 		// each #tag and @handle the author typed needs an explicit facet.
 		$facets = array_merge(
@@ -196,7 +204,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		} else {
 			// If a clip couldn't be processed, $media is null here even though $video
 			// was set — fall through to a link card rather than an empty text stub.
-			$embed = $this->build_link_card( $post_id, $permalink, $session );
+			$embed = $plain ? null : $this->build_link_card( $post_id, $permalink, $session );
 		}
 
 		$record = [

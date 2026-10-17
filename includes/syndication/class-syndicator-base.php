@@ -106,6 +106,29 @@ abstract class Syndicator_Base {
 	}
 
 	/**
+	 * A bare note: text only — no photo, clip, venue, response target or title of
+	 * its own. Its auto-generated title just repeats the body, so a link card (or a
+	 * backlink that makes the network build one) would show the same sentence three
+	 * times under an unrelated site-icon portrait. These go out as plain text.
+	 * Filter `nop_indieweb_note_backlink` to true to keep the permalink on them.
+	 */
+	protected function is_plain_note( int $post_id ): bool {
+		if ( apply_filters( 'nop_indieweb_note_backlink', false, $post_id ) ) {
+			return false;
+		}
+		if ( 'note' !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return false;
+		}
+		$has_photos = array_filter( (array) get_post_meta( $post_id, 'nop_indieweb_photos', true ) );
+		return ! $has_photos
+			&& ! get_post_thumbnail_id( $post_id )
+			&& ! get_post_meta( $post_id, 'nop_indieweb_venue_name', true )
+			&& '' === $this->response_target_url( $post_id )
+			&& ! $this->collect_inline_video( $post_id )
+			&& ! $this->collect_inline_images( $post_id, 1 );
+	}
+
+	/**
 	 * Composes the post body text used by the syndicator. Kind-aware:
 	 *   - checkin → "Checked in at {venue}"
 	 *   - article → title first (link card carries the body)
