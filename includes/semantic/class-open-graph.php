@@ -101,8 +101,8 @@ class Open_Graph {
 	}
 
 	/**
-	 * Image priority: featured image → first inline photo → check-in map →
-	 * site icon. Returns '' when none resolve.
+	 * Image priority: featured image → first inline photo → check-in map (flight
+	 * arcs only — see nop_indieweb_is_quiet_post()). Returns '' when none resolve.
 	 */
 	private function image( int $post_id ): string {
 		$featured = get_the_post_thumbnail_url( $post_id, 'large' );
@@ -119,17 +119,12 @@ class Open_Graph {
 		}
 
 		$map = (string) get_post_meta( $post_id, 'nop_indieweb_map_url', true );
-		if ( '' !== $map ) {
+		if ( '' !== $map && ! \NOP\IndieWeb\nop_indieweb_is_quiet_post( $post_id ) ) {
 			return $map;
 		}
 
-		// A bare note has no picture of its own; the author's portrait under every
-		// one is noise, so it gets a text-only card.
-		if ( 'note' === (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
-			return '';
-		}
-
-		return (string) get_site_icon_url( 512 );
+		// No portrait fallback: a post with no picture of its own gets a text-only card.
+		return '';
 	}
 
 	/**

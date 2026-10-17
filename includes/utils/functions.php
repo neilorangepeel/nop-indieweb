@@ -635,6 +635,29 @@ function nop_indieweb_format_event_datetime( string $value ): string {
 }
 
 /**
+ * Whether a post is "quiet": every kind that speaks for itself — notes, articles,
+ * workouts, check-ins, photos, videos, stories, watches, listens. Their
+ * auto-generated title repeats what the post already says, so a link card (or a
+ * site-icon portrait / zoomed map tile standing in for one) shows the same words
+ * again under an image that says nothing. These syndicate as text plus the bare
+ * permalink, with no card; media the post really has still attaches.
+ *
+ * Responses (bookmark, like, repost, reply, quote, RSVP) are not quiet: their card
+ * shows the *cited* page, which the text deliberately leaves out. Flight check-ins
+ * keep their card too — the arc map says something the text doesn't.
+ * Filter `nop_indieweb_quiet_post` to false to restore cards.
+ */
+function nop_indieweb_is_quiet_post( int $post_id ): bool {
+	$kind  = (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true );
+	$quiet = match ( true ) {
+		in_array( $kind, [ 'note', 'article', 'exercise', 'photo', 'video', 'story', 'watch', 'listen' ], true ) => true,
+		'checkin' === $kind => '' === (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true ),
+		default => false,
+	};
+	return (bool) apply_filters( 'nop_indieweb_quiet_post', $quiet, $post_id );
+}
+
+/**
  * Atomic test-and-set lock, stored as a row in the options table.
  *
  * add_option() is NOT usable for this: it issues INSERT … ON DUPLICATE KEY

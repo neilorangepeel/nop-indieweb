@@ -105,33 +105,15 @@ abstract class Syndicator_Base {
 		return null;
 	}
 
-	/**
-	 * A bare note: text only — no photo, clip, venue, response target or title of
-	 * its own. Its auto-generated title just repeats the body, so a link *card*
-	 * would show the same sentence three times under an unrelated site-icon
-	 * portrait. These link back with their bare URL and no card.
-	 * Filter `nop_indieweb_note_backlink` to true to restore the old card treatment.
-	 */
-	protected function is_plain_note( int $post_id ): bool {
-		if ( apply_filters( 'nop_indieweb_note_backlink', false, $post_id ) ) {
-			return false;
-		}
-		if ( 'note' !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
-			return false;
-		}
-		$has_photos = array_filter( (array) get_post_meta( $post_id, 'nop_indieweb_photos', true ) );
-		return ! $has_photos
-			&& ! get_post_thumbnail_id( $post_id )
-			&& ! get_post_meta( $post_id, 'nop_indieweb_venue_name', true )
-			&& '' === $this->response_target_url( $post_id )
-			&& ! $this->collect_inline_video( $post_id )
-			&& ! $this->collect_inline_images( $post_id, 1 );
+	/** See nop_indieweb_is_quiet_post(): text + bare permalink, no link card. */
+	protected function is_quiet_post( int $post_id ): bool {
+		return \NOP\IndieWeb\nop_indieweb_is_quiet_post( $post_id );
 	}
 
 	/**
 	 * Composes the post body text used by the syndicator. Kind-aware:
 	 *   - checkin → "Checked in at {venue}"
-	 *   - article → title first (link card carries the body)
+	 *   - article → title, then the excerpt
 	 *   - everything else → body text first, title only as a fallback when the
 	 *     body is empty (e.g. Like/Repost where the auto-title carries the URL)
 	 *
@@ -141,6 +123,10 @@ abstract class Syndicator_Base {
 	protected function build_full_text( int $post_id ): string {
 		$post       = get_post( $post_id );
 		$venue_name = get_post_meta( $post_id, 'nop_indieweb_venue_name', true );
+
+		if ( 'exercise' === (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
+			return $this->build_exercise_text( $post_id );
+		}
 
 		if ( $venue_name ) {
 			$body      = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
@@ -214,7 +200,14 @@ abstract class Syndicator_Base {
 		}
 
 		if ( 'article' === $kind ) {
-			return '' !== $title ? $title : $body;
+			// No link card carries the body any more (see nop_indieweb_is_quiet_post()),
+			// so the opening lines go in the text itself.
+			if ( '' === $title ) {
+				return $body;
+			}
+			$excerpt = trim( \NOP\IndieWeb\nop_indieweb_html_to_text( (string) $post->post_excerpt ) );
+			$excerpt = '' !== $excerpt ? $excerpt : wp_trim_words( $body, 35, '…' );
+			return '' !== $excerpt ? $title . "\n\n" . $excerpt : $title;
 		}
 
 		return '' !== $body ? $body : $title;
@@ -265,6 +258,29 @@ abstract class Syndicator_Base {
 			return $suffix;
 		}
 		return $text . ( str_contains( $text, "\n" ) ? "\n\n" : "\n" ) . $suffix;
+	}
+
+	/**
+	 * "🚶 Walk in Coleraine — 4.2 km · 52 min · 38 m ↑", then the author's note if
+	 * there is one. Only the figures the post actually carries are listed.
+	 */
+	private function build_exercise_text( int $post_id ): string {
+		$post  = get_post( $post_id );
+		$meta  = fn( string $k ): float => (float) get_post_meta( $post_id, 'nop_indieweb_exercise_' . $k, true );
+		$type  = strtolower( (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true ) );
+		$emoji = [ 'walk' => '🚶', 'walking' => '🚶', 'run' => '🏃', 'running' => '🏃', 'ride' => '🚴', 'cycling' => '🚴', 'bike' => '🚴', 'hike' => '🥾', 'hiking' => '🥾', 'swim' => '🏊', 'swimming' => '🏊' ][ $type ] ?? '🏋️';
+		$title = \NOP\IndieWeb\nop_indieweb_html_to_text( (string) ( $post->post_title ?? '' ) );
+
+		$secs  = (int) ( $meta( 'moving_time_s' ) ?: $meta( 'duration_s' ) );
+		$stats = array_filter( [
+			$meta( 'distance_m' ) > 0 ? number_format_i18n( $meta( 'distance_m' ) / 1000, 1 ) . ' km' : '',
+			$secs >= 60 ? ( $secs >= 3600 ? floor( $secs / 3600 ) . 'h ' . sprintf( '%02d', floor( $secs % 3600 / 60 ) ) . 'm' : round( $secs / 60 ) . ' min' ) : '',
+			$meta( 'elevation_gain_m' ) >= 1 ? round( $meta( 'elevation_gain_m' ) ) . ' m ↑' : '',
+		] );
+
+		$lead = $emoji . ' ' . $title . ( $stats ? ' — ' . implode( ' · ', $stats ) : '' );
+		$body = $post ? \NOP\IndieWeb\nop_indieweb_block_text( (string) $post->post_content ) : '';
+		return '' !== $body ? $lead . "\n" . $body : $lead;
 	}
 
 	/**

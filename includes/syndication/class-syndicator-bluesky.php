@@ -78,11 +78,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( ! $this->enabled() || ! $this->is_configured() || ! $this->supports_post( $post_id ) ) {
 			return null;
 		}
-		$host  = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
-		$label = '' !== $host ? $host : (string) get_permalink( $post_id );
-		if ( $this->is_plain_note( $post_id ) ) {
-			$label = (string) get_permalink( $post_id );
-		}
+		$label = (string) get_permalink( $post_id );
 		$body  = $this->build_full_text( $post_id );
 		return [
 			'slug'  => $this->slug(),
@@ -106,7 +102,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( $this->collect_inline_video( $post_id ) ) { return __( 'Video', 'nop-indieweb' ); }
 		if ( $this->collect_inline_images( $post_id, 1 ) ) { return __( 'Photos', 'nop-indieweb' ); }
 		$post = get_post( $post_id );
-		return ( $post && '' !== (string) $post->post_title && ! $this->is_plain_note( $post_id ) )
+		return ( $post && '' !== (string) $post->post_title && ! $this->is_quiet_post( $post_id ) )
 			? __( 'Link card → your post', 'nop-indieweb' )
 			: __( 'Text only', 'nop-indieweb' );
 	}
@@ -150,20 +146,11 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 		$body_text = $this->build_full_text( $post_id );
 
-		// Quiet link back: use the bare site host (e.g. neilorangepeel.com) as a
-		// tappable facet label so readers see where the post came from while the
-		// full URL stays out of the visible text budget. Falls back to the full
-		// permalink if the host can't be parsed. Applied to every post regardless
-		// of embed type so the link treatment is consistent.
-		$host   = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
-		$label  = '' !== $host ? $host : $permalink;
-		// A bare note links back with its full URL as the visible text and no card
-		// (see is_plain_note()) — the link says where it came from, the card would
-		// only repeat the note.
-		$plain  = $this->is_plain_note( $post_id );
-		if ( $plain ) {
-			$label = $permalink;
-		}
+		// Every post links back with its bare URL as the visible, tappable text (the
+		// adactio.com convention). Quiet posts additionally carry no link card — see
+		// nop_indieweb_is_quiet_post(); the cite/flight cards are the exceptions.
+		$quiet  = $this->is_quiet_post( $post_id );
+		$label  = $permalink;
 		$text   = $this->compose_status( $body_text, 300, $label, mb_strlen( $label ) );
 		$facet  = $this->build_label_facet( $text, $label, $permalink );
 		// Bluesky doesn't auto-link hashtags or mentions the way Mastodon does —
@@ -206,7 +193,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		} else {
 			// If a clip couldn't be processed, $media is null here even though $video
 			// was set — fall through to a link card rather than an empty text stub.
-			$embed = $plain ? null : $this->build_link_card( $post_id, $permalink, $session );
+			$embed = $quiet ? null : $this->build_link_card( $post_id, $permalink, $session );
 		}
 
 		$record = [
@@ -528,23 +515,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 			}
 		}
 
-		// Fall back to the site icon (the author's portrait) so link cards always
-		// carry an identity image — mirrors the Open Graph image fallback chain.
-		$icon_id = (int) get_option( 'site_icon' );
-		if ( ! $icon_id ) {
-			return null;
-		}
-		$src = wp_get_attachment_image_src( $icon_id, 'large' );
-		if ( ! $src ) {
-			return null;
-		}
-		return $this->upload_image_blob( [
-			'url'           => (string) $src[0],
-			'alt'           => '',
-			'attachment_id' => $icon_id,
-			'width'         => (int) $src[1],
-			'height'        => (int) $src[2],
-		], $session );
+		// No portrait fallback: a card with nothing to show is a plain text card.
+		return null;
 	}
 
 	/**
