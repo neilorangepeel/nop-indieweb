@@ -383,7 +383,7 @@ function nop_indieweb_exercise_stat( string $field, int $post_id ): ?string {
 		case 'exercise_distance':
 			$m = (float) $meta( 'distance_m' );
 			/* translators: %s = distance in kilometres */
-			return $m ? sprintf( __( '%s km', 'nop-indieweb' ), number_format( $m / 1000, 1 ) ) : null;
+			return $m ? sprintf( __( '%s km', 'nop-indieweb' ), number_format_i18n( $m / 1000, 2 ) ) : null;
 
 		case 'exercise_duration': {
 			$s = (int) $meta( 'duration_s' );

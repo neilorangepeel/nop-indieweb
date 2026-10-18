@@ -23,7 +23,7 @@ final class Entry_Fields {
 
 	/** Field names this class answers (anything else falls through to the source's other fields). */
 	public const FIELDS = [
-		'subtitle', 'detail', 'display_title', 'post_number', 'day', 'date_time',
+		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
 		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
 		'venue_category', 'visit_label', 'weather_label',
@@ -117,6 +117,8 @@ final class Entry_Fields {
 		$f    = [];
 
 		$f['post_number'] = '#' . $post_id;
+		// The entry's own page, for a button (core's post-data source needs the post in the block's context, which a Button has not).
+		$f['permalink']   = (string) get_permalink( $post_id );
 		$f['day']         = (string) get_the_date( 'j M Y', $post_id );
 		$f['date_time']   = $f['day'] . ' · ' . get_the_date( 'H:i', $post_id );
 
@@ -233,7 +235,8 @@ final class Entry_Fields {
 				break;
 		}
 
-		$f['display_title'] = ( $f['display_title'] ?? '' ) ?: $title;
+		// A note is untitled on purpose: name it by its opening words, never "(no title)".
+		$f['display_title'] = ( $f['display_title'] ?? '' ) ?: ( '' !== trim( $title ) ? $title : wp_trim_words( wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) ), 6, '…' ) );
 		return $f;
 	}
 
