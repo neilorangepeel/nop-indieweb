@@ -178,6 +178,34 @@ class Block_Bindings {
 		'exercise_type_archive_link'      => '<a href="#">Run</a>',
 		'exercise_personal_best'          => 'Longest run',
 		'kind_label'                      => '<a href="#">Liked</a>',
+		// Entry fields (Entry_Fields) previews
+		'subtitle'                        => 'Ormeau Rd',
+		'detail'                          => '258th visit',
+		'display_title'                   => 'Ormeau Park',
+		'post_number'                     => '#4795',
+		'day'                             => '8 Oct 2026',
+		'date_time'                       => '8 Oct 2026 · 13:24',
+		'source_url'                      => '#',
+		'source_label'                    => 'Swarm',
+		'cite_title'                      => 'Multi-page web apps',
+		'cite_excerpt'                    => 'A question via email…',
+		'cite_author'                     => 'Jeremy Keith',
+		'cite_site'                       => 'adactio.com',
+		'venue_category'                  => 'Park',
+		'visit_label'                     => '258th visit',
+		'weather_label'                   => '11°C · Light Rain',
+		'exercise_summary'                => '3km Run',
+		'watch_released'                  => '1920',
+		'watch_date'                      => '28 Mar 2025',
+		'listen_artist_year'              => 'The Strokes · 2011',
+		'rsvp_answer'                     => 'Going',
+		'rsvp_event'                      => 'IndieWebCamp',
+		'rsvp_when'                       => '12 Oct 2026',
+		'rsvp_time'                       => '10:00',
+		'rsvp_where'                      => 'Brighton',
+		'quote_text'                      => '“Have nothing in your house that you do not know to be useful.”',
+		'quote_author'                    => 'William Morris',
+		'reply_count_label'               => '2 replies',
 	];
 
 	public function get_value( array $source_args, WP_Block $block ): ?string {
@@ -244,6 +272,12 @@ class Block_Bindings {
 		// Exercise stat formatting lives in one shared helper. Return '' (not null)
 		// for absent stats so the bound paragraph renders truly empty — letting the
 		// template hide it with CSS :has(:empty) rather than keeping a placeholder.
+		// Ready-to-read entry facts (subtitle, detail, visit_label, rsvp_answer…): Entry_Fields.
+		$entry = Entry_Fields::value( $field, $post_id );
+		if ( null !== $entry ) {
+			return $entry;
+		}
+
 		if ( str_starts_with( $field, 'exercise_' ) ) {
 			return \NOP\IndieWeb\nop_indieweb_exercise_stat( $field, $post_id ) ?? '';
 		}
