@@ -32,7 +32,7 @@ final class Entry_Fields {
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where',
 		'quote_text', 'quote_author',
-		'reply_count_label',
+		'reply_count', 'reply_count_label', 'replies_label',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -47,6 +47,13 @@ final class Entry_Fields {
 		}
 		if ( 'reply_count_label' === $field ) {
 			return self::reply_count_label( $post_id );
+		}
+		if ( 'reply_count' === $field ) {
+			return (string) self::reply_count( $post_id );
+		}
+		// The same count, always worded: a reply count shown on its own (a spec row, a list) says so when there are none.
+		if ( 'replies_label' === $field ) {
+			return self::reply_count_label( $post_id ) ?: __( 'No replies', 'nop-indieweb' );
 		}
 		self::$cache[ $post_id ] ??= self::compute( $post_id );
 		return self::$cache[ $post_id ][ $field ] ?? '';
@@ -96,7 +103,8 @@ final class Entry_Fields {
 	}
 
 	/** "2 replies": webmention replies and comments, as the Replies block lists them; '' with none. */
-	private static function reply_count_label( int $post_id ): string {
+	/** Replies as the Replies block lists them: webmention replies and comments together. */
+	private static function reply_count( int $post_id ): int {
 		if ( ! function_exists( 'nop_wm_get_data' ) ) {
 			require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 		}
@@ -105,6 +113,11 @@ final class Entry_Fields {
 		foreach ( $data['comment_children'] as $children ) {
 			$count += count( (array) $children );
 		}
+		return $count;
+	}
+
+	private static function reply_count_label( int $post_id ): string {
+		$count = self::reply_count( $post_id );
 		/* translators: %d: number of replies */
 		return $count ? sprintf( _n( '%d reply', '%d replies', $count, 'nop-indieweb' ), $count ) : '';
 	}

@@ -91,7 +91,7 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 
 = 0.10.0 =
 * For themes: entry fields in the `nop-indieweb/post-meta` binding source, formatted for reading (site date format, translatable words), with editor previews.
-* `display_title` names a post for display (a check-in by its venue, a like by the thing liked, an untitled note by its opening words); `permalink` gives a button the post's address. Exercise distance reads to two decimals ("3.02 km").
+* `display_title` names a post for display (a check-in by its venue, a like by the thing liked, an untitled note by its opening words); `permalink` gives a button the post's address. `reply_count` and `replies_label` ("2 replies", "No replies") count replies as the Replies block lists them, webmentions included. Exercise distance reads to two decimals ("3.02 km").
 * The Logbook moves into the plugin: which kinds count, its address and canonical, the /logbook/ redirect, and a plain `category-logbook` template.
 * The entry overlay moves into the plugin (Browse): any block theme opens Logbook entries over the wall, with a plain `entry` template a theme overrides by slug.
 * One icon family: the like button and post footer draw Phosphor icons (the heart fills when liked); the Like kind's icon is a thumbs-up and Listen's is headphones.
