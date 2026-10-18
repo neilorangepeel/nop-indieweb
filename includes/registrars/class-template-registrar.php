@@ -220,6 +220,11 @@ class Template_Registrar {
 				'description' => __( 'Every day-to-day kind in one stream, at /category/logbook/.', 'nop-indieweb' ),
 				'file'        => 'category-logbook.html',
 			],
+			'nop-indieweb//entry' => [
+				'title'       => __( 'Entry (opened from the wall)', 'nop-indieweb' ),
+				'description' => __( 'An entry as it opens over its wall. A kind of its own takes entry-{kind}.', 'nop-indieweb' ),
+				'file'        => 'entry.html',
+			],
 			'nop-indieweb//taxonomy-nop_kind' => [
 				'title'       => __( 'Archive – Any kind', 'nop-indieweb' ),
 				'description' => __( 'Fallback archive for kinds with no template of their own — Book, Collection, Film, Music, Listen, and anything added later.', 'nop-indieweb' ),

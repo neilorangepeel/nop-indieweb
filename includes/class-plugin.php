@@ -208,6 +208,7 @@ class Plugin {
 		( new Exercise_Type_Taxonomy() )->register();
 		( new \NOP\IndieWeb\Kind\Kind_Scoping() )->register();
 		( new \NOP\IndieWeb\Kind\Logbook() )->register();
+		( new \NOP\IndieWeb\Browse\Browse() )->register();
 		( new Registry() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();

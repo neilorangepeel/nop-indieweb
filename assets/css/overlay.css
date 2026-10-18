@@ -1,0 +1,129 @@
+/*
+ * The entry overlay (assets/js/browse.js): an entry opened over its wall.
+ *
+ * Structure only, unlayered: the panel fixed over a scrim, the controls as
+ * their own layer beside it, the closing state and the view transition. How it
+ * looks is the theme's: these read --nop-* tokens with neutral fallbacks, and
+ * the controls' default look is in @layer nop-appearance, which any theme
+ * outranks. A theme that designs its entries (an Entry template per kind)
+ * sizes the panel to its own panes from 900px.
+ *
+ * Tokens: --nop-scrim (the wall's dimming), --nop-entry-bg, --nop-entry-bar
+ * (the controls' height on a phone), --nop-entry-gap and --nop-entry-gutter
+ * (the space around the lightbox).
+ */
+
+html.nop-entry-open { overflow: hidden; }
+
+/* The scrim has no animation of its own: it is part of the view transition's
+   new picture on open and gone from the closing one, so the root cross-fade
+   fades it, composited and in step with the morph. No backdrop blur: Safari
+   cannot animate one smoothly. */
+html.nop-entry-open:not(.nop-entry-closing) body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 99;
+	background: var(--nop-scrim, color-mix(in srgb, #111 88%, transparent));
+	transition: background-color 0.3s ease;
+	pointer-events: none;
+}
+
+body > .nop-entry {
+	position: fixed;
+	inset: calc(var(--wp-admin--admin-bar--height, 0px) + var(--nop-entry-bar, 3.25rem)) 0 0;
+	z-index: 100;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	margin: 0 !important; /* core's layout margins (block-support classes print after this sheet) */
+	max-width: none;
+	background: var(--nop-entry-bg, var(--wp--preset--color--base, #fff));
+	/* No standing view-transition-name: browse.js names the panel only while it
+	   morphs. A standing name makes Safari treat the panel as the box for its
+	   fixed children, which would trap the controls inside it. */
+}
+
+body > .nop-entry:not(:has(*)) { display: none; }
+
+body > .nop-entry > * { margin: 0; }
+
+/* The controls: their own block, attached to <body> beside the panel, so
+   nothing you click moves with it. On a phone a slim bar above the sheet;
+   from 900px a layer over the wall: Close at the top right, the arrows at the
+   edges. */
+body > .nop-entry-nav {
+	position: fixed;
+	z-index: 101;
+	inset: var(--wp-admin--admin-bar--height, 0px) 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-sizing: border-box;
+	height: var(--nop-entry-bar, 3.25rem);
+	margin: 0;
+	padding-inline: 1rem;
+	background: var(--nop-entry-bg, var(--wp--preset--color--base, #fff));
+}
+
+body > .nop-entry-nav > * { margin: 0; }
+
+html.nop-entry-closing body > .nop-entry-nav,
+html.nop-entry-closing body > .nop-entry { display: none; }
+
+::view-transition-group(nop-entry) { animation-duration: 0.24s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+::view-transition-old(nop-entry),
+::view-transition-new(nop-entry) { animation-duration: 0.16s; height: 100%; object-fit: cover; }
+
+/* The page behind differs only by the scrim and the controls, so the root
+   cross-fade is the scrim fading, timed with the morph. */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 0.24s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@media (min-width: 900px) {
+	/* A lightbox: as big as its contents, no bigger than the screen, centred. */
+	body > .nop-entry {
+		inset: calc(var(--wp-admin--admin-bar--height, 0px) + var(--nop-entry-gap, 4rem)) var(--nop-entry-gutter, 6rem) var(--nop-entry-gap, 4rem);
+		width: min(46rem, 100vw - var(--nop-entry-gutter, 6rem) * 2);
+		height: fit-content;
+		max-height: calc(100svh - var(--wp-admin--admin-bar--height, 0px) - var(--nop-entry-gap, 4rem) * 2);
+		margin: auto !important; /* core's layout margins */
+	}
+
+	body > .nop-entry-nav {
+		inset: var(--wp-admin--admin-bar--height, 0px) 0 0;
+		height: auto;
+		padding: 0;
+		background: none;
+		pointer-events: none;
+	}
+
+	body > .nop-entry-nav :is(.wp-block-button, button) { pointer-events: auto; }
+
+	.nop-entry-nav .nop-entry__steps {
+		position: absolute;
+		inset-inline: 1.5rem;
+		top: 50%;
+		justify-content: space-between;
+		translate: 0 -50%;
+	}
+
+	.nop-entry-nav .nop-entry__closer {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+	}
+}
+
+@layer nop-appearance {
+	@media (min-width: 900px) {
+		/* On the dark wall: light outlines on a faint dark disc. */
+		.nop-entry-nav .wp-block-button__link { color: #fff; border-color: currentColor; background: color-mix(in srgb, #111 40%, transparent); }
+	}
+
+	.nop-entry__steps .wp-block-button__link:disabled { opacity: 0.25; cursor: default; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.nop-entry-open:not(.nop-entry-closing) body::before { transition: none; }
+}
