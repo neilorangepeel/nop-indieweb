@@ -36,14 +36,15 @@
 	--nop-repost-color-strong: hsl(152 62% 35%);
 
 	--nop-star-on:  #f59f00;
-	--nop-star-off: #d4d4d8;
+	--nop-star-off: color-mix(in srgb, currentColor 25%, transparent);
 
-	/* Blog/index layout tokens — the card chrome + muted text used by .nop-blog
-	   and .nop-card. Defaults map to the theme palette; theme.json can override. */
+	/* Neutrals follow the theme: greys are the text's own colour, thinned, so
+	   they stay right on any surface (light, dark, a coloured section); ink and
+	   paper are the palette's contrast and base where a theme names them. */
 	--nop-line:      color-mix(in srgb, currentColor 16%, transparent);
-	--nop-ink:       #111;
-	--nop-muted:     #6b7280;
-	--nop-divider-color: #e5e7eb;
+	--nop-ink:       var(--wp--preset--color--contrast, #111);
+	--nop-muted:     color-mix(in srgb, currentColor 62%, transparent);
+	--nop-divider-color: color-mix(in srgb, currentColor 14%, transparent);
 	--nop-text:      inherit;
 	--nop-radius-lg: 14px;
 
@@ -53,9 +54,9 @@
 	   define, so on every other theme they sat permanently on their fallback hex
 	   and no palette could reach them. Tokens instead: always resolve, and any
 	   theme outranks this layer. */
-	--nop-paper:       #fff;
-	--nop-muted-soft:  #9ca3af;
-	--nop-wash:        rgba(0, 0, 0, 0.05);
+	--nop-paper:       var(--wp--preset--color--base, #fff);
+	--nop-muted-soft:  color-mix(in srgb, currentColor 45%, transparent);
+	--nop-wash:        color-mix(in srgb, currentColor 5%, transparent);
 
 	/* RSVP response inks. These were four hex literals in rsvp-meta/render.php,
 	   emitted as an inline custom property no theme could reach. Ratios are
@@ -64,7 +65,7 @@
 	--nop-rsvp-maybe:      #92400e; /* amber-800 — 5.1:1 (d97706 fails AA) */
 	--nop-rsvp-interested: #1d4ed8; /* blue-700  — 5.0:1 */
 	--nop-rsvp-no:         #b91c1c; /* red-700   — 5.0:1 */
-	--nop-rsvp-unset:      #9ca3af;
+	--nop-rsvp-unset:      var(--nop-muted-soft);
 
 	/* Per-kind riso inks — the public-facing kind identity (mirrors the /post
 	   composer). Each is a sensible default; a theme may re-tone any of them. */
@@ -180,12 +181,14 @@ button.nop-post-footer__pill--like {
 
 /* The heart is Phosphor (fills, not strokes): its outline is the outer path, and
    liked it fills with the outer outline (structure: the liked state is information). */
-.nop-like-button__fill {
+.nop-like-button__fill,
+.nop-post-footer__pill-fill {
 	display: none;
 }
 
 .nop-like-button.is-liked .nop-like-button__fill,
-.nop-like-button__btn[aria-pressed="true"] .nop-like-button__fill {
+.nop-like-button__btn[aria-pressed="true"] .nop-like-button__fill,
+.nop-post-footer__pill--like.is-liked .nop-post-footer__pill-fill {
 	display: inline;
 }
 
@@ -211,8 +214,7 @@ button.nop-post-footer__pill--like.is-liked {
 }
 
 .nop-post-footer__pill--like.is-liked .nop-post-footer__pill-icon {
-	fill:   var(--nop-like-color);
-	stroke: var(--nop-like-color);
+	fill: var(--nop-like-color);
 }
 
 /* ── Heart-pop animation (one keyframes shared across both blocks) ────────── */
@@ -232,7 +234,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 .nop-like-button__icon,
 .nop-post-footer__pill-icon {
 	flex-shrink: 0;
-	transition:  fill 150ms ease, stroke 150ms ease, transform 200ms ease;
+	transition:  fill 150ms ease, transform 200ms ease;
 }
 
 /* ── Section-divider pattern (top rule above meta blocks) ─────────────────── */
@@ -327,7 +329,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	background:      var(--nop-divider-color);
 	font-size:       0.6875rem;
 	font-weight:     700;
-	color:           var(--nop-text, #374151);
+	color:           var(--nop-text, currentColor);
 	line-height:     1;
 	letter-spacing:  -0.02em;
 }
@@ -644,31 +646,6 @@ a.nop-post-source__link:focus-visible {
    requirement. Layered so an unlayered theme rule — including anything
    theme.json emits — wins without having to out-specify it. */
 
-/* ── Dark-scheme fallbacks for hardcoded greys ────────────────────────────── */
-
-/*
- * A theme that does dark mode should override the --nop-* tokens itself.
- * These rules are the fallback for themes that don't,
- * so the plugin still feels right against a dark surface.
- */
-@media (prefers-color-scheme: dark) {
-	:where(
-		.nop-cite-card,
-		.nop-comment-form,
-		.nop-film-card,
-		.nop-film-meta,
-		.nop-like-button,
-		.nop-post-footer,
-		.nop-post-source,
-		.nop-replies,
-		.nop-rsvp-meta,
-		.nop-syndication-panel
-	) {
-		--nop-divider-color: rgba(255, 255, 255, 0.14);
-		--nop-muted:         #9ca3af;
-	}
-}
-
 /* ----------------------------------------------------------------------- */
 /* nop-blog :: organised blog/homepage layout                              */
 /* Scoped under .nop-blog / .nop-hscroll so nothing leaks to other pages.  */
@@ -722,7 +699,7 @@ a.nop-post-source__link:focus-visible {
 .nop-card {
 	border: 1px solid var(--nop-line);
 	border-radius: var(--nop-radius-lg);
-	background: #fff;
+	background: var(--nop-paper);
 	height: 100%;
 }
 
@@ -744,18 +721,18 @@ a.nop-post-source__link:focus-visible {
 /* Dark sections (RSVPs, featured) */
 .nop-section--dark {
 	background: var(--nop-ink);
-	color: #fff;
+	color: var(--nop-paper);
 	border-radius: var(--nop-radius-lg);
 }
 
 .nop-section--dark .nop-blog__title,
 .nop-section--dark .wp-block-post-title a,
 .nop-section--dark a {
-	color: #fff;
+	color: inherit;
 }
 
 .nop-section--dark .nop-blog__eyebrow {
-	color: rgba(255, 255, 255, 0.6);
+	color: color-mix(in srgb, currentColor 60%, transparent);
 }
 
 /* Stats row (bio section) */
@@ -946,7 +923,7 @@ a.nop-post-source__link:focus-visible {
 	padding: 0.24rem 0.7rem 0.24rem 0.55rem;
 	border-radius: var(--nop-radius-pill);
 	background: var(--kind-ink);
-	color: #fff;
+	color: var(--nop-paper);
 	line-height: 1;
 }
 .nop-card__head .wp-block-post-terms,
@@ -955,7 +932,7 @@ a.nop-post-source__link:focus-visible {
 .nop-card__head .nop-blog__eyebrow a,
 .nop-card__head .wp-block-nop-indieweb-kind-icon,
 .nop-card__head .wp-block-nop-indieweb-exercise-type-icon {
-	color: #fff;
+	color: inherit;
 	margin: 0;
 }
 .nop-card__head .wp-block-nop-indieweb-kind-icon svg,
@@ -1011,7 +988,7 @@ a.nop-post-source__link:focus-visible {
 .nop-index__placeholder {
 	border: 1px dashed color-mix(in srgb, var(--kind-ink, var(--nop-line)) 40%, var(--nop-line));
 	border-radius: var(--nop-radius-lg);
-	background: color-mix(in srgb, var(--kind-ink, var(--nop-ink)) 5%, #fff);
+	background: color-mix(in srgb, var(--kind-ink, var(--nop-ink)) 5%, var(--nop-paper));
 	height: 100%;
 }
 .nop-index__placeholder .nop-blog__eyebrow { color: var(--kind-ink); }
@@ -1037,29 +1014,29 @@ a.nop-post-source__link:focus-visible {
 	font-weight:    var(--nop-weight-eyebrow, 600);
 	letter-spacing: var(--nop-tracking-eyebrow, 0.1em);
 	text-transform: uppercase;
-	color:          var(--nop-muted, #6b7280);
+	color:          var(--nop-muted);
 }
 
 .nop-meta {
 	font-size: var(--nop-size-meta, 0.8125rem);
-	color:     var(--nop-muted, #6b7280);
+	color:     var(--nop-muted);
 }
 
 /* The same role a step down, where a row already carries a lot. */
 .nop-meta--sm {
 	font-size: var(--nop-size-meta-sm, 0.75rem);
-	color:     var(--nop-muted, #6b7280);
+	color:     var(--nop-muted);
 }
 
 /* Secondary text that takes its size from context and wants only the colour. */
 .nop-muted {
-	color: var(--nop-muted, #6b7280);
+	color: var(--nop-muted);
 }
 
 /* The rule between archive rows. Border lives here so a theme can restyle or
    remove it without editing a template it does not own. */
 .nop-row {
-	border-top: 1px solid var(--nop-line, #e5e7eb);
+	border-top: 1px solid var(--nop-line);
 }
 
 } /* end @layer nop-appearance */

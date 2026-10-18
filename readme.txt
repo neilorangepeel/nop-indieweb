@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.9.24
+Stable tag: 0.10.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,9 @@ NOP IndieWeb turns a WordPress site into a full IndieWeb citizen. It owns your c
 * **POSSE syndication** — automatically cross-post to Mastodon, Bluesky and Pixelfed on publish, recording the syndication link back on the post.
 * **Inbound import** — pull your own posts back from Mastodon, Bluesky, Pixelfed and Letterboxd on a schedule.
 * **Check-in enrichment** — Swarm/Foursquare check-ins gain venue categories, a static map image, and a weather snapshot.
-* **Block bindings** — bind venue, weather and syndication metadata to core blocks in the editor, with microformats2 classes injected at render time.
+* **Block bindings** — bind venue, weather and syndication metadata to core blocks in the editor, with microformats2 classes injected at render time. The `nop-indieweb/post-meta` source also answers ready-to-read fields (a check-in's visit label, a run's summary, an RSVP's answer, a post's number), so a theme designs with core blocks and never formats data itself.
+* **The Logbook** — the day-to-day kinds at one address, /category/logbook/ (and /logbook/), with a plain template a theme can replace by slug. Filters: `nop_indieweb_logbook_kinds`, `nop_indieweb_logbook_per_page`, `nop_indieweb_kind_sections`.
+* **Entries open over their wall** — on the Logbook and a kind's archive, a post opens in an overlay (the Entry template, per kind: `entry-{kind}`, then `entry`) and Previous, Next and Close step through the wall, in any block theme. Filters and pages swap in place. A theme adds walls with `nop_indieweb_is_wall`, styles the overlay through `--nop-scrim` and `--nop-entry-*`, and loads its own CSS on `nop_indieweb_browse_enqueue`.
 
 All microformats markup is injected at render time and stored nothing extra in your database; deactivating the plugin removes it cleanly.
 
@@ -86,6 +88,13 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.10.0 =
+* For themes: entry fields in the `nop-indieweb/post-meta` binding source, formatted for reading (site date format, translatable words), with editor previews.
+* The Logbook moves into the plugin: which kinds count, its address and canonical, the /logbook/ redirect, and a plain `category-logbook` template.
+* The entry overlay moves into the plugin (Browse): any block theme opens Logbook entries over the wall, with a plain `entry` template a theme overrides by slug.
+* One icon family: the like button and post footer draw Phosphor icons (the heart fills when liked); the Like kind's icon is a thumbs-up and Listen's is headphones.
+* Neutral defaults follow the theme: greys are the text colour thinned and paper and ink are the palette's base and contrast, so blocks sit right on dark and coloured sections. The dark-scheme fallback, which greyed text on light themes when the visitor's system was dark, is gone.
 
 = 0.9.24 =
 * Cleaner syndication for every kind. Notes, articles, workouts, check-ins, photos, videos, stories, watches and listens go out as text plus the bare permalink with no link card; responses keep a card of the cited page and flight check-ins keep their arc map. Bluesky links back with the bare URL on every post. Workouts lead with distance, time and elevation, articles carry their excerpt, and the site-icon portrait is no longer used as a card/Open Graph fallback. Filter `nop_indieweb_quiet_post` restores cards.

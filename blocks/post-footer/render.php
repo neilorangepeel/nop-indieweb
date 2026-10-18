@@ -16,13 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 
-$heart_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+use NOP\IndieWeb\Kind\Kind_Icons;
 
-$comment_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
-
-$repost_icon = '<svg class="nop-post-footer__pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="15" height="15"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
-
-$caret_icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="11" height="11"><polyline points="6 9 12 15 18 9"/></svg>';
+// Phosphor Regular, the plugin's one icon family (Kind_Icons). Liked, the heart fills with its outer outline.
+$pill_icon    = static fn( string $paths, int $size = 15, string $class = 'nop-post-footer__pill-icon' ): string => '<svg' . ( $class ? ' class="' . $class . '"' : '' ) . ' viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" width="' . $size . '" height="' . $size . '">' . $paths . '</svg>';
+$heart_icon   = $pill_icon( '<path d="' . Kind_Icons::HEART . '"/><path class="nop-post-footer__pill-fill" d="' . ( preg_match( '/^M[^M]+/', Kind_Icons::HEART, $outer ) ? $outer[0] : Kind_Icons::HEART ) . '"/>' );
+$comment_icon = $pill_icon( '<path d="' . Kind_Icons::CHAT . '"/>' );
+$repost_icon  = $pill_icon( '<path d="' . Kind_Icons::path( 'repost' ) . '"/>' );
+$caret_icon   = $pill_icon( '<path d="' . Kind_Icons::CARET . '"/>', 11, '' );
 
 /**
  * A caret button that reveals a facepile panel. role-less <span> so it can sit

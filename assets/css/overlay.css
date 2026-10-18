@@ -24,7 +24,7 @@ html.nop-entry-open:not(.nop-entry-closing) body::before {
 	position: fixed;
 	inset: 0;
 	z-index: 99;
-	background: var(--nop-scrim, color-mix(in srgb, #111 88%, transparent));
+	background: var(--nop-scrim, color-mix(in srgb, var(--nop-ink, #111) 88%, transparent));
 	transition: background-color 0.3s ease;
 	pointer-events: none;
 }
@@ -37,7 +37,7 @@ body > .nop-entry {
 	overscroll-behavior: contain;
 	margin: 0 !important; /* core's layout margins (block-support classes print after this sheet) */
 	max-width: none;
-	background: var(--nop-entry-bg, var(--wp--preset--color--base, #fff));
+	background: var(--nop-entry-bg, var(--nop-paper, #fff));
 	/* No standing view-transition-name: browse.js names the panel only while it
 	   morphs. A standing name makes Safari treat the panel as the box for its
 	   fixed children, which would trap the controls inside it. */
@@ -62,7 +62,7 @@ body > .nop-entry-nav {
 	height: var(--nop-entry-bar, 3.25rem);
 	margin: 0;
 	padding-inline: 1rem;
-	background: var(--nop-entry-bg, var(--wp--preset--color--base, #fff));
+	background: var(--nop-entry-bg, var(--nop-paper, #fff));
 }
 
 body > .nop-entry-nav > * { margin: 0; }
@@ -117,8 +117,8 @@ html.nop-entry-closing body > .nop-entry { display: none; }
 
 @layer nop-appearance {
 	@media (min-width: 900px) {
-		/* On the dark wall: light outlines on a faint dark disc. */
-		.nop-entry-nav .wp-block-button__link { color: #fff; border-color: currentColor; background: color-mix(in srgb, #111 40%, transparent); }
+		/* On the scrim: paper outlines on a faint ink disc. */
+		.nop-entry-nav .wp-block-button__link { color: var(--nop-paper, #fff); border-color: currentColor; background: color-mix(in srgb, var(--nop-ink, #111) 40%, transparent); }
 	}
 
 	.nop-entry__steps .wp-block-button__link:disabled { opacity: 0.25; cursor: default; }

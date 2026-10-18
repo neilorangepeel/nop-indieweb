@@ -53,7 +53,7 @@ a.nop-cite-card__title:focus-visible {
 
 	.nop-cite-card__url {
 		font-size: 0.8125em;
-		color:     var(--nop-muted, #6b7280);
+		color:     var(--nop-muted);
 		margin:    0.25em 0 0;
 	}
 
