@@ -215,6 +215,11 @@ class Template_Registrar {
 				'description' => __( 'Activity log of workout posts with distance, duration, and date.', 'nop-indieweb' ),
 				'file'        => 'taxonomy-nop_kind-exercise.html',
 			],
+			'nop-indieweb//category-logbook' => [
+				'title'       => __( 'Logbook', 'nop-indieweb' ),
+				'description' => __( 'Every day-to-day kind in one stream, at /category/logbook/.', 'nop-indieweb' ),
+				'file'        => 'category-logbook.html',
+			],
 			'nop-indieweb//taxonomy-nop_kind' => [
 				'title'       => __( 'Archive – Any kind', 'nop-indieweb' ),
 				'description' => __( 'Fallback archive for kinds with no template of their own — Book, Collection, Film, Music, Listen, and anything added later.', 'nop-indieweb' ),
