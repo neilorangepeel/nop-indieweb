@@ -10,7 +10,8 @@
  * - Filters and pages swap in place: links in a Query Pagination, a Terms
  *   Query or anything inside `.nop-wall-filter` navigate with the core
  *   router, which replaces the wall (and `.nop-wall-crumbs`) and keeps the
- *   header, scroll and focus. The wall lands under `--nop-wall-offset`.
+ *   header, scroll and focus. A new page lands under `--nop-wall-offset`;
+ *   a filter leaves the scroll alone.
  * - Links are fetched on hover, so the click usually finds the page waiting.
  * - An entry (a kind post's title or date link) opens over the wall.
  *   Its page (`?entry`, the Entry template) attaches to <body>; the page
@@ -319,14 +320,19 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			yield withTransition( () => routerActions.navigate( link.href ) );
 			// The wall is new: entries made ready against the old one are rebuilt when next wanted.
 			wallVersion += 1;
-			// Land on the wall itself, below a sticky header (--nop-wall-offset), not on the top of the page.
+			// A filter changes the wall in place, with no scroll. A new page lands on
+			// the wall itself, below a sticky header (--nop-wall-offset), since its
+			// links sit at the wall's foot.
 			const wall = region.querySelector( '.wp-block-query' ) ?? region;
 			const header = parseFloat(
 				getComputedStyle( document.documentElement ).getPropertyValue(
 					'--nop-wall-offset'
 				)
 			);
-			if ( wall.getBoundingClientRect().top < ( header || 0 ) ) {
+			if (
+				link.closest( '.wp-block-query-pagination' ) &&
+				wall.getBoundingClientRect().top < ( header || 0 )
+			) {
 				wall.scrollIntoView( {
 					behavior: reducedMotion() ? 'instant' : 'smooth',
 				} );
