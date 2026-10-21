@@ -13,9 +13,58 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Block_Registrar {
 
+	/** Phosphor Regular icons offered to the core Icon block (file name => label), so a template's fact rows pick them in the editor. */
+	private const ICONS = [
+		'arrow-square-out'      => 'Open',
+		'arrows-clockwise'      => 'Repost',
+		'buildings'             => 'Buildings',
+		'calendar-blank'        => 'Calendar',
+		'chat-circle'           => 'Chat',
+		'clock'                 => 'Clock',
+		'cloud-sun'             => 'Weather',
+		'crosshair'             => 'Coordinates',
+		'film-strip'            => 'Film',
+		'gauge'                 => 'Speed',
+		'globe-hemisphere-west' => 'Globe',
+		'hash'                  => 'Number',
+		'heart'                 => 'Heart',
+		'link'                  => 'Link',
+		'map-pin'               => 'Map pin',
+		'microphone-stage'      => 'Stage',
+		'mountains'             => 'Climb',
+		'path'                  => 'Route',
+		'person-simple-run'     => 'Run',
+		'ruler'                 => 'Distance',
+		'share-network'         => 'Share',
+		'storefront'            => 'Venue',
+		'tag'                   => 'Tag',
+		'ticket'                => 'Ticket',
+		'timer'                 => 'Timer',
+		'user'                  => 'Person',
+		'vinyl-record'          => 'Record',
+	];
+
 	public function register(): void {
 		add_action( 'init', [ $this, 'register_blocks' ] );
+		add_action( 'init', [ $this, 'register_icons' ] );
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
+	}
+
+	/** The `phosphor` icon collection (WordPress 7.1+; earlier the Icon block does not exist and this does nothing). */
+	public function register_icons(): void {
+		if ( ! function_exists( 'wp_register_icon_collection' ) || ! function_exists( 'wp_register_icon' ) ) {
+			return;
+		}
+		wp_register_icon_collection( 'phosphor', [
+			'label'       => 'Phosphor',
+			'description' => __( 'Phosphor Regular, the icon family of the plugin\'s own blocks.', 'nop-indieweb' ),
+		] );
+		foreach ( self::ICONS as $name => $label ) {
+			wp_register_icon( 'phosphor/' . $name, [
+				'label'     => $label,
+				'file_path' => NOP_INDIEWEB_DIR . 'assets/icons/phosphor/' . $name . '.svg',
+			] );
+		}
 	}
 
 	public function register_blocks(): void {
@@ -77,6 +126,12 @@ class Block_Registrar {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-type-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/kind-icon' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/photos' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/share-button' );
+		// These blocks reach a wall inside an entry opened over it, so the router must load their stores then.
+		foreach ( [ 'photos', 'share-button' ] as $name ) {
+			wp_interactivity()->add_client_navigation_support_to_script_module( 'nop-indieweb-' . $name . '-view-script-module' );
+		}
 	}
 
 	public function register_block_categories( array $categories ): array {

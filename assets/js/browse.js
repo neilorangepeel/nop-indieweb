@@ -477,7 +477,8 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			}
 		},
 		closeOnEscape( event ) {
-			if ( ! state.entryOpen || isTyping( event ) ) {
+			// A modal inside the entry (a photo viewer) has the keys while it is open.
+			if ( ! state.entryOpen || isTyping( event ) || document.querySelector( 'dialog:modal' ) ) {
 				return;
 			}
 			if ( 'Escape' === event.key ) {

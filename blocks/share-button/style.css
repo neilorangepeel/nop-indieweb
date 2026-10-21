@@ -1,0 +1,10 @@
+/* Share button: structure only; it takes the text colour around it, as the like button does. */
+.nop-share-button { position: relative; display: inline-flex; align-items: center; }
+
+.nop-share-button__btn { display: inline-flex; align-items: center; gap: var(--nop-icon-gap, 0.35em); padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+
+.nop-share-button__icon { display: block; flex: none; width: var(--nop-icon-size, 1em); height: var(--nop-icon-size, 1em); }
+
+.nop-share-button__btn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.nop-share-button__status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

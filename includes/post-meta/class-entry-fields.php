@@ -32,7 +32,7 @@ final class Entry_Fields {
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
 		'quote_text', 'quote_author',
-		'reply_count', 'reply_count_label', 'replies_label',
+		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -50,6 +50,11 @@ final class Entry_Fields {
 		}
 		if ( 'reply_count' === $field ) {
 			return (string) self::reply_count( $post_id );
+		}
+		// Reposts (boosts, shares elsewhere) as a bare number; '' with none, so a block bound to it takes no room.
+		if ( 'repost_count' === $field ) {
+			$reposts = \NOP\IndieWeb\Webmention\Engagement_Counts::get( $post_id )['reposts'];
+			return $reposts ? (string) $reposts : '';
 		}
 		// The same count, always worded: a reply count shown on its own (a spec row, a list) says so when there are none.
 		if ( 'replies_label' === $field ) {
