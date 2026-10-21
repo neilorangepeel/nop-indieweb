@@ -155,6 +155,13 @@ const entryPage = ( html ) => {
 			region.append( style );
 		}
 	} );
+	// Duotone (a block's Duotone setting) points at an SVG filter WordPress prints at the foot of the page, outside
+	// the entry region; the ones this page lacks travel inside the region too.
+	page.querySelectorAll( 'svg filter[id^="wp-duotone-"]' ).forEach( ( filter ) => {
+		if ( region && ! document.getElementById( filter.id ) ) {
+			region.append( filter.closest( 'svg' ) );
+		}
+	} );
 	// Decode the entry's first picture now, so it is on screen the moment the entry opens.
 	const img = region?.querySelector( 'img' );
 	let picture = Promise.resolve();
