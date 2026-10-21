@@ -30,7 +30,7 @@ final class Entry_Fields {
 		'exercise_summary',
 		'watch_released', 'watch_date',
 		'listen_artist_year',
-		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where',
+		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
 		'quote_text', 'quote_author',
 		'reply_count', 'reply_count_label', 'replies_label',
 	];
@@ -214,6 +214,8 @@ final class Entry_Fields {
 					$f['rsvp_time'] = (string) wp_date( 'H:i', $start );
 				}
 				$f['rsvp_where'] = self::meta( $post_id, 'rsvp_event_location' );
+				// The event's own photo, as parsed from its page (a remote URL, not an attachment).
+				$f['rsvp_image'] = self::meta( $post_id, 'rsvp_event_image' );
 				break;
 
 			case 'bookmark':
