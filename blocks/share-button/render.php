@@ -1,6 +1,6 @@
 <?php
 /**
- * Share button: the share-network icon. On a touch device with a share sheet it opens that; elsewhere it copies the
+ * Share button: the reshare arrows (Phosphor repeat). On a touch device with a share sheet it opens that; elsewhere it copies the
  * post's link and says so.
  *
  * @package NOP_IndieWeb
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
-$icon    = (string) file_get_contents( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/share-network.svg' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a bundled file.
+$icon    = (string) file_get_contents( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/repeat.svg' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a bundled file.
 $icon    = str_replace( '<svg ', '<svg class="nop-share-button__icon" aria-hidden="true" focusable="false" width="16" height="16" ', $icon );
 
 $wrapper = get_block_wrapper_attributes( [

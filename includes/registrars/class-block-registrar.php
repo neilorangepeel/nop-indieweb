@@ -33,6 +33,7 @@ class Block_Registrar {
 		'microphone-stage'      => 'Stage',
 		'mountains'             => 'Climb',
 		'path'                  => 'Route',
+		'repeat'                => 'Reshare',
 		'person-simple-run'     => 'Run',
 		'ruler'                 => 'Distance',
 		'share-network'         => 'Share',
