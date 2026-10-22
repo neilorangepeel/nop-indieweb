@@ -28,9 +28,9 @@
 	color:       inherit;
 }
 
-/* Vertical-only: a horizontally resizable textarea breaks the grid. */
+/* No handle: the field grows with what is written (field-sizing below). */
 .nop-webmentions__form-field textarea {
-	resize:     vertical;
+	resize:     none;
 }
 
 /* Focus is never removed, only restyled — including on the fields, which is

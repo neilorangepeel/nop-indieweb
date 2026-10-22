@@ -465,7 +465,7 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 				str_contains( $host, 'bsky' )     => 'Bluesky',
 				str_contains( $host, 'pixelfed' ) => 'Pixelfed',
 				str_contains( $host, 'tumblr' )   => 'Tumblr',
-				'' !== $host                     => str_contains( (string) $copy, '/@' ) ? 'Mastodon' : $host,
+				str_contains( (string) $copy, '/@' ) => 'Mastodon',
 				default                          => '',
 			};
 			if ( $name ) {
