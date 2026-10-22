@@ -303,7 +303,7 @@ function nop_indieweb_strict_remote_get( string $url, array $args = [], int $max
  * when served at the 1× width/height set in the img tag.
  */
 function nop_indieweb_get_or_cache_map_image( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key ): string {
-	return nop_indieweb_cache_static_map( $post_id, $lat, $lng, $width, $height, $api_key, 'nop_indieweb_map_url', 18, 'checkin-maps', 'checkin-map' );
+	return nop_indieweb_cache_static_map( $post_id, $lat, $lng, $width, $height, $api_key, 'nop_indieweb_map_url', nop_indieweb_checkin_map_zoom(), 'checkin-maps', 'checkin-map' );
 }
 
 /**
@@ -347,6 +347,14 @@ function nop_indieweb_map_style_customization(): string {
  * as <prefix>-<post_id>.png and record the local URL in <meta_key>. Returns the
  * cached URL on later calls and '' on any failure.
  */
+/**
+ * The zoom a check-in map is made at: 16 shows a park or a street with its surroundings (18 was a venue's own
+ * block, mostly empty around anything large). Filterable; the backfill CLI regenerates maps made at another zoom.
+ */
+function nop_indieweb_checkin_map_zoom(): int {
+	return (int) apply_filters( 'nop_indieweb_checkin_map_zoom', 16 );
+}
+
 function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key, string $meta_key, int $zoom, string $subdir, string $file_prefix ): string {
 	$cached = (string) get_post_meta( $post_id, $meta_key, true );
 	if ( $cached ) {
@@ -397,6 +405,8 @@ function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, in
 
 	$local_url = $upload_dir['baseurl'] . "/{$subdir}/{$file_prefix}-{$post_id}.png";
 	update_post_meta( $post_id, $meta_key, $local_url );
+	// The zoom it was made at, so a change of zoom can find the maps to remake.
+	update_post_meta( $post_id, $meta_key . '_zoom', $zoom );
 
 	return $local_url;
 }

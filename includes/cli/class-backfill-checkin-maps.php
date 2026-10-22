@@ -23,9 +23,9 @@ class Backfill_Checkin_Maps {
 	 *
 	 * [--force]
 	 * : Regenerate the map even when one is already cached. Maps already at the
-	 * current aspect ratio are skipped without an API call, so repeated
-	 * --limit runs walk forward through the archive instead of redoing the
-	 * same batch.
+	 * current aspect ratio and zoom are skipped without an API call, so
+	 * repeated --limit runs walk forward through the archive instead of
+	 * redoing the same batch.
 	 *
 	 * [--limit=<n>]
 	 * : Stop after generating this many map images. Re-run until complete.
@@ -100,7 +100,7 @@ class Backfill_Checkin_Maps {
 				continue;
 			}
 
-			if ( $force && '' !== $existing && $this->is_current_ratio( $post_id ) ) {
+			if ( $force && '' !== $existing && $this->is_current_ratio( $post_id ) && \NOP\IndieWeb\nop_indieweb_checkin_map_zoom() === (int) get_post_meta( $post_id, 'nop_indieweb_map_url_zoom', true ) ) {
 				$cached++;
 				continue;
 			}
