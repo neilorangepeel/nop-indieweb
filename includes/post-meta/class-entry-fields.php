@@ -26,7 +26,7 @@ final class Entry_Fields {
 		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
 		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
-		'venue_category', 'visit_label', 'weather_label', 'town', 'country_abroad',
+		'venue_category', 'visit_label', 'weather_label', 'town', 'country_abroad', 'country_short',
 		'exercise_summary',
 		'watch_released', 'watch_date',
 		'listen_artist_year',
@@ -62,6 +62,20 @@ final class Entry_Fields {
 		}
 		self::$cache[ $post_id ] ??= self::compute( $post_id );
 		return self::$cache[ $post_id ][ $field ] ?? '';
+	}
+
+	/** A country's short form: its ISO code from ICU's English names ("Ireland" → IE), the UK as "UK"; the name itself without intl or a match. */
+	private static function country_code( string $country ): string {
+		if ( '' === $country || ! class_exists( 'ResourceBundle' ) ) {
+			return $country;
+		}
+		$names = \ResourceBundle::create( 'en', 'ICUDATA-region' );
+		foreach ( $names ? $names['Countries'] : [] as $code => $name ) {
+			if ( 2 === strlen( (string) $code ) && 0 === strcasecmp( (string) $name, $country ) ) {
+				return 'GB' === $code ? 'UK' : (string) $code;
+			}
+		}
+		return $country;
 	}
 
 	private static function meta( int $post_id, string $key ): string {
@@ -157,6 +171,7 @@ final class Entry_Fields {
 				$country           = self::meta( $post_id, 'venue_country' );
 				$home              = (string) apply_filters( 'nop_indieweb_home_country', '' );
 				$f['country_abroad'] = $country && 0 !== strcasecmp( $country, $home ) ? $country : '';
+				$f['country_short']  = self::country_code( $country );
 				$f['source_url']   = self::meta( $post_id, 'checkin_url' ) ?: self::meta( $post_id, 'source_url' );
 				$f['source_label'] = $f['source_url'] ? 'Swarm' : '';
 				$visit             = (int) self::meta( $post_id, 'venue_visit_number' );
