@@ -40,7 +40,7 @@ if ( ! $ids && $post_id ) {
 		// The video plays in place without the browser's own bar (it would sit under whatever a theme lays over the
 		// picture): one large, labelled play/pause button does, and clicking the video does too.
 		$player = new WP_HTML_Tag_Processor( render_block( $parsed ) );
-		if ( $player->next_tag( 'video' ) ) {
+		if ( $player->next_tag( [ 'tag_name' => 'video' ] ) ) {
 			$player->remove_attribute( 'controls' );
 			$player->set_attribute( 'playsinline', true );
 			$player->set_attribute( 'data-wp-on--click', 'actions.toggle' );
