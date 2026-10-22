@@ -1,9 +1,10 @@
 <?php
 /**
  * Photos: the post's photos (nop_indieweb_photo_ids, else the featured image), one at a time, filling the block's height.
- * Several get previous and next, dots, and swiping (a scroll-snap strip); any opens full size in a modal <dialog> kept
- * inside the block, so it travels with a client-side navigation. The first photo's shape is published as
- * --nop-photos-ratio, so a theme can size the column to it.
+ * They are a core Gallery of core Image blocks with Expand on click, so the full-size view is WordPress's own lightbox,
+ * stepping through the gallery. This block adds only the strip: several photos get previous and next, dots, and
+ * swiping (a scroll-snap strip). The first photo's shape is published as --nop-photos-ratio, so a theme can size the
+ * column to it.
  *
  * @package NOP_IndieWeb
  */
@@ -28,16 +29,28 @@ $n     = count( $ids );
 $meta  = wp_get_attachment_metadata( $ids[0] );
 $ratio = ! empty( $meta['width'] ) && ! empty( $meta['height'] ) ? $meta['width'] . ' / ' . $meta['height'] : '4 / 3';
 
-$slides = '';
-$views  = '';
-foreach ( $ids as $i => $id ) {
-	$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
-	/* translators: 1: photo number, 2: number of photos. */
-	$open    = sprintf( __( 'View photo %1$d of %2$d full size', 'nop-indieweb' ), $i + 1, $n );
-	$slides .= '<li class="nop-photos__slide"><button type="button" class="nop-photos__open" data-wp-on--click="actions.open" data-wp-context=\'' . wp_json_encode( [ 'photo' => $i ] ) . '\' aria-label="' . esc_attr( $open ) . '">'
-		. wp_get_attachment_image( $id, 'large', false, [ 'class' => 'nop-photos__img', 'alt' => $alt, 'loading' => 0 === $i ? 'eager' : 'lazy', 'decoding' => 'async', 'sizes' => '(min-width: 900px) 60vw, 100vw' ] )
-		. '</button></li>';
-	$views  .= '<li class="nop-photos__slide">' . wp_get_attachment_image( $id, 'full', false, [ 'class' => 'nop-photos__img', 'alt' => $alt, 'loading' => 'lazy', 'decoding' => 'async', 'sizes' => '100vw' ] ) . '</li>';
+// The gallery as block markup, rendered as blocks, so core adds the lightbox (with the gallery's navigation) itself.
+$images = '';
+foreach ( $ids as $id ) {
+	$src     = (string) wp_get_attachment_image_url( $id, 'large' );
+	$alt     = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+	$images .= '<!-- wp:image {"id":' . $id . ',"sizeSlug":"large","linkDestination":"none","scale":"cover","lightbox":{"enabled":true}} -->'
+		. '<figure class="wp-block-image size-large"><img src="' . esc_url( $src ) . '" alt="' . esc_attr( $alt ) . '" class="wp-image-' . $id . '" style="object-fit:cover"/></figure>'
+		. '<!-- /wp:image -->';
+}
+$gallery = render_block(
+	parse_blocks(
+		'<!-- wp:gallery {"linkTo":"none","className":"nop-photos__track"} -->'
+		. '<figure class="wp-block-gallery has-nested-images columns-default is-cropped nop-photos__track">' . $images . '</figure>'
+		. '<!-- /wp:gallery -->'
+	)[0]
+);
+// The strip follows its scroll, for the dots and the arrows' ends. Core makes the gallery a core/gallery region, so the
+// directive names this block's store.
+$strip = new WP_HTML_Tag_Processor( $gallery );
+if ( $strip->next_tag( [ 'class_name' => 'nop-photos__track' ] ) ) {
+	$strip->set_attribute( 'data-wp-on--scroll', 'nop-indieweb/photos::actions.follow' );
+	$gallery = $strip->get_updated_html();
 }
 
 $steps = '';
@@ -52,16 +65,14 @@ if ( $n > 1 ) {
 }
 
 $wrapper = get_block_wrapper_attributes( [
-	'class'               => 'nop-photos' . ( $n > 1 ? ' has-several' : '' ),
-	'style'               => '--nop-photos-ratio:' . $ratio,
-	'data-wp-interactive' => 'nop-indieweb/photos',
-	'data-wp-context'     => wp_json_encode( [ 'at' => 0, 'count' => $n ] ),
-	'role'                => 'group',
+	'class'                => 'nop-photos' . ( $n > 1 ? ' has-several' : '' ),
+	'style'                => '--nop-photos-ratio:' . $ratio,
+	'data-wp-interactive'  => 'nop-indieweb/photos',
+	'data-wp-context'      => wp_json_encode( [ 'at' => 0, 'count' => $n ] ),
+	'role'                 => 'group',
 	'aria-roledescription' => __( 'carousel', 'nop-indieweb' ),
-	'aria-label'          => __( 'Photos', 'nop-indieweb' ),
+	'aria-label'           => __( 'Photos', 'nop-indieweb' ),
 ] );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), images from wp_get_attachment_image(), every string escaped above.
-echo '<div ' . $wrapper . '><ul class="nop-photos__track" data-wp-on--scroll="actions.follow">' . $slides . '</ul>' . $steps
-	. '<dialog class="nop-photos__viewer" aria-label="' . esc_attr__( 'Photos, full size', 'nop-indieweb' ) . '" data-wp-on--close="actions.closed"><ul class="nop-photos__track" data-wp-on--scroll="actions.follow">' . $views . '</ul>' . $steps
-	. '<button type="button" class="nop-photos__close" data-wp-on--click="actions.close">' . esc_html__( 'Close', 'nop-indieweb' ) . '</button></dialog></div>';
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the gallery rendered by core, every string escaped above.
+echo '<div ' . $wrapper . '>' . $gallery . $steps . '</div>';

@@ -478,14 +478,15 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		},
 		// The dimmed wall around the panel: it is inert, so a click there lands outside the entry.
 		closeOnScrim( event ) {
-			// The previous and next arrows sit outside the panel but are part of the entry.
-			if ( state.entryOpen && ! event.target.closest?.( '.nop-entry, .nop-entry-nav' ) ) {
+			// The previous and next arrows sit outside the panel but are part of the entry, and so is core's lightbox (attached to <body>).
+			if ( state.entryOpen && ! event.target.closest?.( '.nop-entry, .nop-entry-nav, .wp-lightbox-overlay' ) ) {
 				actions.closeEntry();
 			}
 		},
 		closeOnEscape( event ) {
-			// A modal inside the entry (a photo viewer) has the keys while it is open.
-			if ( ! state.entryOpen || isTyping( event ) || document.querySelector( 'dialog:modal' ) ) {
+			// An open lightbox (core's Image lightbox, a modal) has the keys: Escape closes it and the arrows step its gallery.
+			// The lightbox may close itself first, so a key pressed inside it counts too.
+			if ( ! state.entryOpen || isTyping( event ) || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
 				return;
 			}
 			if ( 'Escape' === event.key ) {
