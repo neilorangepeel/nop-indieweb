@@ -26,7 +26,7 @@ final class Entry_Fields {
 		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
 		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
-		'venue_category', 'visit_label', 'weather_label', 'town', 'country_abroad', 'country_short', 'city_line',
+		'venue_category', 'visit_label', 'weather_label', 'country_short', 'city_line',
 		'exercise_summary',
 		'watch_released', 'watch_date',
 		'listen_artist_year',
@@ -182,14 +182,7 @@ final class Entry_Fields {
 		switch ( $kind ) {
 			case 'checkin':
 				$f['subtitle']     = self::meta( $post_id, 'venue_address' );
-				// The town, unless the title already names it ("Ormeau Park, Belfast"); the country, unless it is home
-				// (the nop_indieweb_home_country filter, '' for none).
-				$town              = self::meta( $post_id, 'venue_locality' );
-				$f['town']         = $town && false === stripos( (string) get_the_title( $post_id ), $town ) ? $town : '';
-				$country           = self::meta( $post_id, 'venue_country' );
-				$home              = (string) apply_filters( 'nop_indieweb_home_country', '' );
-				$f['country_abroad'] = $country && 0 !== strcasecmp( $country, $home ) ? $country : '';
-				$f['country_short']  = self::country_code( $country );
+				$f['country_short']  = self::country_code( self::meta( $post_id, 'venue_country' ) );
 				// "Belfast, UK", "Colorado Springs, CO": the city and, in the US, its state, elsewhere the country.
 				$short          = $f['country_short'];
 				$region         = self::meta( $post_id, 'venue_region' );
