@@ -87,7 +87,7 @@ if ( $preview && ! $post_id ) {
 	$likes_panel   = $panel( 'likes', $sample['likes'], count( $sample['likes'] ), nop_wm_liked_by( $sample['likes'] ), true, 'nop-reveal-preview-likes' );
 	$reposts_panel = $panel( 'reposts', $sample['reposts'], count( $sample['reposts'] ), nop_wm_reposted_by( $sample['reposts'] ), true, 'nop-reveal-preview-reposts' );
 	?>
-	<div <?php echo wp_kses_data( $wrapper ); ?>>
+	<div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 		<button class="nop-post-footer__pill nop-post-footer__pill--like is-liked" type="button" aria-pressed="true">
 			<?php echo $heart_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant ?>
 			<span class="nop-post-footer__pill-count">4</span>
@@ -151,7 +151,7 @@ if ( $is_compact ) {
 
 	$compact_wrapper = get_block_wrapper_attributes( [ 'class' => 'nop-post-footer nop-post-footer--compact' ] );
 	?>
-	<p <?php echo wp_kses_data( $compact_wrapper ); ?>>
+	<p <?php echo $compact_wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 		<?php foreach ( $readouts as [ $count, $icon, $label ] ) :
 			if ( 0 === $count ) {
 				continue;
@@ -234,7 +234,7 @@ $wrapper = get_block_wrapper_attributes( [
 	'data-wp-class--is-liked' => 'state.liked',
 ] );
 ?>
-<div <?php echo wp_kses_data( $wrapper ); ?>>
+<div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 
 	<button class="nop-post-footer__pill nop-post-footer__pill--like"
 	        type="button"
