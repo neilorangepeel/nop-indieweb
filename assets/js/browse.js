@@ -47,6 +47,17 @@ const wait = ( ms ) => new Promise( ( resolve ) => window.setTimeout( resolve, m
 
 const router = () => import( '@wordpress/interactivity-router' );
 
+// The open entry's kind on <html> (data-nop-entry-kind), so a theme can colour the wall around it without
+// html:has(), which Safari is slow to re-check when the router swaps the entry in place.
+const markKind = () => {
+	const kind = document.querySelector( 'body > .nop-entry' )?.className.match( /\bnop-kind-([\w-]+)/ )?.[ 1 ];
+	if ( kind ) {
+		document.documentElement.dataset.nopEntryKind = kind;
+	} else {
+		delete document.documentElement.dataset.nopEntryKind;
+	}
+};
+
 const reducedMotion = () =>
 	window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
 
@@ -391,6 +402,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					// The dimmed wall is in place for the transition's new picture, so it fades with the morph rather than after it.
 					document.documentElement.classList.add( 'nop-entry-open' );
 					await routerActions.navigate( href, options );
+					markKind();
 					namePanel( 'nop-entry' );
 				} );
 				transition.finished.finally( () => namePanel( '' ) );
@@ -398,6 +410,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			} else {
 				yield routerActions.navigate( href, options );
 			}
+			markKind();
 			// Have the neighbours waiting.
 			[ -1, 1 ].forEach( ( step ) => {
 				const link = neighbour( step );
@@ -519,6 +532,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			if ( ! open ) {
 				document.documentElement.classList.remove( 'nop-entry-closing' );
 			}
+			markKind();
 			window.requestAnimationFrame( () => {
 				if ( open ) {
 					document
