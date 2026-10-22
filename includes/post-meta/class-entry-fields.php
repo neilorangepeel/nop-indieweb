@@ -28,7 +28,7 @@ final class Entry_Fields {
 		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site', 'cite_byline',
 		'venue_category', 'visit_label', 'weather_label', 'country_short', 'city_line',
 		'exercise_summary',
-		'watch_released', 'watch_date',
+		'watch_released', 'watch_date', 'watch_director', 'watch_genres', 'watch_runtime', 'watch_country',
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
 		'quote_text', 'quote_author', 'quote_work',
@@ -222,6 +222,12 @@ final class Entry_Fields {
 				$f['watch_released'] = self::meta( $post_id, 'film_year' );
 				$watched             = self::meta( $post_id, 'watch_date' );
 				$f['watch_date']     = $watched ? (string) wp_date( 'j M Y', (int) strtotime( $watched ) ) : '';
+				$f['watch_director'] = self::meta( $post_id, 'film_director' );
+				$f['watch_genres']   = self::meta( $post_id, 'film_genres' );
+				$minutes             = (int) self::meta( $post_id, 'film_runtime' );
+				// "1h 16m", "52m".
+				$f['watch_runtime']  = $minutes ? ltrim( ( intdiv( $minutes, 60 ) ? intdiv( $minutes, 60 ) . 'h ' : '' ) . ( $minutes % 60 ? ( $minutes % 60 ) . 'm' : '' ) ) : '';
+				$f['watch_country']  = self::meta( $post_id, 'film_country' );
 				$f['source_url']     = self::meta( $post_id, 'source_url' );
 				$f['source_label']   = $f['source_url'] ? 'Letterboxd' : '';
 				break;

@@ -210,6 +210,7 @@ class Plugin {
 		( new \NOP\IndieWeb\Kind\Logbook() )->register();
 		( new \NOP\IndieWeb\Browse\Browse() )->register();
 		( new Registry() )->register();
+		( new \NOP\IndieWeb\Lookup\Film_Details() )->register();
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();
 		( new Media_Endpoint() )->register();

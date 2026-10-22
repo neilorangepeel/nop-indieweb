@@ -438,6 +438,22 @@ class Registry {
 				'label'       => __( 'Rewatch', 'nop-indieweb' ),
 				'description' => '1 if this is a rewatch, 0 if first viewing.',
 			] ),
+			'nop_indieweb_film_director' => array_merge( $string, [
+				'label'       => __( 'Director', 'nop-indieweb' ),
+				'description' => 'The film\'s director(s), from TMDB.',
+			] ),
+			'nop_indieweb_film_genres'  => array_merge( $string, [
+				'label'       => __( 'Genres', 'nop-indieweb' ),
+				'description' => 'Up to three genres, from TMDB.',
+			] ),
+			'nop_indieweb_film_runtime' => array_merge( $string, [
+				'label'       => __( 'Runtime', 'nop-indieweb' ),
+				'description' => 'Running time in minutes, from TMDB.',
+			] ),
+			'nop_indieweb_film_country' => array_merge( $string, [
+				'label'       => __( 'Country of origin', 'nop-indieweb' ),
+				'description' => 'The first production country, from TMDB.',
+			] ),
 			'nop_indieweb_film_tmdb_id' => array_merge( $string, [
 				'label'       => __( 'TMDB ID', 'nop-indieweb' ),
 				'description' => 'TMDB movie ID, set by the in-editor lookup picker.',

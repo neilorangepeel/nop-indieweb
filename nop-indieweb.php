@@ -81,6 +81,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-tumblr.ph
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-tmdb.php';
+require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-film-details.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings-api.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
@@ -131,6 +132,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-swarm-timestamps.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-micropub-timestamps.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-visits.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-film-details.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-strava.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-repair-photo-sideloads.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
@@ -157,6 +159,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb fix-swarm-timestamps',        \NOP\IndieWeb\Cli\Fix_Swarm_Timestamps::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-micropub-timestamps',     \NOP\IndieWeb\Cli\Fix_Micropub_Timestamps::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-visits',       \NOP\IndieWeb\Cli\Backfill_Venue_Visits::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-film-details',       \NOP\IndieWeb\Cli\Backfill_Film_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb import-strava',               \NOP\IndieWeb\Cli\Import_Strava::class );
 	\WP_CLI::add_command( 'nop-indieweb repair-photo-sideloads',      \NOP\IndieWeb\Cli\Repair_Photo_Sideloads::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-exercise-types',     \NOP\IndieWeb\Cli\Backfill_Exercise_Types::class );
