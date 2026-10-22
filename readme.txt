@@ -24,7 +24,7 @@ NOP IndieWeb turns a WordPress site into a full IndieWeb citizen. It owns your c
 * **Inbound import** — pull your own posts back from Mastodon, Bluesky, Pixelfed and Letterboxd on a schedule.
 * **Check-in enrichment** — Swarm/Foursquare check-ins gain venue categories, a static map image, and a weather snapshot.
 * **Block bindings** — bind venue, weather and syndication metadata to core blocks in the editor, with microformats2 classes injected at render time. The `nop-indieweb/post-meta` source also answers ready-to-read fields (a check-in's visit label, a run's summary, an RSVP's answer, a post's number), so a theme designs with core blocks and never formats data itself.
-* **The Logbook** — the day-to-day kinds at one address, /category/logbook/ (and /logbook/), with a plain template a theme can replace by slug. Filters: `nop_indieweb_logbook_kinds`, `nop_indieweb_logbook_per_page`, `nop_indieweb_kind_sections`.
+* **The Logbook** — the day-to-day kinds at one address, /logbook/ (and /logbook/), with a plain template a theme can replace by slug. Filters: `nop_indieweb_logbook_kinds`, `nop_indieweb_logbook_per_page`, `nop_indieweb_kind_sections`.
 * **Entries open over their wall** — on the Logbook and a kind's archive, a post opens in an overlay (the Entry template, per kind: `entry-{kind}`, then `entry`) and Previous, Next and Close step through the wall, in any block theme. Filters and pages swap in place. A theme adds walls with `nop_indieweb_is_wall`, styles the overlay through `--nop-scrim` and `--nop-entry-*`, and loads its own CSS on `nop_indieweb_browse_enqueue`.
 
 All microformats markup is injected at render time and stored nothing extra in your database; deactivating the plugin removes it cleanly.

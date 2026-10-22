@@ -217,7 +217,7 @@ class Template_Registrar {
 			],
 			'nop-indieweb//category-logbook' => [
 				'title'       => __( 'Logbook', 'nop-indieweb' ),
-				'description' => __( 'Every day-to-day kind in one stream, at /category/logbook/.', 'nop-indieweb' ),
+				'description' => __( 'Every day-to-day kind in one stream, at /logbook/.', 'nop-indieweb' ),
 				'file'        => 'category-logbook.html',
 			],
 			'nop-indieweb//entry' => [
