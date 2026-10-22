@@ -301,6 +301,8 @@ function neighbour( step ) {
 	return index < 0 ? null : links[ index + step ] ?? null;
 }
 
+let searchTimer = 0;
+
 const isTyping = ( event ) =>
 	event.target.closest?.( 'input, textarea, select, [contenteditable]' );
 
@@ -366,6 +368,31 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				} );
 			}
 			region.focus( { preventScroll: true } );
+		} ),
+		// The wall's search (a Search block with the class nop-wall-search): as you type (after a pause) or on submit,
+		// the wall is swapped for the results, the address keeping the search with the other filters.
+		searchWall: withSyncEvent( function* ( event ) {
+			const form = event.target.closest( 'form' );
+			if ( 'submit' === event.type ) {
+				event.preventDefault();
+			} else {
+				window.clearTimeout( searchTimer );
+				yield new Promise( ( resolve ) => {
+					searchTimer = window.setTimeout( resolve, 350 );
+				} );
+			}
+			const url = new URL( form.action );
+			new FormData( form ).forEach( ( value, key ) => {
+				if ( String( value ).trim() ) {
+					url.searchParams.set( key, String( value ).trim() );
+				}
+			} );
+			const href = url.toString().replace( /%2C/g, ',' );
+			if ( href === window.location.href ) {
+				return;
+			}
+			const { actions: routerActions } = yield router();
+			yield routerActions.navigate( href, { replace: 'submit' !== event.type } );
 		} ),
 		*prefetch( event ) {
 			const link = event.target.closest?.( 'a[href]' );

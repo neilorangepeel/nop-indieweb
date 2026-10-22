@@ -209,6 +209,7 @@ class Plugin {
 		( new \NOP\IndieWeb\Kind\Kind_Scoping() )->register();
 		( new \NOP\IndieWeb\Kind\Logbook() )->register();
 		( new \NOP\IndieWeb\Browse\Browse() )->register();
+		( new \NOP\IndieWeb\Browse\Wall_Filters() )->register();
 		( new Registry() )->register();
 		( new \NOP\IndieWeb\Lookup\Film_Details() )->register();
 		( new Block_Bindings() )->register();
