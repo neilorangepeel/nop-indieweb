@@ -152,7 +152,7 @@ class Block_Bindings {
 		'venue_coordinates'               => '54.597° N · 5.935° W',
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
-		'venue_visit_number'              => '1st Visit',
+		'venue_visit_number'              => '1st visit',
 		'flight_route'                    => 'Belfast International Airport → Newcastle Airport',
 		'flight_distance'                 => '294 km',
 		// Full-key forms
@@ -360,7 +360,7 @@ class Block_Bindings {
 					return null;
 				}
 				/* translators: %s = ordinal number, e.g. "1st" */
-				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
+				return sprintf( __( '%s visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
 
 			case 'flight_route':
 				$from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );
