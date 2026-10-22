@@ -31,7 +31,7 @@ final class Entry_Fields {
 		'watch_released', 'watch_date',
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
-		'quote_text', 'quote_author',
+		'quote_text', 'quote_author', 'quote_work',
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 	];
 
@@ -234,7 +234,7 @@ final class Entry_Fields {
 				$f['source_url']   = $url;
 				$f['source_label'] = $host;
 				if ( 'quote' === $kind ) {
-					[ $f['quote_text'], $f['quote_author'] ] = self::quote( $post_id );
+					[ $f['quote_text'], $f['quote_author'], $f['quote_work'] ] = self::quote( $post_id );
 					$f['detail'] = $f['quote_author'];
 					break;
 				}
@@ -261,26 +261,30 @@ final class Entry_Fields {
 	}
 
 	/**
-	 * A quote post's own Quote block: [ "the quotation", author ].
+	 * A quote post's own Quote block: [ "the quotation", author, the work and year ].
 	 *
-	 * @return array{0:string,1:string}
+	 * @return array{0:string,1:string,2:string}
 	 */
 	private static function quote( int $post_id ): array {
 		foreach ( parse_blocks( (string) get_post_field( 'post_content', $post_id ) ) as $block ) {
 			if ( 'core/quote' !== $block['blockName'] ) {
 				continue;
 			}
+			// The cite reads "Author, Work, Year": the author, then the rest (the work and its year).
 			$author = '';
+			$work   = '';
 			if ( preg_match( '#<cite[^>]*>(.*?)</cite>#is', (string) $block['innerHTML'], $m ) ) {
-				$author = trim( explode( ',', trim( wp_strip_all_tags( $m[1] ) ) )[0] );
+				$parts  = array_map( 'trim', explode( ',', trim( wp_strip_all_tags( $m[1] ) ), 2 ) );
+				$author = $parts[0];
+				$work   = $parts[1] ?? '';
 			}
 			$text = '';
 			foreach ( $block['innerBlocks'] as $inner ) {
 				$text .= ' ' . wp_strip_all_tags( (string) $inner['innerHTML'] );
 			}
 			$text = trim( (string) preg_replace( '/\s+/', ' ', $text ) );
-			return [ $text ? "\u{201C}" . $text . "\u{201D}" : '', $author ];
+			return [ $text ? "\u{201C}" . $text . "\u{201D}" : '', $author, $work ];
 		}
-		return [ '', '' ];
+		return [ '', '', '' ];
 	}
 }
