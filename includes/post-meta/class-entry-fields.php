@@ -26,7 +26,7 @@ final class Entry_Fields {
 		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
 		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
-		'venue_category', 'visit_label', 'weather_label', 'town', 'country_abroad', 'country_short',
+		'venue_category', 'visit_label', 'weather_label', 'town', 'country_abroad', 'country_short', 'city_line',
 		'exercise_summary',
 		'watch_released', 'watch_date',
 		'listen_artist_year',
@@ -64,8 +64,26 @@ final class Entry_Fields {
 		return self::$cache[ $post_id ][ $field ] ?? '';
 	}
 
-	/** A country's short form: its ISO code from ICU's English names ("Ireland" → IE), the UK as "UK"; the name itself without intl or a match. */
+	/** US state names to their postal codes, for a city line. */
+	private const US_STATES = [
+		'alabama' => 'AL', 'alaska' => 'AK', 'arizona' => 'AZ', 'arkansas' => 'AR', 'california' => 'CA', 'colorado' => 'CO',
+		'connecticut' => 'CT', 'delaware' => 'DE', 'district of columbia' => 'DC', 'florida' => 'FL', 'georgia' => 'GA',
+		'hawaii' => 'HI', 'idaho' => 'ID', 'illinois' => 'IL', 'indiana' => 'IN', 'iowa' => 'IA', 'kansas' => 'KS',
+		'kentucky' => 'KY', 'louisiana' => 'LA', 'maine' => 'ME', 'maryland' => 'MD', 'massachusetts' => 'MA',
+		'michigan' => 'MI', 'minnesota' => 'MN', 'mississippi' => 'MS', 'missouri' => 'MO', 'montana' => 'MT',
+		'nebraska' => 'NE', 'nevada' => 'NV', 'new hampshire' => 'NH', 'new jersey' => 'NJ', 'new mexico' => 'NM',
+		'new york' => 'NY', 'north carolina' => 'NC', 'north dakota' => 'ND', 'ohio' => 'OH', 'oklahoma' => 'OK',
+		'oregon' => 'OR', 'pennsylvania' => 'PA', 'rhode island' => 'RI', 'south carolina' => 'SC', 'south dakota' => 'SD',
+		'tennessee' => 'TN', 'texas' => 'TX', 'utah' => 'UT', 'vermont' => 'VT', 'virginia' => 'VA', 'washington' => 'WA',
+		'west virginia' => 'WV', 'wisconsin' => 'WI', 'wyoming' => 'WY',
+	];
+
+	/** A country's short form: a stored code as it is, else its ISO code from ICU's English names ("Ireland" → IE); the UK as "UK"; the name itself without intl or a match. */
 	private static function country_code( string $country ): string {
+		if ( 2 === strlen( $country ) && ctype_alpha( $country ) ) {
+			$code = strtoupper( $country );
+			return 'GB' === $code ? 'UK' : $code;
+		}
 		if ( '' === $country || ! class_exists( 'ResourceBundle' ) ) {
 			return $country;
 		}
@@ -172,6 +190,11 @@ final class Entry_Fields {
 				$home              = (string) apply_filters( 'nop_indieweb_home_country', '' );
 				$f['country_abroad'] = $country && 0 !== strcasecmp( $country, $home ) ? $country : '';
 				$f['country_short']  = self::country_code( $country );
+				// "Belfast, UK", "Colorado Springs, CO": the city and, in the US, its state, elsewhere the country.
+				$short          = $f['country_short'];
+				$region         = self::meta( $post_id, 'venue_region' );
+				$suffix         = 'US' === $short ? ( self::US_STATES[ strtolower( $region ) ] ?? ( 2 === strlen( $region ) ? strtoupper( $region ) : 'US' ) ) : $short;
+				$f['city_line'] = implode( ', ', array_filter( [ self::meta( $post_id, 'venue_locality' ), $suffix ] ) );
 				$f['source_url']   = self::meta( $post_id, 'checkin_url' ) ?: self::meta( $post_id, 'source_url' );
 				$f['source_label'] = $f['source_url'] ? 'Swarm' : '';
 				$visit             = (int) self::meta( $post_id, 'venue_visit_number' );
