@@ -29,7 +29,7 @@ use WP_Block;
  *   Derived field (computed, not stored in meta):
  *     "args": { "field": "full_address" }            → "46 Great Victoria Street, Belfast, United Kingdom"
  *     "args": { "field": "locality_country" }        → "Belfast, United Kingdom"
- *     "args": { "field": "venue_coordinates" }       → "54.597 ° N · 5.935 ° W"
+ *     "args": { "field": "venue_coordinates" }       → "54.597° N · 5.935° W"
  *     "args": { "field": "venue_url_host_label" }    → "View on foursquare.com"
  *     "args": { "field": "checkin_url_host_label" }  → "View on swarmapp.com"
  *
@@ -149,7 +149,7 @@ class Block_Bindings {
 		'locality_country'                => 'Belfast, United Kingdom',
 		'full_address'                    => '46 Great Victoria Street, Belfast, United Kingdom',
 		// Derived non-venue fields
-		'venue_coordinates'               => '54.597 ° N · 5.935 ° W',
+		'venue_coordinates'               => '54.597° N · 5.935° W',
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
 		'venue_visit_number'              => '1st Visit',
@@ -331,7 +331,7 @@ class Block_Bindings {
 					return null;
 				}
 				return sprintf(
-					'%s ° %s · %s ° %s',
+					'%s° %s · %s° %s',
 					number_format( abs( $lat ), 3 ),
 					$lat >= 0 ? 'N' : 'S',
 					number_format( abs( $lng ), 3 ),
