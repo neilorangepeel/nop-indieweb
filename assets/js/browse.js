@@ -156,9 +156,11 @@ const entryPage = ( html ) => {
 		}
 	} );
 	// Duotone (a block's Duotone setting) points at an SVG filter WordPress prints at the foot of the page, outside
-	// the entry region; the ones this page lacks travel inside the region too.
+	// the entry region; it travels inside the region too, unless this page has its own copy outside any entry (a copy
+	// inside the open entry goes when the next entry replaces it).
 	page.querySelectorAll( 'svg filter[id^="wp-duotone-"]' ).forEach( ( filter ) => {
-		if ( region && ! document.getElementById( filter.id ) ) {
+		const ours = document.getElementById( filter.id );
+		if ( region && ( ! ours || ours.closest( `[${ REGION }*="nop-indieweb/entry"]` ) ) ) {
 			region.append( filter.closest( 'svg' ) );
 		}
 	} );
