@@ -3,8 +3,14 @@
  * reply form (nop_wm_render_comment_form()).
  *
  * - Posts the form to wp-comments-post.php in place and shows the reply under
- *   it, or says it is awaiting moderation. Errors come back as wp_die() pages;
- *   their message is shown in the form's live region.
+ *   it (marked "Awaiting approval" when held). Missing or wrong fields are
+ *   named beside the field (aria-invalid, aria-describedby) and focused;
+ *   server errors (wp_die() pages) are read into the form's live region.
+ * - The commenter's name is remembered (core's comment cookies, when they tick
+ *   the box): a returning visitor sees "Replying as Name · Change" instead of
+ *   the fields. Cmd/Ctrl+Enter posts; Escape leaves the field.
+ * - A mention from the visitor's own site posts source and target to the
+ *   webmention endpoint.
  * - Threads a reply from any Reply link on the page by setting comment_parent
  *   and focusing the form, instead of moving the form as comment-reply.js did.
  * - While the tab is visible, checks every two minutes (for up to half an
@@ -27,6 +33,18 @@ const { state } = store( 'nop-indieweb/responses', {
 			return replyTo
 				? state.i18n.replying.replace( '%s', replyTo )
 				: state.i18n.heading;
+		},
+		get invalidComment() {
+			return !! getContext().errors.comment;
+		},
+		get invalidAuthor() {
+			return !! getContext().errors.author;
+		},
+		get invalidEmail() {
+			return !! getContext().errors.email;
+		},
+		get invalidMention() {
+			return !! getContext().errors.mention;
 		},
 		get freshLabel() {
 			const { fresh } = getContext();
@@ -61,6 +79,29 @@ const { state } = store( 'nop-indieweb/responses', {
 			context.parent = 0;
 			context.replyTo = '';
 		} ),
+		keys: withSyncEvent( ( event ) => {
+			if ( 'Enter' === event.key && ( event.metaKey || event.ctrlKey ) ) {
+				event.preventDefault();
+				event.target.form.requestSubmit();
+			} else if ( 'Escape' === event.key ) {
+				event.target.blur();
+			}
+		} ),
+		clearError: ( event ) => {
+			getContext().errors[ event.target.name ] = '';
+		},
+		// The name and email are kept in the context (the fields are bound to it), so a re-render keeps what was typed.
+		typed: ( event ) => {
+			const context = getContext();
+			context[ event.target.name ] = event.target.value;
+			context.errors[ event.target.name ] = '';
+		},
+		edit() {
+			getContext().editing = true;
+			window.requestAnimationFrame( () =>
+				document.getElementById( 'author' )?.focus()
+			);
+		},
 		submit: withSyncEvent( function* ( event ) {
 			event.preventDefault();
 			const context = getContext();
@@ -69,6 +110,32 @@ const { state } = store( 'nop-indieweb/responses', {
 			}
 			const form = event.target;
 			const data = new FormData( form );
+			// Name what is missing beside its field, and go there.
+			const check = {
+				comment: ! String( data.get( 'comment' ) || '' ).trim()
+					? state.i18n.noComment
+					: '',
+				author:
+					form.author && ! String( data.get( 'author' ) || '' ).trim()
+						? state.i18n.noName
+						: '',
+				email:
+					form.email &&
+					( form.email.required && ! form.email.value
+						? state.i18n.noEmail
+						: form.email.value && ! form.email.validity.valid
+						? state.i18n.badEmail
+						: '' ),
+			};
+			Object.assign( context.errors, check );
+			const first = Object.keys( check ).find( ( name ) => check[ name ] );
+			if ( first ) {
+				if ( 'comment' !== first ) {
+					context.editing = true;
+				}
+				window.requestAnimationFrame( () => form[ first ]?.focus() );
+				return;
+			}
 			context.sending = true;
 			context.status = state.i18n.sending;
 
@@ -88,11 +155,18 @@ const { state } = store( 'nop-indieweb/responses', {
 						?.textContent.trim();
 					throw new Error( message || state.i18n.failed );
 				}
-				context.sent = {
-					author: context.me || String( data.get( 'author' ) || '' ),
-					text: String( data.get( 'comment' ) || '' ),
-				};
 				const held = response.url.includes( 'unapproved=' );
+				context.sent = {
+					author: String( data.get( 'author' ) || '' ) || context.me,
+					text: String( data.get( 'comment' ) || '' ),
+					held,
+				};
+				// Remembered from now on (core's cookie, when they asked): the fields fold away.
+				if ( data.get( 'author' ) ) {
+					context.me = String( data.get( 'author' ) );
+					context.editing = ! data.get( 'wp-comment-cookies-consent' );
+				}
+				form.querySelector( 'textarea' ).blur();
 				context.status = held ? state.i18n.held : state.i18n.posted;
 				context.known += held ? 0 : 1;
 				context.parent = 0;
@@ -102,6 +176,33 @@ const { state } = store( 'nop-indieweb/responses', {
 				context.status = error.message || state.i18n.failed;
 			} finally {
 				context.sending = false;
+			}
+		} ),
+		mention: withSyncEvent( function* ( event ) {
+			event.preventDefault();
+			const context = getContext();
+			const form = event.target;
+			if ( ! form.source.value || ! form.source.validity.valid ) {
+				context.errors.mention = state.i18n.badUrl;
+				form.source.focus();
+				return;
+			}
+			context.errors.mention = '';
+			context.status = state.i18n.mentioning;
+			try {
+				const response = yield fetch( form.action, {
+					method: 'POST',
+					body: new URLSearchParams( new FormData( form ) ),
+				} );
+				if ( ! response.ok ) {
+					const body = yield response.json().catch( () => ( {} ) );
+					throw new Error( body.message || state.i18n.failed );
+				}
+				context.status = state.i18n.mentioned;
+				form.reset();
+			} catch ( error ) {
+				context.errors.mention = error.message || state.i18n.failed;
+				context.status = '';
 			}
 		} ),
 		showFresh() {

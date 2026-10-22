@@ -31,7 +31,6 @@
 /* Vertical-only: a horizontally resizable textarea breaks the grid. */
 .nop-webmentions__form-field textarea {
 	resize:     vertical;
-	min-height: 5rem;
 }
 
 /* Focus is never removed, only restyled — including on the fields, which is
@@ -43,21 +42,68 @@
 	border-color:   transparent;
 }
 
-/* Name and email pair up once there is room; comment, the logged-in notice and
-   the submit always span. */
-@media (min-width: 480px) {
-	.nop-webmentions__form-form {
-		display:               grid;
-		grid-template-columns: 1fr 1fr;
-		column-gap:            0.75rem;
-		row-gap:               0.75rem;
-	}
-	.nop-webmentions__form-field--comment,
-	.nop-webmentions__form-logged-in,
-	.nop-webmentions__form-form > .form-submit {
-		grid-column: 1 / -1;
-	}
+/* One line until it is wanted: the comment field and Post side by side, the field one row tall and growing with what
+   is written (field-sizing; older browsers keep a fixed height). The rest (who you are, the hint) opens while the form
+   has focus or holds a draft, and folds away after posting. */
+.nop-webmentions__form-form {
+	display:               grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items:           start;
+	column-gap:            0.75rem;
 }
+
+.nop-webmentions__form-field--comment { grid-column: 1; grid-row: 1; margin: 0; }
+
+.nop-webmentions__form-form > .form-submit { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: end; gap: 0.35rem; margin: 0; }
+
+.nop-webmentions__form-more { grid-column: 1 / -1; display: none; flex-direction: column; gap: 0.75rem; }
+
+.nop-webmentions__form-form:is(:focus-within, :has(textarea:not(:placeholder-shown)), .is-editing:has([aria-invalid=true])) .nop-webmentions__form-more { display: flex; }
+
+.nop-webmentions__form-field textarea {
+	field-sizing: content;
+	min-height:   calc(1lh + 1.4em);
+	max-height:   14lh;
+}
+
+.nop-webmentions__form-who { display: grid; gap: 0.75rem; }
+
+@media (min-width: 480px) {
+	.nop-webmentions__form-who { grid-template-columns: 1fr 1fr; }
+	.nop-webmentions__form-field--remember { grid-column: 1 / -1; }
+}
+
+.nop-webmentions__form-who[hidden], .nop-webmentions__form-as[hidden] { display: none; }
+
+.nop-webmentions__form-field--author label, .nop-webmentions__form-field--email label { display: block; margin-block-end: 0.3rem; }
+
+.nop-webmentions__form-field--remember { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
+
+.nop-webmentions__form-field--remember input { width: auto; }
+
+/* An error is named under its field and the field is marked. */
+.nop-webmentions__error { display: block; margin-block-start: 0.3rem; }
+
+.nop-webmentions__error:empty { display: none; }
+
+.nop-webmentions__form-field [aria-invalid=true] { outline: 2px solid currentColor; outline-offset: -2px; }
+
+/* The shortcut hint shows only where there is a keyboard. */
+.nop-webmentions__hint { display: none; white-space: nowrap; }
+
+@media (hover: hover) and (pointer: fine) {
+	.nop-webmentions__form-form:focus-within .nop-webmentions__hint { display: inline; }
+}
+
+.nop-webmentions__change { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+
+.nop-webmentions__mention-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-block-start: 0.5rem; }
+
+.nop-webmentions__mention-form label { flex-basis: 100%; }
+
+.nop-webmentions__mention-form input { flex: 1 1 12rem; min-width: 0; }
+
+.nop-webmentions__mention summary { cursor: pointer; }
 
 .nop-webmentions__form-submit {
 	display:     inline-flex;
@@ -71,13 +117,8 @@
 	outline-offset: 2px;
 }
 
-/* A submit button narrower than the thumb that has to hit it. */
-@media (max-width: 479px) {
-	.nop-webmentions__form-submit {
-		width:           100%;
-		justify-content: center;
-	}
-}
+/* A submit button never narrower than a thumb. */
+.nop-webmentions__form-submit { min-height: 2.75rem; }
 
 .nop-webmentions__cancel-reply {
 	display: block;

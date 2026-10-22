@@ -3,14 +3,26 @@
 	"apiVersion": 3,
 	"name": "nop-indieweb/comment-form",
 	"title": "Comment Form",
-	"description": "Compact leave-a-reply form for the post. Textarea first, then name and email for logged-out visitors.",
+	"description": "A reply form that starts as one line and grows when you write: your name remembered, email optional, Cmd/Ctrl+Enter to post, clear feedback, and other ways to reply (the post's copies elsewhere, or a mention from your own site).",
 	"category": "nop-indieweb-conversations",
 	"icon": "edit",
-	"keywords": ["comment", "reply", "form", "respond", "indieweb"],
+	"keywords": [
+		"comment",
+		"reply",
+		"form",
+		"respond",
+		"indieweb"
+	],
 	"editorScript": "file:./editor.js",
-	"style": ["nop-blocks-shared", "file:./style.css"],
+	"style": [
+		"nop-blocks-shared",
+		"file:./style.css"
+	],
 	"render": "file:./render.php",
-	"usesContext": ["postId", "postType"],
+	"usesContext": [
+		"postId",
+		"postType"
+	],
 	"selectors": {
 		"border": ".wp-block-nop-indieweb-comment-form :is(.nop-webmentions__form-field input, .nop-webmentions__form-field textarea)"
 	},
@@ -55,6 +67,24 @@
 		},
 		"interactivity": {
 			"clientNavigation": true
+		}
+	},
+	"attributes": {
+		"showHeading": {
+			"type": "boolean",
+			"default": true
+		},
+		"heading": {
+			"type": "string",
+			"default": ""
+		},
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
+		"showOtherWays": {
+			"type": "boolean",
+			"default": true
 		}
 	}
 }

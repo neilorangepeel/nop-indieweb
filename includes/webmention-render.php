@@ -360,6 +360,22 @@ function nop_wm_time_label( string $date_gmt ): string {
 	return (string) wp_date( 'j F Y', $ts );
 }
 
+/*
+ * Email is optional on a comment (filter nop_indieweb_comment_email_optional):
+ * core's "Comment author must fill out name and email" asks for both, so while
+ * a comment is handled it is read as off, and the name alone is required here.
+ */
+add_action( 'pre_comment_on_post', static function (): void {
+	if ( ! apply_filters( 'nop_indieweb_comment_email_optional', true ) || is_user_logged_in() || ! get_option( 'require_name_email' ) ) {
+		return;
+	}
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- core's own comment submission, checked by core.
+	if ( '' === trim( (string) wp_unslash( $_POST['author'] ?? '' ) ) ) {
+		wp_die( esc_html__( 'Add your name, so people know who replied.', 'nop-indieweb' ), esc_html__( 'Comment Submission Failure', 'nop-indieweb' ), [ 'response' => 400, 'back_link' => true ] );
+	}
+	add_filter( 'pre_option_require_name_email', '__return_zero' );
+} );
+
 /**
  * Compact inline comment form for the bottom of the Responses section.
  * Returns empty string when comments are closed on this post.
@@ -372,15 +388,25 @@ function nop_wm_time_label( string $date_gmt ): string {
  * $force        — true in the editor preview to render regardless of whether
  *                 comments are open (the template editor has no real post).
  */
-function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bool $force = false ): string {
+function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bool $force = false, array $opts = [] ): string {
 	if ( ! $force && ! comments_open( $post_id ) ) {
 		return '';
 	}
+	$opts = array_merge(
+		[
+			'heading'     => __( 'Leave a reply', 'nop-indieweb' ),
+			'placeholder' => __( 'Add a comment…', 'nop-indieweb' ),
+			'other_ways'  => true,
+		],
+		array_filter( $opts, static fn( $v ) => '' !== $v && null !== $v )
+	);
 
-	$post_url  = esc_url( (string) get_permalink( $post_id ) );
+	$post_url  = (string) get_permalink( $post_id );
 	$logged_in = is_user_logged_in();
 	$commenter = wp_get_current_commenter();
 	$user      = $logged_in ? wp_get_current_user() : null;
+	$known     = $user ? $user->display_name : (string) $commenter['comment_author'];
+	$email_req = ! (bool) apply_filters( 'nop_indieweb_comment_email_optional', true );
 
 	// The nop-indieweb/responses store posts the form in place, threads a
 	// reply without moving the form, and offers new responses as they arrive.
@@ -389,15 +415,23 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 	if ( $interactive ) {
 		wp_enqueue_script_module( 'nop-indieweb-responses' );
 		wp_interactivity_state( 'nop-indieweb/responses', [
-			'endpoint' => rest_url( 'nop-indieweb/v1/like' ),
-			'i18n'     => [
-				'heading'  => __( 'Leave a reply', 'nop-indieweb' ),
+			'endpoint'   => rest_url( 'nop-indieweb/v1/like' ),
+			'webmention' => rest_url( 'nop-indieweb/v1/webmention' ),
+			'i18n'       => [
+				'heading'    => $opts['heading'],
 				/* translators: %s: name of the person being replied to */
-				'replying' => __( 'Replying to %s', 'nop-indieweb' ),
-				'sending'  => __( 'Posting your reply…', 'nop-indieweb' ),
-				'posted'   => __( 'Your reply is posted.', 'nop-indieweb' ),
-				'held'     => __( 'Thanks — your reply is awaiting moderation.', 'nop-indieweb' ),
-				'failed'   => __( 'Your reply could not be posted. Please try again.', 'nop-indieweb' ),
+				'replying'   => __( 'Replying to %s', 'nop-indieweb' ),
+				'sending'    => __( 'Posting your reply…', 'nop-indieweb' ),
+				'posted'     => __( 'Your reply is posted.', 'nop-indieweb' ),
+				'held'       => __( 'Thanks — your reply is awaiting approval.', 'nop-indieweb' ),
+				'failed'     => __( 'Your reply could not be posted. Please try again.', 'nop-indieweb' ),
+				'noComment'  => __( 'Write something first.', 'nop-indieweb' ),
+				'noName'     => __( 'Add your name, so people know who replied.', 'nop-indieweb' ),
+				'badEmail'   => __( 'That email address doesn’t look right.', 'nop-indieweb' ),
+				'noEmail'    => __( 'Add your email (it won’t be published).', 'nop-indieweb' ),
+				'mentioning' => __( 'Sending your mention…', 'nop-indieweb' ),
+				'mentioned'  => __( 'Thanks — your mention will appear once it’s checked.', 'nop-indieweb' ),
+				'badUrl'     => __( 'Add the address of the post on your site.', 'nop-indieweb' ),
 				/* translators: %d: number of new responses (one) */
 				'freshOne'   => __( 'Show %d new response', 'nop-indieweb' ),
 				/* translators: %d: number of new responses */
@@ -406,16 +440,50 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 		] );
 	}
 	$context = [
-		'postId'  => $post_id,
-		'known'   => $interactive ? ( new \NOP\IndieWeb\Webmention\Like_Endpoint() )->response_count( $post_id ) : 0,
-		'fresh'   => 0,
-		'parent'  => 0,
-		'replyTo' => '',
-		'sending' => false,
-		'status'  => '',
-		'me'      => $user ? $user->display_name : '',
-		'sent'    => [ 'author' => '', 'text' => '' ],
+		'postId'   => $post_id,
+		'known'    => $interactive ? ( new \NOP\IndieWeb\Webmention\Like_Endpoint() )->response_count( $post_id ) : 0,
+		'fresh'    => 0,
+		'parent'   => 0,
+		'replyTo'  => '',
+		'sending'  => false,
+		'status'   => '',
+		'me'       => $known,
+		'editing'  => '' === $known,
+		'errors'   => [ 'comment' => '', 'author' => '', 'email' => '', 'mention' => '' ],
+		'sent'     => [ 'author' => '', 'text' => '', 'held' => false ],
+		'mention'  => '',
+		'author'   => $known,
+		'email'    => (string) $commenter['comment_author_email'],
 	];
+
+	// Other ways to reply: the post's copies elsewhere, and a mention from your own site.
+	$elsewhere = [];
+	if ( $opts['other_ways'] ) {
+		foreach ( (array) get_post_meta( $post_id, 'nop_indieweb_syndication', true ) as $copy ) {
+			$host = (string) wp_parse_url( (string) $copy, PHP_URL_HOST );
+			$name = match ( true ) {
+				str_contains( $host, 'bsky' )     => 'Bluesky',
+				str_contains( $host, 'pixelfed' ) => 'Pixelfed',
+				str_contains( $host, 'tumblr' )   => 'Tumblr',
+				'' !== $host                     => str_contains( (string) $copy, '/@' ) ? 'Mastodon' : $host,
+				default                          => '',
+			};
+			if ( $name ) {
+				$elsewhere[ $name ] = (string) $copy;
+			}
+		}
+	}
+
+	$field = static function ( string $name ) use ( $interactive ): string {
+		return $interactive
+			? ' data-wp-bind--aria-invalid="state.invalid' . ucfirst( $name ) . '" aria-describedby="nop-error-' . $name . '"'
+			: '';
+	};
+	$error = static function ( string $name ) use ( $interactive ): string {
+		return $interactive
+			? '<span class="nop-webmentions__error" id="nop-error-' . $name . '" data-wp-text="context.errors.' . $name . '"></span>'
+			: '';
+	};
 
 	ob_start();
 	?>
@@ -425,17 +493,23 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 		data-wp-init="callbacks.watch"
 		data-wp-on-document--click="actions.replyTo"<?php endif; ?>>
 		<?php if ( $show_heading ) : ?>
-		<p class="nop-webmentions__form-label" data-wp-text="state.heading"><?php esc_html_e( 'Leave a reply', 'nop-indieweb' ); ?></p>
+		<p class="nop-webmentions__form-label" id="nop-reply-heading" data-wp-text="state.heading"><?php echo esc_html( $opts['heading'] ); ?></p>
 		<?php endif; ?>
 		<a id="cancel-comment-reply-link" class="nop-webmentions__cancel-reply" href="<?php echo esc_url( $post_url . '#respond' ); ?>" hidden data-wp-bind--hidden="!context.parent" data-wp-on--click="actions.cancelReply"><?php esc_html_e( 'Cancel reply', 'nop-indieweb' ); ?></a>
-		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>" data-wp-on--submit="actions.submit" data-wp-bind--aria-busy="context.sending">
+		<form id="commentform" class="nop-webmentions__form-form" method="post" action="<?php echo esc_url( site_url( '/wp-comments-post.php' ) ); ?>"<?php if ( $show_heading ) : ?> aria-labelledby="nop-reply-heading"<?php endif; ?> data-wp-on--submit="actions.submit" data-wp-bind--aria-busy="context.sending" data-wp-class--is-editing="context.editing"<?php if ( $interactive ) : ?> novalidate<?php endif; ?>>
+			<p class="nop-webmentions__form-field nop-webmentions__form-field--comment">
+				<label for="comment" class="screen-reader-text"><?php esc_html_e( 'Comment', 'nop-indieweb' ); ?></label>
+				<textarea id="comment" name="comment" rows="1" placeholder="<?php echo esc_attr( $opts['placeholder'] ); ?>" required<?php echo $field( 'comment' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed attribute markup ?> data-wp-on--keydown="actions.keys" data-wp-on--input="actions.clearError"></textarea>
+				<?php echo $error( 'comment' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed markup ?>
+			</p>
+			<div class="nop-webmentions__form-more">
 			<?php if ( $user ) : ?>
 			<p class="nop-webmentions__form-field nop-webmentions__form-logged-in logged-in-as">
 				<?php
 				printf(
 					wp_kses(
 						/* translators: 1: user display name, 2: logout URL */
-						__( 'Logged in as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
+						__( 'Replying as <strong>%1$s</strong>. <a href="%2$s">Log out?</a>', 'nop-indieweb' ),
 						[ 'strong' => [], 'a' => [ 'href' => [] ] ]
 					),
 					esc_html( $user->display_name ),
@@ -443,37 +517,81 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 				);
 				?>
 			</p>
+			<?php else : ?>
+			<p class="nop-webmentions__form-field nop-webmentions__form-as" data-wp-bind--hidden="context.editing"<?php echo '' === $known ? ' hidden' : ''; ?>>
+				<?php
+				printf(
+					/* translators: %s: the commenter's remembered name */
+					esc_html__( 'Replying as %s', 'nop-indieweb' ),
+					'<strong data-wp-text="context.me">' . esc_html( $known ) . '</strong>'
+				);
+				?>
+				<button type="button" class="nop-webmentions__change" data-wp-on--click="actions.edit"><?php esc_html_e( 'Change', 'nop-indieweb' ); ?></button>
+			</p>
+			<div class="nop-webmentions__form-who" data-wp-bind--hidden="!context.editing"<?php echo '' === $known ? '' : ' hidden'; ?>>
+				<p class="nop-webmentions__form-field nop-webmentions__form-field--author">
+					<label for="author"><?php esc_html_e( 'Name', 'nop-indieweb' ); ?></label>
+					<input id="author" name="author" type="text" value="<?php echo esc_attr( $known ); ?>" data-wp-bind--value="context.author" autocomplete="name" required<?php echo $field( 'author' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed attribute markup ?> data-wp-on--input="actions.typed">
+					<?php echo $error( 'author' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed markup ?>
+				</p>
+				<p class="nop-webmentions__form-field nop-webmentions__form-field--email">
+					<label for="email"><?php echo $email_req ? esc_html__( 'Email (not published)', 'nop-indieweb' ) : esc_html__( 'Email (optional, not published)', 'nop-indieweb' ); ?></label>
+					<input id="email" name="email" type="email" value="<?php echo esc_attr( $commenter['comment_author_email'] ); ?>" data-wp-bind--value="context.email" autocomplete="email"<?php echo $email_req ? ' required' : ''; ?><?php echo $field( 'email' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed attribute markup ?> data-wp-on--input="actions.typed">
+					<?php echo $error( 'email' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed markup ?>
+				</p>
+				<?php if ( get_option( 'show_comments_cookies_opt_in' ) ) : ?>
+				<p class="nop-webmentions__form-field nop-webmentions__form-field--remember">
+					<input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"<?php checked( '' !== $known ); ?>>
+					<label for="wp-comment-cookies-consent"><?php esc_html_e( 'Remember my name on this browser', 'nop-indieweb' ); ?></label>
+				</p>
+				<?php endif; ?>
+			</div>
 			<?php endif; ?>
-			<p class="nop-webmentions__form-field nop-webmentions__form-field--comment">
-				<label for="comment" class="screen-reader-text"><?php esc_html_e( 'Comment', 'nop-indieweb' ); ?></label>
-				<textarea id="comment" name="comment" rows="3" placeholder="<?php esc_attr_e( 'Add a comment…', 'nop-indieweb' ); ?>" required></textarea>
-			</p>
-			<?php if ( ! $logged_in ) : ?>
-			<p class="nop-webmentions__form-field nop-webmentions__form-field--author">
-				<label for="author" class="screen-reader-text"><?php esc_html_e( 'Name', 'nop-indieweb' ); ?></label>
-				<input id="author" name="author" type="text" value="<?php echo esc_attr( $commenter['comment_author'] ); ?>" autocomplete="name" placeholder="<?php esc_attr_e( 'Your name', 'nop-indieweb' ); ?>" required>
-			</p>
-			<p class="nop-webmentions__form-field nop-webmentions__form-field--email">
-				<label for="email" class="screen-reader-text"><?php esc_html_e( 'Email', 'nop-indieweb' ); ?></label>
-				<input id="email" name="email" type="email" value="<?php echo esc_attr( $commenter['comment_author_email'] ); ?>" autocomplete="email" placeholder="<?php esc_attr_e( 'Email (not published)', 'nop-indieweb' ); ?>" required>
-			</p>
-			<?php endif; ?>
+			</div>
 			<input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( (string) $post_id ); ?>">
 			<input type="hidden" name="comment_parent" id="comment_parent" value="0" data-wp-bind--value="context.parent">
 			<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $post_url ); ?>">
 			<p class="form-submit">
-				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post comment', 'nop-indieweb' ); ?>" data-wp-bind--disabled="context.sending">
+				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post', 'nop-indieweb' ); ?>" data-wp-bind--disabled="context.sending">
+				<?php if ( $interactive ) : ?>
+				<span class="nop-webmentions__hint"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+				<?php endif; ?>
 			</p>
 		</form>
 		<?php if ( $interactive ) : ?>
 		<p class="nop-webmentions__form-status" role="status" aria-live="polite" data-wp-text="context.status"></p>
 		<div class="nop-webmentions__reply nop-webmentions__reply--sent" hidden data-wp-bind--hidden="!context.sent.text">
 			<div class="nop-webmentions__reply-body">
-				<p class="nop-webmentions__reply-meta"><strong class="p-author p-name" data-wp-text="context.sent.author"></strong></p>
+				<p class="nop-webmentions__reply-meta"><strong class="p-author p-name" data-wp-text="context.sent.author"></strong> <span class="nop-webmentions__pending" hidden data-wp-bind--hidden="!context.sent.held"><?php esc_html_e( 'Awaiting approval', 'nop-indieweb' ); ?></span></p>
 				<div class="nop-webmentions__reply-content" data-wp-text="context.sent.text"></div>
 			</div>
 		</div>
 		<button type="button" class="nop-webmentions__fresh" hidden data-wp-bind--hidden="!context.fresh" data-wp-on--click="actions.showFresh" data-wp-text="state.freshLabel"></button>
+		<?php endif; ?>
+		<?php if ( $opts['other_ways'] ) : ?>
+		<div class="nop-webmentions__elsewhere">
+			<p>
+				<?php if ( $elsewhere ) : ?>
+					<?php esc_html_e( 'Or reply on', 'nop-indieweb' ); ?>
+					<?php
+					echo implode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each link escaped below
+						' · ',
+						array_map( static fn( $name, $url ) => '<a href="' . esc_url( $url ) . '" rel="noopener">' . esc_html( $name ) . '</a>', array_keys( $elsewhere ), $elsewhere )
+					);
+					?>
+				<?php endif; ?>
+			</p>
+			<details class="nop-webmentions__mention">
+				<summary><?php echo $elsewhere ? esc_html__( 'or from your own site', 'nop-indieweb' ) : esc_html__( 'Reply from your own site', 'nop-indieweb' ); ?></summary>
+				<form class="nop-webmentions__mention-form" method="post" action="<?php echo esc_url( rest_url( 'nop-indieweb/v1/webmention' ) ); ?>" data-wp-on--submit="actions.mention"<?php if ( $interactive ) : ?> novalidate<?php endif; ?>>
+					<label for="nop-mention-source"><?php esc_html_e( 'The address of your post', 'nop-indieweb' ); ?></label>
+					<input id="nop-mention-source" name="source" type="url" placeholder="https://" required<?php echo $field( 'mention' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed attribute markup ?>>
+					<input type="hidden" name="target" value="<?php echo esc_attr( $post_url ); ?>">
+					<button type="submit"><?php esc_html_e( 'Send', 'nop-indieweb' ); ?></button>
+					<?php echo $error( 'mention' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed markup ?>
+				</form>
+			</details>
+		</div>
 		<?php endif; ?>
 	</div>
 	<?php
