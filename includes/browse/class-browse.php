@@ -55,18 +55,26 @@ final class Browse {
 		add_filter( 'wp_robots', fn( $robots ) => self::is_entry_request() ? array_merge( $robots, [ 'noindex' => true ] ) : $robots );
 		add_filter( 'render_block_core/group', [ $this, 'mark_group' ], 10, 2 );
 		add_filter( 'render_block_core/button', [ $this, 'mark_button' ], 10, 2 );
-		add_filter( 'render_block_core/post-content', [ $this, 'drop_listen_lead' ] );
+		add_filter( 'render_block_core/post-content', [ $this, 'drop_repeated_lead' ] );
 	}
 
 	/**
-	 * A listen opens with "Artist, Year." (Entry_Fields reads it for the subtitle); an opened entry shows that line
-	 * under the title, so it is not repeated as the words' first paragraph.
+	 * An opened entry says nothing twice: the words lose a first paragraph that only repeats what the entry already
+	 * shows above them, a listen's "Artist, Year." (its subtitle) or a story's caption that is its title. The full page
+	 * is unchanged.
 	 */
-	public function drop_listen_lead( string $content ): string {
-		if ( ! self::is_entry_request() || ! has_term( 'listen', Kind_Taxonomy::TAXONOMY ) || '' === (string) \NOP\IndieWeb\Post_Meta\Entry_Fields::value( 'listen_artist_year', (int) get_the_ID() ) ) {
+	public function drop_repeated_lead( string $content ): string {
+		if ( ! self::is_entry_request() ) {
 			return $content;
 		}
-		return (string) preg_replace( '#<p\b[^>]*>\s*[^<,.\n]{1,60},\s*(?:19|20)\d{2}\.?\s*</p>\s*#u', '', $content, 1 );
+		$id = (int) get_the_ID();
+		if ( has_term( 'listen', Kind_Taxonomy::TAXONOMY ) && '' !== (string) \NOP\IndieWeb\Post_Meta\Entry_Fields::value( 'listen_artist_year', $id ) ) {
+			return (string) preg_replace( '#<p\b[^>]*>\s*[^<,.\n]{1,60},\s*(?:19|20)\d{2}\.?\s*</p>\s*#u', '', $content, 1 );
+		}
+		if ( preg_match( '#<p\b[^>]*>(.*?)</p>\s*#s', $content, $m, PREG_OFFSET_CAPTURE ) && 0 === strcasecmp( trim( wp_strip_all_tags( $m[1][0] ) ), trim( wp_strip_all_tags( get_the_title( $id ) ) ) ) ) {
+			return substr_replace( $content, '', $m[0][1], strlen( $m[0][0] ) );
+		}
+		return $content;
 	}
 
 	public function register_assets(): void {
