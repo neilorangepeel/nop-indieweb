@@ -26,12 +26,30 @@ store( 'nop-indieweb/photos', {
 		get isFirst() {
 			return 0 === getContext().at;
 		},
+		get playLabel() {
+			const context = getContext();
+			return context.playing ? context.pause : context.play;
+		},
 		get isLast() {
 			const context = getContext();
 			return context.at === context.count - 1;
 		},
 	},
 	actions: {
+		toggle() {
+			const video = getElement().ref.closest( '.nop-photos' ).querySelector( 'video' );
+			if ( video.paused ) {
+				video.play();
+			} else {
+				video.pause();
+			}
+		},
+		played() {
+			getContext().playing = true;
+		},
+		paused() {
+			getContext().playing = false;
+		},
 		previous() {
 			step( -1 );
 		},

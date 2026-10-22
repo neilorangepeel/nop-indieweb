@@ -30,9 +30,27 @@ if ( ! $ids && $post_id ) {
 		}
 		$poster = wp_get_attachment_metadata( (int) get_post_thumbnail_id( $post_id ) );
 		$shape  = ! empty( $poster['width'] ) && ! empty( $poster['height'] ) ? $poster['width'] . ' / ' . $poster['height'] : '9 / 16';
-		$video  = get_block_wrapper_attributes( [ 'class' => 'nop-photos has-video', 'style' => '--nop-photos-ratio:' . $shape ] );
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the video rendered by core.
-		echo '<div ' . $video . '>' . render_block( $parsed ) . '</div>';
+		$video  = get_block_wrapper_attributes( [
+			'class'               => 'nop-photos has-video',
+			'style'               => '--nop-photos-ratio:' . $shape,
+			'data-wp-interactive' => 'nop-indieweb/photos',
+			'data-wp-context'     => wp_json_encode( [ 'playing' => false, 'play' => __( 'Play video', 'nop-indieweb' ), 'pause' => __( 'Pause video', 'nop-indieweb' ) ] ),
+			'data-wp-class--is-playing' => 'context.playing',
+		] );
+		// The video plays in place without the browser's own bar (it would sit under whatever a theme lays over the
+		// picture): one large, labelled play/pause button does, and clicking the video does too.
+		$player = new WP_HTML_Tag_Processor( render_block( $parsed ) );
+		if ( $player->next_tag( 'video' ) ) {
+			$player->remove_attribute( 'controls' );
+			$player->set_attribute( 'playsinline', true );
+			$player->set_attribute( 'data-wp-on--click', 'actions.toggle' );
+			$player->set_attribute( 'data-wp-on--play', 'actions.played' );
+			$player->set_attribute( 'data-wp-on--pause', 'actions.paused' );
+			$player->set_attribute( 'data-wp-on--ended', 'actions.paused' );
+		}
+		$button = '<button type="button" class="nop-photos__play" data-wp-on--click="actions.toggle" data-wp-bind--aria-label="state.playLabel" aria-label="' . esc_attr__( 'Play video', 'nop-indieweb' ) . '"></button>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the video rendered by core, the button escaped above.
+		echo '<div ' . $video . '>' . $player->get_updated_html() . $button . '</div>';
 		return;
 	}
 }

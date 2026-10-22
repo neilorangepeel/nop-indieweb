@@ -17,6 +17,19 @@
 
 .nop-photos.has-video video { display: block; width: 100%; height: 100%; object-fit: contain; }
 
+/* Play and pause: a large disc in the middle while paused; while playing it fades away, shown again on hover or focus. */
+.nop-photos__play { position: absolute; top: 50%; left: 50%; z-index: 1; display: grid; place-items: center; width: 4rem; height: 4rem; padding: 0; border: 0; border-radius: 50%; background: var(--nop-photos-control, rgb(255 255 255 / 0.85)); color: #111; cursor: pointer; translate: -50% -50%; transition: opacity 0.2s; }
+
+.nop-photos__play::before { content: ""; width: 1.5rem; height: 1.5rem; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%3E%3Cpath%20d=%22M7%205v14l12-7z%22/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%3E%3Cpath%20d=%22M7%205v14l12-7z%22/%3E%3C/svg%3E") center / contain no-repeat; }
+
+.nop-photos.is-playing .nop-photos__play::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%3E%3Cpath%20d=%22M7%205h3.5v14H7zM13.5%205H17v14h-3.5z%22/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2024%2024%22%3E%3Cpath%20d=%22M7%205h3.5v14H7zM13.5%205H17v14h-3.5z%22/%3E%3C/svg%3E"); }
+
+.nop-photos.is-playing:not(:hover, :focus-within) .nop-photos__play { opacity: 0; }
+
+.nop-photos__play:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.nop-photos.has-video video { cursor: pointer; }
+
 /* Previous and next: WordPress's own chevrons (those of core's Image lightbox) on small discs at the photo's edges, shown on hover or focus where there is a pointer. */
 .nop-photos__step { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 2rem; height: 2rem; margin-top: -1rem; padding: 0; border: 0; border-radius: 50%; background: var(--nop-photos-control, rgb(255 255 255 / 0.85)); color: #111; cursor: pointer; transition: opacity 0.15s; }
 
@@ -41,5 +54,5 @@
 .nop-photos__dot.is-current { background: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
-	.nop-photos__step, .nop-photos__dot { transition: none; }
+	.nop-photos__step, .nop-photos__dot, .nop-photos__play { transition: none; }
 }
