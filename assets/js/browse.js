@@ -262,14 +262,14 @@ const namePanel = ( name ) => {
 const prepareSoon = ( href ) => idle( () => prepareEntry( href ).catch( () => {} ) );
 
 // A wall's entry links: a kind post's title or date link in a Query Loop (never its other links: kind, like, source).
-const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date) a[href]';
+const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date, .wp-block-post-featured-image) a[href]';
 const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter';
 const isEntryLink = ( link ) => !! link?.closest( '.nop-wall' ) && link.matches( ENTRY_LINK );
 // The post an entry link belongs to: what the entry morphs out of and back into.
 const postOf = ( link ) => link?.closest( '.wp-block-post' );
 
 /**
- * The wall's entries in order: one link per post (its title, or its date when
+ * The wall's entries in order: one link per post (its title, its picture, or its date when
  * the title is hidden).
  *
  * @return {HTMLAnchorElement[]} Links.

@@ -13,7 +13,9 @@
  *
  * Which kinds count: filter `nop_indieweb_logbook_kinds`. Page size: filter
  * `nop_indieweb_logbook_per_page`. Where another kind lives instead (a
- * section of its own): filter `nop_indieweb_kind_sections`.
+ * section of its own): filter `nop_indieweb_kind_sections`. A kind can be both:
+ * photos are in the Logbook and also have their own section (its crumbs and
+ * archive), and they open over either wall.
  */
 declare( strict_types=1 );
 
@@ -29,7 +31,7 @@ final class Logbook {
 
 	/** @return string[] Kind slugs that make up the Logbook (replies and reposts answer other people's posts, so they stay out). */
 	public static function kinds(): array {
-		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'watch', 'listen', 'bookmark', 'like', 'quote', 'exercise', 'rsvp', 'story' ] );
+		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'quote', 'exercise', 'rsvp', 'story' ] );
 	}
 
 	/** The section a kind lives in: a category slug, or 'logbook'. */
@@ -54,7 +56,7 @@ final class Logbook {
 			return true;
 		}
 		$term = is_tax( Kind_Taxonomy::TAXONOMY ) ? get_queried_object() : null;
-		return $term instanceof \WP_Term && 'logbook' === self::section( $term->slug );
+		return $term instanceof \WP_Term && in_array( $term->slug, self::kinds(), true );
 	}
 
 	/** A single logbook entry, which a wall can open over itself. */
@@ -63,7 +65,7 @@ final class Logbook {
 			return false;
 		}
 		$kinds = get_the_terms( get_queried_object_id(), Kind_Taxonomy::TAXONOMY );
-		return $kinds && ! is_wp_error( $kinds ) && 'logbook' === self::section( $kinds[0]->slug );
+		return $kinds && ! is_wp_error( $kinds ) && in_array( $kinds[0]->slug, self::kinds(), true );
 	}
 
 	public function register(): void {
