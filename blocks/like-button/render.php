@@ -23,7 +23,7 @@ $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 if ( ! $post_id ) {
 	$wrapper = get_block_wrapper_attributes( [ 'class' => 'nop-like-button' ] );
 	?>
-	<div <?php echo wp_kses_data( $wrapper ); ?>>
+	<div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 		<button class="nop-like-button__btn" type="button" aria-pressed="false">
 			<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
 			<span class="nop-like-button__label"><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
@@ -49,7 +49,7 @@ $wrapper = get_block_wrapper_attributes( [
 	'data-wp-class--is-liked' => 'state.liked',
 ] );
 ?>
-<div <?php echo wp_kses_data( $wrapper ); ?>>
+<div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 	<button class="nop-like-button__btn"
 	        type="button"
 	        data-wp-on--click="actions.like"
