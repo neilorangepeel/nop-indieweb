@@ -55,6 +55,18 @@ final class Browse {
 		add_filter( 'wp_robots', fn( $robots ) => self::is_entry_request() ? array_merge( $robots, [ 'noindex' => true ] ) : $robots );
 		add_filter( 'render_block_core/group', [ $this, 'mark_group' ], 10, 2 );
 		add_filter( 'render_block_core/button', [ $this, 'mark_button' ], 10, 2 );
+		add_filter( 'render_block_core/post-content', [ $this, 'drop_listen_lead' ] );
+	}
+
+	/**
+	 * A listen opens with "Artist, Year." (Entry_Fields reads it for the subtitle); an opened entry shows that line
+	 * under the title, so it is not repeated as the words' first paragraph.
+	 */
+	public function drop_listen_lead( string $content ): string {
+		if ( ! self::is_entry_request() || ! has_term( 'listen', Kind_Taxonomy::TAXONOMY ) || '' === (string) \NOP\IndieWeb\Post_Meta\Entry_Fields::value( 'listen_artist_year', (int) get_the_ID() ) ) {
+			return $content;
+		}
+		return (string) preg_replace( '#<p\b[^>]*>\s*[^<,.\n]{1,60},\s*(?:19|20)\d{2}\.?\s*</p>\s*#u', '', $content, 1 );
 	}
 
 	public function register_assets(): void {
