@@ -1,6 +1,7 @@
 <?php
 /**
- * Photos: the post's photos (nop_indieweb_photo_ids, else the featured image), one at a time, filling the block's height.
+ * Photos: the post's photos (nop_indieweb_photo_ids; else the first Video block in the post, playing in place; else the
+ * featured image), one at a time, filling the block's height.
  * They are a core Gallery of core Image blocks with Expand on click, so the full-size view is WordPress's own lightbox,
  * stepping through the gallery. This block adds only the strip: several photos get previous and next, dots, and
  * swiping (a scroll-snap strip). The first photo's shape is published as --nop-photos-ratio, so a theme can size the
@@ -21,6 +22,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $post_id = (int) ( $block->context['postId'] ?? get_the_ID() );
 $ids     = $post_id ? array_values( array_filter( array_map( 'absint', (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true ) ), 'wp_attachment_is_image' ) ) : [];
+// No photos but a video in the post (a story): the video is the media, at its poster's shape, playing in place.
+if ( ! $ids && $post_id ) {
+	foreach ( parse_blocks( (string) get_post_field( 'post_content', $post_id ) ) as $parsed ) {
+		if ( 'core/video' !== $parsed['blockName'] ) {
+			continue;
+		}
+		$poster = wp_get_attachment_metadata( (int) get_post_thumbnail_id( $post_id ) );
+		$shape  = ! empty( $poster['width'] ) && ! empty( $poster['height'] ) ? $poster['width'] . ' / ' . $poster['height'] : '9 / 16';
+		$video  = get_block_wrapper_attributes( [ 'class' => 'nop-photos has-video', 'style' => '--nop-photos-ratio:' . $shape ] );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the video rendered by core.
+		echo '<div ' . $video . '>' . render_block( $parsed ) . '</div>';
+		return;
+	}
+}
 if ( ! $ids && $post_id && has_post_thumbnail( $post_id ) ) {
 	$ids = [ (int) get_post_thumbnail_id( $post_id ) ];
 }
