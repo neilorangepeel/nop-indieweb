@@ -3,15 +3,23 @@
 	"apiVersion": 3,
 	"name": "nop-indieweb/photos",
 	"title": "Photos",
-	"description": "The post's photos (else its featured image) at full height, one at a time: swipe or step between them, and open one full size.",
+	"description": "The post's photos (else its featured image) at full height, one at a time: swipe or step between them, and open one full size in the lightbox. Ratio fixes their shape (\"1\" for square), cropping to it.",
 	"category": "nop-indieweb-meta",
 	"icon": "format-gallery",
-	"keywords": ["photos", "gallery", "carousel", "lightbox"],
+	"keywords": [
+		"photos",
+		"gallery",
+		"carousel",
+		"lightbox"
+	],
 	"editorScript": "file:./editor.js",
 	"viewScriptModule": "file:./view.js",
 	"style": "file:./style.css",
 	"render": "file:./render.php",
-	"usesContext": ["postId", "postType"],
+	"usesContext": [
+		"postId",
+		"postType"
+	],
 	"supports": {
 		"html": false,
 		"align": false,
@@ -23,6 +31,12 @@
 		},
 		"interactivity": {
 			"clientNavigation": true
+		}
+	},
+	"attributes": {
+		"ratio": {
+			"type": "string",
+			"default": ""
 		}
 	}
 }

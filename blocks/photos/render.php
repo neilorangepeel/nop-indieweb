@@ -7,6 +7,9 @@
  * column to it.
  *
  * @package NOP_IndieWeb
+ *
+ * @var array<string, mixed> $attributes
+ * @var \WP_Block            $block
  */
 
 declare( strict_types=1 );
@@ -28,6 +31,10 @@ if ( ! $ids ) {
 $n     = count( $ids );
 $meta  = wp_get_attachment_metadata( $ids[0] );
 $ratio = ! empty( $meta['width'] ) && ! empty( $meta['height'] ) ? $meta['width'] . ' / ' . $meta['height'] : '4 / 3';
+// A fixed shape (an album's square cover), cropping the photos to it.
+if ( preg_match( '#^\d+(\.\d+)?( ?/ ?\d+(\.\d+)?)?$#', (string) ( $attributes['ratio'] ?? '' ) ) ) {
+	$ratio = (string) $attributes['ratio'];
+}
 
 // The gallery as block markup, rendered as blocks, so core adds the lightbox (with the gallery's navigation) itself.
 $images = '';
