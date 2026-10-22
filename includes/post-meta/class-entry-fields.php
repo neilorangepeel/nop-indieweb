@@ -25,7 +25,7 @@ final class Entry_Fields {
 	public const FIELDS = [
 		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
-		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
+		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site', 'cite_byline',
 		'venue_category', 'visit_label', 'weather_label', 'country_short', 'city_line',
 		'exercise_summary',
 		'watch_released', 'watch_date',
@@ -287,6 +287,8 @@ final class Entry_Fields {
 				$f['cite_image']    = self::meta( $post_id, 'cite_image' );
 				$f['cite_author']   = self::meta( $post_id, 'cite_author_name' );
 				$f['cite_site']     = self::meta( $post_id, 'cite_site_name' ) ?: $host;
+				// "Cole Peters · adactio.com": who and where, for a link's preview.
+				$f['cite_byline']   = implode( ' · ', array_filter( [ $f['cite_author'], $f['cite_site'] ] ) );
 				// The kind label already says "Liked": the title is the thing itself.
 				$f['display_title'] = $cite ?: (string) preg_replace( '/^[^·]{2,16}\s·\s/u', '', $title );
 				$f['detail']        = $f['cite_site'];
