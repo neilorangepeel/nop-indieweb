@@ -50,7 +50,15 @@ const router = () => import( '@wordpress/interactivity-router' );
 // The open entry's kind on <html> (data-nop-entry-kind), so a theme can colour the wall around it without
 // html:has(), which Safari is slow to re-check when the router swaps the entry in place.
 const markKind = () => {
-	const kind = document.querySelector( 'body > .nop-entry' )?.className.match( /\bnop-kind-([\w-]+)/ )?.[ 1 ];
+	const panel = document.querySelector( 'body > .nop-entry' );
+	// Lay the swapped-in entry out from scratch: Safari kept sizes from the previous entry. One synchronous
+	// detach and read, before any paint, so nothing flickers.
+	if ( panel ) {
+		panel.style.display = 'none';
+		void panel.offsetHeight;
+		panel.style.display = '';
+	}
+	const kind = panel?.className.match( /\bnop-kind-([\w-]+)/ )?.[ 1 ];
 	if ( kind ) {
 		document.documentElement.dataset.nopEntryKind = kind;
 	} else {
