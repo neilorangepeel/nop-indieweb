@@ -58,7 +58,9 @@
 
 .nop-webmentions__form-more { grid-column: 1 / -1; display: none; flex-direction: column; gap: 0.75rem; }
 
-.nop-webmentions__form-form:is(:focus-within, :has(textarea:not(:placeholder-shown)), .is-editing:has([aria-invalid=true])) .nop-webmentions__form-more { display: flex; }
+.nop-webmentions__form-form:is(:focus-within, :has(textarea:not(:placeholder-shown)), :has(.nop-webmentions__form-more:hover), .is-editing:has([aria-invalid=true])) .nop-webmentions__form-more { display: flex; }
+
+/* Pressing a field below the comment blurs the comment before the new field has focus (Safari shows that gap); the pointer being over the open fields keeps them open through it, so the one under the pointer is still there to take focus. */
 
 .nop-webmentions__form-field textarea {
 	field-sizing: content;
