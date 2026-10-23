@@ -71,6 +71,10 @@ final class Browse {
 		if ( has_term( 'listen', Kind_Taxonomy::TAXONOMY ) && '' !== (string) \NOP\IndieWeb\Post_Meta\Entry_Fields::value( 'listen_artist_year', $id ) ) {
 			return (string) preg_replace( '#<p\b[^>]*>\s*[^<,.\n]{1,60},\s*(?:19|20)\d{2}\.?\s*</p>\s*#u', '', $content, 1 );
 		}
+		// A note's title is its own words (it has no title of its own, and its card shows none), so they are never a repeat.
+		if ( has_term( 'note', Kind_Taxonomy::TAXONOMY ) ) {
+			return $content;
+		}
 		if ( preg_match( '#<p\b[^>]*>(.*?)</p>\s*#s', $content, $m, PREG_OFFSET_CAPTURE ) && 0 === strcasecmp( trim( wp_strip_all_tags( $m[1][0] ) ), trim( wp_strip_all_tags( get_the_title( $id ) ) ) ) ) {
 			return substr_replace( $content, '', $m[0][1], strlen( $m[0][0] ) );
 		}

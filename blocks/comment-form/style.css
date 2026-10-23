@@ -92,12 +92,6 @@
 
 .nop-webmentions__form-field [aria-invalid=true] { outline: 2px solid currentColor; outline-offset: -2px; }
 
-/* The shortcut hint shows only where there is a keyboard. */
-.nop-webmentions__hint { display: none; white-space: nowrap; }
-
-@media (hover: hover) and (pointer: fine) {
-	.nop-webmentions__form-form:is(:focus-within, :has(textarea:not(:placeholder-shown)), :has(.nop-webmentions__form-more:hover)) .nop-webmentions__hint { display: inline; }
-}
 
 .nop-webmentions__change { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
 

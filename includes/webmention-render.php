@@ -553,9 +553,6 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 			<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $post_url ); ?>">
 			<p class="form-submit">
 				<input name="submit" type="submit" id="submit" class="nop-webmentions__form-submit" value="<?php esc_attr_e( 'Post', 'nop-indieweb' ); ?>" data-wp-bind--disabled="context.sending">
-				<?php if ( $interactive ) : ?>
-				<span class="nop-webmentions__hint"><kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
-				<?php endif; ?>
 			</p>
 		</form>
 		<?php if ( $interactive ) : ?>
