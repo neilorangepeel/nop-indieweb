@@ -66,7 +66,9 @@
 	max-height:   14lh;
 }
 
-.nop-webmentions__form-who { display: grid; gap: 0.75rem; }
+.nop-webmentions__form-who { display: grid; gap: 0.75rem; align-items: end; }
+
+.nop-webmentions__form-who > .nop-webmentions__form-field { margin: 0; }
 
 @media (min-width: 480px) {
 	.nop-webmentions__form-who { grid-template-columns: 1fr 1fr; }
