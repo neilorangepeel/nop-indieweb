@@ -303,6 +303,10 @@ function neighbour( step ) {
 
 let searchTimer = 0;
 
+// An open (or step) in flight, and a Close asked for while it was: the entry is shown first, then closed, never half of each.
+let opening = false;
+let closeQueued = false;
+
 const isTyping = ( event ) =>
 	event.target.closest?.( 'input, textarea, select, [contenteditable]' );
 
@@ -415,6 +419,21 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			}
 		},
 		*openEntry( href, replace = false ) {
+			if ( opening ) {
+				return;
+			}
+			opening = true;
+			try {
+				yield actions.showEntry( href, replace );
+			} finally {
+				opening = false;
+			}
+			if ( closeQueued ) {
+				closeQueued = false;
+				actions.closeEntry();
+			}
+		},
+		*showEntry( href, replace ) {
 			let isReady = false;
 			try {
 				isReady = yield prepareEntry( href );
@@ -489,6 +508,10 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		} ),
 		// The panel goes at once (morphing back into its tile where it can); the wall catches up underneath.
 		closeEntry() {
+			if ( opening ) {
+				closeQueued = true;
+				return;
+			}
 			if ( ! state.entryOpen ) {
 				return;
 			}
@@ -536,7 +559,12 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		closeOnEscape( event ) {
 			// An open lightbox (core's Image lightbox, a modal) has the keys: Escape closes it and the arrows step its gallery.
 			// The lightbox may close itself first, so a key pressed inside it counts too.
-			if ( ! state.entryOpen || isTyping( event ) || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
+			// Escape in a field leaves the field first (a second press closes), so a half-written reply is not lost to a stray key.
+			if ( 'Escape' === event.key && isTyping( event ) && state.entryOpen ) {
+				event.target.blur?.();
+				return;
+			}
+			if ( ! ( state.entryOpen || opening ) || isTyping( event ) || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
 				return;
 			}
 			if ( 'Escape' === event.key ) {
