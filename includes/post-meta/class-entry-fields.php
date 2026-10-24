@@ -31,8 +31,9 @@ final class Entry_Fields {
 		'watch_released', 'watch_date', 'watch_director', 'watch_genres', 'watch_runtime', 'watch_country',
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
-		'quote_text', 'quote_author', 'quote_work',
+		'quote_text', 'quote_body', 'quote_author', 'quote_work',
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
+		'camera_line',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -267,6 +268,12 @@ final class Entry_Fields {
 				$f['rsvp_image'] = self::meta( $post_id, 'rsvp_event_image' );
 				break;
 
+			case 'photo':
+				$f['camera_line']  = self::camera_line( $post_id );
+				$f['source_url']   = self::meta( $post_id, 'source_url' );
+				$f['source_label'] = $f['source_url'] ? (string) preg_replace( '/^www\./', '', (string) wp_parse_url( $f['source_url'], PHP_URL_HOST ) ) : '';
+				break;
+
 			case 'bookmark':
 			case 'like':
 			case 'reply':
@@ -279,6 +286,8 @@ final class Entry_Fields {
 				$f['source_label'] = $host;
 				if ( 'quote' === $kind ) {
 					[ $f['quote_text'], $f['quote_author'], $f['quote_work'] ] = self::quote( $post_id );
+					// The quotation without its marks, for a design that sets it apart some other way (size, a rule).
+					$f['quote_body'] = (string) preg_replace( '/^\x{201C}|\x{201D}$/u', '', $f['quote_text'] );
 					$f['detail'] = $f['quote_author'];
 					break;
 				}
@@ -304,6 +313,32 @@ final class Entry_Fields {
 		// A note is untitled on purpose: name it by its opening words, never "(no title)".
 		$f['display_title'] = ( $f['display_title'] ?? '' ) ?: ( '' !== trim( $title ) ? $title : wp_trim_words( wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) ), 6, '…' ) );
 		return $f;
+	}
+
+	/**
+	 * The first photo's camera settings as one line, from what WordPress read out of the file at upload
+	 * ("X100V · 23mm · f/2 · 1/250s · ISO 400"); '' when the file carried none (an imported photo usually doesn't).
+	 */
+	private static function camera_line( int $post_id ): string {
+		$ids = array_filter( array_map( 'absint', (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true ) ) );
+		$id  = $ids ? (int) reset( $ids ) : (int) get_post_thumbnail_id( $post_id );
+		$m   = $id ? ( wp_get_attachment_metadata( $id )['image_meta'] ?? [] ) : [];
+		if ( ! $m ) {
+			return '';
+		}
+		$shutter = (float) ( $m['shutter_speed'] ?? 0 );
+		return implode(
+			' · ',
+			array_filter(
+				[
+					trim( (string) ( $m['camera'] ?? '' ) ),
+					(float) ( $m['focal_length'] ?? 0 ) ? round( (float) $m['focal_length'] ) . 'mm' : '',
+					(float) ( $m['aperture'] ?? 0 ) ? 'f/' . round( (float) $m['aperture'], 1 ) : '',
+					$shutter ? ( $shutter < 1 ? '1/' . round( 1 / $shutter ) : round( $shutter, 1 ) ) . 's' : '',
+					(int) ( $m['iso'] ?? 0 ) ? 'ISO ' . (int) $m['iso'] : '',
+				]
+			)
+		);
 	}
 
 	/**

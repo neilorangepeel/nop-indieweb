@@ -37,6 +37,16 @@ const entries = new Map();
 const ready = new Map();
 let wallVersion = 0;
 let opener = null;
+// Whether core's Image lightbox was open when the key went down: it closes itself on Escape before our handler
+// runs, so without this one press would close the lightbox and the entry under it. Read in the capture phase.
+let lightboxOpenAtKey = false;
+document.addEventListener(
+	'keydown',
+	() => {
+		lightboxOpenAtKey = !! document.querySelector( '.wp-lightbox-overlay.active' );
+	},
+	true
+);
 
 const idle = ( callback ) =>
 	window.requestIdleCallback
@@ -614,14 +624,24 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				event.target.blur?.();
 				return;
 			}
-			if ( ! ( state.entryOpen || opening ) || isTyping( event ) || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
+			if ( ! ( state.entryOpen || opening ) || isTyping( event ) || lightboxOpenAtKey || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
 				return;
 			}
 			if ( 'Escape' === event.key ) {
 				actions.closeEntry();
-			} else if ( 'ArrowLeft' === event.key ) {
+				return;
+			}
+			// An entry with several photos steps through them first, and on to the next entry only from its last (or first) photo.
+			const back = 'ArrowLeft' === event.key;
+			if ( ! back && 'ArrowRight' !== event.key ) {
+				return;
+			}
+			const photo = document.querySelector( `.nop-entry .nop-photos.has-several .nop-photos__${ back ? 'previous' : 'next' }:not(:disabled)` );
+			if ( photo ) {
+				photo.click();
+			} else if ( back ) {
 				actions.previousEntry();
-			} else if ( 'ArrowRight' === event.key ) {
+			} else {
 				actions.nextEntry();
 			}
 		},

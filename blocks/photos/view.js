@@ -1,6 +1,6 @@
 /**
  * Photos — the `nop-indieweb/photos` Interactivity store: steps a block's strip one photo at a time and keeps the
- * dots with the scroll. The full-size view is core's Image lightbox.
+ * count with the scroll. The full-size view is core's Image lightbox.
  */
 import { store, getContext, getElement } from '@wordpress/interactivity';
 
@@ -19,9 +19,10 @@ const step = ( by ) => {
 
 store( 'nop-indieweb/photos', {
 	state: {
-		get isCurrent() {
+		// "2 / 5", at the photo's foot.
+		get countLabel() {
 			const context = getContext();
-			return context.dot === context.at;
+			return `${ context.at + 1 } / ${ context.count }`;
 		},
 		get isFirst() {
 			return 0 === getContext().at;

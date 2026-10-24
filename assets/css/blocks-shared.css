@@ -265,13 +265,6 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	overflow:        hidden;
 	line-height:     0;
 	text-decoration: none;
-	transition:      transform 150ms ease;
-}
-
-.nop-webmentions__avatar-link:hover {
-	transform: translateY(-3px);
-	position:  relative;
-	z-index:   1;
 }
 
 .nop-webmentions__avatar {
@@ -624,7 +617,6 @@ a.nop-post-source__link:focus-visible {
 	.nop-post-footer__pill,
 	.nop-post-footer__pill-icon,
 	.nop-film-card__poster,
-	.nop-webmentions__avatar-link,
 	.nop-webmentions__reply-link {
 		transition: none !important;
 	}

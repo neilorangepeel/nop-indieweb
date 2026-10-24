@@ -31,7 +31,7 @@ final class Logbook {
 
 	/** @return string[] Kind slugs that make up the Logbook (replies and reposts answer other people's posts, so they stay out). */
 	public static function kinds(): array {
-		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'quote', 'exercise', 'rsvp', 'story' ] );
+		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'reply', 'repost', 'quote', 'exercise', 'rsvp', 'story' ] );
 	}
 
 	/** The section a kind lives in: a category slug, or 'logbook'. */

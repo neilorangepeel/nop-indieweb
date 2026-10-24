@@ -209,6 +209,7 @@ class Block_Bindings {
 		'rsvp_time'                       => '10:00',
 		'rsvp_where'                      => 'Brighton',
 		'quote_text'                      => '“Have nothing in your house that you do not know to be useful.”',
+		'quote_body'                      => 'Have nothing in your house that you do not know to be useful.',
 		'quote_author'                    => 'William Morris',
 		'reply_count_label'               => '2 replies',
 	];

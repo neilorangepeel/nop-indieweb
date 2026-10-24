@@ -1,10 +1,10 @@
 <?php
 /**
  * Photos: the post's photos (nop_indieweb_photo_ids; else the first Video block in the post, playing in place; else the
- * featured image), one at a time, filling the block's height.
+ * featured image), one at a time, filling the block's height; with the map attribute, the post's map after them.
  * They are a core Gallery of core Image blocks with Expand on click, so the full-size view is WordPress's own lightbox,
- * stepping through the gallery. This block adds only the strip: several photos get previous and next, dots, and
- * swiping (a scroll-snap strip). The first photo's shape is published as --nop-photos-ratio, so a theme can size the
+ * stepping through the gallery. This block adds only the strip: several photos get previous and next, a count ("2 / 3"),
+ * and swiping (a scroll-snap strip). The first photo's shape is published as --nop-photos-ratio, so a theme can size the
  * column to it.
  *
  * @package NOP_IndieWeb
@@ -61,7 +61,21 @@ if ( ! $ids ) {
 	return;
 }
 
-$n     = count( $ids );
+// The post's map as the last slide (attribute map: checkin-map or exercise-map), when the post has one: the map stops
+// competing with the words for room, and is shown at the photos' size. Its licence line is printed into the image too
+// small to read, so the slide carries the credit as text.
+$map_slide = '';
+if ( in_array( $attributes['map'] ?? '', [ 'checkin-map', 'exercise-map' ], true ) ) {
+	$duotone = sanitize_key( (string) ( $attributes['mapDuotone'] ?? '' ) );
+	$parsed  = parse_blocks( '<!-- wp:nop-indieweb/' . $attributes['map'] . ( $duotone ? ' {"style":{"color":{"duotone":"var:preset|duotone|' . $duotone . '"}}}' : '' ) . ' /-->' )[0];
+	$map     = ( new WP_Block( $parsed, [ 'postId' => $post_id, 'postType' => get_post_type( $post_id ) ] ) )->render();
+	if ( '' !== trim( $map ) ) {
+		$map_slide = '<figure class="wp-block-image nop-photos__map">' . $map
+			. '<p class="nop-photos__credit">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> · <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a></p></figure>';
+	}
+}
+
+$n     = count( $ids ) + ( '' !== $map_slide ? 1 : 0 );
 $meta  = wp_get_attachment_metadata( $ids[0] );
 $ratio = ! empty( $meta['width'] ) && ! empty( $meta['height'] ) ? $meta['width'] . ' / ' . $meta['height'] : '4 / 3';
 // A fixed shape (an album's square cover), cropping the photos to it.
@@ -85,8 +99,12 @@ $gallery = render_block(
 		. '<!-- /wp:gallery -->'
 	)[0]
 );
-// The strip follows its scroll, for the dots and the arrows' ends. Core makes the gallery a core/gallery region, so the
+// The strip follows its scroll, for the count and the arrows' ends. Core makes the gallery a core/gallery region, so the
 // directive names this block's store.
+if ( '' !== $map_slide ) {
+	$at      = (int) strrpos( $gallery, '</figure>' );
+	$gallery = substr( $gallery, 0, $at ) . $map_slide . substr( $gallery, $at );
+}
 $strip = new WP_HTML_Tag_Processor( $gallery );
 if ( $strip->next_tag( [ 'class_name' => 'nop-photos__track' ] ) ) {
 	$strip->set_attribute( 'data-wp-on--scroll', 'nop-indieweb/photos::actions.follow' );
@@ -95,13 +113,9 @@ if ( $strip->next_tag( [ 'class_name' => 'nop-photos__track' ] ) ) {
 
 $steps = '';
 if ( $n > 1 ) {
-	$dots = '';
-	for ( $i = 0; $i < $n; $i++ ) {
-		$dots .= '<span class="nop-photos__dot" data-wp-context=\'' . wp_json_encode( [ 'dot' => $i ] ) . '\' data-wp-class--is-current="state.isCurrent"></span>';
-	}
 	$steps = '<button type="button" class="nop-photos__step nop-photos__previous" data-wp-on--click="actions.previous" data-wp-bind--disabled="state.isFirst" aria-label="' . esc_attr__( 'Previous photo', 'nop-indieweb' ) . '"></button>'
 		. '<button type="button" class="nop-photos__step nop-photos__next" data-wp-on--click="actions.next" data-wp-bind--disabled="state.isLast" aria-label="' . esc_attr__( 'Next photo', 'nop-indieweb' ) . '"></button>'
-		. '<div class="nop-photos__dots" aria-hidden="true">' . $dots . '</div>';
+		. '<span class="nop-photos__count" aria-hidden="true" data-wp-text="state.countLabel">1 / ' . $n . '</span>';
 }
 
 $wrapper = get_block_wrapper_attributes( [

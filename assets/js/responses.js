@@ -13,8 +13,8 @@
  *   webmention endpoint.
  * - Threads a reply from any Reply link on the page by setting comment_parent
  *   and focusing the form, instead of moving the form as comment-reply.js did.
- * - Opening the conversation scrolls the replies into view when the template
- *   sets them apart from the form (in the scrolling words above it).
+ * - The summary of a details holding the form (a band's Reply) goes to the
+ *   form: it focuses the box, opening the details first if it was closed.
  * - While the tab is visible, checks every two minutes (for up to half an
  *   hour) whether new responses have arrived, and offers to show them.
  */
@@ -252,28 +252,21 @@ const { state } = store( 'nop-indieweb/responses', {
 				} catch {}
 			} );
 			const timer = setInterval( check, POLL_EVERY );
-			// Opening the conversation (the details holding this form) brings the
-			// replies into view: a template can set them apart from the form, up
-			// in the scrolling words, with the form pinned below.
+			// The details holding this form (the Reply on a band): its summary goes to the form. Already open (the
+			// form always on show), it stays open and only focuses; closed, it opens as well.
 			const { ref } = getElement();
-			const reveal = ( event ) => {
-				const details = ref.closest( 'details' );
-				if ( event.target !== details || ! details.open ) {
-					return;
+			const details = ref.closest( 'details' );
+			const summary = details?.querySelector( ':scope > summary' );
+			const toForm = ( event ) => {
+				if ( details.open ) {
+					event.preventDefault();
 				}
-				const scope = details.closest( 'main' ) ?? document;
-				const replies = [ ...scope.querySelectorAll( '.nop-replies' ) ].find(
-					( list ) => ! details.contains( list )
-				);
-				replies?.scrollIntoView( {
-					block: 'nearest',
-					behavior: window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches ? 'instant' : 'smooth',
-				} );
+				window.requestAnimationFrame( () => ref.querySelector( 'textarea' )?.focus() );
 			};
-			document.addEventListener( 'toggle', reveal, true );
+			summary?.addEventListener( 'click', toForm );
 			return () => {
 				clearInterval( timer );
-				document.removeEventListener( 'toggle', reveal, true );
+				summary?.removeEventListener( 'click', toForm );
 			};
 		},
 	},

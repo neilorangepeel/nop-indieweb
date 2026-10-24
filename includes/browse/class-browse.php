@@ -115,6 +115,7 @@ final class Browse {
 			'entry-link'     => __( 'Entry: bookmark, like, reply, repost', 'nop-indieweb' ),
 			'entry-rsvp'     => __( 'Entry: RSVP', 'nop-indieweb' ),
 			'entry-story'    => __( 'Entry: story', 'nop-indieweb' ),
+			'entry-photo'    => __( 'Entry: photo', 'nop-indieweb' ),
 		];
 		foreach ( $names as $slug => $title ) {
 			$types[ $slug ] = [
