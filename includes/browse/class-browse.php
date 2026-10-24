@@ -166,6 +166,7 @@ final class Browse {
 			$p->set_attribute( 'data-wp-watch', 'callbacks.holdFocus' );
 			$p->set_attribute( 'data-wp-on--click', 'actions.follow' );
 			$p->set_attribute( 'data-wp-on--pointerover', 'actions.prefetch' );
+			$p->set_attribute( 'data-wp-on--pointerout', 'actions.cancelPrefetch' );
 			$p->set_attribute( 'data-wp-on--focusin', 'actions.prefetch' );
 			$p->set_attribute( 'data-wp-on-document--keydown', 'actions.closeOnEscape' );
 			$p->set_attribute( 'data-wp-on-document--click', 'actions.closeOnScrim' );

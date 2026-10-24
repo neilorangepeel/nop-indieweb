@@ -85,17 +85,32 @@ const withTransition = ( update ) =>
 		? document.startViewTransition( update ).finished
 		: update();
 
-const fetchEntry = ( href ) => {
-	if ( ! entries.has( href ) ) {
-		entries.set(
-			href,
-			// ?entry renders the Entry template (the spread) instead of the full page.
-			fetch( href + ( href.includes( '?' ) ? '&' : '?' ) + 'entry' ).then( ( response ) =>
-				response.ok ? response.text() : Promise.reject()
-			)
-		);
+// Both caches hold whole entry pages (about 150KB of HTML and styles each, and the router keeps its own copy of what it is
+// handed), so a long visit would grow without end: the most recently used few are kept, the rest fetched again if wanted.
+const KEEP = 24;
+const remember = ( map, key, value ) => {
+	map.delete( key );
+	map.set( key, value );
+	for ( const oldest of map.keys() ) {
+		if ( map.size <= KEEP ) {
+			break;
+		}
+		map.delete( oldest );
 	}
-	return entries.get( href );
+};
+
+const fetchEntry = ( href ) => {
+	const known = entries.get( href );
+	if ( known ) {
+		remember( entries, href, known );
+		return known;
+	}
+	// ?entry renders the Entry template (the spread) instead of the full page.
+	const request = fetch( href + ( href.includes( '?' ) ? '&' : '?' ) + 'entry' ).then( ( response ) =>
+		response.ok ? response.text() : Promise.reject()
+	);
+	remember( entries, href, request );
+	return request;
 };
 
 /**
@@ -245,7 +260,7 @@ const prepareEntry = ( href ) => {
 		return true;
 	} )();
 	promise.catch( () => ready.delete( href ) );
-	ready.set( href, { version: wallVersion, promise } );
+	remember( ready, href, { version: wallVersion, promise } );
 	return promise;
 };
 
@@ -257,6 +272,18 @@ const namePanel = ( name ) => {
 	if ( element ) {
 		element.style.viewTransitionName = name;
 	}
+};
+
+// How long a pointer rests on a tile before its entry is fetched (ms), and the tile it is resting on.
+const DWELL = 90;
+let dwell = 0;
+let dwellHref = '';
+let dwellPost = null;
+const cancelDwell = () => {
+	window.clearTimeout( dwell );
+	dwell = 0;
+	dwellHref = '';
+	dwellPost = null;
 };
 
 const prepareSoon = ( href ) => idle( () => prepareEntry( href ).catch( () => {} ) );
@@ -408,14 +435,37 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			if ( isEntryLink( link ) ) {
-				// Start fetching at once; build the router's page when the browser is idle.
-				fetchEntry( link.href ).catch( () => entries.delete( link.href ) );
-				prepareSoon( link.href );
+				// Every entry is a server render, so a pointer sweeping across the wall must not ask for each tile it
+				// crosses: it has to rest (DWELL) on one. A keyboard focus or a touch is already a decision: at once.
+				// Someone saving data gets no guesses: the entry is fetched when it is opened.
+				if ( window.navigator.connection?.saveData ) {
+					return;
+				}
+				const start = () => {
+					dwellHref = '';
+					// Start fetching at once; build the router's page when the browser is idle.
+					fetchEntry( link.href ).catch( () => entries.delete( link.href ) );
+					prepareSoon( link.href );
+				};
+				if ( 'focusin' === event.type || 'mouse' !== event.pointerType ) {
+					start();
+				} else if ( dwellHref !== link.href ) {
+					cancelDwell();
+					dwellHref = link.href;
+					dwellPost = postOf( link );
+					dwell = window.setTimeout( start, DWELL );
+				}
 				return;
 			}
 			if ( link.closest( FILTER_LINK ) ) {
 				const { actions: routerActions } = yield router();
 				yield routerActions.prefetch( link.href );
+			}
+		},
+		// The pointer left the tile it was resting on before it rested long enough.
+		cancelPrefetch( event ) {
+			if ( dwellHref && ! dwellPost?.contains( event.relatedTarget ) ) {
+				cancelDwell();
 			}
 		},
 		*openEntry( href, replace = false ) {
