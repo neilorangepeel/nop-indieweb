@@ -394,10 +394,14 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			const keepOpen = inBar && state.filtersOpen;
 			const { actions: routerActions } = yield router();
 			const region = getElement().ref;
-			yield withTransition( () => routerActions.navigate( link.href ) );
-			if ( keepOpen ) {
-				state.filtersOpen = true;
+			// A choice in the bar swaps the wall at once (no cross-fade: the bar itself is in the picture, and fading it
+			// read as the drawer flickering); pagination keeps its transition.
+			if ( inBar ) {
+				yield routerActions.navigate( link.href );
+			} else {
+				yield withTransition( () => routerActions.navigate( link.href ) );
 			}
+			state.filtersOpen = keepOpen;
 			// The wall is new: entries made ready against the old one are rebuilt when next wanted.
 			wallVersion += 1;
 			// A filter changes the wall in place, with no scroll. A new page lands on
@@ -417,9 +421,12 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					behavior: reducedMotion() ? 'instant' : 'smooth',
 				} );
 			}
-			// A choice in the filter bar keeps the bar in use: focus goes back to its search, not to the wall.
+			// A choice in the open bar keeps it in use: focus goes back to its search. A chip removed with the bar closed
+			// leaves it closed (focusing the search would open it).
 			if ( inBar ) {
-				region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
+				if ( keepOpen ) {
+					region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
+				}
 				return;
 			}
 			region.focus( { preventScroll: true } );

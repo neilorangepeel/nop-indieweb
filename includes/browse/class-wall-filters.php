@@ -248,6 +248,10 @@ final class Wall_Filters {
 				$p->set_attribute( 'name', self::SEARCH );
 				$p->set_attribute( 'value', self::search() );
 				$p->set_attribute( 'autocomplete', 'off' );
+				// With chips in the field, its placeholder says it takes more.
+				if ( self::kinds() || self::tags() || self::words() ) {
+					$p->set_attribute( 'placeholder', __( 'Add more…', 'nop-indieweb' ) );
+				}
 			}
 		}
 		$hidden = '';
@@ -302,8 +306,8 @@ final class Wall_Filters {
 		if ( ! $p->next_tag() ) {
 			return $content;
 		}
-		// The summary row (a Group with nop-wall-applied) is there only while something is applied; the quiet count on
-		// the search line (nop-wall-idle) only while nothing is.
+		// The count at the line's end: "1,718 entries" (Query Total in nop-wall-idle) while nothing is applied, "6 of 1,718"
+		// (nop-wall-summary) while something is. (nop-wall-applied: a Group shown only while something is applied.)
 		if ( 'applied' === $m[1] ) {
 			return self::active() ? $content : '';
 		}
@@ -312,6 +316,9 @@ final class Wall_Filters {
 		}
 		// "6 of 1,718": the wall's count against the whole Logbook, read out as it changes.
 		if ( 'summary' === $m[1] ) {
+			if ( ! self::active() ) {
+				return '';
+			}
 			global $wp_query;
 			/* translators: 1: entries shown, 2: all Logbook entries */
 			$text = sprintf( __( '%1$s of %2$s', 'nop-indieweb' ), number_format_i18n( (int) $wp_query->found_posts ), number_format_i18n( self::count( [], [], false ) ) );
