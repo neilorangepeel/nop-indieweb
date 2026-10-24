@@ -246,15 +246,19 @@ final class Wall_Filters {
 	/** The status line becomes a live region; Clear shows only when something is filtered. */
 	public function mark( string $content, array $block ): string {
 		$class = (string) ( $block['attrs']['className'] ?? '' );
-		// The bar itself: its drawer opens while it is in use (browse.js keeps the state across the wall's swaps).
+		// The bar itself: its drawer opens while it is in use (browse.js keeps the state across the wall's swaps). The
+		// store is named in each directive, as the bar can sit outside the wall's own interactive region.
 		if ( preg_match( '/\bnop-wall-filters\b/', $class ) ) {
+			if ( ! Browse::is_wall() ) {
+				return $content; // No wall script here: the drawer opens on focus alone (CSS :focus-within).
+			}
 			$p = new \WP_HTML_Tag_Processor( $content );
 			if ( $p->next_tag() ) {
-				$p->set_attribute( 'data-wp-class--is-open', 'state.filtersOpen' );
-				$p->set_attribute( 'data-wp-on--focusin', 'actions.openFilters' );
-				$p->set_attribute( 'data-wp-on--focusout', 'actions.leaveFilters' );
-				$p->set_attribute( 'data-wp-on--keydown', 'actions.filterKeys' );
-				$p->set_attribute( 'data-wp-on-document--pointerdown', 'actions.outsideFilters' );
+				$p->set_attribute( 'data-wp-class--is-open', 'nop-indieweb/browse::state.filtersOpen' );
+				$p->set_attribute( 'data-wp-on--focusin', 'nop-indieweb/browse::actions.openFilters' );
+				$p->set_attribute( 'data-wp-on--focusout', 'nop-indieweb/browse::actions.leaveFilters' );
+				$p->set_attribute( 'data-wp-on--keydown', 'nop-indieweb/browse::actions.filterKeys' );
+				$p->set_attribute( 'data-wp-on-document--pointerdown', 'nop-indieweb/browse::actions.outsideFilters' );
 				return $p->get_updated_html();
 			}
 			return $content;
