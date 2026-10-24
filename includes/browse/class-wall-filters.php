@@ -42,6 +42,9 @@ final class Wall_Filters {
 		add_filter( 'render_block_core/paragraph', [ $this, 'mark' ], 10, 2 );
 		add_filter( 'render_block_core/buttons', [ $this, 'mark' ], 10, 2 );
 		add_filter( 'render_block_core/post-terms', [ $this, 'topics' ], 10, 2 );
+		add_action( 'save_post_post', [ self::class, 'forget_counts' ] );
+		add_action( 'deleted_post', [ self::class, 'forget_counts' ] );
+		add_action( 'set_object_terms', [ self::class, 'forget_counts' ] );
 	}
 
 	/** @return string[] The kinds chosen (logbook kinds only). */
@@ -69,7 +72,8 @@ final class Wall_Filters {
 			array_merge(
 				[
 					self::KIND   => implode( ',', self::kinds() ),
-					'tag'        => implode( ',', self::tags() ),
+					// Topics combine as all of them (core reads "a+b" as both): cross-referencing narrows.
+					'tag'        => implode( '+', self::tags() ),
 					self::SEARCH => self::search(),
 				],
 				$change
@@ -77,7 +81,7 @@ final class Wall_Filters {
 			static fn( $v ) => '' !== $v
 		);
 		// Commas stay readable in the address (?kind=note,photo).
-		return str_replace( '%2C', ',', add_query_arg( array_map( 'rawurlencode', $args ), Logbook::url() ) );
+		return str_replace( [ '%2C', '%2B' ], [ ',', '+' ], add_query_arg( array_map( 'rawurlencode', $args ), Logbook::url() ) );
 	}
 
 	/** The Logbook shows the chosen kinds only; a search on it searches it. */
@@ -114,13 +118,87 @@ final class Wall_Filters {
 		if ( ! $p->next_tag( [ 'tag_name' => 'a' ] ) ) {
 			return $content;
 		}
-		$p->set_attribute( 'href', self::url( [ $key => implode( ',', $next ) ] ) );
+		$p->set_attribute( 'href', self::url( [ $key => implode( Kind_Taxonomy::TAXONOMY === $taxonomy ? ',' : '+', $next ) ] ) );
 		$p->set_attribute( 'rel', 'nofollow' );
+		// How many entries this choice holds among the others: a kind, its own entries with the chosen topics; a topic, the
+		// wall with it added: a choice that would leave nothing is marked, so it can step back rather than lead to an empty wall.
+		$count = Kind_Taxonomy::TAXONOMY === $taxonomy
+			? self::count( [ $term->slug ], self::tags() )
+			: self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ) );
 		if ( $on ) {
 			$p->set_attribute( 'aria-current', 'true' );
 			$p->add_class( 'is-current' );
+		} elseif ( 0 === $count ) {
+			$p->add_class( 'is-empty' );
+			$p->set_attribute( 'aria-disabled', 'true' );
+			$p->set_attribute( 'tabindex', '-1' );
 		}
-		return $p->get_updated_html();
+		$html = $p->get_updated_html();
+		return (string) preg_replace( '#</a>#', ' <span class="nop-wall-count">' . esc_html( number_format_i18n( $count ) ) . '</span></a>', $html, 1 );
+	}
+
+	/**
+	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and the
+	 * current search. Kept for a day per combination and forgotten whenever a post is saved or deleted.
+	 *
+	 * @param string[] $kinds Kind slugs.
+	 * @param string[] $tags  Tag slugs.
+	 */
+	public static function count( array $kinds, array $tags ): int {
+		sort( $kinds );
+		sort( $tags );
+		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, self::search(), (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
+		static $seen = [];
+		if ( isset( $seen[ $key ] ) ) {
+			return $seen[ $key ];
+		}
+		$cached = get_transient( $key );
+		if ( false !== $cached ) {
+			return $seen[ $key ] = (int) $cached;
+		}
+		$args = [
+			'post_type'              => 'post',
+			'post_status'            => 'publish',
+			'posts_per_page'         => 1,
+			'fields'                 => 'ids',
+			'ignore_sticky_posts'    => true,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+			'tax_query'              => [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ?: Logbook::kinds() ] ],
+		];
+		if ( $tags ) {
+			$args['tag_slug__and'] = $tags;
+		}
+		if ( '' !== self::search() ) {
+			$args['s'] = self::search();
+		}
+		$count = (int) ( new \WP_Query( $args ) )->found_posts;
+		set_transient( $key, $count, DAY_IN_SECONDS );
+		return $seen[ $key ] = $count;
+	}
+
+	/** Saving or deleting a post forgets every count (a new version in the keys). */
+	public static function forget_counts(): void {
+		update_option( 'nop_wall_counts_version', (int) get_option( 'nop_wall_counts_version', 0 ) + 1, false );
+	}
+
+	/** The chosen kinds and topics as chips on the bar (a Paragraph with the class nop-wall-chips): each a link that drops it. */
+	private function chips(): string {
+		$out = '';
+		foreach ( self::kinds() as $slug ) {
+			$term  = get_term_by( 'slug', $slug, Kind_Taxonomy::TAXONOMY );
+			$out  .= $this->chip( $term ? $term->name : $slug, self::url( [ self::KIND => implode( ',', array_diff( self::kinds(), [ $slug ] ) ) ] ) );
+		}
+		foreach ( self::tags() as $slug ) {
+			$term  = get_term_by( 'slug', $slug, 'post_tag' );
+			$out  .= $this->chip( '#' . ( $term ? $term->name : $slug ), self::url( [ 'tag' => implode( '+', array_diff( self::tags(), [ $slug ] ) ) ] ) );
+		}
+		return $out;
+	}
+
+	private function chip( string $label, string $href ): string {
+		/* translators: %s: a filter, e.g. "Photo" or "#Belfast" */
+		return '<a class="nop-wall-chip" rel="nofollow" href="' . esc_url( $href ) . '" aria-label="' . esc_attr( sprintf( __( 'Remove %s', 'nop-indieweb' ), $label ) ) . '">' . esc_html( $label ) . '<span class="nop-wall-chip__x" aria-hidden="true">×</span></a>';
 	}
 
 	/** A Search block with the class nop-wall-search searches the current view. */
@@ -142,7 +220,7 @@ final class Wall_Filters {
 			}
 		}
 		$hidden = '';
-		foreach ( [ self::KIND => implode( ',', self::kinds() ), 'tag' => implode( ',', self::tags() ) ] as $name => $value ) {
+		foreach ( [ self::KIND => implode( ',', self::kinds() ), 'tag' => implode( '+', self::tags() ) ] as $name => $value ) {
 			if ( '' !== $value ) {
 				$hidden .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '">';
 			}
@@ -168,14 +246,31 @@ final class Wall_Filters {
 	/** The status line becomes a live region; Clear shows only when something is filtered. */
 	public function mark( string $content, array $block ): string {
 		$class = (string) ( $block['attrs']['className'] ?? '' );
-		if ( ! Logbook::is_logbook() || ! preg_match( '/\bnop-wall-(status|clear|all-kinds)\b/', $class, $m ) ) {
+		// The bar itself: its drawer opens while it is in use (browse.js keeps the state across the wall's swaps).
+		if ( preg_match( '/\bnop-wall-filters\b/', $class ) ) {
+			$p = new \WP_HTML_Tag_Processor( $content );
+			if ( $p->next_tag() ) {
+				$p->set_attribute( 'data-wp-class--is-open', 'state.filtersOpen' );
+				$p->set_attribute( 'data-wp-on--focusin', 'actions.openFilters' );
+				$p->set_attribute( 'data-wp-on--focusout', 'actions.leaveFilters' );
+				$p->set_attribute( 'data-wp-on--keydown', 'actions.filterKeys' );
+				$p->set_attribute( 'data-wp-on-document--pointerdown', 'actions.outsideFilters' );
+				return $p->get_updated_html();
+			}
+			return $content;
+		}
+		if ( ! Logbook::is_logbook() || ! preg_match( '/\bnop-wall-(status|clear|all-kinds|chips)\b/', $class, $m ) ) {
 			return $content;
 		}
 		$p = new \WP_HTML_Tag_Processor( $content );
 		if ( ! $p->next_tag() ) {
 			return $content;
 		}
-		if ( 'status' === $m[1] ) {
+		if ( 'chips' === $m[1] ) {
+			$chips = $this->chips();
+			return '' === $chips ? '' : (string) preg_replace( '#(<p\b[^>]*>)\s*(</p>)#', '$1' . $chips . '$2', $content, 1 );
+		}
+				if ( 'status' === $m[1] ) {
 			$p->set_attribute( 'role', 'status' );
 			$p->set_attribute( 'aria-live', 'polite' );
 			return $p->get_updated_html();

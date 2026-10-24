@@ -300,7 +300,7 @@ const prepareSoon = ( href ) => idle( () => prepareEntry( href ).catch( () => {}
 
 // A wall's entry links: a kind post's title or date link in a Query Loop (never its other links: kind, like, source).
 const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date, .wp-block-post-featured-image) a[href]';
-const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter';
+const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter, .nop-wall-chips';
 const isEntryLink = ( link ) => !! link?.closest( '.nop-wall' ) && link.matches( ENTRY_LINK );
 // The post an entry link belongs to: what the entry morphs out of and back into.
 const postOf = ( link ) => link?.closest( '.wp-block-post' );
@@ -350,6 +350,8 @@ const isTyping = ( event ) =>
 const { state, actions } = store( 'nop-indieweb/browse', {
 	state: {
 		entryUrl: '',
+		// The wall's filter bar (a Group with the class nop-wall-filters): its kinds and topics show while it is in use.
+		filtersOpen: false,
 		get entryRole() {
 			return state.entryOpen ? 'dialog' : null;
 		},
@@ -408,7 +410,36 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					behavior: reducedMotion() ? 'instant' : 'smooth',
 				} );
 			}
+			// A choice in the filter bar keeps the bar in use: focus goes back to its search, not to the wall.
+			if ( link.closest( '.nop-wall-filters' ) ) {
+				region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
+				return;
+			}
 			region.focus( { preventScroll: true } );
+		} ),
+		// The filter bar opens when anything in it takes focus, and stays open while the wall swaps under it (a choice
+		// replaces the bar too, and focus is lost with the old one). It closes on Escape, on a click elsewhere, or when
+		// focus moves on to something outside it.
+		openFilters() {
+			state.filtersOpen = true;
+		},
+		leaveFilters( event ) {
+			const next = event.relatedTarget;
+			if ( next && ! next.closest( '.nop-wall-filters' ) ) {
+				state.filtersOpen = false;
+			}
+		},
+		outsideFilters( event ) {
+			if ( state.filtersOpen && ! event.target.closest?.( '.nop-wall-filters' ) ) {
+				state.filtersOpen = false;
+			}
+		},
+		filterKeys: withSyncEvent( ( event ) => {
+			if ( 'Escape' === event.key && state.filtersOpen ) {
+				event.stopPropagation();
+				state.filtersOpen = false;
+				event.target.blur?.();
+			}
 		} ),
 		// The wall's search (a Search block with the class nop-wall-search): as you type (after a pause) or on submit,
 		// the wall is swapped for the results, the address keeping the search with the other filters.
@@ -428,7 +459,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					url.searchParams.set( key, String( value ).trim() );
 				}
 			} );
-			const href = url.toString().replace( /%2C/g, ',' );
+			const href = url.toString().replace( /%2C/g, ',' ).replace( /%2B/g, '+' );
 			if ( href === window.location.href ) {
 				return;
 			}
