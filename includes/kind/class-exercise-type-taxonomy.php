@@ -106,12 +106,18 @@ class Exercise_Type_Taxonomy {
 	}
 
 	private function seed_terms(): void {
+		// Once per change, not per request (see Kind_Taxonomy::seed_terms()).
+		$signature = md5( (string) wp_json_encode( [ self::TYPES, self::DESCRIPTIONS ] ) );
+		if ( ! is_admin() && ! ( defined( 'WP_CLI' ) && WP_CLI ) && get_option( 'nop_indieweb_exercise_type_seed' ) === $signature ) {
+			return;
+		}
 		foreach ( self::TYPES as $slug => $name ) {
 			if ( ! term_exists( $slug, self::TAXONOMY ) ) {
 				wp_insert_term( $name, self::TAXONOMY, [ 'slug' => $slug ] );
 			}
 			$this->set_description( $slug );
 		}
+		update_option( 'nop_indieweb_exercise_type_seed', $signature );
 	}
 
 	private function set_description( string $slug ): void {

@@ -321,6 +321,13 @@ class Kind_Taxonomy {
 	}
 
 	private function seed_terms(): void {
+		// Seeding is an install and update step, not a per-request one: checking each term and rewriting its description
+		// cost about 45 queries on every page. A visitor's request runs it only when the list or the descriptions have
+		// changed since it last ran; the admin and WP-CLI always do (so a term deleted by hand comes back).
+		$signature = md5( (string) wp_json_encode( [ self::FLAT_KINDS, self::HIERARCHICAL_KINDS, self::KIND_DESCRIPTIONS ] ) );
+		if ( ! is_admin() && ! ( defined( 'WP_CLI' ) && WP_CLI ) && get_option( 'nop_indieweb_kind_seed' ) === $signature ) {
+			return;
+		}
 		foreach ( self::FLAT_KINDS as $slug => $name ) {
 			if ( ! term_exists( $slug, self::TAXONOMY ) ) {
 				wp_insert_term( $name, self::TAXONOMY, [ 'slug' => $slug ] );
@@ -347,6 +354,7 @@ class Kind_Taxonomy {
 				$this->set_description( $child_slug );
 			}
 		}
+		update_option( 'nop_indieweb_kind_seed', $signature );
 	}
 
 	/**
