@@ -434,6 +434,14 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				state.filtersOpen = false;
 			}
 		},
+		// Pressing a pill or a chip must not take focus out of the search: Safari does not focus a link on click, so
+		// the search would blur, the bar would read as no longer in use and the drawer would close before the click
+		// landed. Holding the press keeps focus (and the drawer) where it is; the click still follows the link.
+		holdFilters: withSyncEvent( ( event ) => {
+			if ( event.target.closest?.( '.orange-peel-filter__drawer a, .nop-wall-chips a, .nop-wall-clear a' ) ) {
+				event.preventDefault();
+			}
+		} ),
 		filterKeys: withSyncEvent( ( event ) => {
 			if ( 'Escape' === event.key && state.filtersOpen ) {
 				event.stopPropagation();

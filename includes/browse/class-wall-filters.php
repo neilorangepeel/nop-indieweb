@@ -258,6 +258,7 @@ final class Wall_Filters {
 				$p->set_attribute( 'data-wp-on--focusin', 'nop-indieweb/browse::actions.openFilters' );
 				$p->set_attribute( 'data-wp-on--focusout', 'nop-indieweb/browse::actions.leaveFilters' );
 				$p->set_attribute( 'data-wp-on--keydown', 'nop-indieweb/browse::actions.filterKeys' );
+				$p->set_attribute( 'data-wp-on--mousedown', 'nop-indieweb/browse::actions.holdFilters' );
 				$p->set_attribute( 'data-wp-on-document--pointerdown', 'nop-indieweb/browse::actions.outsideFilters' );
 				return $p->get_updated_html();
 			}
