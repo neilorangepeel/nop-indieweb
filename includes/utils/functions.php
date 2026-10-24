@@ -355,25 +355,35 @@ function nop_indieweb_checkin_map_zoom(): int {
 	return (int) apply_filters( 'nop_indieweb_checkin_map_zoom', 16 );
 }
 
-function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key, string $meta_key, int $zoom, string $subdir, string $file_prefix ): string {
-	$cached = (string) get_post_meta( $post_id, $meta_key, true );
-	if ( $cached ) {
-		return $cached;
-	}
-
+/**
+ * The Geoapify static-map request for one marker. $scale is Geoapify's scaleFactor: pixel density at the same
+ * framing (a 2 makes a 1000px-wide view as 2000px of sharper detail), as opposed to asking for more pixels, which
+ * shows more map at the same detail.
+ */
+function nop_indieweb_static_map_api_url( float $lat, float $lng, int $zoom, int $width, int $height, string $api_key, int $scale = 1 ): string {
 	$marker_color = apply_filters( 'nop_indieweb_map_marker_color', 'e03232' );
 
-	$api_url = sprintf(
-		'https://maps.geoapify.com/v1/staticmap?style=%s&styleCustomization=%s&zoom=%d&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d&apiKey=%s',
+	return sprintf(
+		'https://maps.geoapify.com/v1/staticmap?style=%s&styleCustomization=%s&zoom=%d&center=lonlat:%s,%s&marker=lonlat:%s,%s;type:awesome;color:%%23%s;size:small&width=%d&height=%d%s&apiKey=%s',
 		rawurlencode( nop_indieweb_map_style() ),
 		nop_indieweb_map_style_customization(),
 		$zoom,
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( (string) $lng ), rawurlencode( (string) $lat ),
 		rawurlencode( $marker_color ),
-		$width * 2, $height * 2,
+		$width, $height,
+		$scale > 1 ? '&scaleFactor=' . $scale : '',
 		rawurlencode( $api_key )
 	);
+}
+
+function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, int $width, int $height, string $api_key, string $meta_key, int $zoom, string $subdir, string $file_prefix ): string {
+	$cached = (string) get_post_meta( $post_id, $meta_key, true );
+	if ( $cached ) {
+		return $cached;
+	}
+
+	$api_url = nop_indieweb_static_map_api_url( $lat, $lng, $zoom, $width * 2, $height * 2, $api_key );
 
 	// 4 MB ceiling on the response. A 1240×620 PNG (the upper bound we ever ask
 	// Geoapify for) is well under 1 MB in practice — the cap is just a guard
@@ -409,6 +419,164 @@ function nop_indieweb_cache_static_map( int $post_id, float $lat, float $lng, in
 	update_post_meta( $post_id, $meta_key . '_zoom', $zoom );
 
 	return $local_url;
+}
+
+/**
+ * The large check-in map: the same framing as the cached one at twice the pixel density, for the entry overlay,
+ * where the map fills a frame of a thousand CSS pixels or more and the 1240px original is stretched soft.
+ * [ width, height ] in CSS pixels; the file is made at 2× that. Filterable.
+ */
+function nop_indieweb_checkin_map_large_size(): array {
+	return array_map( 'intval', (array) apply_filters( 'nop_indieweb_checkin_map_large_size', [ 1000, 920 ] ) );
+}
+
+/**
+ * A fingerprint of what the large map shows (place, zoom, look, size), kept beside it so a map made for a venue
+ * that has since moved, or before a restyle, is never served: it simply stops matching and is remade.
+ */
+function nop_indieweb_checkin_map_large_source( float $lat, float $lng ): string {
+	return md5( implode( '|', [ $lat, $lng, nop_indieweb_checkin_map_zoom(), nop_indieweb_map_style(), nop_indieweb_map_style_customization(), ...nop_indieweb_checkin_map_large_size() ] ) );
+}
+
+/**
+ * The large map for a check-in, if one has been made and still matches its venue.
+ *
+ * @return array{url:string,width:int}|array{} Empty when there is none (the caller serves the ordinary map).
+ */
+function nop_indieweb_checkin_map_large( int $post_id ): array {
+	$url = (string) get_post_meta( $post_id, 'nop_indieweb_map_url_lg', true );
+	if ( '' === $url ) {
+		return [];
+	}
+	$src = nop_indieweb_checkin_map_large_source( (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true ), (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true ) );
+	if ( $src !== (string) get_post_meta( $post_id, 'nop_indieweb_map_url_lg_src', true ) ) {
+		return [];
+	}
+	return [ 'url' => $url, 'width' => nop_indieweb_checkin_map_large_size()[0] * 2 ];
+}
+
+/**
+ * Asks for a check-in's large map to be made in the background. Called when an entry is opened over the wall, so
+ * the map is sharp from the next open on; nothing here waits on Geoapify, and a day's requests are capped (the free
+ * plan allows 3,000) so a sweep of the wall cannot spend them all.
+ */
+function nop_indieweb_queue_checkin_map_large( int $post_id ): void {
+	if ( '' !== (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true ) || ! get_post_meta( $post_id, 'nop_indieweb_map_url', true ) ) {
+		return; // A flight keeps its arc; no map yet means the ordinary cacher has not run.
+	}
+	if ( wp_next_scheduled( 'nop_indieweb_make_large_map', [ $post_id ] ) ) {
+		return;
+	}
+	$used = (int) get_transient( 'nop_indieweb_large_map_budget' );
+	if ( $used >= (int) apply_filters( 'nop_indieweb_large_map_daily_budget', 200 ) ) {
+		return;
+	}
+	set_transient( 'nop_indieweb_large_map_budget', $used + 1, DAY_IN_SECONDS );
+	wp_schedule_single_event( time(), 'nop_indieweb_make_large_map', [ $post_id ] );
+	spawn_cron();
+}
+
+/**
+ * Makes (or remakes) a check-in's large map. Returns its URL, or '' on any failure (the ordinary map keeps serving).
+ */
+function nop_indieweb_make_checkin_map_large( int $post_id, string $api_key ): string {
+	$lat = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lat', true );
+	$lng = (float) get_post_meta( $post_id, 'nop_indieweb_venue_lng', true );
+	if ( ( ! $lat && ! $lng ) || '' !== (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true ) ) {
+		return '';
+	}
+	if ( nop_indieweb_checkin_map_large( $post_id ) ) {
+		return (string) get_post_meta( $post_id, 'nop_indieweb_map_url_lg', true );
+	}
+
+	[ $w, $h ] = nop_indieweb_checkin_map_large_size();
+	$response  = wp_safe_remote_get(
+		nop_indieweb_static_map_api_url( $lat, $lng, nop_indieweb_checkin_map_zoom(), $w, $h, $api_key, 2 ),
+		[ 'timeout' => 15, 'limit_response_size' => 6 * 1024 * 1024 ]
+	);
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) || ! str_starts_with( (string) wp_remote_retrieve_header( $response, 'content-type' ), 'image/' ) ) {
+		return '';
+	}
+
+	$upload_dir = wp_upload_dir();
+	$dir        = $upload_dir['basedir'] . '/checkin-maps';
+	if ( ! wp_mkdir_p( $dir ) ) {
+		return '';
+	}
+	// Geoapify answers with JPEG whatever the request; the ordinary maps keep a .png name from before that was
+	// noticed, this one is named for what it is.
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- plugin-owned cache dir
+	if ( false === file_put_contents( "{$dir}/checkin-map-{$post_id}-lg.jpg", wp_remote_retrieve_body( $response ) ) ) {
+		return '';
+	}
+
+	nop_indieweb_recompress_jpeg( "{$dir}/checkin-map-{$post_id}-lg.jpg" );
+
+	$url = $upload_dir['baseurl'] . "/checkin-maps/checkin-map-{$post_id}-lg.jpg";
+	update_post_meta( $post_id, 'nop_indieweb_map_url_lg', $url );
+	update_post_meta( $post_id, 'nop_indieweb_map_url_lg_src', nop_indieweb_checkin_map_large_source( $lat, $lng ) );
+	return $url;
+}
+
+/**
+ * The tile-sized copy of a cached map: the wall shows a map in a tile about 330px across, so it gets a 520px square
+ * (the centre of the map, where the pin is), about 35KB beside the 240KB original. Made in the background from the
+ * cached file (no Geoapify call), so a tile that has none yet just uses the original this once.
+ *
+ * @param string $kind 'checkin' or 'exercise'.
+ * @return array{url:string,size:int}|array{} Empty until the copy exists and is newer than the map it was made from.
+ */
+function nop_indieweb_map_tile( int $post_id, string $kind = 'checkin' ): array {
+	[ $sub, $name ] = nop_indieweb_map_tile_paths( $post_id, $kind );
+	$up             = wp_upload_dir();
+	$src            = "{$up['basedir']}/{$sub}/{$name}.png";
+	$tile           = "{$up['basedir']}/{$sub}/{$name}-tile.jpg";
+	if ( ! is_file( $src ) ) {
+		return [];
+	}
+	if ( is_file( $tile ) && filemtime( $tile ) >= filemtime( $src ) ) {
+		return [ 'url' => "{$up['baseurl']}/{$sub}/{$name}-tile.jpg", 'size' => 520 ];
+	}
+	if ( ! wp_next_scheduled( 'nop_indieweb_make_map_tile', [ $post_id, $kind ] ) ) {
+		wp_schedule_single_event( time(), 'nop_indieweb_make_map_tile', [ $post_id, $kind ] );
+		spawn_cron();
+	}
+	return [];
+}
+
+/** @return array{0:string,1:string} The uploads sub-directory and file stem (no extension) of a post's cached map. */
+function nop_indieweb_map_tile_paths( int $post_id, string $kind ): array {
+	return 'exercise' === $kind ? [ 'exercise-maps', "exercise-map-{$post_id}" ] : [ 'checkin-maps', "checkin-map-{$post_id}" ];
+}
+
+/** Makes the tile copy of a cached map (see nop_indieweb_map_tile()). A failure leaves the original in use. */
+function nop_indieweb_make_map_tile( int $post_id, string $kind ): void {
+	[ $sub, $name ] = nop_indieweb_map_tile_paths( $post_id, $kind );
+	$dir            = wp_upload_dir()['basedir'] . '/' . $sub;
+	// The cached file is JPEG data under a .png name (Geoapify answers in JPEG); the editor reads the content.
+	$editor = is_file( "{$dir}/{$name}.png" ) ? wp_get_image_editor( "{$dir}/{$name}.png" ) : null;
+	if ( ! $editor || is_wp_error( $editor ) ) {
+		return;
+	}
+	$editor->resize( 520, 520, true );
+	$editor->set_quality( 75 );
+	$editor->save( "{$dir}/{$name}-tile.jpg", 'image/jpeg' );
+}
+
+/** Re-saves a JPEG in place at a lower quality when that makes it smaller (Geoapify's own is near-lossless: 586KB against 348KB at 75). */
+function nop_indieweb_recompress_jpeg( string $file, int $quality = 75 ): void {
+	$editor = wp_get_image_editor( $file );
+	if ( is_wp_error( $editor ) ) {
+		return;
+	}
+	$editor->set_quality( $quality );
+	$tmp = $file . '.tmp.jpg';
+	$ok  = $editor->save( $tmp, 'image/jpeg' );
+	if ( ! is_wp_error( $ok ) && is_file( $tmp ) && filesize( $tmp ) < filesize( $file ) ) {
+		rename( $tmp, $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- plugin-owned cache dir
+		return;
+	}
+	wp_delete_file( $tmp );
 }
 
 function nop_indieweb_ordinal( int $n ): string {
