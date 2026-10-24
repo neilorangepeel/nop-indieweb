@@ -32,9 +32,11 @@ final class Wall_Filters {
 
 	public const KIND   = 'kind';
 	public const SEARCH = 'q';
+	// Words kept from earlier searches (Enter keeps what was typed): each a chip, all of them searched together.
+	public const WORDS  = 'words';
 
 	public function register(): void {
-		add_filter( 'query_vars', fn( $vars ) => array_merge( $vars, [ self::KIND, self::SEARCH ] ) );
+		add_filter( 'query_vars', fn( $vars ) => array_merge( $vars, [ self::KIND, self::SEARCH, self::WORDS ] ) );
 		add_action( 'pre_get_posts', [ $this, 'narrow' ], 20 );
 		add_filter( 'render_block_core/term-name', [ $this, 'toggle' ], 10, 3 );
 		add_filter( 'render_block_core/search', [ $this, 'search_form' ], 10, 2 );
@@ -42,6 +44,7 @@ final class Wall_Filters {
 		add_filter( 'render_block_core/paragraph', [ $this, 'mark' ], 10, 2 );
 		add_filter( 'render_block_core/buttons', [ $this, 'mark' ], 10, 2 );
 		add_filter( 'render_block_core/post-terms', [ $this, 'topics' ], 10, 2 );
+		add_filter( 'render_block_core/query-total', [ $this, 'total' ], 10, 2 );
 		add_action( 'save_post_post', [ self::class, 'forget_counts' ] );
 		add_action( 'deleted_post', [ self::class, 'forget_counts' ] );
 		add_action( 'set_object_terms', [ self::class, 'forget_counts' ] );
@@ -58,12 +61,23 @@ final class Wall_Filters {
 		return array_values( array_filter( array_map( 'sanitize_title', preg_split( '/[,+ ]/', (string) get_query_var( 'tag' ) ) ?: [] ) ) );
 	}
 
+	/** @return string[] The words kept as chips. */
+	public static function words(): array {
+		$words = array_map( static fn( $w ) => trim( sanitize_text_field( $w ) ), explode( ',', (string) get_query_var( self::WORDS ) ) );
+		return array_values( array_unique( array_filter( $words, static fn( $w ) => '' !== $w ) ) );
+	}
+
+	/** Everything searched for: the kept words and what is in the field now. */
+	public static function terms(): string {
+		return trim( implode( ' ', self::words() ) . ' ' . self::search() );
+	}
+
 	public static function search(): string {
 		return trim( sanitize_text_field( (string) get_query_var( self::SEARCH ) ) );
 	}
 
 	public static function active(): bool {
-		return Logbook::is_logbook() && ( self::kinds() || self::tags() || '' !== self::search() );
+		return Logbook::is_logbook() && ( self::kinds() || self::tags() || '' !== self::terms() );
 	}
 
 	/** The current view's address with one filter changed (and back to page one). */
@@ -74,6 +88,7 @@ final class Wall_Filters {
 					self::KIND   => implode( ',', self::kinds() ),
 					// Topics combine as all of them (core reads "a+b" as both): cross-referencing narrows.
 					'tag'        => implode( '+', self::tags() ),
+					self::WORDS  => implode( ',', self::words() ),
 					self::SEARCH => self::search(),
 				],
 				$change
@@ -93,9 +108,9 @@ final class Wall_Filters {
 		if ( $kinds ) {
 			$query->set( 'tax_query', [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ] ] );
 		}
-		if ( '' !== self::search() ) {
-			// As ?q=, not ?s=: a search would turn the Logbook into the search results page.
-			$query->set( 's', self::search() );
+		if ( '' !== self::terms() ) {
+			// As ?q= and ?w=, not ?s=: a search would turn the Logbook into the search results page.
+			$query->set( 's', self::terms() );
 		}
 	}
 
@@ -144,10 +159,11 @@ final class Wall_Filters {
 	 * @param string[] $kinds Kind slugs.
 	 * @param string[] $tags  Tag slugs.
 	 */
-	public static function count( array $kinds, array $tags ): int {
+	public static function count( array $kinds, array $tags, bool $searched = true ): int {
+		$terms = $searched ? self::terms() : '';
 		sort( $kinds );
 		sort( $tags );
-		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, self::search(), (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
+		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, $terms, (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
 		static $seen = [];
 		if ( isset( $seen[ $key ] ) ) {
 			return $seen[ $key ];
@@ -169,8 +185,8 @@ final class Wall_Filters {
 		if ( $tags ) {
 			$args['tag_slug__and'] = $tags;
 		}
-		if ( '' !== self::search() ) {
-			$args['s'] = self::search();
+		if ( '' !== $terms ) {
+			$args['s'] = $terms;
 		}
 		$count = (int) ( new \WP_Query( $args ) )->found_posts;
 		set_transient( $key, $count, DAY_IN_SECONDS );
@@ -182,9 +198,12 @@ final class Wall_Filters {
 		update_option( 'nop_wall_counts_version', (int) get_option( 'nop_wall_counts_version', 0 ) + 1, false );
 	}
 
-	/** The chosen kinds and topics as chips on the bar (a Paragraph with the class nop-wall-chips): each a link that drops it. */
+	/** The kept words, chosen kinds and topics as chips (a Paragraph with the class nop-wall-chips): each a link that drops it. */
 	private function chips(): string {
 		$out = '';
+		foreach ( self::words() as $word ) {
+			$out .= $this->chip( '“' . $word . '”', self::url( [ self::WORDS => implode( ',', array_diff( self::words(), [ $word ] ) ) ] ) );
+		}
 		foreach ( self::kinds() as $slug ) {
 			$term  = get_term_by( 'slug', $slug, Kind_Taxonomy::TAXONOMY );
 			$out  .= $this->chip( $term ? $term->name : $slug, self::url( [ self::KIND => implode( ',', array_diff( self::kinds(), [ $slug ] ) ) ] ) );
@@ -199,6 +218,18 @@ final class Wall_Filters {
 	private function chip( string $label, string $href ): string {
 		/* translators: %s: a filter, e.g. "Photo" or "#Belfast" */
 		return '<a class="nop-wall-chip" rel="nofollow" href="' . esc_url( $href ) . '" aria-label="' . esc_attr( sprintf( __( 'Remove %s', 'nop-indieweb' ), $label ) ) . '">' . esc_html( $label ) . '<span class="nop-wall-chip__x" aria-hidden="true">×</span></a>';
+	}
+
+	/** On the Logbook at rest, Query Total says how many entries there are ("1,718 entries"). */
+	public function total( string $content, array $block ): string {
+		if ( ! Logbook::is_logbook() || self::active() ) {
+			return $content;
+		}
+		global $wp_query;
+		$n = (int) $wp_query->found_posts;
+		/* translators: %s: number of entries */
+		$text = sprintf( _n( '%s entry', '%s entries', $n, 'nop-indieweb' ), number_format_i18n( $n ) );
+		return (string) preg_replace( '#(<div\b[^>]*>).*?(</div>)#s', '${1}' . esc_html( $text ) . '$2', $content, 1 );
 	}
 
 	/** A Search block with the class nop-wall-search searches the current view. */
@@ -220,7 +251,7 @@ final class Wall_Filters {
 			}
 		}
 		$hidden = '';
-		foreach ( [ self::KIND => implode( ',', self::kinds() ), 'tag' => implode( '+', self::tags() ) ] as $name => $value ) {
+		foreach ( [ self::KIND => implode( ',', self::kinds() ), 'tag' => implode( '+', self::tags() ), self::WORDS => implode( ',', self::words() ) ] as $name => $value ) {
 			if ( '' !== $value ) {
 				$hidden .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '">';
 			}
@@ -264,16 +295,33 @@ final class Wall_Filters {
 			}
 			return $content;
 		}
-		if ( ! Logbook::is_logbook() || ! preg_match( '/\bnop-wall-(status|clear|all-kinds|chips)\b/', $class, $m ) ) {
+		if ( ! Logbook::is_logbook() || ! preg_match( '/\bnop-wall-(status|clear|all-kinds|chips|applied|idle|summary)\b/', $class, $m ) ) {
 			return $content;
 		}
 		$p = new \WP_HTML_Tag_Processor( $content );
 		if ( ! $p->next_tag() ) {
 			return $content;
 		}
+		// The summary row (a Group with nop-wall-applied) is there only while something is applied; the quiet count on
+		// the search line (nop-wall-idle) only while nothing is.
+		if ( 'applied' === $m[1] ) {
+			return self::active() ? $content : '';
+		}
+		if ( 'idle' === $m[1] ) {
+			return self::active() ? '' : $content;
+		}
+		// "6 of 1,718": the wall's count against the whole Logbook, read out as it changes.
+		if ( 'summary' === $m[1] ) {
+			global $wp_query;
+			/* translators: 1: entries shown, 2: all Logbook entries */
+			$text = sprintf( __( '%1$s of %2$s', 'nop-indieweb' ), number_format_i18n( (int) $wp_query->found_posts ), number_format_i18n( self::count( [], [], false ) ) );
+			$p->set_attribute( 'role', 'status' );
+			$p->set_attribute( 'aria-live', 'polite' );
+			return (string) preg_replace( '#(<p\b[^>]*>)\s*(</p>)#', '${1}' . esc_html( $text ) . '$2', $p->get_updated_html(), 1 );
+		}
 		if ( 'chips' === $m[1] ) {
 			$chips = $this->chips();
-			return '' === $chips ? '' : (string) preg_replace( '#(<p\b[^>]*>)\s*(</p>)#', '$1' . $chips . '$2', $content, 1 );
+			return '' === $chips ? '' : (string) preg_replace( '#(<p\b[^>]*>)\s*(</p>)#', '${1}' . $chips . '$2', $content, 1 );
 		}
 				if ( 'status' === $m[1] ) {
 			$p->set_attribute( 'role', 'status' );
@@ -293,7 +341,8 @@ final class Wall_Filters {
 			}
 			return $p->get_updated_html();
 		}
-		if ( ! self::active() ) {
+		// Clear all: only when there is more than one thing to clear (one chip's own × does the job).
+		if ( count( self::kinds() ) + count( self::tags() ) + count( self::words() ) + ( '' !== self::search() ? 1 : 0 ) < 2 ) {
 			return '';
 		}
 		while ( $p->next_tag( [ 'tag_name' => 'a' ] ) ) {

@@ -462,7 +462,18 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				} );
 			}
 			const url = new URL( form.action );
-			new FormData( form ).forEach( ( value, key ) => {
+			const data = new FormData( form );
+			// Enter keeps what was typed as a chip: it joins the kept words (words) and the field empties for more.
+			if ( 'submit' === event.type ) {
+				const typed = String( data.get( 'q' ) || '' ).replace( /,/g, ' ' ).trim();
+				if ( typed ) {
+					const kept = String( data.get( 'words' ) || '' ).split( ',' ).filter( Boolean );
+					data.set( 'words', [ ...kept, typed ].join( ',' ) );
+					data.delete( 'q' );
+					form.querySelector( 'input[name="q"]' ).value = '';
+				}
+			}
+			data.forEach( ( value, key ) => {
 				if ( String( value ).trim() ) {
 					url.searchParams.set( key, String( value ).trim() );
 				}
