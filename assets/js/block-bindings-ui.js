@@ -109,6 +109,17 @@
 		venue_coordinates:        '54.597 ° N · 5.935 ° W',
 		venue_url_host_label:     'View on foursquare.com',
 		checkin_url_host_label:   'View on swarmapp.com',
+		// Icon names for a core/icon block's `icon` binding, and the temperature for a paragraph.
+		kind_icon:                'phosphor/kind-note',
+		activity_icon:            'phosphor/exercise-run',
+		weather_icon:             'phosphor/weather-cloud',
+		weather_temp:             '12°C',
+	};
+
+	// Pirate Weather's vocabulary onto the Phosphor marks (the same map as the PHP source).
+	var WEATHER_ICONS = {
+		'clear-day': 'sun', 'clear-night': 'moon', 'partly-cloudy-day': 'cloud-sun', 'partly-cloudy-night': 'cloud-moon',
+		'cloudy': 'cloud', 'fog': 'cloud-fog', 'rain': 'cloud-rain', 'sleet': 'cloud-snow', 'snow': 'cloud-snow', 'wind': 'wind',
 	};
 
 	function humanize( field, key ) {
@@ -129,6 +140,18 @@
 		var args  = binding.args || {};
 		var field = args.field || '';
 		var key   = args.key || '';
+
+		// What the post itself has, where the editor knows it (a post, not the template).
+		if ( 'weather_icon' === field && meta.nop_indieweb_weather_icon ) {
+			return 'phosphor/weather-' + ( WEATHER_ICONS[ meta.nop_indieweb_weather_icon ] || 'cloud' );
+		}
+		if ( 'weather_temp' === field ) {
+			var unit = 'f' === args.unit ? 'f' : 'c';
+			var raw  = meta[ 'nop_indieweb_weather_temp_' + unit ];
+			if ( raw ) {
+				return Math.round( parseFloat( raw ) ) + ( false === args.symbol ? '' : ( 'f' === unit ? '°F' : '°C' ) );
+			}
+		}
 
 		if ( field && DERIVED.includes( field ) ) {
 			var derived = deriveValue( field, meta );

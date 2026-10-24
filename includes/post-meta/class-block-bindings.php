@@ -67,6 +67,11 @@ class Block_Bindings {
 	private const DERIVED_MF2_CLASSES = [
 		// Kind derived fields
 		'kind_label'            => '',
+		// Icon names for a core/icon block's `icon` binding (WordPress 7.2+), and the weather temperature for a paragraph.
+		'kind_icon'             => '',
+		'activity_icon'         => '',
+		'weather_icon'          => '',
+		'weather_temp'          => '',
 		'full_address'          => 'p-adr',
 		'locality_country'      => '',
 		'venue_coordinates'     => '',
@@ -178,6 +183,10 @@ class Block_Bindings {
 		'exercise_type_archive_link'      => '<a href="#">Run</a>',
 		'exercise_personal_best'          => 'Longest run',
 		'kind_label'                      => '<a href="#">Liked</a>',
+		'kind_icon'                       => 'phosphor/kind-note',
+		'activity_icon'                   => 'phosphor/exercise-run',
+		'weather_icon'                    => 'phosphor/weather-cloud',
+		'weather_temp'                    => '12°C',
 		// Entry fields (Entry_Fields) previews
 		'subtitle'                        => 'Ormeau Rd',
 		'detail'                          => '258th visit',
@@ -214,7 +223,7 @@ class Block_Bindings {
 
 		// Derived fields handled by name before the venue_ shorthand kicks in.
 		if ( $post_id && $field ) {
-			$derived = $this->get_derived_value( $field, (int) $post_id );
+			$derived = $this->get_derived_value( $field, (int) $post_id, $source_args );
 			if ( null !== $derived ) {
 				return $derived;
 			}
@@ -268,7 +277,7 @@ class Block_Bindings {
 	 * isn't a derived one (in which case the caller falls through to normal
 	 * meta lookup).
 	 */
-	private function get_derived_value( string $field, int $post_id ): ?string {
+	private function get_derived_value( string $field, int $post_id, array $args = [] ): ?string {
 		// Exercise stat formatting lives in one shared helper. Return '' (not null)
 		// for absent stats so the bound paragraph renders truly empty — letting the
 		// template hide it with CSS :has(:empty) rather than keeping a placeholder.
@@ -283,6 +292,48 @@ class Block_Bindings {
 		}
 
 		switch ( $field ) {
+			// The icon for the post's kind: `phosphor/kind-<slug>`. Exercise is passed on (its own icon says the activity: a run, a swim),
+			// and a kind with no mark gives '' so the Icon block renders nothing.
+			case 'kind_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' ); // The icon's size and alignment live there; core/icon is not a plugin block, so rendering it would not load it.
+				$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
+				$slug  = ( $terms && ! is_wp_error( $terms ) ) ? (string) reset( $terms )->slug : '';
+				return ( '' !== $slug && 'exercise' !== $slug && '' !== \NOP\IndieWeb\Kind\Kind_Icons::path( $slug ) ) ? 'phosphor/kind-' . $slug : '';
+			}
+
+			// The activity's icon: `phosphor/exercise-<type>`, from the exercise type term (or the stored type on a post not yet termed).
+			case 'activity_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' );
+				$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY );
+				$type  = ( $terms && ! is_wp_error( $terms ) ) ? (string) reset( $terms )->slug : sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true ) );
+				return ( '' !== $type && is_readable( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/exercise-' . $type . '.svg' ) ) ? 'phosphor/exercise-' . $type : '';
+			}
+
+			// The conditions' icon: Pirate Weather's vocabulary onto the Phosphor marks. Sleet and snow share cloud-snow (Phosphor has
+			// no sleet glyph; the summary carries the exact wording). An unknown condition is a plain cloud.
+			case 'weather_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' );
+				$slug = sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_weather_icon', true ) );
+				if ( '' === $slug ) {
+					return '';
+				}
+				$map = [
+					'clear-day' => 'sun', 'clear-night' => 'moon', 'partly-cloudy-day' => 'cloud-sun', 'partly-cloudy-night' => 'cloud-moon',
+					'cloudy' => 'cloud', 'fog' => 'cloud-fog', 'rain' => 'cloud-rain', 'sleet' => 'cloud-snow', 'snow' => 'cloud-snow', 'wind' => 'wind',
+				];
+				return 'phosphor/weather-' . ( $map[ $slug ] ?? 'cloud' );
+			}
+
+			// The temperature to the degree: args.unit "c" (default) or "f"; args.symbol false leaves off the "°C".
+			case 'weather_temp': {
+				$unit = 'f' === ( $args['unit'] ?? 'c' ) ? 'f' : 'c';
+				$raw  = (string) get_post_meta( $post_id, 'nop_indieweb_weather_temp_' . $unit, true );
+				if ( '' === $raw ) {
+					return '';
+				}
+				return (string) (int) round( (float) $raw ) . ( false === ( $args['symbol'] ?? true ) ? '' : ( 'f' === $unit ? '°F' : '°C' ) );
+			}
+
 			// The post's kind, in its reading voice, linked to its archive.
 			//
 			// Returns markup on purpose: WP_Block::replace_html() passes a bound

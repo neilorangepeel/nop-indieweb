@@ -29,9 +29,10 @@ if ( $is_editor && isset( $_GET['post_id'] ) ) { // phpcs:ignore WordPress.Secur
 
 $type = '';
 if ( $post_id ) {
-	$terms = wp_get_object_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY, [ 'fields' => 'slugs' ] );
-	if ( ! is_wp_error( $terms ) && $terms ) {
-		$type = (string) $terms[0];
+	// get_the_terms() reads the terms the loop's query already fetched; wp_get_object_terms() asked the database for each tile.
+	$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY );
+	if ( $terms && ! is_wp_error( $terms ) ) {
+		$type = (string) reset( $terms )->slug;
 	}
 	if ( ! $type ) {
 		$type = sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true ) );

@@ -2,14 +2,22 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "nop-indieweb/weather-temp",
-	"title": "Weather Temperature",
-	"description": "Renders the temperature for a check-in post. Choose °C or °F from the block inspector.",
+	"title": "Weather Temperature (deprecated)",
+	"description": "Deprecated: use a core Paragraph block bound to the post-meta source, field \"weather_temp\". Kept so saved content still renders. Renders the temperature for a check-in post. Choose °C or °F from the block inspector.",
 	"category": "nop-indieweb-meta",
-	"keywords": ["weather", "temperature", "checkin", "indieweb"],
+	"keywords": [
+		"weather",
+		"temperature",
+		"checkin",
+		"indieweb"
+	],
 	"editorScript": "file:./editor.js",
 	"style": "nop-blocks-shared",
 	"render": "file:./render.php",
-	"usesContext": ["postId", "postType"],
+	"usesContext": [
+		"postId",
+		"postType"
+	],
 	"attributes": {
 		"unit": {
 			"type": "string",
@@ -61,6 +69,7 @@
 		},
 		"interactivity": {
 			"clientNavigation": true
-		}
+		},
+		"inserter": false
 	}
 }

@@ -170,8 +170,8 @@ HTML,
 			'content'       => <<<'HTML'
 <!-- wp:group {"style":{"spacing":{"blockGap":"6px"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
 <div class="wp-block-group has-small-font-size">
-<!-- wp:nop-indieweb/weather-icon {"fontSize":"small"} /-->
-<!-- wp:nop-indieweb/weather-temp {"fontSize":"small"} /-->
+<!-- wp:icon {"metadata":{"bindings":{"icon":{"source":"nop-indieweb/post-meta","args":{"field":"weather_icon"}}}},"className":"nop-weather-icon"} /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"weather_temp"}}}},"className":"nop-weather-temp","fontSize":"small"} --><p class="nop-weather-temp has-small-font-size"></p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
 HTML,
@@ -290,10 +290,10 @@ HTML,
 <!-- /wp:heading -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather-icon (custom block — inlines SVG from slug)</p><!-- /wp:paragraph -->
-<!-- wp:nop-indieweb/weather-icon /-->
+<!-- wp:icon {"metadata":{"bindings":{"icon":{"source":"nop-indieweb/post-meta","args":{"field":"weather_icon"}}}},"className":"nop-weather-icon"} /-->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather-temp (custom block)</p><!-- /wp:paragraph -->
-<!-- wp:nop-indieweb/weather-temp /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"weather_temp"}}}},"className":"nop-weather-temp"} --><p class="nop-weather-temp"></p><!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather summary (binding: key=nop_indieweb_weather_summary)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} --><p>Light Rain</p><!-- /wp:paragraph -->
@@ -476,10 +476,10 @@ HTML,
 <!-- /wp:heading -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">weather icon (custom block: nop-indieweb/weather-icon)</p><!-- /wp:paragraph -->
-<!-- wp:nop-indieweb/weather-icon /-->
+<!-- wp:icon {"metadata":{"bindings":{"icon":{"source":"nop-indieweb/post-meta","args":{"field":"weather_icon"}}}},"className":"nop-weather-icon"} /-->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">temperature (custom block: nop-indieweb/weather-temp)</p><!-- /wp:paragraph -->
-<!-- wp:nop-indieweb/weather-temp /-->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"weather_temp"}}}},"className":"nop-weather-temp"} --><p class="nop-weather-temp"></p><!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#9ca3af"},"typography":{"fontSize":"0.75rem"}}} --><p class="has-text-color" style="color:#9ca3af;font-size:0.75rem">summary (binding: key=nop_indieweb_weather_summary)</p><!-- /wp:paragraph -->
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} --><p>Overcast</p><!-- /wp:paragraph -->
@@ -588,12 +588,16 @@ HTML,
 			return;
 		}
 		$content = (string) file_get_contents( $file );
+		// Every kind's ID in one query: a lookup per token was about 30 queries on every request, shown or not.
+		$ids = [];
+		foreach ( (array) get_terms( [ 'taxonomy' => \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY, 'hide_empty' => false ] ) as $term ) {
+			if ( $term instanceof \WP_Term ) {
+				$ids[ $term->slug ] = $term->term_id;
+			}
+		}
 		$content = (string) preg_replace_callback(
 			'/%%KIND:([a-z0-9-]+)%%/',
-			static function ( array $m ): string {
-				$term = get_term_by( 'slug', $m[1], \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
-				return ( $term instanceof \WP_Term ) ? (string) $term->term_id : '0';
-			},
+			static fn( array $m ): string => (string) ( $ids[ $m[1] ] ?? 0 ),
 			$content
 		);
 

@@ -14,7 +14,7 @@
 
 				<!-- wp:group {"style":{"spacing":{"blockGap":"0.5em"}},"layout":{"type":"flex","flexWrap":"wrap"}} -->
 				<div class="wp-block-group">
-					<!-- wp:nop-indieweb/exercise-type-icon /-->
+					<!-- wp:icon {"metadata":{"bindings":{"icon":{"source":"nop-indieweb/post-meta","args":{"field":"activity_icon"}}}},"className":"nop-exercise-type-icon"} /-->
 
 					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"kind_label"}}}}} -->
 					<p></p>
@@ -147,8 +147,8 @@
 
 				<!-- wp:group {"className":"nop-weather-row","style":{"spacing":{"blockGap":"0.4em"}},"fontSize":"small","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
 				<div class="wp-block-group nop-weather-row has-small-font-size">
-					<!-- wp:nop-indieweb/weather-icon /-->
-					<!-- wp:nop-indieweb/weather-temp /-->
+					<!-- wp:icon {"metadata":{"bindings":{"icon":{"source":"nop-indieweb/post-meta","args":{"field":"weather_icon"}}}},"className":"nop-weather-icon"} /-->
+					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"field":"weather_temp"}}}},"className":"nop-weather-temp"} --><p class="nop-weather-temp"></p><!-- /wp:paragraph -->
 					<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"nop-indieweb/post-meta","args":{"key":"nop_indieweb_weather_summary"}}}}} -->
 					<p>Mostly Cloudy</p>
 					<!-- /wp:paragraph -->

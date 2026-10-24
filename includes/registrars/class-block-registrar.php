@@ -66,6 +66,17 @@ class Block_Registrar {
 				'file_path' => NOP_INDIEWEB_DIR . 'assets/icons/phosphor/' . $name . '.svg',
 			] );
 		}
+		// The marks the post kinds, exercise types and weather conditions bind to (kind-*, exercise-*, weather-*): every other
+		// file in the folder, so adding one is adding the SVG.
+		foreach ( (array) glob( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/*.svg' ) as $file ) {
+			$name = basename( $file, '.svg' );
+			if ( ! isset( self::ICONS[ $name ] ) ) {
+				wp_register_icon( 'phosphor/' . $name, [
+					'label'     => ucwords( str_replace( '-', ' ', $name ) ),
+					'file_path' => $file,
+				] );
+			}
+		}
 	}
 
 	public function register_blocks(): void {
