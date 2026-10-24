@@ -134,7 +134,7 @@ final class Wall_Filters {
 			$p->set_attribute( 'tabindex', '-1' );
 		}
 		$html = $p->get_updated_html();
-		return (string) preg_replace( '#</a>#', ' <span class="nop-wall-count">' . esc_html( number_format_i18n( $count ) ) . '</span></a>', $html, 1 );
+		return (string) preg_replace( '#</a>#', '<span class="nop-wall-count">' . esc_html( number_format_i18n( $count ) ) . '</span></a>', $html, 1 );
 	}
 
 	/**
