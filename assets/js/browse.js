@@ -388,9 +388,10 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			event.preventDefault();
-			// A choice made in the open filter bar (a pill, a chip, Clear all) leaves it open: the bar is replaced with the
-			// wall, so its state is set again after, whatever focus did on the way (Safari moves it differently).
-			const keepOpen = state.filtersOpen && !! link.closest( '.nop-wall-filters' );
+			// A choice made in the filter bar (a pill, a chip, Clear all) keeps the bar in use. Noted before the swap: the
+			// bar is replaced with the wall, so afterwards the clicked link is no longer in the page at all.
+			const inBar = !! link.closest( '.nop-wall-filters' );
+			const keepOpen = inBar && state.filtersOpen;
 			const { actions: routerActions } = yield router();
 			const region = getElement().ref;
 			yield withTransition( () => routerActions.navigate( link.href ) );
@@ -417,7 +418,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				} );
 			}
 			// A choice in the filter bar keeps the bar in use: focus goes back to its search, not to the wall.
-			if ( link.closest( '.nop-wall-filters' ) ) {
+			if ( inBar ) {
 				region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
 				return;
 			}
@@ -444,7 +445,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		// the search would blur, the bar would read as no longer in use and the drawer would close before the click
 		// landed. Holding the press keeps focus (and the drawer) where it is; the click still follows the link.
 		holdFilters: withSyncEvent( ( event ) => {
-			if ( event.target.closest?.( '.orange-peel-filter__drawer a, .nop-wall-chips a, .nop-wall-clear a' ) ) {
+			if ( event.target.closest?.( '.nop-wall-filters a' ) ) {
 				event.preventDefault();
 			}
 		} ),
