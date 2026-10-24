@@ -1,7 +1,8 @@
 <?php
 /**
  * Photos: the post's photos (nop_indieweb_photo_ids; else the first Video block in the post, playing in place; else the
- * featured image), one at a time, filling the block's height; with the map attribute, the post's map after them.
+ * featured image), one at a time, filling the block's height (layout strip), or all of them composed as a grid (layout
+ * grid); with the map attribute, the post's map after them.
  * They are a core Gallery of core Image blocks with Expand on click, so the full-size view is WordPress's own lightbox,
  * stepping through the gallery. This block adds only the strip: several photos get previous and next, a count ("2 / 3"),
  * and swiping (a scroll-snap strip). The first photo's shape is published as --nop-photos-ratio, so a theme can size the
@@ -83,13 +84,21 @@ if ( preg_match( '#^\d+(\.\d+)?( ?/ ?\d+(\.\d+)?)?$#', (string) ( $attributes['r
 	$ratio = (string) $attributes['ratio'];
 }
 
+// Layout grid (the post's own page): every photo, composed by how many there are (one large, the rest beside it), up to
+// seven tiles (six and the map); past that the last tile says "+3" and the rest wait in the lightbox, which steps
+// through them all.
+$grid    = 'grid' === ( $attributes['layout'] ?? 'strip' );
+$visible = $grid ? ( '' !== $map_slide ? 6 : 7 ) : PHP_INT_MAX;
+$more    = max( 0, count( $ids ) - $visible );
+
 // The gallery as block markup, rendered as blocks, so core adds the lightbox (with the gallery's navigation) itself.
 $images = '';
-foreach ( $ids as $id ) {
+foreach ( $ids as $i => $id ) {
 	$src     = (string) wp_get_attachment_image_url( $id, 'large' );
 	$alt     = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
-	$images .= '<!-- wp:image {"id":' . $id . ',"sizeSlug":"large","linkDestination":"none","scale":"cover","lightbox":{"enabled":true}} -->'
-		. '<figure class="wp-block-image size-large"><img src="' . esc_url( $src ) . '" alt="' . esc_attr( $alt ) . '" class="wp-image-' . $id . '" style="object-fit:cover"/></figure>'
+	$class   = $i >= $visible ? 'nop-photos__hidden' : ( $more && $i === $visible - 1 ? 'nop-photos__more' : '' );
+	$images .= '<!-- wp:image {"id":' . $id . ',"sizeSlug":"large","linkDestination":"none","scale":"cover","lightbox":{"enabled":true}' . ( $class ? ',"className":"' . $class . '"' : '' ) . '} -->'
+		. '<figure class="wp-block-image size-large' . ( $class ? ' ' . $class : '' ) . '"><img src="' . esc_url( $src ) . '" alt="' . esc_attr( $alt ) . '" class="wp-image-' . $id . '" style="object-fit:cover"/></figure>'
 		. '<!-- /wp:image -->';
 }
 $gallery = render_block(
@@ -105,6 +114,17 @@ if ( '' !== $map_slide ) {
 	$at      = (int) strrpos( $gallery, '</figure>' );
 	$gallery = substr( $gallery, 0, $at ) . $map_slide . substr( $gallery, $at );
 }
+if ( $grid ) {
+	$tiles   = min( count( $ids ), $visible ) + ( '' !== $map_slide ? 1 : 0 );
+	$wrapper = get_block_wrapper_attributes( [
+		'class' => 'nop-photos is-grid is-tiles-' . min( 4, $tiles ),
+		'style' => '--nop-photos-ratio:' . $ratio . ( $more ? ';--nop-photos-more:"+' . $more . '"' : '' ),
+	] );
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the gallery rendered by core, every string escaped above.
+	echo '<div ' . $wrapper . '>' . $gallery . '</div>';
+	return;
+}
+
 $strip = new WP_HTML_Tag_Processor( $gallery );
 if ( $strip->next_tag( [ 'class_name' => 'nop-photos__track' ] ) ) {
 	$strip->set_attribute( 'data-wp-on--scroll', 'nop-indieweb/photos::actions.follow' );

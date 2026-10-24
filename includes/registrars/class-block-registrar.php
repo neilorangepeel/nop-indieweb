@@ -137,6 +137,7 @@ class Block_Registrar {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/kind-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/photos' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/share-button' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/engagement' );
 		// These blocks reach a wall inside an entry opened over it, so the router must load their stores then.
 		foreach ( [ 'photos', 'share-button' ] as $name ) {
 			wp_interactivity()->add_client_navigation_support_to_script_module( 'nop-indieweb-' . $name . '-view-script-module' );

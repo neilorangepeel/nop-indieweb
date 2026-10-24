@@ -1,0 +1,45 @@
+/* Likes and Reposts: structure only (rows, the overlapping stack, the grid); a theme gives it its type and colour. */
+.nop-engagement { display: grid; gap: 0.75rem; }
+
+.nop-engagement__row { display: grid; gap: 0.5rem; }
+
+.nop-engagement__summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; margin: 0; }
+
+.nop-engagement__total { display: inline-flex; align-items: center; gap: 0.3em; font-variant-numeric: tabular-nums; }
+
+.nop-engagement__icon { width: 1.1em; height: 1.1em; background: currentColor; }
+
+.nop-engagement__row--likes .nop-engagement__icon { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M240,102c0,70-103.79,126.66-108.21,129a8,8,0,0,1-7.58,0C119.79,228.66,16,172,16,102A62.07,62.07,0,0,1,78,40c20.65,0,38.73,8.88,50,23.89C139.27,48.88,157.35,40,178,40A62.07,62.07,0,0,1,240,102Z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M240,102c0,70-103.79,126.66-108.21,129a8,8,0,0,1-7.58,0C119.79,228.66,16,172,16,102A62.07,62.07,0,0,1,78,40c20.65,0,38.73,8.88,50,23.89C139.27,48.88,157.35,40,178,40A62.07,62.07,0,0,1,240,102Z'/%3E%3C/svg%3E") center / contain no-repeat; }
+
+.nop-engagement__row--reposts .nop-engagement__icon { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M24,128A72.08,72.08,0,0,1,96,56H204.69L194.34,45.66a8,8,0,0,1,11.32-11.32l24,24a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L204.69,72H96a56.06,56.06,0,0,0-56,56,8,8,0,0,1-16,0Zm200-8a8,8,0,0,0-8,8,56.06,56.06,0,0,1-56,56H51.31l10.35-10.34a8,8,0,0,0-11.32-11.32l-24,24a8,8,0,0,0,0,11.32l24,24a8,8,0,0,0,11.32-11.32L51.31,200H160a72.08,72.08,0,0,0,72-72A8,8,0,0,0,224,120Z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M24,128A72.08,72.08,0,0,1,96,56H204.69L194.34,45.66a8,8,0,0,1,11.32-11.32l24,24a8,8,0,0,1,0,11.32l-24,24a8,8,0,0,1-11.32-11.32L204.69,72H96a56.06,56.06,0,0,0-56,56,8,8,0,0,1-16,0Zm200-8a8,8,0,0,0-8,8,56.06,56.06,0,0,1-56,56H51.31l10.35-10.34a8,8,0,0,0-11.32-11.32l-24,24a8,8,0,0,0,0,11.32l24,24a8,8,0,0,0,11.32-11.32L51.31,200H160a72.08,72.08,0,0,0,72-72A8,8,0,0,0,224,120Z'/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* The stack: faces overlapping by a third, each ringed in the ground so they read as separate. */
+.nop-engagement__stack { display: inline-flex; }
+
+.nop-engagement__stack > * + * { margin-inline-start: -0.5rem; }
+
+.nop-engagement__stack .nop-webmentions__avatar-wrap { box-shadow: 0 0 0 2px var(--nop-engagement-ring, var(--nop-paper, #fff)); }
+
+.nop-engagement__line { flex: 1 1 12rem; }
+
+.nop-engagement__line a { color: inherit; font-weight: 600; text-decoration: none; }
+
+.nop-engagement__line a:hover { text-decoration: underline; }
+
+.nop-engagement__all > summary { display: inline-block; cursor: pointer; list-style: none; text-decoration: underline; text-underline-offset: 0.2em; }
+
+.nop-engagement__all > summary::-webkit-details-marker { display: none; }
+
+.nop-engagement__all[open] > summary { margin-block-end: 0.75rem; }
+
+.nop-engagement__grid { display: grid; grid-template-columns: repeat(auto-fill, 2rem); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+
+.nop-engagement__grid li { margin: 0; }
+
+.nop-engagement .nop-webmentions__avatar-wrap,
+.nop-engagement .nop-webmentions__avatar { display: block; flex: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; }
+
+.nop-engagement__grid .nop-webmentions__avatar-wrap,
+.nop-engagement__grid .nop-webmentions__avatar { width: 2rem; height: 2rem; }
+
+.nop-engagement .nop-webmentions__avatar--fallback { display: grid; place-items: center; }

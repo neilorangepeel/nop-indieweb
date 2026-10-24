@@ -91,3 +91,36 @@
 @media (prefers-reduced-motion: reduce) {
 	.nop-photos__step, .nop-photos__play, .nop-photos .lightbox-trigger { transition: none; }
 }
+
+/* Layout grid: every photo at once, composed by how many tiles there are (is-tiles-1…4, four meaning four or more):
+   one at its own shape; two side by side; three as one large and two stacked; four or more as one wide and the rest
+   in threes. The gallery's own rules are matched (:not(#…)) to be beaten. Every photo still opens in core's lightbox. */
+.nop-photos.is-grid { overflow: visible; }
+
+.nop-photos.is-grid .wp-block-gallery.has-nested-images.nop-photos__track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--nop-photos-gap, 0.5rem); height: auto; overflow: visible; scroll-snap-type: none; }
+
+.nop-photos.is-grid .wp-block-gallery.has-nested-images.nop-photos__track figure.wp-block-image:not(#individual-image) { width: auto; height: auto; aspect-ratio: 1; scroll-snap-align: none; }
+
+.nop-photos.is-grid .wp-block-gallery.has-nested-images.nop-photos__track figure.nop-photos__hidden:not(#individual-image) { display: none; }
+
+.nop-photos.is-tiles-1 .wp-block-gallery.has-nested-images.nop-photos__track { grid-template-columns: minmax(0, 1fr); }
+
+.nop-photos.is-tiles-1 .wp-block-gallery.has-nested-images.nop-photos__track figure.wp-block-image:not(#individual-image) { aspect-ratio: var(--nop-photos-ratio); max-height: 85svh; }
+
+.nop-photos.is-tiles-2 .wp-block-gallery.has-nested-images.nop-photos__track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.nop-photos.is-tiles-2 .wp-block-gallery.has-nested-images.nop-photos__track figure.wp-block-image:not(#individual-image) { aspect-ratio: 4 / 5; }
+
+.nop-photos.is-tiles-3 .wp-block-gallery.has-nested-images.nop-photos__track { grid-template-columns: 2fr 1fr; }
+
+.nop-photos.is-tiles-3 .wp-block-gallery.has-nested-images.nop-photos__track figure.wp-block-image:first-child:not(#individual-image) { grid-row: span 2; aspect-ratio: auto; }
+
+.nop-photos.is-tiles-4 .wp-block-gallery.has-nested-images.nop-photos__track figure.wp-block-image:first-child:not(#individual-image) { grid-column: 1 / -1; aspect-ratio: 3 / 2; }
+
+/* "+3" on the last tile shown: the rest are in the lightbox. */
+.nop-photos.is-grid .nop-photos__more { position: relative; }
+
+.nop-photos.is-grid .nop-photos__more::after { content: var(--nop-photos-more); position: absolute; inset: 0; display: grid; place-items: center; background: var(--nop-photos-chip, rgb(0 0 0 / 0.45)); color: #fff; font-size: 1.5rem; pointer-events: none; }
+
+/* In a grid the map is one tile among several, often narrow: its credit wraps rather than running off the tile. */
+.nop-photos.is-grid .nop-photos__credit { left: var(--nop-photos-inset, 0.75rem); height: auto; padding-block: 0.35em; border-radius: 0.875rem; line-height: 1.3; white-space: normal; text-align: right; justify-self: end; width: max-content; max-width: calc(100% - 2 * var(--nop-photos-inset, 0.75rem)); margin-inline-start: auto; }
