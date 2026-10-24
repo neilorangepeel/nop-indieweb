@@ -300,7 +300,7 @@ const prepareSoon = ( href ) => idle( () => prepareEntry( href ).catch( () => {}
 
 // A wall's entry links: a kind post's title or date link in a Query Loop (never its other links: kind, like, source).
 const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date, .wp-block-post-featured-image) a[href]';
-const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter, .nop-wall-chips';
+const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter, .nop-wall-chips, .nop-wall-clear';
 const isEntryLink = ( link ) => !! link?.closest( '.nop-wall' ) && link.matches( ENTRY_LINK );
 // The post an entry link belongs to: what the entry morphs out of and back into.
 const postOf = ( link ) => link?.closest( '.wp-block-post' );
@@ -388,9 +388,15 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			event.preventDefault();
+			// A choice made in the open filter bar (a pill, a chip, Clear all) leaves it open: the bar is replaced with the
+			// wall, so its state is set again after, whatever focus did on the way (Safari moves it differently).
+			const keepOpen = state.filtersOpen && !! link.closest( '.nop-wall-filters' );
 			const { actions: routerActions } = yield router();
 			const region = getElement().ref;
 			yield withTransition( () => routerActions.navigate( link.href ) );
+			if ( keepOpen ) {
+				state.filtersOpen = true;
+			}
 			// The wall is new: entries made ready against the old one are rebuilt when next wanted.
 			wallVersion += 1;
 			// A filter changes the wall in place, with no scroll. A new page lands on
