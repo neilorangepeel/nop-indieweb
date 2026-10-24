@@ -1,8 +1,8 @@
 === NOP IndieWeb ===
 Contributors: neilorangepeel
 Tags: indieweb, micropub, webmention, indieauth, posse
-Requires at least: 6.7
-Tested up to: 7.0
+Requires at least: 7.2
+Tested up to: 7.2
 Requires PHP: 8.0
 Stable tag: 0.10.0
 License: GPL-2.0-or-later

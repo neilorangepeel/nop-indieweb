@@ -14,7 +14,7 @@ use WP_Block;
  * Registers the nop-indieweb/post-meta Block Bindings source and injects
  * microformat classes onto bound core blocks at render time.
  *
- * Requires WordPress 6.5+ (Block Bindings API).
+ * Requires WordPress 7.2 (the plugin's minimum: core/icon accepts an `icon` binding from there).
  *
  * Usage — two equivalent forms:
  *
@@ -127,10 +127,6 @@ class Block_Bindings {
 	}
 
 	public function register_source(): void {
-		if ( ! function_exists( 'register_block_bindings_source' ) ) {
-			return;
-		}
-
 		register_block_bindings_source( 'nop-indieweb/post-meta', [
 			'label'              => 'IndieWeb Post Meta',
 			'get_value_callback' => [ $this, 'get_value' ],

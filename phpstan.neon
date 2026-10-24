@@ -24,10 +24,14 @@ parameters:
 	#
 	# mf2-stubs declares the optional php-mf2 \Mf2\parse() symbol (guarded by
 	# function_exists at every call site).
+	#
+	# icon-stubs declares WordPress's Icon API (wp_register_icon*), which the
+	# bundled core stubs predate; the plugin needs WordPress 7.2, which has it.
 	scanFiles:
 		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
 		- vendor/php-stubs/wp-cli-stubs/wp-cli-tools-stubs.php
 		- tests/php/mf2-stubs.php
+		- tests/php/icon-stubs.php
 	# WordPress symbols come from szepeviktor/phpstan-wordpress (php-stubs/wordpress-stubs).
 	# The /post and /settings React apps are JS — analysed by `npm run lint:js`, not here.
 

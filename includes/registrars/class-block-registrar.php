@@ -51,11 +51,8 @@ class Block_Registrar {
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
 	}
 
-	/** The `phosphor` icon collection (WordPress 7.1+; earlier the Icon block does not exist and this does nothing). */
+	/** The `phosphor` icon collection, for the core Icon block (WordPress 7.2 is the plugin's minimum). */
 	public function register_icons(): void {
-		if ( ! function_exists( 'wp_register_icon_collection' ) || ! function_exists( 'wp_register_icon' ) ) {
-			return;
-		}
 		wp_register_icon_collection( 'phosphor', [
 			'label'       => 'Phosphor',
 			'description' => __( 'Phosphor Regular, the icon family of the plugin\'s own blocks.', 'nop-indieweb' ),
