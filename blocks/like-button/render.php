@@ -39,6 +39,8 @@ $endpoint->seed_state( $post_id );
 $count = $endpoint->like_count( $post_id );
 $liked = $endpoint->visitor_has_liked( $post_id );
 
+$count_id = wp_unique_id( 'nop-like-count-' );
+
 // State lives in the shared nop-indieweb/likes store (seeded above), so this
 // heart and the post footer's pill stay in step. The server processes these
 // directives too, so the markup is right before any JavaScript runs.
@@ -52,6 +54,7 @@ $wrapper = get_block_wrapper_attributes( [
 <div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes; wp_kses_data() decoded the &quot; in data-wp-context JSON and broke the attribute. ?>>
 	<button class="nop-like-button__btn"
 	        type="button"
+	        aria-describedby="<?php echo esc_attr( $count_id ); ?>"
 	        data-wp-on--click="actions.like"
 	        data-wp-on--animationend="actions.endAnimation"
 	        data-wp-bind--aria-pressed="state.liked"
@@ -59,9 +62,10 @@ $wrapper = get_block_wrapper_attributes( [
 	        data-wp-class--is-busy="context.busy"
 	        data-wp-class--is-animating="context.animating">
 		<?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- bundled, plugin-authored SVG constant; wp_kses would lowercase the case-sensitive viewBox attribute and break it ?>
-		<span class="nop-like-button__label" data-wp-text="state.label"><?php echo $liked ? esc_html__( 'Liked', 'nop-indieweb' ) : esc_html__( 'Like', 'nop-indieweb' ); ?></span>
+		<?php // The name stays "Like": aria-pressed carries the state, and a name that also turned to "Liked" read as "Liked, toggle button, pressed". ?>
+		<span class="nop-like-button__label"><?php esc_html_e( 'Like', 'nop-indieweb' ); ?></span>
 	</button>
-	<span class="nop-like-button__count"
+	<span class="nop-like-button__count" id="<?php echo esc_attr( $count_id ); ?>"
 	      data-wp-text="state.count"
 	      data-wp-bind--aria-label="state.countLabel"
 	      data-wp-bind--hidden="!state.count"><?php echo esc_html( (string) $count ); ?></span>
