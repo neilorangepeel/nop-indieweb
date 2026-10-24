@@ -140,7 +140,7 @@
 	   marker rather than competing with the response content above it. */
 	.nop-webmentions__form-label {
 		margin:         0 0 0.75rem;
-		font-size:      0.6875rem;
+		font-size:      var(--wp--preset--font-size--xx-small, 0.6875rem);
 		font-weight:    600;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -150,7 +150,7 @@
 	/* Cancel reply link — shown while a threaded reply is active. */
 	.nop-webmentions__cancel-reply {
 		margin-bottom:   0.625rem;
-		font-size:       0.8125rem;
+		font-size:       var(--wp--preset--font-size--x-small, 0.8125rem);
 		color:           var(--nop-muted);
 		text-decoration: none;
 	}
@@ -195,7 +195,7 @@
 		font-weight:    600;
 		letter-spacing: 0.02em;
 		color:          inherit;
-		transition:     color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+		transition:     color var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, background-color 150ms ease, border-color 150ms ease;
 	}
 
 	.nop-webmentions__form-submit:hover {
@@ -214,7 +214,7 @@
 
 	.nop-webmentions__form-status {
 		margin:    0.625rem 0 0;
-		font-size: 0.8125rem;
+		font-size: var(--wp--preset--font-size--x-small, 0.8125rem);
 		color:     var(--nop-muted);
 	}
 
@@ -232,7 +232,7 @@
 		background:    none;
 		color:         inherit;
 		font:          inherit;
-		font-size:     0.8125rem;
+		font-size:     var(--wp--preset--font-size--x-small, 0.8125rem);
 		cursor:        pointer;
 	}
 

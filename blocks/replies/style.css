@@ -65,7 +65,7 @@
 
 .nop-webmentions__reply-link {
 	opacity:    0;
-	transition: opacity 150ms ease, color 150ms ease;
+	transition: opacity var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, color 150ms ease;
 }
 
 .nop-webmentions__reply:hover                .nop-webmentions__reply-link,
@@ -129,7 +129,7 @@
 	   it). */
 	.nop-replies__label {
 		margin:         0;
-		font-size:      0.6875rem;
+		font-size:      var(--wp--preset--font-size--xx-small, 0.6875rem);
 		font-weight:    600;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -139,7 +139,7 @@
 	/* ── Platform tag pill ──────────────────────────────────────────────────── */
 
 	.nop-webmentions__via {
-		font-size:      0.75rem;
+		font-size:      var(--wp--preset--font-size--xx-small, 0.75rem);
 		font-weight:    600;
 		letter-spacing: 0.02em;
 		padding:        2px 6px;
@@ -154,7 +154,7 @@
 	.nop-webmentions__via-bridgy {
 		margin-inline-start: 0.15rem;
 		color:               var(--nop-muted);
-		font-size:           0.75rem;
+		font-size:           var(--wp--preset--font-size--xx-small, 0.75rem);
 		font-weight:         400;
 	}
 
@@ -204,7 +204,7 @@
 	}
 
 	.nop-webmentions__reply-time {
-		font-size:       0.8125rem;
+		font-size:       var(--wp--preset--font-size--x-small, 0.8125rem);
 		color:           var(--nop-muted);
 		text-decoration: none;
 	}
@@ -223,7 +223,7 @@
 	}
 
 	.nop-webmentions__reply-link {
-		font-size:       0.8125rem;
+		font-size:       var(--wp--preset--font-size--x-small, 0.8125rem);
 		font-weight:     600;
 		color:           var(--nop-muted);
 		text-decoration: none;

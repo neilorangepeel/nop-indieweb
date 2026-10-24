@@ -33,7 +33,7 @@
 .nop-rsvp-option {
 	cursor:     pointer;
 	background: transparent;
-	transition: background 0.15s, color 0.15s;
+	transition: background var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))), color var(--nop-motion-fast, 150ms);
 }
 
 /* ── State modifiers ──────────────────────────────────────────────────────

@@ -163,7 +163,7 @@ button.nop-post-footer__pill,
 	font-size:       0.875rem;
 	font-weight:     500;
 	text-decoration: none;
-	transition:      color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+	transition:      color var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, background-color 150ms ease, border-color 150ms ease;
 }
 
 button.nop-like-button__btn,
@@ -234,7 +234,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 .nop-like-button__icon,
 .nop-post-footer__pill-icon {
 	flex-shrink: 0;
-	transition:  fill 150ms ease, transform 200ms ease;
+	transition:  fill var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, transform var(--nop-motion-fast, 150ms) ease;
 }
 
 /* ── Section-divider pattern (top rule above meta blocks) ─────────────────── */
@@ -466,7 +466,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	line-height:        1.4;
 	backdrop-filter:    blur(2px);
 	-webkit-backdrop-filter: blur(2px);
-	transition:         background-color 150ms ease, color 150ms ease;
+	transition:         background-color var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, color 150ms ease;
 }
 
 .nop-checkin-map:hover .nop-checkin-map__caption {
@@ -524,7 +524,7 @@ button.nop-post-footer__pill--like.is-animating .nop-post-footer__pill-icon {
 	line-height:        1.4;
 	backdrop-filter:    blur(2px);
 	-webkit-backdrop-filter: blur(2px);
-	transition:         background-color 150ms ease, color 150ms ease;
+	transition:         background-color var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, color 150ms ease;
 }
 
 .nop-exercise-map:hover .nop-exercise-map__caption {
@@ -851,7 +851,7 @@ a.nop-post-source__link:focus-visible {
 	display: block;
 }
 @media (prefers-reduced-motion: no-preference) {
-	.is-style-stories-rail .wp-block-post-featured-image { transition: transform 0.15s ease; }
+	.is-style-stories-rail .wp-block-post-featured-image { transition: transform var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease; }
 	.is-style-stories-rail li:hover .wp-block-post-featured-image { transform: scale(1.03); }
 }
 
@@ -879,7 +879,7 @@ a.nop-post-source__link:focus-visible {
 .nop-card {
 	position: relative;
 	overflow: hidden;
-	transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+	transition: transform var(--nop-motion-fast, 150ms) ease, box-shadow var(--nop-motion-fast, 150ms) ease, border-color var(--nop-motion-fast, 150ms) ease;
 }
 .nop-card::before {
 	content: "";
@@ -1099,7 +1099,7 @@ a.nop-post-source__link:focus-visible {
 @layer nop-appearance {
 	@media (prefers-reduced-motion: no-preference) {
 		.nop-sheet__frame .nop-post-footer--compact {
-			transition: opacity 0.18s ease;
+			transition: opacity var(--nop-motion-fast, 150ms) ease;
 		}
 	}
 }
