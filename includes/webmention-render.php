@@ -339,7 +339,20 @@ function nop_wm_time_ago( string $date_gmt ): string {
 	if ( $diff < WEEK_IN_SECONDS )                       { return sprintf( _x( '%dd', 'days abbreviation', 'nop-indieweb' ),     (int) floor( $diff / DAY_IN_SECONDS ) ); }
 	/* translators: %d: number of weeks */
 	if ( $diff < MONTH_IN_SECONDS )                      { return sprintf( _x( '%dw', 'weeks abbreviation', 'nop-indieweb' ),    (int) floor( $diff / WEEK_IN_SECONDS ) ); }
-	return (string) wp_date( 'j M Y', $ts );
+	return nop_wm_date_at( $ts, 'j M' );
+}
+
+/**
+ * An older date and its time, read as a phrase: "10 May at 11:00" this year,
+ * "10 May 2025 at 11:00" before (the site's own time format).
+ *
+ * @param int    $ts    Timestamp.
+ * @param string $month Day-and-month format ('j M' short, 'j F' long).
+ */
+function nop_wm_date_at( int $ts, string $month ): string {
+	$date = wp_date( 'Y' ) === wp_date( 'Y', $ts ) ? wp_date( $month, $ts ) : wp_date( $month . ' Y', $ts );
+	/* translators: 1: date, e.g. 10 May; 2: time, e.g. 11:00 */
+	return sprintf( __( '%1$s at %2$s', 'nop-indieweb' ), (string) $date, (string) wp_date( (string) get_option( 'time_format' ), $ts ) );
 }
 
 function nop_wm_time_label( string $date_gmt ): string {
@@ -357,7 +370,7 @@ function nop_wm_time_label( string $date_gmt ): string {
 	if ( $diff < WEEK_IN_SECONDS )    { return sprintf( _n( '%d day ago',    '%d days ago',    (int) floor( $diff / DAY_IN_SECONDS ),    'nop-indieweb' ),  (int) floor( $diff / DAY_IN_SECONDS ) ); }
 	/* translators: %d: number of weeks */
 	if ( $diff < MONTH_IN_SECONDS )   { return sprintf( _n( '%d week ago',   '%d weeks ago',   (int) floor( $diff / WEEK_IN_SECONDS ),   'nop-indieweb' ),  (int) floor( $diff / WEEK_IN_SECONDS ) ); }
-	return (string) wp_date( 'j F Y', $ts );
+	return nop_wm_date_at( $ts, 'j F' );
 }
 
 /*
@@ -381,8 +394,9 @@ add_action( 'pre_comment_on_post', static function (): void {
  * Returns empty string when comments are closed on this post.
  *
  * Custom form (not comment_form()) so the textarea appears before name/email —
- * engage first, ask for details after. Drops the Website and cookies-consent
- * fields: IndieWeb visitors send a webmention; casual visitors don't need them.
+ * engage first, ask for details after. Drops the Website field (IndieWeb
+ * visitors send a webmention) and the cookies checkbox: the name is always
+ * remembered, and "Not you?" forgets it.
  *
  * $show_heading — false in the empty state (invitation text already labels it).
  * $force        — true in the editor preview to render regardless of whether
@@ -417,6 +431,7 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 		wp_interactivity_state( 'nop-indieweb/responses', [
 			'endpoint'   => rest_url( 'nop-indieweb/v1/like' ),
 			'webmention' => rest_url( 'nop-indieweb/v1/webmention' ),
+			'cookie'     => [ 'hash' => COOKIEHASH, 'path' => COOKIEPATH, 'domain' => (string) COOKIE_DOMAIN ],
 			'i18n'       => [
 				'heading'    => $opts['heading'],
 				/* translators: %s: name of the person being replied to */
@@ -526,7 +541,7 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 					'<strong data-wp-text="context.me">' . esc_html( $known ) . '</strong>'
 				);
 				?>
-				<button type="button" class="nop-webmentions__change" data-wp-on--click="actions.edit"><?php esc_html_e( 'Change', 'nop-indieweb' ); ?></button>
+				<button type="button" class="nop-webmentions__change" data-wp-on--click="actions.forget"><?php esc_html_e( 'Not you?', 'nop-indieweb' ); ?></button>
 			</p>
 			<div class="nop-webmentions__form-who" data-wp-bind--hidden="!context.editing"<?php echo '' === $known ? '' : ' hidden'; ?>>
 				<p class="nop-webmentions__form-field nop-webmentions__form-field--author">
@@ -539,12 +554,8 @@ function nop_wm_render_comment_form( int $post_id, bool $show_heading = true, bo
 					<input id="email" name="email" type="email" value="<?php echo esc_attr( $commenter['comment_author_email'] ); ?>" data-wp-bind--value="context.email" autocomplete="email"<?php echo $email_req ? ' required' : ''; ?><?php echo $field( 'email' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed attribute markup ?> data-wp-on--input="actions.typed">
 					<?php echo $error( 'email' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed markup ?>
 				</p>
-				<?php if ( get_option( 'show_comments_cookies_opt_in' ) ) : ?>
-				<p class="nop-webmentions__form-field nop-webmentions__form-field--remember">
-					<input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"<?php checked( '' !== $known ); ?>>
-					<label for="wp-comment-cookies-consent"><?php esc_html_e( 'Remember my name on this browser', 'nop-indieweb' ); ?></label>
-				</p>
-				<?php endif; ?>
+				<?php // Remembered by default (core's comment cookies): the next reply starts as "Replying as …", and "Not you?" forgets it. ?>
+				<input type="hidden" name="wp-comment-cookies-consent" value="yes">
 			</div>
 			<?php endif; ?>
 			</div>

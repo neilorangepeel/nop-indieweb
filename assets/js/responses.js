@@ -6,19 +6,22 @@
  *   it (marked "Awaiting approval" when held). Missing or wrong fields are
  *   named beside the field (aria-invalid, aria-describedby) and focused;
  *   server errors (wp_die() pages) are read into the form's live region.
- * - The commenter's name is remembered (core's comment cookies, when they tick
- *   the box): a returning visitor sees "Replying as Name · Change" instead of
- *   the fields. Cmd/Ctrl+Enter posts; Escape leaves the field.
+ * - The commenter's name is remembered (core's comment cookies, always set):
+ *   a returning visitor sees "Replying as Name · Not you?" instead of the
+ *   fields, and "Not you?" forgets it. Cmd/Ctrl+Enter posts; Escape leaves the field.
  * - A mention from the visitor's own site posts source and target to the
  *   webmention endpoint.
  * - Threads a reply from any Reply link on the page by setting comment_parent
  *   and focusing the form, instead of moving the form as comment-reply.js did.
+ * - Opening the conversation scrolls the replies into view when the template
+ *   sets them apart from the form (in the scrolling words above it).
  * - While the tab is visible, checks every two minutes (for up to half an
  *   hour) whether new responses have arrived, and offers to show them.
  */
 import {
 	store,
 	getContext,
+	getElement,
 	withScope,
 	withSyncEvent,
 } from '@wordpress/interactivity';
@@ -96,8 +99,19 @@ const { state } = store( 'nop-indieweb/responses', {
 			context[ event.target.name ] = event.target.value;
 			context.errors[ event.target.name ] = '';
 		},
-		edit() {
-			getContext().editing = true;
+		// Forget the remembered commenter (core's cookies are not HttpOnly) and ask again.
+		forget() {
+			const context = getContext();
+			const { hash, path, domain } = state.cookie;
+			for ( const name of [ 'author', 'email', 'url' ] ) {
+				document.cookie = `comment_${ name }_${ hash }=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${ path }${
+					domain ? `; domain=${ domain }` : ''
+				}`;
+			}
+			context.me = '';
+			context.author = '';
+			context.email = '';
+			context.editing = true;
 			window.requestAnimationFrame( () =>
 				document.getElementById( 'author' )?.focus()
 			);
@@ -161,10 +175,10 @@ const { state } = store( 'nop-indieweb/responses', {
 					text: String( data.get( 'comment' ) || '' ),
 					held,
 				};
-				// Remembered from now on (core's cookie, when they asked): the fields fold away.
+				// Remembered from now on (core's cookie): the fields fold away.
 				if ( data.get( 'author' ) ) {
 					context.me = String( data.get( 'author' ) );
-					context.editing = ! data.get( 'wp-comment-cookies-consent' );
+					context.editing = false;
 				}
 				form.querySelector( 'textarea' ).blur();
 				context.status = held ? state.i18n.held : state.i18n.posted;
@@ -238,7 +252,29 @@ const { state } = store( 'nop-indieweb/responses', {
 				} catch {}
 			} );
 			const timer = setInterval( check, POLL_EVERY );
-			return () => clearInterval( timer );
+			// Opening the conversation (the details holding this form) brings the
+			// replies into view: a template can set them apart from the form, up
+			// in the scrolling words, with the form pinned below.
+			const { ref } = getElement();
+			const reveal = ( event ) => {
+				const details = ref.closest( 'details' );
+				if ( event.target !== details || ! details.open ) {
+					return;
+				}
+				const scope = details.closest( 'main' ) ?? document;
+				const replies = [ ...scope.querySelectorAll( '.nop-replies' ) ].find(
+					( list ) => ! details.contains( list )
+				);
+				replies?.scrollIntoView( {
+					block: 'nearest',
+					behavior: window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches ? 'instant' : 'smooth',
+				} );
+			};
+			document.addEventListener( 'toggle', reveal, true );
+			return () => {
+				clearInterval( timer );
+				document.removeEventListener( 'toggle', reveal, true );
+			};
 		},
 	},
 } );
