@@ -457,6 +457,15 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			}
 		} ),
 		filterKeys: withSyncEvent( ( event ) => {
+			// Backspace in the empty search removes the last chip, as in any token field.
+			if ( 'Backspace' === event.key && event.target.matches?.( 'input[type="search"]' ) && ! event.target.value ) {
+				const chips = event.target.closest( '.nop-wall-filters' )?.querySelectorAll( '.nop-wall-chip' );
+				if ( chips?.length ) {
+					event.preventDefault();
+					chips[ chips.length - 1 ].click();
+				}
+				return;
+			}
 			if ( 'Escape' === event.key && state.filtersOpen ) {
 				event.stopPropagation();
 				state.filtersOpen = false;
