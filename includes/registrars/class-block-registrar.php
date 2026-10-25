@@ -46,9 +46,25 @@ class Block_Registrar {
 	];
 
 	public function register(): void {
+		add_filter( 'block_type_metadata', [ $this, 'version_assets' ] );
 		add_action( 'init', [ $this, 'register_blocks' ] );
 		add_action( 'init', [ $this, 'register_icons' ] );
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
+	}
+
+	/**
+	 * A block's own scripts and styles carry the plugin's version, as its other scripts do, so a release reaches browsers
+	 * that cached the last one. block.json sets none, and without one they carried WordPress's version, which a release
+	 * of the plugin does not change.
+	 *
+	 * @param array<string, mixed> $metadata block.json, as read.
+	 * @return array<string, mixed>
+	 */
+	public function version_assets( array $metadata ): array {
+		if ( str_starts_with( (string) ( $metadata['name'] ?? '' ), 'nop-indieweb/' ) && empty( $metadata['version'] ) ) {
+			$metadata['version'] = NOP_INDIEWEB_VERSION;
+		}
+		return $metadata;
 	}
 
 	/** The `phosphor` icon collection, for the core Icon block (WordPress 7.2 is the plugin's minimum). */
