@@ -32,25 +32,57 @@ if ( ! $ids && $post_id ) {
 		$poster = wp_get_attachment_metadata( (int) get_post_thumbnail_id( $post_id ) );
 		$shape  = ! empty( $poster['width'] ) && ! empty( $poster['height'] ) ? $poster['width'] . ' / ' . $poster['height'] : '9 / 16';
 		$video  = get_block_wrapper_attributes( [
-			'class'               => 'nop-photos has-video',
-			'style'               => '--nop-photos-ratio:' . $shape,
-			'data-wp-interactive' => 'nop-indieweb/photos',
-			'data-wp-context'     => wp_json_encode( [ 'playing' => false, 'play' => __( 'Play video', 'nop-indieweb' ), 'pause' => __( 'Pause video', 'nop-indieweb' ) ] ),
-			'data-wp-class--is-playing' => 'context.playing',
+			'class'                                 => 'nop-photos has-video',
+			'style'                                 => '--nop-photos-ratio:' . $shape,
+			'data-wp-interactive'                   => 'nop-indieweb/photos',
+			// Its own key, so stepping to the next story (the router swapping the entry in place) makes a new player
+			// that starts, rather than reusing this one with another video in it.
+			'data-wp-key'                           => 'nop-photos-video-' . $post_id,
+			'data-wp-context'                       => wp_json_encode( [
+				'playing'  => false,
+				'muted'    => true,
+				'held'     => false,
+				'play'     => __( 'Play video', 'nop-indieweb' ),
+				'pause'    => __( 'Pause video', 'nop-indieweb' ),
+				'soundOn'  => __( 'Turn sound on', 'nop-indieweb' ),
+				'soundOff' => __( 'Turn sound off', 'nop-indieweb' ),
+				/* translators: 1: seconds played, 2: the video's length in seconds */
+				'position' => __( '%1$s of %2$s seconds', 'nop-indieweb' ),
+			] ),
+			'data-wp-class--is-playing'             => 'context.playing',
+			'data-wp-class--is-muted'               => 'context.muted',
+			'data-wp-class--is-held'                => 'context.held',
+			'data-wp-init'                          => 'callbacks.start',
+			'data-wp-on-document--keydown'          => 'actions.key',
+			'data-wp-on-document--visibilitychange' => 'actions.visibility',
 		] );
 		// The video plays in place without the browser's own bar (it would sit under whatever a theme lays over the
-		// picture): one large, labelled play/pause button does, and clicking the video does too.
+		// picture). It starts by itself, muted and looping, as a story does (with sound once the reader has turned it
+		// on: the choice lasts the visit); with reduced motion it waits for Play. Its own controls: a tap or click
+		// pauses and plays, a press held pauses for as long as it is held (the class is-held lets a theme clear the
+		// picture meanwhile), a line across the top shows the time and seeks, and a button turns the sound on and
+		// off. In the entry overlay the keys do too: K or Space, M, J and L.
 		$player = new WP_HTML_Tag_Processor( render_block( $parsed ) );
 		if ( $player->next_tag( [ 'tag_name' => 'video' ] ) ) {
 			$player->remove_attribute( 'controls' );
+			$player->remove_attribute( 'autoplay' );
 			$player->set_attribute( 'playsinline', true );
-			$player->set_attribute( 'data-wp-on--click', 'actions.toggle' );
+			$player->set_attribute( 'muted', true );
+			$player->set_attribute( 'loop', true );
+			$player->set_attribute( 'data-wp-on--click', 'actions.tap' );
+			$player->set_attribute( 'data-wp-on--pointerdown', 'actions.press' );
+			$player->set_attribute( 'data-wp-on--pointerup', 'actions.release' );
+			$player->set_attribute( 'data-wp-on--pointercancel', 'actions.release' );
+			$player->set_attribute( 'data-wp-on--pointerleave', 'actions.release' );
+			$player->set_attribute( 'data-wp-on--contextmenu', 'actions.noMenu' );
 			$player->set_attribute( 'data-wp-on--play', 'actions.played' );
 			$player->set_attribute( 'data-wp-on--pause', 'actions.paused' );
-			$player->set_attribute( 'data-wp-on--ended', 'actions.paused' );
+			$player->set_attribute( 'data-wp-on--volumechange', 'actions.heard' );
 		}
-		$button = '<button type="button" class="nop-photos__play" data-wp-on--click="actions.toggle" data-wp-bind--aria-label="state.playLabel" aria-label="' . esc_attr__( 'Play video', 'nop-indieweb' ) . '"></button>';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the video rendered by core, the button escaped above.
+		$button = '<button type="button" class="nop-photos__play" data-wp-on--click="actions.toggle" data-wp-bind--aria-label="state.playLabel" aria-label="' . esc_attr__( 'Play video', 'nop-indieweb' ) . '"></button>'
+			. '<button type="button" class="nop-photos__sound" data-wp-on--click="actions.sound" data-wp-bind--aria-label="state.soundLabel" aria-label="' . esc_attr__( 'Turn sound on', 'nop-indieweb' ) . '"></button>'
+			. '<input type="range" class="nop-photos__progress" min="0" max="1000" step="1" value="0" aria-label="' . esc_attr__( 'Seek', 'nop-indieweb' ) . '" data-wp-on--input="actions.seek">';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attributes from get_block_wrapper_attributes(), the video rendered by core, the controls escaped above.
 		echo '<div ' . $video . '>' . $player->get_updated_html() . $button . '</div>';
 		return;
 	}

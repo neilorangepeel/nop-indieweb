@@ -21,6 +21,9 @@
  * - The controls (`.nop-entry-nav`, with `.nop-entry__previous`, `__next`,
  *   `__close`) and the left/right keys step through the wall in place,
  *   replacing the address, so Close still returns to the wall.
+ * - A Details in the entry marked `data-nop-sheet` is a sheet over it (a
+ *   story's conversation): Escape closes it before the entry, and the
+ *   entry's video pauses while it is open.
  * - Opening morphs the post into the entry (a view transition named
  *   nop-entry), and closing morphs it back. The scrim has no animation of
  *   its own: it is in the open picture and gone from the closing one, so the
@@ -426,6 +429,24 @@ const markPills = () => {
 let opening = false;
 let closeQueued = false;
 
+// While a sheet is open over the entry (a Details marked data-nop-sheet) its video waits, and plays on when it closes.
+// The toggle event does not bubble, so it is heard on the way down.
+let sheetPaused = null;
+document.addEventListener(
+	'toggle',
+	( { target: sheet } ) => {
+		const video = sheet.matches?.( 'details[data-nop-sheet]' ) && sheet.closest( '.nop-entry' )?.querySelector( 'video' );
+		if ( video && sheet.open && ! video.paused ) {
+			sheetPaused = video;
+			video.pause();
+		} else if ( video && ! sheet.open && sheetPaused === video ) {
+			sheetPaused = null;
+			video.play().catch( () => {} );
+		}
+	},
+	true
+);
+
 const isTyping = ( event ) =>
 	event.target.closest?.( 'input, textarea, select, [contenteditable]' );
 
@@ -516,13 +537,16 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		} ),
 		// The filter bar opens when anything in it takes focus, and stays open while the wall swaps under it (a choice
 		// replaces the bar too, and focus is lost with the old one). It closes on Escape, on a click elsewhere, or when
-		// focus moves on to something outside it.
+		// focus moves on to something outside it (the keyboard's Tab). A click, not a press: closing on the press
+		// lifted the wall under the pointer, so the click landed on whatever moved under it and a tile took two clicks.
+		// One click on a tile opens it, and the drawer closes behind.
 		openFilters() {
 			state.filtersOpen = true;
 		},
 		leaveFilters( event ) {
 			const next = event.relatedTarget;
-			if ( next && ! next.closest( '.nop-wall-filters' ) ) {
+			// Focus taken by a press (the pointer is on what took it) is left to the click that follows.
+			if ( next && ! next.matches( ':hover' ) && ! next.closest( '.nop-wall-filters' ) ) {
 				state.filtersOpen = false;
 			}
 		},
@@ -829,6 +853,13 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			if ( 'Escape' === event.key ) {
+				// A sheet open over the entry (a Details marked data-nop-sheet: a story's conversation) closes first.
+				const sheet = document.querySelector( 'body > .nop-entry details[data-nop-sheet][open]' );
+				if ( sheet ) {
+					sheet.open = false;
+					sheet.querySelector( 'summary' )?.focus();
+					return;
+				}
 				actions.closeEntry();
 				return;
 			}

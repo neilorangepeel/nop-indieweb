@@ -268,6 +268,13 @@ final class Entry_Fields {
 				$f['rsvp_image'] = self::meta( $post_id, 'rsvp_event_image' );
 				break;
 
+			case 'story':
+				// A story posted elsewhere first (Bluesky, Instagram): its source, named as the reader knows it.
+				$f['source_url']   = self::meta( $post_id, 'source_url' );
+				$host              = $f['source_url'] ? (string) preg_replace( '/^www\./', '', (string) wp_parse_url( $f['source_url'], PHP_URL_HOST ) ) : '';
+				$f['source_label'] = [ 'bsky.app' => 'Bluesky', 'instagram.com' => 'Instagram' ][ $host ] ?? $host;
+				break;
+
 			case 'photo':
 				$f['camera_line']  = self::camera_line( $post_id );
 				$f['source_url']   = self::meta( $post_id, 'source_url' );
