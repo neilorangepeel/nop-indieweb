@@ -137,9 +137,12 @@ final class Wall_Filters {
 		$p->set_attribute( 'rel', 'nofollow' );
 		// How many entries this choice holds among the others: a kind, its own entries with the chosen topics; a topic, the
 		// wall with it added: a choice that would leave nothing is marked, so it can step back rather than lead to an empty wall.
+		// Counted against the chips only, not what is still being typed: the pills are the next choices, and they are
+		// what typing points at (a typed "Exercise" finds no text, but must not fade the Exercise pill it names).
+		$words = implode( ' ', self::words() );
 		$count = Kind_Taxonomy::TAXONOMY === $taxonomy
-			? self::count( [ $term->slug ], self::tags() )
-			: self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ) );
+			? self::count( [ $term->slug ], self::tags(), $words )
+			: self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ), $words );
 		if ( $on ) {
 			$p->set_attribute( 'aria-current', 'true' );
 			$p->add_class( 'is-current' );
@@ -153,14 +156,14 @@ final class Wall_Filters {
 	}
 
 	/**
-	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and the
-	 * current search. Kept for a day per combination and forgotten whenever a post is saved or deleted.
+	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and
+	 * search. Kept for a day per combination and forgotten whenever a post is saved or deleted.
 	 *
 	 * @param string[] $kinds Kind slugs.
 	 * @param string[] $tags  Tag slugs.
+	 * @param string   $terms Words searched for, or none.
 	 */
-	public static function count( array $kinds, array $tags, bool $searched = true ): int {
-		$terms = $searched ? self::terms() : '';
+	public static function count( array $kinds, array $tags, string $terms = '' ): int {
 		sort( $kinds );
 		sort( $tags );
 		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, $terms, (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
@@ -321,7 +324,7 @@ final class Wall_Filters {
 			}
 			global $wp_query;
 			/* translators: 1: entries shown, 2: all Logbook entries */
-			$text = sprintf( __( '%1$s of %2$s', 'nop-indieweb' ), number_format_i18n( (int) $wp_query->found_posts ), number_format_i18n( self::count( [], [], false ) ) );
+			$text = sprintf( __( '%1$s of %2$s', 'nop-indieweb' ), number_format_i18n( (int) $wp_query->found_posts ), number_format_i18n( self::count( [], [] ) ) );
 			$p->set_attribute( 'role', 'status' );
 			$p->set_attribute( 'aria-live', 'polite' );
 			return (string) preg_replace( '#(<p\b[^>]*>)\s*(</p>)#', '${1}' . esc_html( $text ) . '$2', $p->get_updated_html(), 1 );

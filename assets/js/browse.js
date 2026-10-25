@@ -48,6 +48,43 @@ document.addEventListener(
 	true
 );
 
+// Block style variations (a theme's Flush heading, say) are styled through classes WordPress numbers in render order
+// (is-style-flush--31), with their rules in one stylesheet per page. The router swaps that sheet for the next page's,
+// where the numbers belong to other blocks, but never swaps the header or footer: their classes would come to mean
+// nothing, or another block's style (the footer's Flush heading lost its capitals and weight, and its Fit text size, set
+// for them, ran past the window and scrolled the page sideways). So the rules for blocks outside the router's regions are
+// kept as the page loaded them, in a sheet the router never touches, under class names no page hands out.
+const keepVariations = () => {
+	const sheet = document.getElementById( 'block-style-variation-styles-inline-css' )?.sheet;
+	if ( ! sheet || ! document.adoptedStyleSheets ) {
+		return;
+	}
+	const kept = new Map();
+	document.querySelectorAll( '[class*="is-style-"]' ).forEach( ( element ) => {
+		if ( element.closest( `[${ REGION }]` ) ) {
+			return;
+		}
+		[ ...element.classList ].forEach( ( name ) => {
+			if ( /^is-style-\S+--\d+$/.test( name ) ) {
+				kept.set( name, name + '-kept' );
+				element.classList.replace( name, name + '-kept' );
+			}
+		} );
+	} );
+	if ( ! kept.size ) {
+		return;
+	}
+	const names = new RegExp( `\\.(${ [ ...kept.keys() ].join( '|' ) })(?![\\w-])`, 'g' );
+	const rules = [ ...sheet.cssRules ]
+		.map( ( rule ) => rule.cssText )
+		.filter( ( text ) => text.match( names ) )
+		.map( ( text ) => text.replace( names, ( match, name ) => '.' + kept.get( name ) ) );
+	const keep = new window.CSSStyleSheet();
+	keep.replaceSync( rules.join( '\n' ) );
+	document.adoptedStyleSheets = [ ...document.adoptedStyleSheets, keep ];
+};
+keepVariations();
+
 const idle = ( callback ) =>
 	window.requestIdleCallback
 		? window.requestIdleCallback( callback, { timeout: 400 } )
@@ -339,6 +376,51 @@ function neighbour( step ) {
 }
 
 let searchTimer = 0;
+// What is in the wall's search field as of the last keystroke, and where the caret was: a swap puts it back.
+let typing = { value: '', start: null, end: null, composing: false };
+
+// The bar's pills (Term Name links in its Terms Query lists) not already chosen, each with its name as shown, without its count.
+const pills = () =>
+	[ ...document.querySelectorAll( '.nop-wall-filters .wp-block-terms-query a[href]:not([aria-current])' ) ].map( ( link ) => ( {
+		link,
+		name: [ ...link.childNodes ]
+			.filter( ( node ) => ! node.classList?.contains( 'nop-wall-count' ) )
+			.map( ( node ) => node.textContent )
+			.join( '' )
+			.trim()
+			.toLowerCase(),
+	} ) );
+
+// The pills what is typed points at: a name, or any word in it, that begins with it ("exer" finds Exercise, "quar"
+// Cathedral Quarter).
+const matchingPills = ( text ) => {
+	const typed = text.trim().toLowerCase();
+	if ( ! typed ) {
+		return [];
+	}
+	return pills().filter( ( { name } ) => name.startsWith( typed ) || name.split( /\s+/ ).some( ( word ) => word.startsWith( typed ) ) );
+};
+
+// The pill Enter picks: the one whose name is what was typed, or the only one it points at; otherwise Enter keeps the words.
+const pickedPill = ( text ) => {
+	const matches = matchingPills( text );
+	const typed = text.trim().toLowerCase();
+	return ( matches.find( ( { name } ) => name === typed ) ?? ( 1 === matches.length ? matches[ 0 ] : null ) )?.link ?? null;
+};
+
+// Typing points at pills: the ones it matches stand out (is-match) and the rest step back (is-dim), so a kind or tag can
+// be seen, and picked with Enter, before the text search finds nothing for its name. Marked on each pill, not on the bar,
+// as the bar's own class is the store's to set. Again after every swap, which brings fresh pills.
+const markPills = () => {
+	const text = document.querySelector( '.nop-wall-filters input[type="search"]' )?.value ?? '';
+	const matches = new Set( matchingPills( text ).map( ( { link } ) => link ) );
+	document.querySelectorAll( '.nop-wall-filters .wp-block-terms-query a[href]' ).forEach( ( link ) => {
+		link.classList.toggle( 'is-match', matches.has( link ) );
+		link.classList.toggle( 'is-dim', matches.size > 0 && ! matches.has( link ) );
+	} );
+	// On a phone a list scrolls sideways: bring the first match into its row (block: nearest leaves the page where it is).
+	[ ...matches ][ 0 ]?.closest( 'li' )?.scrollIntoView( { block: 'nearest', inline: 'nearest', behavior: 'instant' } );
+};
 
 // An open (or step) in flight, and a Close asked for while it was: the entry is shown first, then closed, never half of each.
 let opening = false;
@@ -424,6 +506,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			// A choice in the open bar keeps it in use: focus goes back to its search. A chip removed with the bar closed
 			// leaves it closed (focusing the search would open it).
 			if ( inBar ) {
+				markPills();
 				if ( keepOpen ) {
 					region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
 				}
@@ -478,7 +561,31 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			const form = event.target.closest( 'form' );
 			if ( 'submit' === event.type ) {
 				event.preventDefault();
+				// A search still waiting to run would land after this one, with the bar as it was.
+				window.clearTimeout( searchTimer );
+				// Enter on a kind's or tag's name picks that pill, as a click would, instead of searching the text for it. The
+				// pill's address carries the typed search (the wall was searched as you typed), which the pill replaces.
+				const field = form.querySelector( 'input[type="search"]' );
+				const pill = pickedPill( field.value );
+				// Either way the field empties: Enter turns what was typed into a chip.
+				typing = { value: '', start: 0, end: 0, composing: false };
+				if ( pill ) {
+					const to = new URL( pill.href );
+					to.searchParams.delete( 'q' );
+					pill.setAttribute( 'href', to.toString().replace( /%2C/g, ',' ).replace( /%2B/g, '+' ) );
+					field.value = '';
+					markPills();
+					pill.click();
+					return;
+				}
 			} else {
+				typing = {
+					value: event.target.value,
+					start: event.target.selectionStart,
+					end: event.target.selectionEnd,
+					composing: !! event.isComposing,
+				};
+				markPills();
 				window.clearTimeout( searchTimer );
 				yield new Promise( ( resolve ) => {
 					searchTimer = window.setTimeout( resolve, 350 );
@@ -506,7 +613,28 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			const { actions: routerActions } = yield router();
+			const typed = form.querySelector( 'input[type="search"]' );
+			const wasFocused = document.activeElement === typed;
 			yield routerActions.navigate( href, { replace: 'submit' !== event.type } );
+			markPills();
+			// The swap renders the field as the server saw it when the request left, so letters typed while the page was on
+			// its way would be lost, and the word misspelled under your fingers. It can also replace or move the field (Enter
+			// adds a chip before it), which loses focus. The field gets back what is really typed, and the caret where it was,
+			// before anything is painted. Not mid-composition (an accented letter, a CJK word), which only the keyboard may change.
+			const field = document.querySelector( '.nop-wall-filters input[type="search"]' );
+			if ( ! field ) {
+				return;
+			}
+			const restore = field.value !== typing.value && ! typing.composing;
+			if ( restore ) {
+				field.value = typing.value;
+			}
+			if ( wasFocused && document.activeElement !== field ) {
+				field.focus( { preventScroll: true } );
+			}
+			if ( wasFocused && ( restore || field !== typed ) ) {
+				field.setSelectionRange( typing.start ?? field.value.length, typing.end ?? field.value.length );
+			}
 		} ),
 		*prefetch( event ) {
 			const link = event.target.closest?.( 'a[href]' );
