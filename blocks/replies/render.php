@@ -84,21 +84,24 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' 
 					<?php if ( $entry['handle'] ) : ?>
 					<span class="nop-webmentions__reply-handle"><?php echo esc_html( $entry['handle'] ); ?></span>
 					<?php endif; ?>
-					<?php if ( $platform_tag ) : ?>
-					<?php echo $platform_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
-					<?php endif; ?>
+				</p>
+				<?php if ( $entry['content'] ) : ?>
+				<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $entry['content'] ); ?></div>
+				<?php endif; ?>
+				<?php // When, where and Reply follow the words, so a theme can run the name into them (as a comment is read). ?>
+				<p class="nop-webmentions__reply-foot">
 					<?php if ( $time_display ) : ?>
 					<a href="<?php echo esc_url( $reply_url ); ?>" class="nop-webmentions__reply-time u-url" target="_blank" rel="noopener noreferrer">
 						<time class="dt-published" datetime="<?php echo esc_attr( $time_iso ); ?>" aria-label="<?php echo esc_attr( $time_label ); ?>"><?php echo esc_html( $time_display ); ?></time>
 					</a>
 					<?php endif; ?>
+					<?php if ( $platform_tag ) : ?>
+					<?php echo $platform_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
+					<?php endif; ?>
 					<?php if ( $comments_open ) : ?>
 					<?php echo nop_wm_reply_link( $entry['id'], $post_id, "nop-wm-{$entry['id']}", $author_name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 					<?php endif; ?>
 				</p>
-				<?php if ( $entry['content'] ) : ?>
-				<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $entry['content'] ); ?></div>
-				<?php endif; ?>
 
 				<?php if ( $children ) : ?>
 				<ul class="nop-webmentions__comment-replies">
@@ -114,6 +117,11 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' 
 						<div class="nop-webmentions__comment-reply-body">
 							<p class="nop-webmentions__reply-meta">
 								<strong class="p-author p-name"><?php echo esc_html( $child->comment_author ); ?></strong>
+							</p>
+							<?php if ( $child->comment_content ) : ?>
+							<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $child->comment_content ); ?></div>
+							<?php endif; ?>
+							<p class="nop-webmentions__reply-foot">
 								<?php if ( $child_time ) : ?>
 								<span class="nop-webmentions__reply-time">
 									<time class="dt-published" datetime="<?php echo esc_attr( $child_time_iso ); ?>" aria-label="<?php echo esc_attr( $child_label ); ?>"><?php echo esc_html( $child_time ); ?></time>
@@ -123,9 +131,6 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' 
 								<?php echo nop_wm_reply_link( $child->comment_ID, $post_id, "nop-wm-{$child->comment_ID}", $child->comment_author ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 								<?php endif; ?>
 							</p>
-							<?php if ( $child->comment_content ) : ?>
-							<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $child->comment_content ); ?></div>
-							<?php endif; ?>
 						</div>
 					</li>
 					<?php endforeach; ?>

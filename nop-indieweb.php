@@ -28,6 +28,9 @@ define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 // Load all files explicitly — no autoloader magic.
 require_once NOP_INDIEWEB_DIR . 'includes/utils/functions.php';
 require_once NOP_INDIEWEB_DIR . 'includes/utils/block-content.php';
+// The conversation's markup and its comment handling (email optional): loaded with the plugin, not only when a block
+// renders, as a comment is posted to wp-comments-post.php, where no block does.
+require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/route.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/class-exercise-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/travel/arc-map.php';

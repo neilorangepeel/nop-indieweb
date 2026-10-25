@@ -52,7 +52,8 @@
 	min-width: 0;
 }
 
-.nop-webmentions__reply-meta {
+.nop-webmentions__reply-meta,
+.nop-webmentions__reply-foot {
 	display:     flex;
 	flex-wrap:   wrap;
 	align-items: center;
@@ -182,6 +183,12 @@
 
 	.nop-webmentions__reply-meta {
 		margin:      0 0 0.5rem;
+		line-height: 1.4;
+	}
+
+	/* When, where and Reply, after the words. */
+	.nop-webmentions__reply-foot {
+		margin:      0.35rem 0 0;
 		line-height: 1.4;
 	}
 

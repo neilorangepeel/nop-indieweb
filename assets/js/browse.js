@@ -447,6 +447,12 @@ document.addEventListener(
 	true
 );
 
+// Where the last press began, for closeOnScrim. Heard on the way down, before anything under it can change.
+let pressedAt = null;
+document.addEventListener( 'pointerdown', ( event ) => {
+	pressedAt = event.target;
+}, true );
+
 const isTyping = ( event ) =>
 	event.target.closest?.( 'input, textarea, select, [contenteditable]' );
 
@@ -834,10 +840,13 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			// The router then shows the wall; holdFocus clears the closing state once the entry is gone.
 			window.history.back();
 		},
-		// The dimmed wall around the panel: it is inert, so a click there lands outside the entry.
+		// The dimmed wall around the panel: it is inert, so a click there lands outside the entry. Only a click that
+		// began there too: a press inside the entry that ends outside it (a selection dragged past its edge, or the
+		// panel shrinking under the pointer) is not a click on the wall.
 		closeOnScrim( event ) {
 			// The previous and next arrows sit outside the panel but are part of the entry, and so is core's lightbox (attached to <body>).
-			if ( state.entryOpen && ! event.target.closest?.( '.nop-entry, .nop-entry-nav, .wp-lightbox-overlay' ) ) {
+			const inEntry = ( node ) => node?.closest?.( '.nop-entry, .nop-entry-nav, .wp-lightbox-overlay' );
+			if ( state.entryOpen && ! inEntry( event.target ) && ! inEntry( pressedAt ) ) {
 				actions.closeEntry();
 			}
 		},

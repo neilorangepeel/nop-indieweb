@@ -6,9 +6,11 @@
  *   it (marked "Awaiting approval" when held). Missing or wrong fields are
  *   named beside the field (aria-invalid, aria-describedby) and focused;
  *   server errors (wp_die() pages) are read into the form's live region.
- * - The commenter's name is remembered (core's comment cookies, always set):
- *   a returning visitor sees "Replying as Name · Not you?" instead of the
- *   fields, and "Not you?" forgets it. Cmd/Ctrl+Enter posts; Escape leaves the field.
+ * - The name is asked for when it is needed: a first reply sent without one
+ *   opens "Who's replying?" (name, email) and waits; sending again posts it.
+ *   The name is then remembered (core's comment cookies, always set): a
+ *   returning visitor sees "Replying as Name · Not you?", and "Not you?"
+ *   forgets it. Cmd/Ctrl+Enter posts; Escape leaves the field.
  * - A mention from the visitor's own site posts source and target to the
  *   webmention endpoint.
  * - Threads a reply from any Reply link on the page by setting comment_parent
@@ -57,6 +59,11 @@ const { state } = store( 'nop-indieweb/responses', {
 		},
 	},
 	actions: {
+		// Once the form is used it stays open in full (is-engaged): folding back as focus left it moved everything
+		// under a press on its other ways to reply, so the click landed somewhere else.
+		engage() {
+			getContext().engaged = true;
+		},
 		replyTo: withSyncEvent( ( event ) => {
 			const link = event.target.closest?.(
 				'.comment-reply-link[data-commentid]'
@@ -143,6 +150,13 @@ const { state } = store( 'nop-indieweb/responses', {
 			};
 			Object.assign( context.errors, check );
 			const first = Object.keys( check ).find( ( name ) => check[ name ] );
+			// The first send without a name asks who is replying (the name step opens, not an error); the reply waits.
+			if ( 'author' === first && ! context.editing ) {
+				context.editing = true;
+				context.errors.author = '';
+				window.requestAnimationFrame( () => form.author?.focus() );
+				return;
+			}
 			if ( first ) {
 				if ( 'comment' !== first ) {
 					context.editing = true;
@@ -159,7 +173,9 @@ const { state } = store( 'nop-indieweb/responses', {
 					body: data,
 					credentials: 'same-origin',
 				} );
-				if ( ! response.ok ) {
+				// Core answers a refused comment with its error page, sometimes as a 200: a reply that was taken redirects to
+				// the post, so still being at wp-comments-post.php means it was not.
+				if ( ! response.ok || response.url.includes( 'wp-comments-post.php' ) ) {
 					const page = new window.DOMParser().parseFromString(
 						yield response.text(),
 						'text/html'
@@ -169,7 +185,7 @@ const { state } = store( 'nop-indieweb/responses', {
 						?.textContent.trim();
 					throw new Error( message || state.i18n.failed );
 				}
-				const held = response.url.includes( 'unapproved=' );
+				const held = /[?&](unapproved|held)=/.test( response.url );
 				context.sent = {
 					author: String( data.get( 'author' ) || '' ) || context.me,
 					text: String( data.get( 'comment' ) || '' ),
