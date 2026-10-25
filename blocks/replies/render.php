@@ -33,13 +33,13 @@ $preview = nop_wm_is_editor_preview();
 $post_id = nop_wm_resolve_post_id( $block );
 $data    = nop_wm_get_data( $post_id );
 
-$replies          = $data['replies'];
-$comment_children = $data['comment_children'];
+$replies = $data['replies'];
+$threads = $data['children'];
 
 if ( $preview && ! $replies ) {
-	$sample           = nop_wm_sample_data();
-	$replies          = $sample['replies'];
-	$comment_children = $sample['comment_children'];
+	$sample  = nop_wm_sample_data();
+	$replies = $sample['replies'];
+	$threads = $sample['children'];
 }
 
 if ( ! $replies ) {
@@ -64,7 +64,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' 
 			$time_display = $entry['date'] ? nop_wm_time_ago( $entry['date'] ) : '';
 			$time_label   = $entry['date'] ? nop_wm_time_label( $entry['date'] ) : '';
 			$time_iso     = $entry['date'] ? gmdate( 'c', (int) strtotime( $entry['date'] ) ) : '';
-			$children     = $comment_children[ (int) $entry['id'] ] ?? [];
+			$children     = $threads[ (int) $entry['id'] ] ?? [];
 			$platform_tag = nop_wm_platform_tag( (string) ( $entry['platform'] ?? '' ), ! empty( $entry['via_bridgy'] ) );
 			$author_name  = $entry['author'];
 		?>
@@ -106,29 +106,44 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-replies', 'id' 
 				<?php if ( $children ) : ?>
 				<ul class="nop-webmentions__comment-replies">
 					<?php foreach ( $children as $child ) :
-						$child_time     = nop_wm_time_ago( $child->comment_date_gmt );
-						$child_label    = nop_wm_time_label( $child->comment_date_gmt );
-						$child_time_iso = gmdate( 'c', (int) strtotime( $child->comment_date_gmt ) );
+						$child_url      = esc_url( $child['author_url'] );
+						$child_link     = esc_url( $child['source'] ?: $child['author_url'] );
+						$child_time     = $child['date'] ? nop_wm_time_ago( $child['date'] ) : '';
+						$child_label    = $child['date'] ? nop_wm_time_label( $child['date'] ) : '';
+						$child_time_iso = $child['date'] ? gmdate( 'c', (int) strtotime( $child['date'] ) ) : '';
+						$child_tag      = nop_wm_platform_tag( (string) ( $child['platform'] ?? '' ), ! empty( $child['via_bridgy'] ) );
 					?>
-					<li class="nop-webmentions__comment-reply h-cite" id="nop-wm-<?php echo esc_attr( (string) $child->comment_ID ); ?>">
+					<li class="nop-webmentions__comment-reply h-cite" id="nop-wm-<?php echo esc_attr( (string) $child['id'] ); ?>">
 						<div class="nop-webmentions__comment-reply-avatar" aria-hidden="true">
-							<?php echo get_avatar( $child, 28, '', $child->comment_author, [ 'class' => 'nop-webmentions__avatar' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_avatar returns safe markup ?>
+							<?php echo nop_wm_avatar_wrap( $child, 28 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 						</div>
 						<div class="nop-webmentions__comment-reply-body">
 							<p class="nop-webmentions__reply-meta">
-								<strong class="p-author p-name"><?php echo esc_html( $child->comment_author ); ?></strong>
+								<?php if ( $child_url ) : ?>
+								<a class="p-author h-card u-url" href="<?php echo esc_url( $child_url ); ?>" target="_blank" rel="noopener noreferrer">
+									<strong class="p-name"><?php echo esc_html( $child['author'] ); ?></strong>
+								</a>
+								<?php else : ?>
+								<strong class="p-author p-name"><?php echo esc_html( $child['author'] ); ?></strong>
+								<?php endif; ?>
+								<?php if ( $child['handle'] ) : ?>
+								<span class="nop-webmentions__reply-handle"><?php echo esc_html( $child['handle'] ); ?></span>
+								<?php endif; ?>
 							</p>
-							<?php if ( $child->comment_content ) : ?>
-							<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $child->comment_content ); ?></div>
+							<?php if ( $child['content'] ) : ?>
+							<div class="nop-webmentions__reply-content e-content"><?php echo wp_kses_post( $child['content'] ); ?></div>
 							<?php endif; ?>
 							<p class="nop-webmentions__reply-foot">
 								<?php if ( $child_time ) : ?>
-								<span class="nop-webmentions__reply-time">
+								<a href="<?php echo esc_url( $child_link ); ?>" class="nop-webmentions__reply-time u-url" target="_blank" rel="noopener noreferrer">
 									<time class="dt-published" datetime="<?php echo esc_attr( $child_time_iso ); ?>" aria-label="<?php echo esc_attr( $child_label ); ?>"><?php echo esc_html( $child_time ); ?></time>
-								</span>
+								</a>
+								<?php endif; ?>
+								<?php if ( $child_tag ) : ?>
+								<?php echo $child_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 								<?php endif; ?>
 								<?php if ( $comments_open ) : ?>
-								<?php echo nop_wm_reply_link( $child->comment_ID, $post_id, "nop-wm-{$child->comment_ID}", $child->comment_author ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
+								<?php echo nop_wm_reply_link( $child['id'], $post_id, "nop-wm-{$child['id']}", $child['author'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes its inputs ?>
 								<?php endif; ?>
 							</p>
 						</div>

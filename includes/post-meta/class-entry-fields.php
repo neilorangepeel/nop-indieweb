@@ -140,15 +140,14 @@ final class Entry_Fields {
 		return $amount . ' ' . $name;
 	}
 
-	/** "2 replies": webmention replies and comments, as the Replies block lists them; '' with none. */
-	/** Replies as the Replies block lists them: webmention replies and comments together. */
+	/** Replies as the Replies block lists them: webmention replies and comments together, threads included. */
 	private static function reply_count( int $post_id ): int {
 		if ( ! function_exists( 'nop_wm_get_data' ) ) {
 			require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 		}
 		$data  = nop_wm_get_data( $post_id );
 		$count = count( $data['replies'] );
-		foreach ( $data['comment_children'] as $children ) {
+		foreach ( $data['children'] as $children ) {
 			$count += count( (array) $children );
 		}
 		return $count;

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * share one fetch: the DB queries run once no matter how many of the three
  * blocks appear on the page.
  *
- * @return array{likes:array,reposts:array,replies:array,comment_children:array}
+ * @return array{likes:array,reposts:array,replies:array,children:array}
  */
 function nop_wm_get_data( int $post_id ): array {
 	static $cache = [];
@@ -33,7 +33,7 @@ function nop_wm_get_data( int $post_id ): array {
 	}
 
 	if ( ! $post_id ) {
-		return $cache[ $post_id ] = [ 'likes' => [], 'reposts' => [], 'replies' => [], 'comment_children' => [] ];
+		return $cache[ $post_id ] = [ 'likes' => [], 'reposts' => [], 'replies' => [], 'children' => [] ];
 	}
 
 	// ── Fetch all webmentions ─────────────────────────────────────────────────
@@ -65,21 +65,21 @@ function nop_wm_get_data( int $post_id ): array {
 	] );
 
 	// ── Sort webmentions into buckets ─────────────────────────────────────────
-	$likes          = [];
-	$reposts        = [];
-	$replies        = [];
-	$webmention_ids = [];
+	// Likes and reposts stand apart; replies (webmention replies and comments) gather by id, to be threaded below.
+	$likes   = [];
+	$reposts = [];
+	$entries = [];
 
 	foreach ( $webmentions as $wm ) {
 		// WP_Comment::$comment_ID is a string; get_comment_meta() wants an int.
 		// Cast once here rather than at each of the six call sites below.
-		$comment_id       = (int) $wm->comment_ID;
-		$type             = get_comment_meta( $comment_id, 'webmention_type', true );
-		$webmention_ids[] = $comment_id;
-		$source           = get_comment_meta( $comment_id, 'webmention_source', true );
+		$comment_id = (int) $wm->comment_ID;
+		$type       = get_comment_meta( $comment_id, 'webmention_type', true );
+		$source     = get_comment_meta( $comment_id, 'webmention_source', true );
 
 		$entry = [
 			'id'         => $comment_id,
+			'parent'     => (int) $wm->comment_parent,
 			'author'     => $wm->comment_author,
 			'author_url' => $wm->comment_author_url,
 			'photo'      => get_comment_meta( $comment_id, 'webmention_author_photo',  true ),
@@ -96,25 +96,14 @@ function nop_wm_get_data( int $post_id ): array {
 		} elseif ( 'repost' === $type ) {
 			$reposts[] = $entry;
 		} else {
-			$replies[] = $entry;
+			$entries[ $comment_id ] = $entry;
 		}
 	}
 
-	// ── Distribute regular comments ───────────────────────────────────────────
-	// Children of a webmention → nested below that webmention inline.
-	// Everything else (top-level or comment→comment) → into the replies list.
-	$comment_children = [];
-
 	foreach ( $wp_comments as $c ) {
-		$parent = (int) $c->comment_parent;
-
-		if ( $parent > 0 && in_array( $parent, $webmention_ids, true ) ) {
-			$comment_children[ $parent ][] = $c;
-			continue;
-		}
-
-		$replies[] = [
-			'id'         => $c->comment_ID,
+		$entries[ (int) $c->comment_ID ] = [
+			'id'         => (int) $c->comment_ID,
+			'parent'     => (int) $c->comment_parent,
 			'author'     => $c->comment_author,
 			'author_url' => $c->comment_author_url,
 			'photo'      => get_avatar_url( $c, [ 'size' => 80 ] ),
@@ -126,13 +115,37 @@ function nop_wm_get_data( int $post_id ): array {
 		];
 	}
 
-	usort( $replies, static fn( array $a, array $b ) => strcmp( $a['date'], $b['date'] ) );
+	// ── Thread the replies ────────────────────────────────────────────────────
+	// A reply to a reply nests under the conversation it belongs to, one level deep (as a comment thread is read):
+	// under the reply that started it, however far down the thread it answers, whether it came as a comment, a
+	// webmention or from a silo's thread. A reply whose parent is not shown (unapproved, deleted, a like) stands on its
+	// own in the replies list.
+	uasort( $entries, static fn( array $a, array $b ) => strcmp( $a['date'], $b['date'] ) );
+
+	$thread_of = static function ( int $id ) use ( $entries ): int {
+		// Up to the reply that started the thread (bounded, should the data ever loop).
+		for ( $steps = 0; isset( $entries[ $entries[ $id ]['parent'] ] ) && $steps < 50; $steps++ ) {
+			$id = $entries[ $id ]['parent'];
+		}
+		return $id;
+	};
+
+	$replies  = [];
+	$children = [];
+	foreach ( $entries as $id => $entry ) {
+		$thread = $thread_of( $id );
+		if ( $thread === $id ) {
+			$replies[] = $entry;
+		} else {
+			$children[ $thread ][] = $entry;
+		}
+	}
 
 	return $cache[ $post_id ] = [
-		'likes'            => $likes,
-		'reposts'          => $reposts,
-		'replies'          => $replies,
-		'comment_children' => $comment_children,
+		'likes'    => $likes,
+		'reposts'  => $reposts,
+		'replies'  => $replies,
+		'children' => $children,
 	];
 }
 
@@ -683,6 +696,6 @@ function nop_wm_sample_data(): array {
 			$mk( 'Jeremy Keith', '@adactio@mastodon.social', 'mastodon', 'Love seeing the IndieWeb principles put into practice like this. Your own site, your own data.', '2026-05-10 11:00:00' ),
 			$mk( 'Sophie Koonin', '@localghost.dev', 'bluesky', 'This is exactly the kind of thing I want for my own site — brilliant work Neil.', '2026-05-10 11:30:00' ),
 		],
-		'comment_children' => [],
+		'children' => [],
 	];
 }

@@ -772,6 +772,52 @@ function nop_indieweb_wm_find_by_silo_key( int $post_id, string $silo_key ): int
 }
 
 /**
+ * The reply, on $post_id, that a webmention or a polled reply answers, or 0 (it answers the post itself, or nothing
+ * held here). $urls are what it answers, in order of trust: a comment's own address (…#comment-123, ?replytocom=123)
+ * names it directly; any other address is matched against the replies stored here, by the address they came from
+ * (webmention_source) or their original on their platform (webmention_original_url). So a reply from someone's site
+ * to one of your comments, or a Mastodon or Bluesky reply to another reply, threads under it.
+ *
+ * @param list<string> $urls
+ */
+function nop_indieweb_wm_find_parent( int $post_id, array $urls ): int {
+	if ( 0 === $post_id ) {
+		return 0;
+	}
+	foreach ( $urls as $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url ) {
+			continue;
+		}
+		if ( preg_match( '/(?:#comment-|[?&]replytocom=)(\d+)/', $url, $m ) ) {
+			$comment = get_comment( (int) $m[1] );
+			if ( $comment && (int) $comment->comment_post_ID === $post_id ) {
+				return (int) $comment->comment_ID;
+			}
+			continue;
+		}
+		$ids = get_comments( [
+			'post_id'    => $post_id,
+			// Named, so the filter that keeps webmentions out of default comment queries leaves this one alone.
+			'type__in'   => [ 'webmention', 'comment' ],
+			'status'     => 'all',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- once per incoming reply, not a hot path
+			'meta_query' => [
+				'relation' => 'OR',
+				[ 'key' => 'webmention_source', 'value' => $url ],
+				[ 'key' => 'webmention_original_url', 'value' => $url ],
+			],
+			'number'     => 1,
+			'fields'     => 'ids',
+		] );
+		if ( isset( $ids[0] ) ) {
+			return (int) $ids[0];
+		}
+	}
+	return 0;
+}
+
+/**
  * One-time migration: flip the existing settings option to autoload=false.
  * Idempotent and cheap — runs on plugins_loaded behind a version flag.
  */
