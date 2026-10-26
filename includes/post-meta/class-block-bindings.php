@@ -14,7 +14,7 @@ use WP_Block;
  * Registers the nop-indieweb/post-meta Block Bindings source and injects
  * microformat classes onto bound core blocks at render time.
  *
- * Requires WordPress 6.5+ (Block Bindings API).
+ * Requires WordPress 7.2 (the plugin's minimum: core/icon accepts an `icon` binding from there).
  *
  * Usage — two equivalent forms:
  *
@@ -29,7 +29,7 @@ use WP_Block;
  *   Derived field (computed, not stored in meta):
  *     "args": { "field": "full_address" }            → "46 Great Victoria Street, Belfast, United Kingdom"
  *     "args": { "field": "locality_country" }        → "Belfast, United Kingdom"
- *     "args": { "field": "venue_coordinates" }       → "54.597 ° N · 5.935 ° W"
+ *     "args": { "field": "venue_coordinates" }       → "54.597° N · 5.935° W"
  *     "args": { "field": "venue_url_host_label" }    → "View on foursquare.com"
  *     "args": { "field": "checkin_url_host_label" }  → "View on swarmapp.com"
  *
@@ -67,6 +67,11 @@ class Block_Bindings {
 	private const DERIVED_MF2_CLASSES = [
 		// Kind derived fields
 		'kind_label'            => '',
+		// Icon names for a core/icon block's `icon` binding (WordPress 7.2+), and the weather temperature for a paragraph.
+		'kind_icon'             => '',
+		'activity_icon'         => '',
+		'weather_icon'          => '',
+		'weather_temp'          => '',
 		'full_address'          => 'p-adr',
 		'locality_country'      => '',
 		'venue_coordinates'     => '',
@@ -122,10 +127,6 @@ class Block_Bindings {
 	}
 
 	public function register_source(): void {
-		if ( ! function_exists( 'register_block_bindings_source' ) ) {
-			return;
-		}
-
 		register_block_bindings_source( 'nop-indieweb/post-meta', [
 			'label'              => 'IndieWeb Post Meta',
 			'get_value_callback' => [ $this, 'get_value' ],
@@ -149,10 +150,10 @@ class Block_Bindings {
 		'locality_country'                => 'Belfast, United Kingdom',
 		'full_address'                    => '46 Great Victoria Street, Belfast, United Kingdom',
 		// Derived non-venue fields
-		'venue_coordinates'               => '54.597 ° N · 5.935 ° W',
+		'venue_coordinates'               => '54.597° N · 5.935° W',
 		'venue_url_host_label'            => 'View on foursquare.com',
 		'checkin_url_host_label'          => 'View on swarmapp.com',
-		'venue_visit_number'              => '1st Visit',
+		'venue_visit_number'              => '1st visit',
 		'flight_route'                    => 'Belfast International Airport → Newcastle Airport',
 		'flight_distance'                 => '294 km',
 		// Full-key forms
@@ -178,6 +179,10 @@ class Block_Bindings {
 		'exercise_type_archive_link'      => '<a href="#">Run</a>',
 		'exercise_personal_best'          => 'Longest run',
 		'kind_label'                      => '<a href="#">Liked</a>',
+		'kind_icon'                       => 'phosphor/kind-note',
+		'activity_icon'                   => 'phosphor/exercise-run',
+		'weather_icon'                    => 'phosphor/weather-cloud',
+		'weather_temp'                    => '12°C',
 		// Entry fields (Entry_Fields) previews
 		'subtitle'                        => 'Ormeau Rd',
 		'detail'                          => '258th visit',
@@ -204,6 +209,7 @@ class Block_Bindings {
 		'rsvp_time'                       => '10:00',
 		'rsvp_where'                      => 'Brighton',
 		'quote_text'                      => '“Have nothing in your house that you do not know to be useful.”',
+		'quote_body'                      => 'Have nothing in your house that you do not know to be useful.',
 		'quote_author'                    => 'William Morris',
 		'reply_count_label'               => '2 replies',
 	];
@@ -214,7 +220,7 @@ class Block_Bindings {
 
 		// Derived fields handled by name before the venue_ shorthand kicks in.
 		if ( $post_id && $field ) {
-			$derived = $this->get_derived_value( $field, (int) $post_id );
+			$derived = $this->get_derived_value( $field, (int) $post_id, $source_args );
 			if ( null !== $derived ) {
 				return $derived;
 			}
@@ -268,7 +274,7 @@ class Block_Bindings {
 	 * isn't a derived one (in which case the caller falls through to normal
 	 * meta lookup).
 	 */
-	private function get_derived_value( string $field, int $post_id ): ?string {
+	private function get_derived_value( string $field, int $post_id, array $args = [] ): ?string {
 		// Exercise stat formatting lives in one shared helper. Return '' (not null)
 		// for absent stats so the bound paragraph renders truly empty — letting the
 		// template hide it with CSS :has(:empty) rather than keeping a placeholder.
@@ -283,6 +289,48 @@ class Block_Bindings {
 		}
 
 		switch ( $field ) {
+			// The icon for the post's kind: `phosphor/kind-<slug>`. Exercise is passed on (its own icon says the activity: a run, a swim),
+			// and a kind with no mark gives '' so the Icon block renders nothing.
+			case 'kind_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' ); // The icon's size and alignment live there; core/icon is not a plugin block, so rendering it would not load it.
+				$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
+				$slug  = ( $terms && ! is_wp_error( $terms ) ) ? (string) reset( $terms )->slug : '';
+				return ( '' !== $slug && 'exercise' !== $slug && '' !== \NOP\IndieWeb\Kind\Kind_Icons::path( $slug ) ) ? 'phosphor/kind-' . $slug : '';
+			}
+
+			// The activity's icon: `phosphor/exercise-<type>`, from the exercise type term (or the stored type on a post not yet termed).
+			case 'activity_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' );
+				$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Exercise_Type_Taxonomy::TAXONOMY );
+				$type  = ( $terms && ! is_wp_error( $terms ) ) ? (string) reset( $terms )->slug : sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_exercise_type', true ) );
+				return ( '' !== $type && is_readable( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/exercise-' . $type . '.svg' ) ) ? 'phosphor/exercise-' . $type : '';
+			}
+
+			// The conditions' icon: Pirate Weather's vocabulary onto the Phosphor marks. Sleet and snow share cloud-snow (Phosphor has
+			// no sleet glyph; the summary carries the exact wording). An unknown condition is a plain cloud.
+			case 'weather_icon': {
+				wp_enqueue_style( 'nop-blocks-shared' );
+				$slug = sanitize_key( (string) get_post_meta( $post_id, 'nop_indieweb_weather_icon', true ) );
+				if ( '' === $slug ) {
+					return '';
+				}
+				$map = [
+					'clear-day' => 'sun', 'clear-night' => 'moon', 'partly-cloudy-day' => 'cloud-sun', 'partly-cloudy-night' => 'cloud-moon',
+					'cloudy' => 'cloud', 'fog' => 'cloud-fog', 'rain' => 'cloud-rain', 'sleet' => 'cloud-snow', 'snow' => 'cloud-snow', 'wind' => 'wind',
+				];
+				return 'phosphor/weather-' . ( $map[ $slug ] ?? 'cloud' );
+			}
+
+			// The temperature to the degree: args.unit "c" (default) or "f"; args.symbol false leaves off the "°C".
+			case 'weather_temp': {
+				$unit = 'f' === ( $args['unit'] ?? 'c' ) ? 'f' : 'c';
+				$raw  = (string) get_post_meta( $post_id, 'nop_indieweb_weather_temp_' . $unit, true );
+				if ( '' === $raw ) {
+					return '';
+				}
+				return (string) (int) round( (float) $raw ) . ( false === ( $args['symbol'] ?? true ) ? '' : ( 'f' === $unit ? '°F' : '°C' ) );
+			}
+
 			// The post's kind, in its reading voice, linked to its archive.
 			//
 			// Returns markup on purpose: WP_Block::replace_html() passes a bound
@@ -331,7 +379,7 @@ class Block_Bindings {
 					return null;
 				}
 				return sprintf(
-					'%s ° %s · %s ° %s',
+					'%s° %s · %s° %s',
 					number_format( abs( $lat ), 3 ),
 					$lat >= 0 ? 'N' : 'S',
 					number_format( abs( $lng ), 3 ),
@@ -360,7 +408,7 @@ class Block_Bindings {
 					return null;
 				}
 				/* translators: %s = ordinal number, e.g. "1st" */
-				return sprintf( __( '%s Visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
+				return sprintf( __( '%s visit', 'nop-indieweb' ), \NOP\IndieWeb\nop_indieweb_ordinal( $n ) );
 
 			case 'flight_route':
 				$from = (string) get_post_meta( $post_id, 'nop_indieweb_flight_from_name', true );

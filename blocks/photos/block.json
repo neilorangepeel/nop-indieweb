@@ -1,0 +1,63 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/photos",
+	"title": "Photos",
+	"description": "The post's photos (else its featured image) at full height, one at a time: swipe or step between them, and open one full size in the lightbox. Ratio fixes their shape (\"1\" for square), cropping to it. Map adds the post's map (check-in or route) as the last slide, after the photos. Layout: a strip (one at a time, for the overlay) or a grid (all of them, composed: one large and the rest beside it, for the post's own page).",
+	"category": "nop-indieweb-meta",
+	"icon": "format-gallery",
+	"keywords": [
+		"photos",
+		"gallery",
+		"carousel",
+		"lightbox"
+	],
+	"editorScript": "file:./editor.js",
+	"viewScriptModule": "file:./view.js",
+	"style": "file:./style.css",
+	"render": "file:./render.php",
+	"usesContext": [
+		"postId",
+		"postType"
+	],
+	"supports": {
+		"html": false,
+		"align": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"gradients": false,
+			"link": false
+		},
+		"interactivity": {
+			"clientNavigation": true
+		}
+	},
+	"attributes": {
+		"ratio": {
+			"type": "string",
+			"default": ""
+		},
+		"map": {
+			"type": "string",
+			"enum": [
+				"",
+				"checkin-map",
+				"exercise-map"
+			],
+			"default": ""
+		},
+		"mapDuotone": {
+			"type": "string",
+			"default": ""
+		},
+		"layout": {
+			"type": "string",
+			"enum": [
+				"strip",
+				"grid"
+			],
+			"default": "strip"
+		}
+	}
+}

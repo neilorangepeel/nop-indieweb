@@ -30,8 +30,10 @@ class Comment_Filter {
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return;
 		}
-		// If the caller already asked for a specific type, respect that.
-		if ( ! empty( $query->query_vars['type'] ) ) {
+		// If the caller already asked for specific types, respect that (type, or a type__in list: the response count asks
+		// for comments and webmentions, and stripped of them on the page it disagreed with the REST endpoint's count,
+		// offering "1 new response" that was not new).
+		if ( ! empty( $query->query_vars['type'] ) || ! empty( $query->query_vars['type__in'] ) ) {
 			return;
 		}
 		$not_in = (array) ( $query->query_vars['type__not_in'] ?? [] );

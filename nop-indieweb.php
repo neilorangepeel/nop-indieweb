@@ -4,7 +4,7 @@
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
  * Version:     0.10.0
- * Requires at least: 6.7
+ * Requires at least: 7.2
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
  * Author URI:  https://neilorangepeel.com
@@ -28,6 +28,9 @@ define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 // Load all files explicitly — no autoloader magic.
 require_once NOP_INDIEWEB_DIR . 'includes/utils/functions.php';
 require_once NOP_INDIEWEB_DIR . 'includes/utils/block-content.php';
+// The conversation's markup and its comment handling (email optional): loaded with the plugin, not only when a block
+// renders, as a comment is posted to wp-comments-post.php, where no block does.
+require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/route.php';
 require_once NOP_INDIEWEB_DIR . 'includes/exercise/class-exercise-endpoint.php';
 require_once NOP_INDIEWEB_DIR . 'includes/travel/arc-map.php';
@@ -61,6 +64,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-entry-fields.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-logbook.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-browse.php';
+require_once NOP_INDIEWEB_DIR . 'includes/browse/class-wall-filters.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/rsvp/class-event-parser.php';
 require_once NOP_INDIEWEB_DIR . 'includes/rsvp/class-event-endpoint.php';
@@ -81,6 +85,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndicator-tumblr.ph
 require_once NOP_INDIEWEB_DIR . 'includes/syndication/class-syndication-manager.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-base.php';
 require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-lookup-provider-tmdb.php';
+require_once NOP_INDIEWEB_DIR . 'includes/lookup/class-film-details.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-settings-api.php';
 require_once NOP_INDIEWEB_DIR . 'includes/admin/class-post-filter.php';
@@ -131,6 +136,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-swarm-timestamps.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-micropub-timestamps.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-visits.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-film-details.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-strava.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-repair-photo-sideloads.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-exercise-types.php';
@@ -157,6 +163,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command( 'nop-indieweb fix-swarm-timestamps',        \NOP\IndieWeb\Cli\Fix_Swarm_Timestamps::class );
 	\WP_CLI::add_command( 'nop-indieweb fix-micropub-timestamps',     \NOP\IndieWeb\Cli\Fix_Micropub_Timestamps::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-venue-visits',       \NOP\IndieWeb\Cli\Backfill_Venue_Visits::class );
+	\WP_CLI::add_command( 'nop-indieweb backfill-film-details',       \NOP\IndieWeb\Cli\Backfill_Film_Details::class );
 	\WP_CLI::add_command( 'nop-indieweb import-strava',               \NOP\IndieWeb\Cli\Import_Strava::class );
 	\WP_CLI::add_command( 'nop-indieweb repair-photo-sideloads',      \NOP\IndieWeb\Cli\Repair_Photo_Sideloads::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-exercise-types',     \NOP\IndieWeb\Cli\Backfill_Exercise_Types::class );

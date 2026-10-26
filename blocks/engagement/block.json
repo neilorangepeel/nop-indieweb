@@ -1,0 +1,26 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/engagement",
+	"title": "Likes and Reposts",
+	"category": "nop-indieweb-conversations",
+	"icon": "heart",
+	"description": "Everyone who liked and reposted the post, calmly: a line each (\"Liked by Jeremy, Sophie and 61 others\") with a row of faces, and Show all for the full grid. Likes and reposts from Mastodon, Bluesky and the site's own like button.",
+	"keywords": [ "likes", "reposts", "boosts", "facepile", "indieweb" ],
+	"usesContext": [ "postId", "postType" ],
+	"editorScript": "file:./editor.js",
+	"style": [ "nop-blocks-shared", "file:./style.css" ],
+	"render": "file:./render.php",
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": { "fontSize": true, "__experimentalDefaultControls": { "fontSize": true } },
+		"color": { "text": true, "background": true, "link": true },
+		"spacing": { "margin": true, "padding": true }
+	},
+	"attributes": {
+		"showLikes": { "type": "boolean", "default": true },
+		"showReposts": { "type": "boolean", "default": true },
+		"stack": { "type": "number", "default": 10 }
+	}
+}

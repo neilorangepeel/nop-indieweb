@@ -183,8 +183,12 @@ class Webmention_Endpoint {
 		$parser = new MF2_Parser();
 		$parsed = $parser->parse( $body, $source );
 
+		// The reply it answers, if that is a comment or a reply held here: the address it was sent to first (a
+		// #comment-123 target names it), then what the source says it replies to.
+		$parent = \NOP\IndieWeb\nop_indieweb_wm_find_parent( $post_id, array_merge( [ $target ], (array) ( $parsed['in_reply_to'] ?? [] ) ) );
+
 		if ( $existing_id ) {
-			$this->update_webmention( $existing_id, $parsed );
+			$this->update_webmention( $existing_id, $parsed, $parent );
 			return;
 		}
 
@@ -202,7 +206,7 @@ class Webmention_Endpoint {
 			return;
 		}
 
-		$this->insert_webmention( $post_id, $source, $target, $parsed );
+		$this->insert_webmention( $post_id, $source, $target, $parsed, $parent );
 	}
 
 	// ── Validation ─────────────────────────────────────────────────────────────
@@ -286,7 +290,7 @@ class Webmention_Endpoint {
 		return isset( $comments[0] ) ? (int) $comments[0] : 0;
 	}
 
-	private function insert_webmention( int $post_id, string $source, string $target, array $parsed ): int|\WP_Error {
+	private function insert_webmention( int $post_id, string $source, string $target, array $parsed, int $parent = 0 ): int|\WP_Error {
 		$approval = \NOP\IndieWeb\nop_indieweb_get_option( 'webmentions', [] )['approval'] ?? 'bridgy_only';
 		$approved = match( $approval ) {
 			'auto_all'   => 1,
@@ -304,6 +308,7 @@ class Webmention_Endpoint {
 			'comment_date'         => $this->parse_date_local( $parsed['published'] ),
 			'comment_date_gmt'     => $this->parse_date_gmt( $parsed['published'] ),
 			'comment_approved'     => $approved,
+			'comment_parent'       => $parent,
 		] ) );
 
 		// wp_insert_comment() returns int|false — never a WP_Error, so the only
@@ -317,12 +322,18 @@ class Webmention_Endpoint {
 		return $comment_id;
 	}
 
-	private function update_webmention( int $comment_id, array $parsed ): void {
-		wp_update_comment( wp_slash( [
+	private function update_webmention( int $comment_id, array $parsed, int $parent = 0 ): void {
+		$update = [
 			'comment_ID'      => $comment_id,
 			'comment_author'  => $parsed['author_name'] ?: 'Anonymous',
 			'comment_content' => $parsed['content'],
-		] ) );
+		];
+		// A re-sent webmention files under the reply it answers, if it was not already (never itself).
+		$comment = get_comment( $comment_id );
+		if ( $parent && $parent !== $comment_id && $comment && ! (int) $comment->comment_parent ) {
+			$update['comment_parent'] = $parent;
+		}
+		wp_update_comment( wp_slash( $update ) );
 
 		update_comment_meta( $comment_id, 'webmention_type',         $parsed['type'] );
 		update_comment_meta( $comment_id, 'webmention_author_photo', Avatar_Cache::cache( (string) $parsed['author_photo'] ) );

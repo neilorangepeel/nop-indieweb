@@ -1,8 +1,8 @@
 === NOP IndieWeb ===
 Contributors: neilorangepeel
 Tags: indieweb, micropub, webmention, indieauth, posse
-Requires at least: 6.7
-Tested up to: 7.0
+Requires at least: 7.2
+Tested up to: 7.2
 Requires PHP: 8.0
 Stable tag: 0.10.0
 License: GPL-2.0-or-later
@@ -24,7 +24,7 @@ NOP IndieWeb turns a WordPress site into a full IndieWeb citizen. It owns your c
 * **Inbound import** — pull your own posts back from Mastodon, Bluesky, Pixelfed and Letterboxd on a schedule.
 * **Check-in enrichment** — Swarm/Foursquare check-ins gain venue categories, a static map image, and a weather snapshot.
 * **Block bindings** — bind venue, weather and syndication metadata to core blocks in the editor, with microformats2 classes injected at render time. The `nop-indieweb/post-meta` source also answers ready-to-read fields (a check-in's visit label, a run's summary, an RSVP's answer, a post's number), so a theme designs with core blocks and never formats data itself.
-* **The Logbook** — the day-to-day kinds at one address, /category/logbook/ (and /logbook/), with a plain template a theme can replace by slug. Filters: `nop_indieweb_logbook_kinds`, `nop_indieweb_logbook_per_page`, `nop_indieweb_kind_sections`.
+* **The Logbook** — the day-to-day kinds at one address, /logbook/ (and /logbook/), with a plain template a theme can replace by slug. Filters: `nop_indieweb_logbook_kinds`, `nop_indieweb_logbook_per_page`, `nop_indieweb_kind_sections`.
 * **Entries open over their wall** — on the Logbook and a kind's archive, a post opens in an overlay (the Entry template, per kind: `entry-{kind}`, then `entry`) and Previous, Next and Close step through the wall, in any block theme. Filters and pages swap in place. A theme adds walls with `nop_indieweb_is_wall`, styles the overlay through `--nop-scrim` and `--nop-entry-*`, and loads its own CSS on `nop_indieweb_browse_enqueue`.
 
 All microformats markup is injected at render time and stored nothing extra in your database; deactivating the plugin removes it cleanly.
@@ -90,6 +90,12 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 == Changelog ==
 
 = 0.10.0 =
+* A story's video is its own player (Photos block): it starts muted and looping (with sound once the reader turns it on, for the visit; with reduced motion it waits), pauses on a tap or while a press is held, shows and seeks its time on a line across the top, and answers K or Space, M, J and L in the overlay.
+* Browse: a Details in an entry marked `data-nop-sheet` is a sheet over it (Escape closes it before the entry, and the entry's video waits while it is open); the overlay closes only on a click that begins outside it; the filter drawer closes on a click, not a press, so a tile opens with one click.
+* The reply form asks for a name only when a reply is sent without one, says "Be the first to reply…" with no replies yet, keeps who is replying and the other places to reply (as core's Social Icons, Pixelfed's from Simple Icons) on one line, and stays open in full once used.
+* Fixed: a guest's reply without an email was refused while the form said it was posted (the email-optional handling loaded only where a block rendered, never on wp-comments-post.php); a refused reply now shows the reason, and a held one without an email says it is awaiting approval.
+* Fixed: "Show 1 new response" offered a like already shown (the response count dropped webmentions on the page but not in the REST check).
+* Replies: a reply to a reply nests under the conversation it belongs to, one level deep, however it came (a reply to a site comment was put back in the main list). A webmention reply files under the reply it answers, found from its `u-in-reply-to` (that reply's address, or a `#comment-` link to it); replies polled from Mastodon, Pixelfed and Bluesky follow their thread, and ones stored before are filed on the next poll. When, where and Reply follow the words, so a theme can run the name into them. A story names its source (Bluesky, Instagram) from `source_url`. Block scripts and styles carry the plugin's version.
 * For themes: entry fields in the `nop-indieweb/post-meta` binding source, formatted for reading (site date format, translatable words), with editor previews.
 * `display_title` names a post for display (a check-in by its venue, a like by the thing liked, an untitled note by its opening words); `permalink` gives a button the post's address. `reply_count` and `replies_label` ("2 replies", "No replies") count replies as the Replies block lists them, webmentions included. Exercise distance reads to two decimals ("3.02 km").
 * The Logbook moves into the plugin: which kinds count, its address and canonical, the /logbook/ redirect, and a plain `category-logbook` template.

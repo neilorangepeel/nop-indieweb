@@ -33,6 +33,7 @@ class MF2_Parser {
 		$content      = $this->extract_content( $root, $xpath, $type );
 		$published    = $this->extract_published( $root, $xpath );
 		$original_url = $this->extract_url( $root, $xpath );
+		$in_reply_to  = $this->extract_in_reply_to( $root, $xpath );
 
 		return [
 			'type'         => $type,
@@ -42,6 +43,7 @@ class MF2_Parser {
 			'content'      => $content,
 			'published'    => $published,
 			'original_url' => $original_url,
+			'in_reply_to'  => $in_reply_to,
 			'platform'     => $this->detect_platform( $source_url ),
 		];
 	}
@@ -148,6 +150,28 @@ class MF2_Parser {
 		return esc_url_raw(
 			$this->attr( $xpath, './/*[' . $this->cls( 'u-url' ) . ']/@href', $root )
 		);
+	}
+
+	/**
+	 * What the reply answers: the u-in-reply-to links, plain (<a class="u-in-reply-to" href>) or as a citation
+	 * (<div class="u-in-reply-to h-cite"> with its own u-url). The receiver files a reply under the one it answers
+	 * when one of these is a comment or a reply stored here.
+	 *
+	 * @return list<string>
+	 */
+	private function extract_in_reply_to( ?\DOMElement $root, \DOMXPath $xpath ): array {
+		if ( ! $root ) {
+			return [];
+		}
+		$urls  = [];
+		$nodes = $xpath->query( './/*[' . $this->cls( 'u-in-reply-to' ) . ']/@href | .//*[' . $this->cls( 'u-in-reply-to' ) . ']//*[' . $this->cls( 'u-url' ) . ']/@href', $root );
+		foreach ( false !== $nodes ? $nodes : [] as $node ) {
+			$url = esc_url_raw( trim( (string) $node->nodeValue ) );
+			if ( $url ) {
+				$urls[] = $url;
+			}
+		}
+		return array_values( array_unique( $urls ) );
 	}
 
 	private function detect_platform( string $source_url ): string {

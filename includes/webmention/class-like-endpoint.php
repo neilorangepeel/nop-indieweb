@@ -123,6 +123,10 @@ class Like_Endpoint {
 	 * from the platform the post first appeared on (which carry no identities).
 	 */
 	public function like_count( int $post_id ): int {
+		$primed = $this->primed();
+		if ( isset( $primed['counts'][ $post_id ] ) || ( $primed && isset( $primed['ids'][ $post_id ] ) ) ) {
+			return (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes', true ) + (int) ( $primed['counts'][ $post_id ] ?? 0 );
+		}
 		return (int) get_post_meta( $post_id, 'nop_indieweb_imported_likes', true ) + (int) get_comments( [
 			'post_id'    => $post_id,
 			'type'       => 'webmention',
@@ -195,6 +199,10 @@ class Like_Endpoint {
 	}
 
 	public function visitor_has_liked( int $post_id ): bool {
+		$primed = $this->primed();
+		if ( $primed && isset( $primed['ids'][ $post_id ] ) ) {
+			return isset( $primed['liked'][ $post_id ] );
+		}
 		return ! empty( get_comments( [
 			'post_id'    => $post_id,
 			'type'       => 'webmention',
@@ -210,6 +218,48 @@ class Like_Endpoint {
 	}
 
 	// ── Private ───────────────────────────────────────────────────────────────
+
+	/**
+	 * The like counts, and which of them this visitor has made, for every post in the loop's query, in two grouped queries
+	 * instead of two per post (a wall of 25 tiles asked 50 times). Made the first time a count is wanted inside a loop; a
+	 * post outside it (a single entry, the REST route) is asked for singly as before.
+	 *
+	 * @return array{ids:array<int,true>,counts:array<int,int>,liked:array<int,true>}|array{} Empty outside a loop.
+	 */
+	private function primed(): array {
+		static $primed = null;
+		global $wp_query, $wpdb;
+		if ( null !== $primed ) {
+			return $primed;
+		}
+		$ids = ( in_the_loop() && $wp_query instanceof \WP_Query ) ? array_values( array_filter( array_map( 'intval', wp_list_pluck( $wp_query->posts, 'ID' ) ) ) ) : [];
+		if ( count( $ids ) < 2 ) {
+			return []; // One post: the ordinary query is as cheap (and this is not cached, so a later loop can still prime).
+		}
+		$in     = implode( ',', $ids );
+		$counts = [];
+		$liked  = [];
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- one grouped read for the page; $in is integers only
+		foreach ( (array) $wpdb->get_results(
+			"SELECT c.comment_post_ID AS id, COUNT(*) AS n FROM {$wpdb->comments} c
+			 INNER JOIN {$wpdb->commentmeta} m ON m.comment_id = c.comment_ID AND m.meta_key = 'webmention_type' AND m.meta_value = 'like'
+			 WHERE c.comment_type = 'webmention' AND c.comment_approved = '1' AND c.comment_post_ID IN ({$in}) GROUP BY c.comment_post_ID"
+		) as $row ) {
+			$counts[ (int) $row->id ] = (int) $row->n;
+		}
+		foreach ( (array) $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT c.comment_post_ID FROM {$wpdb->comments} c
+			 INNER JOIN {$wpdb->commentmeta} m ON m.comment_id = c.comment_ID AND m.meta_key = 'webmention_type' AND m.meta_value = 'like'
+			 INNER JOIN {$wpdb->commentmeta} h ON h.comment_id = c.comment_ID AND h.meta_key = 'webmention_ip_hash' AND h.meta_value = %s
+			 WHERE c.comment_type = 'webmention' AND c.comment_approved = '1' AND c.comment_post_ID IN ({$in})",
+			$this->ip_hash()
+		) ) as $id ) {
+			$liked[ (int) $id ] = true;
+		}
+		// phpcs:enable
+		$primed = [ 'ids' => array_fill_keys( $ids, true ), 'counts' => $counts, 'liked' => $liked ];
+		return $primed;
+	}
 
 	private function post_is_valid( int $post_id ): bool {
 		$post = get_post( $post_id );

@@ -114,9 +114,22 @@ class Social_Backfeed {
 		// Replies (thread context — descendants only).
 		$context = $this->fetch_json( "{$base}/context", $token );
 		if ( $context && is_array( $context['descendants'] ?? null ) ) {
+			// Each reply names the status it answers (in_reply_to_id): the syndicated post itself, or another reply in
+			// the thread, whose address is how the reply stored for it is found.
+			$address = [];
 			foreach ( $context['descendants'] as $status ) {
-				$pid = "{$platform}_reply_" . ( $status['id'] ?? '' );
-				if ( isset( $seen[ $pid ] ) || empty( $status['id'] ) ) {
+				if ( ! empty( $status['id'] ) ) {
+					$address[ (string) $status['id'] ] = (string) ( $status['url'] ?? ( $status['uri'] ?? '' ) );
+				}
+			}
+			foreach ( $context['descendants'] as $status ) {
+				$pid        = "{$platform}_reply_" . ( $status['id'] ?? '' );
+				$parent_url = $address[ (string) ( $status['in_reply_to_id'] ?? '' ) ] ?? '';
+				if ( empty( $status['id'] ) ) {
+					continue;
+				}
+				if ( isset( $seen[ $pid ] ) ) {
+					$this->link_parent( $post_id, $pid, $parent_url );
 					continue;
 				}
 				$account = $status['account'] ?? [];
@@ -131,6 +144,7 @@ class Social_Backfeed {
 					'author_handle' => $this->mastodon_handle( $account, $instance ),
 					'content'       => wp_strip_all_tags( $status['content'] ?? '' ),
 					'date'          => $status['created_at'] ?? '',
+					'parent_url'    => $parent_url,
 				], $seen );
 			}
 		}
@@ -235,7 +249,11 @@ class Social_Backfeed {
 		}
 	}
 
-	private function process_bluesky_replies( int $post_id, array $replies, array &$seen ): void {
+	/**
+	 * The thread under a Bluesky post is a tree: a reply's own replies answer it, so each is stored under the reply
+	 * above it ($parent_url, its address; '' for a reply to the post itself).
+	 */
+	private function process_bluesky_replies( int $post_id, array $replies, array &$seen, string $parent_url = '' ): void {
 		foreach ( $replies as $reply ) {
 			$post = $reply['post'] ?? [];
 			$uri  = $post['uri'] ?? '';
@@ -243,11 +261,14 @@ class Social_Backfeed {
 				continue;
 			}
 
-			$pid = 'bluesky_reply_' . $uri;
-			if ( ! isset( $seen[ $pid ] ) ) {
-				$parts      = explode( '/', $uri );
-				$reply_rkey = end( $parts );
-				$reply_did  = $parts[2] ?? '';
+			$pid        = 'bluesky_reply_' . $uri;
+			$parts      = explode( '/', $uri );
+			$reply_rkey = end( $parts );
+			$reply_did  = $parts[2] ?? '';
+			$address    = "https://bsky.app/profile/{$reply_did}/post/{$reply_rkey}";
+			if ( isset( $seen[ $pid ] ) ) {
+				$this->link_parent( $post_id, $pid, $parent_url );
+			} else {
 				$author     = $post['author'] ?? [];
 				$handle     = $author['handle'] ?? '';
 				$record     = $post['record'] ?? [];
@@ -256,18 +277,19 @@ class Social_Backfeed {
 					'platform'      => 'bluesky',
 					'type'          => 'reply',
 					'platform_id'   => $pid,
-					'source'        => "https://bsky.app/profile/{$reply_did}/post/{$reply_rkey}",
+					'source'        => $address,
 					'author'        => ( $author['displayName'] ?? '' ) ?: $handle,
 					'author_url'    => $handle ? "https://bsky.app/profile/{$handle}" : '',
 					'author_photo'  => $author['avatar'] ?? '',
 					'author_handle' => $handle ? "@{$handle}" : '',
 					'content'       => $record['text'] ?? '',
 					'date'          => $record['createdAt'] ?? '',
+					'parent_url'    => $parent_url,
 				], $seen );
 			}
 
 			if ( ! empty( $reply['replies'] ) ) {
-				$this->process_bluesky_replies( $post_id, $reply['replies'], $seen );
+				$this->process_bluesky_replies( $post_id, $reply['replies'], $seen, $address );
 			}
 		}
 	}
@@ -277,7 +299,7 @@ class Social_Backfeed {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @param array{platform:string,type:string,platform_id:string,source:string,author:string,author_url:string,author_photo:string,author_handle:string,content:string,date:string} $data
+	 * @param array{platform:string,type:string,platform_id:string,source:string,author:string,author_url:string,author_photo:string,author_handle:string,content:string,date:string,parent_url?:string} $data
 	 * @param array<string,mixed> $seen
 	 */
 	private function store_interaction( int $post_id, array $data, array &$seen ): void {
@@ -316,6 +338,7 @@ class Social_Backfeed {
 			'comment_content'      => $data['content'],
 			'comment_date'         => $date,
 			'comment_date_gmt'     => $date_gmt,
+			'comment_parent'       => \NOP\IndieWeb\nop_indieweb_wm_find_parent( $post_id, [ (string) ( $data['parent_url'] ?? '' ) ] ),
 		] ) );
 
 		if ( $comment_id ) {
@@ -327,6 +350,35 @@ class Social_Backfeed {
 			add_comment_meta( $comment_id, 'webmention_author_handle', $data['author_handle'],            true );
 			add_comment_meta( $comment_id, 'webmention_silo_key',      $silo_key,                         true );
 			$seen[ $data['platform_id'] ] = true;
+		}
+	}
+
+	/**
+	 * A reply stored before replies were threaded files under the one it answers, once that is known: the poll
+	 * passes over every reply in the thread each time, so earlier threads sort themselves out on the next run.
+	 */
+	private function link_parent( int $post_id, string $platform_id, string $parent_url ): void {
+		if ( '' === $parent_url ) {
+			return;
+		}
+		$ids = get_comments( [
+			'post_id'    => $post_id,
+			'type'       => 'webmention',
+			'status'     => 'all',
+			'parent'     => 0,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- hourly back-feed, only replies to replies
+			'meta_key'   => 'webmention_platform_id',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above
+			'meta_value' => $platform_id,
+			'number'     => 1,
+			'fields'     => 'ids',
+		] );
+		if ( ! isset( $ids[0] ) ) {
+			return;
+		}
+		$parent = \NOP\IndieWeb\nop_indieweb_wm_find_parent( $post_id, [ $parent_url ] );
+		if ( $parent && $parent !== (int) $ids[0] ) {
+			wp_update_comment( [ 'comment_ID' => (int) $ids[0], 'comment_parent' => $parent ] );
 		}
 	}
 

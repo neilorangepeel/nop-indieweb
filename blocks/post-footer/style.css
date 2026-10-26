@@ -141,7 +141,7 @@
 	.nop-post-footer__reveal {
 		border-radius: var(--nop-radius, 2px);
 		color:         var(--nop-muted);
-		transition:    transform 150ms ease, color 150ms ease;
+		transition:    transform var(--nop-motion-fast, var(--nop-motion-fast, var(--nop-motion-fast, 150ms))) ease, color 150ms ease;
 	}
 
 	.nop-post-footer__reveal:hover,

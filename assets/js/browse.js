@@ -21,6 +21,9 @@
  * - The controls (`.nop-entry-nav`, with `.nop-entry__previous`, `__next`,
  *   `__close`) and the left/right keys step through the wall in place,
  *   replacing the address, so Close still returns to the wall.
+ * - A Details in the entry marked `data-nop-sheet` is a sheet over it (a
+ *   story's conversation): Escape closes it before the entry, and the
+ *   entry's video pauses while it is open.
  * - Opening morphs the post into the entry (a view transition named
  *   nop-entry), and closing morphs it back. The scrim has no animation of
  *   its own: it is in the open picture and gone from the closing one, so the
@@ -37,6 +40,53 @@ const entries = new Map();
 const ready = new Map();
 let wallVersion = 0;
 let opener = null;
+// Whether core's Image lightbox was open when the key went down: it closes itself on Escape before our handler
+// runs, so without this one press would close the lightbox and the entry under it. Read in the capture phase.
+let lightboxOpenAtKey = false;
+document.addEventListener(
+	'keydown',
+	() => {
+		lightboxOpenAtKey = !! document.querySelector( '.wp-lightbox-overlay.active' );
+	},
+	true
+);
+
+// Block style variations (a theme's Flush heading, say) are styled through classes WordPress numbers in render order
+// (is-style-flush--31), with their rules in one stylesheet per page. The router swaps that sheet for the next page's,
+// where the numbers belong to other blocks, but never swaps the header or footer: their classes would come to mean
+// nothing, or another block's style (the footer's Flush heading lost its capitals and weight, and its Fit text size, set
+// for them, ran past the window and scrolled the page sideways). So the rules for blocks outside the router's regions are
+// kept as the page loaded them, in a sheet the router never touches, under class names no page hands out.
+const keepVariations = () => {
+	const sheet = document.getElementById( 'block-style-variation-styles-inline-css' )?.sheet;
+	if ( ! sheet || ! document.adoptedStyleSheets ) {
+		return;
+	}
+	const kept = new Map();
+	document.querySelectorAll( '[class*="is-style-"]' ).forEach( ( element ) => {
+		if ( element.closest( `[${ REGION }]` ) ) {
+			return;
+		}
+		[ ...element.classList ].forEach( ( name ) => {
+			if ( /^is-style-\S+--\d+$/.test( name ) ) {
+				kept.set( name, name + '-kept' );
+				element.classList.replace( name, name + '-kept' );
+			}
+		} );
+	} );
+	if ( ! kept.size ) {
+		return;
+	}
+	const names = new RegExp( `\\.(${ [ ...kept.keys() ].join( '|' ) })(?![\\w-])`, 'g' );
+	const rules = [ ...sheet.cssRules ]
+		.map( ( rule ) => rule.cssText )
+		.filter( ( text ) => text.match( names ) )
+		.map( ( text ) => text.replace( names, ( match, name ) => '.' + kept.get( name ) ) );
+	const keep = new window.CSSStyleSheet();
+	keep.replaceSync( rules.join( '\n' ) );
+	document.adoptedStyleSheets = [ ...document.adoptedStyleSheets, keep ];
+};
+keepVariations();
 
 const idle = ( callback ) =>
 	window.requestIdleCallback
@@ -46,6 +96,25 @@ const idle = ( callback ) =>
 const wait = ( ms ) => new Promise( ( resolve ) => window.setTimeout( resolve, ms ) );
 
 const router = () => import( '@wordpress/interactivity-router' );
+
+// The open entry's kind on <html> (data-nop-entry-kind), so a theme can colour the wall around it without
+// html:has(), which Safari is slow to re-check when the router swaps the entry in place.
+const markKind = () => {
+	const panel = document.querySelector( 'body > .nop-entry' );
+	// Lay the swapped-in entry out from scratch: Safari kept sizes from the previous entry. One synchronous
+	// detach and read, before any paint, so nothing flickers.
+	if ( panel ) {
+		panel.style.display = 'none';
+		void panel.offsetHeight;
+		panel.style.display = '';
+	}
+	const kind = panel?.className.match( /\bnop-kind-([\w-]+)/ )?.[ 1 ];
+	if ( kind ) {
+		document.documentElement.dataset.nopEntryKind = kind;
+	} else {
+		delete document.documentElement.dataset.nopEntryKind;
+	}
+};
 
 const reducedMotion = () =>
 	window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
@@ -66,17 +135,32 @@ const withTransition = ( update ) =>
 		? document.startViewTransition( update ).finished
 		: update();
 
-const fetchEntry = ( href ) => {
-	if ( ! entries.has( href ) ) {
-		entries.set(
-			href,
-			// ?entry renders the Entry template (the spread) instead of the full page.
-			fetch( href + ( href.includes( '?' ) ? '&' : '?' ) + 'entry' ).then( ( response ) =>
-				response.ok ? response.text() : Promise.reject()
-			)
-		);
+// Both caches hold whole entry pages (about 150KB of HTML and styles each, and the router keeps its own copy of what it is
+// handed), so a long visit would grow without end: the most recently used few are kept, the rest fetched again if wanted.
+const KEEP = 24;
+const remember = ( map, key, value ) => {
+	map.delete( key );
+	map.set( key, value );
+	for ( const oldest of map.keys() ) {
+		if ( map.size <= KEEP ) {
+			break;
+		}
+		map.delete( oldest );
 	}
-	return entries.get( href );
+};
+
+const fetchEntry = ( href ) => {
+	const known = entries.get( href );
+	if ( known ) {
+		remember( entries, href, known );
+		return known;
+	}
+	// ?entry renders the Entry template (the spread) instead of the full page.
+	const request = fetch( href + ( href.includes( '?' ) ? '&' : '?' ) + 'entry' ).then( ( response ) =>
+		response.ok ? response.text() : Promise.reject()
+	);
+	remember( entries, href, request );
+	return request;
 };
 
 /**
@@ -155,6 +239,15 @@ const entryPage = ( html ) => {
 			region.append( style );
 		}
 	} );
+	// Duotone (a block's Duotone setting) points at an SVG filter WordPress prints at the foot of the page, outside
+	// the entry region; it travels inside the region too, unless this page has its own copy outside any entry (a copy
+	// inside the open entry goes when the next entry replaces it).
+	page.querySelectorAll( 'svg filter[id^="wp-duotone-"]' ).forEach( ( filter ) => {
+		const ours = document.getElementById( filter.id );
+		if ( region && ( ! ours || ours.closest( `[${ REGION }*="nop-indieweb/entry"]` ) ) ) {
+			region.append( filter.closest( 'svg' ) );
+		}
+	} );
 	// Decode the entry's first picture now, so it is on screen the moment the entry opens.
 	const img = region?.querySelector( 'img' );
 	let picture = Promise.resolve();
@@ -217,7 +310,7 @@ const prepareEntry = ( href ) => {
 		return true;
 	} )();
 	promise.catch( () => ready.delete( href ) );
-	ready.set( href, { version: wallVersion, promise } );
+	remember( ready, href, { version: wallVersion, promise } );
 	return promise;
 };
 
@@ -231,17 +324,29 @@ const namePanel = ( name ) => {
 	}
 };
 
+// How long a pointer rests on a tile before its entry is fetched (ms), and the tile it is resting on.
+const DWELL = 90;
+let dwell = 0;
+let dwellHref = '';
+let dwellPost = null;
+const cancelDwell = () => {
+	window.clearTimeout( dwell );
+	dwell = 0;
+	dwellHref = '';
+	dwellPost = null;
+};
+
 const prepareSoon = ( href ) => idle( () => prepareEntry( href ).catch( () => {} ) );
 
 // A wall's entry links: a kind post's title or date link in a Query Loop (never its other links: kind, like, source).
-const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date) a[href]';
-const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter';
+const ENTRY_LINK = '.wp-block-post[class*="nop_kind-"] :is(.wp-block-post-title, .wp-block-post-date, .wp-block-post-featured-image) a[href]';
+const FILTER_LINK = '.wp-block-query-pagination, .wp-block-terms-query, .nop-wall-filter, .nop-wall-chips, .nop-wall-clear';
 const isEntryLink = ( link ) => !! link?.closest( '.nop-wall' ) && link.matches( ENTRY_LINK );
 // The post an entry link belongs to: what the entry morphs out of and back into.
 const postOf = ( link ) => link?.closest( '.wp-block-post' );
 
 /**
- * The wall's entries in order: one link per post (its title, or its date when
+ * The wall's entries in order: one link per post (its title, its picture, or its date when
  * the title is hidden).
  *
  * @return {HTMLAnchorElement[]} Links.
@@ -273,12 +378,89 @@ function neighbour( step ) {
 	return index < 0 ? null : links[ index + step ] ?? null;
 }
 
+let searchTimer = 0;
+// What is in the wall's search field as of the last keystroke, and where the caret was: a swap puts it back.
+let typing = { value: '', start: null, end: null, composing: false };
+
+// The bar's pills (Term Name links in its Terms Query lists) not already chosen, each with its name as shown, without its count.
+const pills = () =>
+	[ ...document.querySelectorAll( '.nop-wall-filters .wp-block-terms-query a[href]:not([aria-current])' ) ].map( ( link ) => ( {
+		link,
+		name: [ ...link.childNodes ]
+			.filter( ( node ) => ! node.classList?.contains( 'nop-wall-count' ) )
+			.map( ( node ) => node.textContent )
+			.join( '' )
+			.trim()
+			.toLowerCase(),
+	} ) );
+
+// The pills what is typed points at: a name, or any word in it, that begins with it ("exer" finds Exercise, "quar"
+// Cathedral Quarter).
+const matchingPills = ( text ) => {
+	const typed = text.trim().toLowerCase();
+	if ( ! typed ) {
+		return [];
+	}
+	return pills().filter( ( { name } ) => name.startsWith( typed ) || name.split( /\s+/ ).some( ( word ) => word.startsWith( typed ) ) );
+};
+
+// The pill Enter picks: the one whose name is what was typed, or the only one it points at; otherwise Enter keeps the words.
+const pickedPill = ( text ) => {
+	const matches = matchingPills( text );
+	const typed = text.trim().toLowerCase();
+	return ( matches.find( ( { name } ) => name === typed ) ?? ( 1 === matches.length ? matches[ 0 ] : null ) )?.link ?? null;
+};
+
+// Typing points at pills: the ones it matches stand out (is-match) and the rest step back (is-dim), so a kind or tag can
+// be seen, and picked with Enter, before the text search finds nothing for its name. Marked on each pill, not on the bar,
+// as the bar's own class is the store's to set. Again after every swap, which brings fresh pills.
+const markPills = () => {
+	const text = document.querySelector( '.nop-wall-filters input[type="search"]' )?.value ?? '';
+	const matches = new Set( matchingPills( text ).map( ( { link } ) => link ) );
+	document.querySelectorAll( '.nop-wall-filters .wp-block-terms-query a[href]' ).forEach( ( link ) => {
+		link.classList.toggle( 'is-match', matches.has( link ) );
+		link.classList.toggle( 'is-dim', matches.size > 0 && ! matches.has( link ) );
+	} );
+	// On a phone a list scrolls sideways: bring the first match into its row (block: nearest leaves the page where it is).
+	[ ...matches ][ 0 ]?.closest( 'li' )?.scrollIntoView( { block: 'nearest', inline: 'nearest', behavior: 'instant' } );
+};
+
+// An open (or step) in flight, and a Close asked for while it was: the entry is shown first, then closed, never half of each.
+let opening = false;
+let closeQueued = false;
+
+// While a sheet is open over the entry (a Details marked data-nop-sheet) its video waits, and plays on when it closes.
+// The toggle event does not bubble, so it is heard on the way down.
+let sheetPaused = null;
+document.addEventListener(
+	'toggle',
+	( { target: sheet } ) => {
+		const video = sheet.matches?.( 'details[data-nop-sheet]' ) && sheet.closest( '.nop-entry' )?.querySelector( 'video' );
+		if ( video && sheet.open && ! video.paused ) {
+			sheetPaused = video;
+			video.pause();
+		} else if ( video && ! sheet.open && sheetPaused === video ) {
+			sheetPaused = null;
+			video.play().catch( () => {} );
+		}
+	},
+	true
+);
+
+// Where the last press began, for closeOnScrim. Heard on the way down, before anything under it can change.
+let pressedAt = null;
+document.addEventListener( 'pointerdown', ( event ) => {
+	pressedAt = event.target;
+}, true );
+
 const isTyping = ( event ) =>
 	event.target.closest?.( 'input, textarea, select, [contenteditable]' );
 
 const { state, actions } = store( 'nop-indieweb/browse', {
 	state: {
 		entryUrl: '',
+		// The wall's filter bar (a Group with the class nop-wall-filters): its kinds and topics show while it is in use.
+		filtersOpen: false,
 		get entryRole() {
 			return state.entryOpen ? 'dialog' : null;
 		},
@@ -315,9 +497,20 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			event.preventDefault();
+			// A choice made in the filter bar (a pill, a chip, Clear all) keeps the bar in use. Noted before the swap: the
+			// bar is replaced with the wall, so afterwards the clicked link is no longer in the page at all.
+			const inBar = !! link.closest( '.nop-wall-filters' );
+			const keepOpen = inBar && state.filtersOpen;
 			const { actions: routerActions } = yield router();
 			const region = getElement().ref;
-			yield withTransition( () => routerActions.navigate( link.href ) );
+			// A choice in the bar swaps the wall at once (no cross-fade: the bar itself is in the picture, and fading it
+			// read as the drawer flickering); pagination keeps its transition.
+			if ( inBar ) {
+				yield routerActions.navigate( link.href );
+			} else {
+				yield withTransition( () => routerActions.navigate( link.href ) );
+			}
+			state.filtersOpen = keepOpen;
 			// The wall is new: entries made ready against the old one are rebuilt when next wanted.
 			wallVersion += 1;
 			// A filter changes the wall in place, with no scroll. A new page lands on
@@ -337,7 +530,141 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					behavior: reducedMotion() ? 'instant' : 'smooth',
 				} );
 			}
+			// A choice in the open bar keeps it in use: focus goes back to its search. A chip removed with the bar closed
+			// leaves it closed (focusing the search would open it).
+			if ( inBar ) {
+				markPills();
+				if ( keepOpen ) {
+					region.querySelector( '.nop-wall-filters input[type="search"]' )?.focus( { preventScroll: true } );
+				}
+				return;
+			}
 			region.focus( { preventScroll: true } );
+		} ),
+		// The filter bar opens when anything in it takes focus, and stays open while the wall swaps under it (a choice
+		// replaces the bar too, and focus is lost with the old one). It closes on Escape, on a click elsewhere, or when
+		// focus moves on to something outside it (the keyboard's Tab). A click, not a press: closing on the press
+		// lifted the wall under the pointer, so the click landed on whatever moved under it and a tile took two clicks.
+		// One click on a tile opens it, and the drawer closes behind.
+		openFilters() {
+			state.filtersOpen = true;
+		},
+		leaveFilters( event ) {
+			const next = event.relatedTarget;
+			// Focus taken by a press (the pointer is on what took it) is left to the click that follows.
+			if ( next && ! next.matches( ':hover' ) && ! next.closest( '.nop-wall-filters' ) ) {
+				state.filtersOpen = false;
+			}
+		},
+		outsideFilters( event ) {
+			if ( state.filtersOpen && ! event.target.closest?.( '.nop-wall-filters' ) ) {
+				state.filtersOpen = false;
+			}
+		},
+		// Pressing a pill or a chip must not take focus out of the search: Safari does not focus a link on click, so
+		// the search would blur, the bar would read as no longer in use and the drawer would close before the click
+		// landed. Holding the press keeps focus (and the drawer) where it is; the click still follows the link.
+		holdFilters: withSyncEvent( ( event ) => {
+			if ( event.target.closest?.( '.nop-wall-filters a' ) ) {
+				event.preventDefault();
+			}
+		} ),
+		filterKeys: withSyncEvent( ( event ) => {
+			// Backspace in the empty search removes the last chip, as in any token field.
+			if ( 'Backspace' === event.key && event.target.matches?.( 'input[type="search"]' ) && ! event.target.value ) {
+				const chips = event.target.closest( '.nop-wall-filters' )?.querySelectorAll( '.nop-wall-chip' );
+				if ( chips?.length ) {
+					event.preventDefault();
+					chips[ chips.length - 1 ].click();
+				}
+				return;
+			}
+			if ( 'Escape' === event.key && state.filtersOpen ) {
+				event.stopPropagation();
+				state.filtersOpen = false;
+				event.target.blur?.();
+			}
+		} ),
+		// The wall's search (a Search block with the class nop-wall-search): as you type (after a pause) or on submit,
+		// the wall is swapped for the results, the address keeping the search with the other filters.
+		searchWall: withSyncEvent( function* ( event ) {
+			const form = event.target.closest( 'form' );
+			if ( 'submit' === event.type ) {
+				event.preventDefault();
+				// A search still waiting to run would land after this one, with the bar as it was.
+				window.clearTimeout( searchTimer );
+				// Enter on a kind's or tag's name picks that pill, as a click would, instead of searching the text for it. The
+				// pill's address carries the typed search (the wall was searched as you typed), which the pill replaces.
+				const field = form.querySelector( 'input[type="search"]' );
+				const pill = pickedPill( field.value );
+				// Either way the field empties: Enter turns what was typed into a chip.
+				typing = { value: '', start: 0, end: 0, composing: false };
+				if ( pill ) {
+					const to = new URL( pill.href );
+					to.searchParams.delete( 'q' );
+					pill.setAttribute( 'href', to.toString().replace( /%2C/g, ',' ).replace( /%2B/g, '+' ) );
+					field.value = '';
+					markPills();
+					pill.click();
+					return;
+				}
+			} else {
+				typing = {
+					value: event.target.value,
+					start: event.target.selectionStart,
+					end: event.target.selectionEnd,
+					composing: !! event.isComposing,
+				};
+				markPills();
+				window.clearTimeout( searchTimer );
+				yield new Promise( ( resolve ) => {
+					searchTimer = window.setTimeout( resolve, 350 );
+				} );
+			}
+			const url = new URL( form.action );
+			const data = new FormData( form );
+			// Enter keeps what was typed as a chip: it joins the kept words (words) and the field empties for more.
+			if ( 'submit' === event.type ) {
+				const typed = String( data.get( 'q' ) || '' ).replace( /,/g, ' ' ).trim();
+				if ( typed ) {
+					const kept = String( data.get( 'words' ) || '' ).split( ',' ).filter( Boolean );
+					data.set( 'words', [ ...kept, typed ].join( ',' ) );
+					data.delete( 'q' );
+					form.querySelector( 'input[name="q"]' ).value = '';
+				}
+			}
+			data.forEach( ( value, key ) => {
+				if ( String( value ).trim() ) {
+					url.searchParams.set( key, String( value ).trim() );
+				}
+			} );
+			const href = url.toString().replace( /%2C/g, ',' ).replace( /%2B/g, '+' );
+			if ( href === window.location.href ) {
+				return;
+			}
+			const { actions: routerActions } = yield router();
+			const typed = form.querySelector( 'input[type="search"]' );
+			const wasFocused = document.activeElement === typed;
+			yield routerActions.navigate( href, { replace: 'submit' !== event.type } );
+			markPills();
+			// The swap renders the field as the server saw it when the request left, so letters typed while the page was on
+			// its way would be lost, and the word misspelled under your fingers. It can also replace or move the field (Enter
+			// adds a chip before it), which loses focus. The field gets back what is really typed, and the caret where it was,
+			// before anything is painted. Not mid-composition (an accented letter, a CJK word), which only the keyboard may change.
+			const field = document.querySelector( '.nop-wall-filters input[type="search"]' );
+			if ( ! field ) {
+				return;
+			}
+			const restore = field.value !== typing.value && ! typing.composing;
+			if ( restore ) {
+				field.value = typing.value;
+			}
+			if ( wasFocused && document.activeElement !== field ) {
+				field.focus( { preventScroll: true } );
+			}
+			if ( wasFocused && ( restore || field !== typed ) ) {
+				field.setSelectionRange( typing.start ?? field.value.length, typing.end ?? field.value.length );
+			}
 		} ),
 		*prefetch( event ) {
 			const link = event.target.closest?.( 'a[href]' );
@@ -349,9 +676,26 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				return;
 			}
 			if ( isEntryLink( link ) ) {
-				// Start fetching at once; build the router's page when the browser is idle.
-				fetchEntry( link.href ).catch( () => entries.delete( link.href ) );
-				prepareSoon( link.href );
+				// Every entry is a server render, so a pointer sweeping across the wall must not ask for each tile it
+				// crosses: it has to rest (DWELL) on one. A keyboard focus or a touch is already a decision: at once.
+				// Someone saving data gets no guesses: the entry is fetched when it is opened.
+				if ( window.navigator.connection?.saveData ) {
+					return;
+				}
+				const start = () => {
+					dwellHref = '';
+					// Start fetching at once; build the router's page when the browser is idle.
+					fetchEntry( link.href ).catch( () => entries.delete( link.href ) );
+					prepareSoon( link.href );
+				};
+				if ( 'focusin' === event.type || 'mouse' !== event.pointerType ) {
+					start();
+				} else if ( dwellHref !== link.href ) {
+					cancelDwell();
+					dwellHref = link.href;
+					dwellPost = postOf( link );
+					dwell = window.setTimeout( start, DWELL );
+				}
 				return;
 			}
 			if ( link.closest( FILTER_LINK ) ) {
@@ -359,7 +703,28 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				yield routerActions.prefetch( link.href );
 			}
 		},
+		// The pointer left the tile it was resting on before it rested long enough.
+		cancelPrefetch( event ) {
+			if ( dwellHref && ! dwellPost?.contains( event.relatedTarget ) ) {
+				cancelDwell();
+			}
+		},
 		*openEntry( href, replace = false ) {
+			if ( opening ) {
+				return;
+			}
+			opening = true;
+			try {
+				yield actions.showEntry( href, replace );
+			} finally {
+				opening = false;
+			}
+			if ( closeQueued ) {
+				closeQueued = false;
+				actions.closeEntry();
+			}
+		},
+		*showEntry( href, replace ) {
 			let isReady = false;
 			try {
 				isReady = yield prepareEntry( href );
@@ -382,6 +747,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 					// The dimmed wall is in place for the transition's new picture, so it fades with the morph rather than after it.
 					document.documentElement.classList.add( 'nop-entry-open' );
 					await routerActions.navigate( href, options );
+					markKind();
 					namePanel( 'nop-entry' );
 				} );
 				transition.finished.finally( () => namePanel( '' ) );
@@ -389,6 +755,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			} else {
 				yield routerActions.navigate( href, options );
 			}
+			markKind();
 			// Have the neighbours waiting.
 			[ -1, 1 ].forEach( ( step ) => {
 				const link = neighbour( step );
@@ -432,6 +799,10 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 		} ),
 		// The panel goes at once (morphing back into its tile where it can); the wall catches up underneath.
 		closeEntry() {
+			if ( opening ) {
+				closeQueued = true;
+				return;
+			}
 			if ( ! state.entryOpen ) {
 				return;
 			}
@@ -469,22 +840,49 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			// The router then shows the wall; holdFocus clears the closing state once the entry is gone.
 			window.history.back();
 		},
-		// The dimmed wall around the panel: it is inert, so a click there lands outside the entry.
+		// The dimmed wall around the panel: it is inert, so a click there lands outside the entry. Only a click that
+		// began there too: a press inside the entry that ends outside it (a selection dragged past its edge, or the
+		// panel shrinking under the pointer) is not a click on the wall.
 		closeOnScrim( event ) {
-			// The previous and next arrows sit outside the panel but are part of the entry.
-			if ( state.entryOpen && ! event.target.closest?.( '.nop-entry, .nop-entry-nav' ) ) {
+			// The previous and next arrows sit outside the panel but are part of the entry, and so is core's lightbox (attached to <body>).
+			const inEntry = ( node ) => node?.closest?.( '.nop-entry, .nop-entry-nav, .wp-lightbox-overlay' );
+			if ( state.entryOpen && ! inEntry( event.target ) && ! inEntry( pressedAt ) ) {
 				actions.closeEntry();
 			}
 		},
 		closeOnEscape( event ) {
-			if ( ! state.entryOpen || isTyping( event ) ) {
+			// An open lightbox (core's Image lightbox, a modal) has the keys: Escape closes it and the arrows step its gallery.
+			// The lightbox may close itself first, so a key pressed inside it counts too.
+			// Escape in a field leaves the field first (a second press closes), so a half-written reply is not lost to a stray key.
+			if ( 'Escape' === event.key && isTyping( event ) && state.entryOpen ) {
+				event.target.blur?.();
+				return;
+			}
+			if ( ! ( state.entryOpen || opening ) || isTyping( event ) || lightboxOpenAtKey || event.target.closest?.( '.wp-lightbox-overlay' ) || document.querySelector( 'dialog:modal, .wp-lightbox-overlay.active' ) ) {
 				return;
 			}
 			if ( 'Escape' === event.key ) {
+				// A sheet open over the entry (a Details marked data-nop-sheet: a story's conversation) closes first.
+				const sheet = document.querySelector( 'body > .nop-entry details[data-nop-sheet][open]' );
+				if ( sheet ) {
+					sheet.open = false;
+					sheet.querySelector( 'summary' )?.focus();
+					return;
+				}
 				actions.closeEntry();
-			} else if ( 'ArrowLeft' === event.key ) {
+				return;
+			}
+			// An entry with several photos steps through them first, and on to the next entry only from its last (or first) photo.
+			const back = 'ArrowLeft' === event.key;
+			if ( ! back && 'ArrowRight' !== event.key ) {
+				return;
+			}
+			const photo = document.querySelector( `.nop-entry .nop-photos.has-several .nop-photos__${ back ? 'previous' : 'next' }:not(:disabled)` );
+			if ( photo ) {
+				photo.click();
+			} else if ( back ) {
 				actions.previousEntry();
-			} else if ( 'ArrowRight' === event.key ) {
+			} else {
 				actions.nextEntry();
 			}
 		},
@@ -508,6 +906,7 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 			if ( ! open ) {
 				document.documentElement.classList.remove( 'nop-entry-closing' );
 			}
+			markKind();
 			window.requestAnimationFrame( () => {
 				if ( open ) {
 					document

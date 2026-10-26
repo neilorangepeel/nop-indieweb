@@ -2,15 +2,23 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "nop-indieweb/kind-icon",
-	"title": "Kind Icon",
-	"description": "Renders a lined icon matching the post's nop_kind taxonomy term (note, like, bookmark, …).",
+	"title": "Kind Icon (deprecated)",
+	"description": "Deprecated: use a core Icon block bound to the post-meta source, field \"kind_icon\". Kept so saved content still renders. Renders a lined icon matching the post's nop_kind taxonomy term (note, like, bookmark, …).",
 	"category": "nop-indieweb-meta",
 	"icon": "tag",
-	"keywords": ["kind", "icon", "post format", "indieweb"],
+	"keywords": [
+		"kind",
+		"icon",
+		"post format",
+		"indieweb"
+	],
 	"editorScript": "file:./editor.js",
 	"style": "nop-blocks-shared",
 	"render": "file:./render.php",
-	"usesContext": ["postId", "postType"],
+	"usesContext": [
+		"postId",
+		"postType"
+	],
 	"supports": {
 		"html": false,
 		"align": false,
@@ -52,6 +60,7 @@
 		},
 		"interactivity": {
 			"clientNavigation": true
-		}
+		},
+		"inserter": false
 	}
 }

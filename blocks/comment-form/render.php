@@ -30,7 +30,16 @@ $preview = nop_wm_is_editor_preview();
 $post_id = nop_wm_resolve_post_id( $block );
 
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-comment-form' ] );
-$form          = nop_wm_render_comment_form( $post_id, true, $preview );
+$form          = nop_wm_render_comment_form(
+	$post_id,
+	(bool) ( $attributes['showHeading'] ?? true ),
+	$preview,
+	[
+		'heading'     => (string) ( $attributes['heading'] ?? '' ),
+		'placeholder' => (string) ( $attributes['placeholder'] ?? '' ),
+		'other_ways'  => (bool) ( $attributes['showOtherWays'] ?? true ),
+	]
+);
 
 if ( '' === $form ) {
 	return;

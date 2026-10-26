@@ -64,7 +64,7 @@
 	.nop-film-card__poster {
 		border-radius: var(--nop-radius);
 		box-shadow:    0 2px 10px rgba(0, 0, 0, 0.15);
-		transition:    box-shadow 0.2s, transform 0.2s;
+		transition:    box-shadow var(--nop-motion-fast, 150ms), transform var(--nop-motion-fast, 150ms);
 	}
 
 	.nop-film-card:hover .nop-film-card__poster {

@@ -13,9 +13,83 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Block_Registrar {
 
+	/** Phosphor Regular icons offered to the core Icon block (file name => label), so a template's fact rows pick them in the editor. */
+	private const ICONS = [
+		'arrow-square-out'      => 'Open',
+		'arrows-clockwise'      => 'Repost',
+		'buildings'             => 'Buildings',
+		'calendar-blank'        => 'Calendar',
+		'chat-circle'           => 'Chat',
+		'clock'                 => 'Clock',
+		'cloud-sun'             => 'Weather',
+		'crosshair'             => 'Coordinates',
+		'film-strip'            => 'Film',
+		'gauge'                 => 'Speed',
+		'globe-hemisphere-west' => 'Globe',
+		'hash'                  => 'Number',
+		'heart'                 => 'Heart',
+		'link'                  => 'Link',
+		'map-pin'               => 'Map pin',
+		'microphone-stage'      => 'Stage',
+		'mountains'             => 'Climb',
+		'path'                  => 'Route',
+		'repeat'                => 'Reshare',
+		'person-simple-run'     => 'Run',
+		'ruler'                 => 'Distance',
+		'share-network'         => 'Share',
+		'storefront'            => 'Venue',
+		'tag'                   => 'Tag',
+		'ticket'                => 'Ticket',
+		'timer'                 => 'Timer',
+		'user'                  => 'Person',
+		'vinyl-record'          => 'Record',
+	];
+
 	public function register(): void {
+		add_filter( 'block_type_metadata', [ $this, 'version_assets' ] );
 		add_action( 'init', [ $this, 'register_blocks' ] );
+		add_action( 'init', [ $this, 'register_icons' ] );
 		add_filter( 'block_categories_all', [ $this, 'register_block_categories' ] );
+	}
+
+	/**
+	 * A block's own scripts and styles carry the plugin's version, as its other scripts do, so a release reaches browsers
+	 * that cached the last one. block.json sets none, and without one they carried WordPress's version, which a release
+	 * of the plugin does not change.
+	 *
+	 * @param array<string, mixed> $metadata block.json, as read.
+	 * @return array<string, mixed>
+	 */
+	public function version_assets( array $metadata ): array {
+		if ( str_starts_with( (string) ( $metadata['name'] ?? '' ), 'nop-indieweb/' ) && empty( $metadata['version'] ) ) {
+			$metadata['version'] = NOP_INDIEWEB_VERSION;
+		}
+		return $metadata;
+	}
+
+	/** The `phosphor` icon collection, for the core Icon block (WordPress 7.2 is the plugin's minimum). */
+	public function register_icons(): void {
+		wp_register_icon_collection( 'phosphor', [
+			'label'       => 'Phosphor',
+			'description' => __( 'Phosphor Regular, the icon family of the plugin\'s own blocks.', 'nop-indieweb' ),
+		] );
+		foreach ( self::ICONS as $name => $label ) {
+			wp_register_icon( 'phosphor/' . $name, [
+				'label'     => $label,
+				'file_path' => NOP_INDIEWEB_DIR . 'assets/icons/phosphor/' . $name . '.svg',
+			] );
+		}
+		// The marks the post kinds, exercise types and weather conditions bind to (kind-*, exercise-*, weather-*): every other
+		// file in the folder, so adding one is adding the SVG.
+		foreach ( (array) glob( NOP_INDIEWEB_DIR . 'assets/icons/phosphor/*.svg' ) as $file ) {
+			$name = basename( $file, '.svg' );
+			if ( ! isset( self::ICONS[ $name ] ) ) {
+				wp_register_icon( 'phosphor/' . $name, [
+					'label'     => ucwords( str_replace( '-', ' ', $name ) ),
+					'file_path' => $file,
+				] );
+			}
+		}
 	}
 
 	public function register_blocks(): void {
@@ -77,6 +151,13 @@ class Block_Registrar {
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/syndication-panel' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/exercise-type-icon' );
 		register_block_type( NOP_INDIEWEB_DIR . 'blocks/kind-icon' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/photos' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/share-button' );
+		register_block_type( NOP_INDIEWEB_DIR . 'blocks/engagement' );
+		// These blocks reach a wall inside an entry opened over it, so the router must load their stores then.
+		foreach ( [ 'photos', 'share-button' ] as $name ) {
+			wp_interactivity()->add_client_navigation_support_to_script_module( 'nop-indieweb-' . $name . '-view-script-module' );
+		}
 	}
 
 	public function register_block_categories( array $categories ): array {

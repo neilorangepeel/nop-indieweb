@@ -99,6 +99,25 @@ if ( ! $map_img_url && ! $is_editor ) {
 	return;
 }
 
+// In the entry overlay the map fills a frame the 1× file is stretched across: offer the large one too, and let the
+// browser take it only where the frame needs it (see `sizes`). Made in the background on first open, never here.
+$map_srcset = '';
+$map_sizes  = '';
+if ( $map_img_url && ! $is_editor && '' === $flight_from && \NOP\IndieWeb\Browse\Browse::is_entry_request() ) {
+	$large = \NOP\IndieWeb\nop_indieweb_checkin_map_large( (int) $post_id );
+	if ( $large ) {
+		$map_small = esc_url( add_query_arg( 'v', NOP_INDIEWEB_VERSION, $map_img_url ) );
+		// `auto` lets browsers that support it read the real laid-out width; the rest take the fallback. A theme that
+		// shows the map cropped in (zoomed past its box) returns '' for densities instead: 2× screens get the large file.
+		$map_sizes  = (string) apply_filters( 'nop_indieweb_checkin_map_sizes', 'auto, (min-width: 900px) 900px, 100vw', $block->attributes ?? [] );
+		$map_srcset = '' === $map_sizes
+			? esc_url( $large['url'] ) . ' 2x, ' . $map_small . ' 1x'
+			: esc_url( $large['url'] ) . ' ' . $large['width'] . 'w, ' . $map_small . ' ' . ( $map_w * 2 ) . 'w';
+	} else {
+		\NOP\IndieWeb\nop_indieweb_queue_checkin_map_large( (int) $post_id );
+	}
+}
+
 $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] );
 ?>
 <div <?php echo wp_kses_data( $wrapper_attrs ); ?>>
@@ -112,6 +131,12 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-checkin-map' ] 
 			src="<?php echo esc_url( add_query_arg( 'v', NOP_INDIEWEB_VERSION, $map_img_url ) ); ?>"
 			width="<?php echo esc_attr( (string) $map_w ); ?>"
 			height="<?php echo esc_attr( (string) $map_h ); ?>"
+			<?php if ( $map_srcset ) : ?>
+			srcset="<?php echo esc_attr( $map_srcset ); ?>"
+			<?php if ( '' !== $map_sizes ) : ?>
+			sizes="<?php echo esc_attr( $map_sizes ); ?>"
+			<?php endif; ?>
+			<?php endif; ?>
 			alt=""
 			loading="lazy" decoding="async" aria-hidden="true">
 	</a>

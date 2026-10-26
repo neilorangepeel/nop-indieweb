@@ -3,15 +3,19 @@
  * The Logbook: the day-to-day kinds, gathered at one address.
  *
  * A site files its day-to-day posts by kind, so the Logbook is those kinds,
- * not a category. Without a real Logbook category, /category/logbook/ is the
- * archive of the logbook kinds: it routes as a kind archive, then the main
- * query widens to every logbook kind. It renders the category-logbook
- * template (the plugin's plain one, or a theme's own by the same slug),
- * has one canonical address, and /logbook/ lands on it.
+ * not a category. /logbook/ is the archive of the logbook kinds: it routes as
+ * a kind archive, then the main query widens to every logbook kind, so the
+ * filters (?kind=, ?tag=, ?s=) combine on it like on any archive. It renders
+ * the `category-logbook` template (a theme's own, or the plugin's plain one),
+ * has one canonical address, and the
+ * old /category/logbook/ addresses redirect to it. A real Logbook category, if
+ * a site has one, keeps its own archive.
  *
  * Which kinds count: filter `nop_indieweb_logbook_kinds`. Page size: filter
  * `nop_indieweb_logbook_per_page`. Where another kind lives instead (a
- * section of its own): filter `nop_indieweb_kind_sections`.
+ * section of its own): filter `nop_indieweb_kind_sections`. A kind can be both:
+ * photos are in the Logbook and also have their own section (its crumbs and
+ * archive), and they open over either wall.
  */
 declare( strict_types=1 );
 
@@ -27,7 +31,7 @@ final class Logbook {
 
 	/** @return string[] Kind slugs that make up the Logbook (replies and reposts answer other people's posts, so they stay out). */
 	public static function kinds(): array {
-		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'watch', 'listen', 'bookmark', 'like', 'quote', 'exercise', 'rsvp', 'story' ] );
+		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'reply', 'repost', 'quote', 'exercise', 'rsvp', 'story' ] );
 	}
 
 	/** The section a kind lives in: a category slug, or 'logbook'. */
@@ -52,7 +56,7 @@ final class Logbook {
 			return true;
 		}
 		$term = is_tax( Kind_Taxonomy::TAXONOMY ) ? get_queried_object() : null;
-		return $term instanceof \WP_Term && 'logbook' === self::section( $term->slug );
+		return $term instanceof \WP_Term && in_array( $term->slug, self::kinds(), true );
 	}
 
 	/** A single logbook entry, which a wall can open over itself. */
@@ -61,10 +65,11 @@ final class Logbook {
 			return false;
 		}
 		$kinds = get_the_terms( get_queried_object_id(), Kind_Taxonomy::TAXONOMY );
-		return $kinds && ! is_wp_error( $kinds ) && 'logbook' === self::section( $kinds[0]->slug );
+		return $kinds && ! is_wp_error( $kinds ) && in_array( $kinds[0]->slug, self::kinds(), true );
 	}
 
 	public function register(): void {
+		add_action( 'init', [ $this, 'rewrite' ] );
 		add_filter( 'query_vars', fn( $vars ) => array_merge( $vars, [ self::QUERY_VAR ] ) );
 		add_filter( 'request', [ $this, 'route' ] );
 		add_action( 'pre_get_posts', [ $this, 'widen' ] );
@@ -80,10 +85,21 @@ final class Logbook {
 		add_action( 'admin_bar_menu', [ $this, 'edit_link' ], 90 );
 	}
 
-	/** /category/logbook/ without a Logbook category: route as the first kind's archive, marked as the Logbook. */
+	/** /logbook/ and its pages. The rules are written once (the version below); a change of rule bumps it. */
+	public function rewrite(): void {
+		add_rewrite_rule( '^logbook/?$', 'index.php?' . self::QUERY_VAR . '=1', 'top' );
+		add_rewrite_rule( '^logbook/page/([0-9]+)/?$', 'index.php?' . self::QUERY_VAR . '=1&paged=$matches[1]', 'top' );
+		if ( '2' !== get_option( 'nop_indieweb_logbook_rewrite' ) ) {
+			add_action( 'wp_loaded', static function (): void {
+				flush_rewrite_rules( false );
+				update_option( 'nop_indieweb_logbook_rewrite', '2', false );
+			} );
+		}
+	}
+
+	/** /logbook/: route as the first kind's archive, marked as the Logbook. */
 	public function route( array $vars ): array {
-		if ( 'logbook' === ( $vars['category_name'] ?? '' ) && ! term_exists( 'logbook', 'category' ) ) {
-			unset( $vars['category_name'] );
+		if ( ! empty( $vars[ self::QUERY_VAR ] ) ) {
 			$vars['taxonomy']        = Kind_Taxonomy::TAXONOMY;
 			$vars['term']            = self::kinds()[0] ?? 'note';
 			$vars[ self::QUERY_VAR ] = 1;
@@ -106,17 +122,25 @@ final class Logbook {
 		}
 	}
 
+	/** The old address, /category/logbook/ (and its pages), moves to /logbook/, keeping any filter. */
 	public function redirect(): void {
-		if ( is_404() && 'logbook' === trim( (string) wp_parse_url( add_query_arg( [] ), PHP_URL_PATH ), '/' ) && ! term_exists( 'logbook', 'category' ) ) {
-			wp_safe_redirect( home_url( '/category/logbook/' ), 301 );
+		$path = trim( (string) wp_parse_url( add_query_arg( [] ), PHP_URL_PATH ), '/' );
+		if ( preg_match( '#^category/logbook(?:/page/(\d+))?$#', $path, $m ) && ! term_exists( 'logbook', 'category' ) ) {
+			$query = (string) wp_parse_url( add_query_arg( [] ), PHP_URL_QUERY );
+			wp_safe_redirect( self::url( (int) ( $m[1] ?? 1 ) ) . ( $query ? '?' . $query : '' ), 301 );
 			exit;
 		}
+	}
+
+	/** The Logbook's address, or one of its pages. */
+	public static function url( int $page = 1 ): string {
+		return home_url( '/logbook/' . ( $page > 1 ? 'page/' . $page . '/' : '' ) );
 	}
 
 	public function canonical(): void {
 		if ( self::is_routed() ) {
 			$paged = (int) get_query_var( 'paged' );
-			echo '<link rel="canonical" href="' . esc_url( home_url( '/category/logbook/' . ( $paged > 1 ? 'page/' . $paged . '/' : '' ) ) ) . "\" />\n";
+			echo '<link rel="canonical" href="' . esc_url( self::url( max( 1, $paged ) ) ) . "\" />\n";
 		}
 	}
 

@@ -25,14 +25,15 @@ final class Entry_Fields {
 	public const FIELDS = [
 		'subtitle', 'detail', 'display_title', 'post_number', 'permalink', 'day', 'date_time',
 		'source_url', 'source_label',
-		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site',
-		'venue_category', 'visit_label', 'weather_label',
+		'cite_title', 'cite_excerpt', 'cite_image', 'cite_author', 'cite_site', 'cite_byline',
+		'venue_category', 'visit_label', 'weather_label', 'country_short', 'city_line',
 		'exercise_summary',
-		'watch_released', 'watch_date',
+		'watch_released', 'watch_date', 'watch_director', 'watch_genres', 'watch_runtime', 'watch_country',
 		'listen_artist_year',
 		'rsvp_answer', 'rsvp_event', 'rsvp_when', 'rsvp_time', 'rsvp_where', 'rsvp_image',
-		'quote_text', 'quote_author',
-		'reply_count', 'reply_count_label', 'replies_label',
+		'quote_text', 'quote_body', 'quote_author', 'quote_work',
+		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
+		'camera_line',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -51,12 +52,49 @@ final class Entry_Fields {
 		if ( 'reply_count' === $field ) {
 			return (string) self::reply_count( $post_id );
 		}
+		// Reposts (boosts, shares elsewhere) as a bare number; '' with none, so a block bound to it takes no room.
+		if ( 'repost_count' === $field ) {
+			$reposts = \NOP\IndieWeb\Webmention\Engagement_Counts::get( $post_id )['reposts'];
+			return $reposts ? (string) $reposts : '';
+		}
 		// The same count, always worded: a reply count shown on its own (a spec row, a list) says so when there are none.
 		if ( 'replies_label' === $field ) {
 			return self::reply_count_label( $post_id ) ?: __( 'No replies', 'nop-indieweb' );
 		}
 		self::$cache[ $post_id ] ??= self::compute( $post_id );
 		return self::$cache[ $post_id ][ $field ] ?? '';
+	}
+
+	/** US state names to their postal codes, for a city line. */
+	private const US_STATES = [
+		'alabama' => 'AL', 'alaska' => 'AK', 'arizona' => 'AZ', 'arkansas' => 'AR', 'california' => 'CA', 'colorado' => 'CO',
+		'connecticut' => 'CT', 'delaware' => 'DE', 'district of columbia' => 'DC', 'florida' => 'FL', 'georgia' => 'GA',
+		'hawaii' => 'HI', 'idaho' => 'ID', 'illinois' => 'IL', 'indiana' => 'IN', 'iowa' => 'IA', 'kansas' => 'KS',
+		'kentucky' => 'KY', 'louisiana' => 'LA', 'maine' => 'ME', 'maryland' => 'MD', 'massachusetts' => 'MA',
+		'michigan' => 'MI', 'minnesota' => 'MN', 'mississippi' => 'MS', 'missouri' => 'MO', 'montana' => 'MT',
+		'nebraska' => 'NE', 'nevada' => 'NV', 'new hampshire' => 'NH', 'new jersey' => 'NJ', 'new mexico' => 'NM',
+		'new york' => 'NY', 'north carolina' => 'NC', 'north dakota' => 'ND', 'ohio' => 'OH', 'oklahoma' => 'OK',
+		'oregon' => 'OR', 'pennsylvania' => 'PA', 'rhode island' => 'RI', 'south carolina' => 'SC', 'south dakota' => 'SD',
+		'tennessee' => 'TN', 'texas' => 'TX', 'utah' => 'UT', 'vermont' => 'VT', 'virginia' => 'VA', 'washington' => 'WA',
+		'west virginia' => 'WV', 'wisconsin' => 'WI', 'wyoming' => 'WY',
+	];
+
+	/** A country's short form: a stored code as it is, else its ISO code from ICU's English names ("Ireland" → IE); the UK as "UK"; the name itself without intl or a match. */
+	private static function country_code( string $country ): string {
+		if ( 2 === strlen( $country ) && ctype_alpha( $country ) ) {
+			$code = strtoupper( $country );
+			return 'GB' === $code ? 'UK' : $code;
+		}
+		if ( '' === $country || ! class_exists( 'ResourceBundle' ) ) {
+			return $country;
+		}
+		$names = \ResourceBundle::create( 'en', 'ICUDATA-region' );
+		foreach ( $names ? $names['Countries'] : [] as $code => $name ) {
+			if ( 2 === strlen( (string) $code ) && 0 === strcasecmp( (string) $name, $country ) ) {
+				return 'GB' === $code ? 'UK' : (string) $code;
+			}
+		}
+		return $country;
 	}
 
 	private static function meta( int $post_id, string $key ): string {
@@ -102,15 +140,14 @@ final class Entry_Fields {
 		return $amount . ' ' . $name;
 	}
 
-	/** "2 replies": webmention replies and comments, as the Replies block lists them; '' with none. */
-	/** Replies as the Replies block lists them: webmention replies and comments together. */
+	/** Replies as the Replies block lists them: webmention replies and comments together, threads included. */
 	private static function reply_count( int $post_id ): int {
 		if ( ! function_exists( 'nop_wm_get_data' ) ) {
 			require_once NOP_INDIEWEB_DIR . 'includes/webmention-render.php';
 		}
 		$data  = nop_wm_get_data( $post_id );
 		$count = count( $data['replies'] );
-		foreach ( $data['comment_children'] as $children ) {
+		foreach ( $data['children'] as $children ) {
 			$count += count( (array) $children );
 		}
 		return $count;
@@ -145,6 +182,12 @@ final class Entry_Fields {
 		switch ( $kind ) {
 			case 'checkin':
 				$f['subtitle']     = self::meta( $post_id, 'venue_address' );
+				$f['country_short']  = self::country_code( self::meta( $post_id, 'venue_country' ) );
+				// "Belfast, UK", "Colorado Springs, CO": the city and, in the US, its state, elsewhere the country.
+				$short          = $f['country_short'];
+				$region         = self::meta( $post_id, 'venue_region' );
+				$suffix         = 'US' === $short ? ( self::US_STATES[ strtolower( $region ) ] ?? ( 2 === strlen( $region ) ? strtoupper( $region ) : 'US' ) ) : $short;
+				$f['city_line'] = implode( ', ', array_filter( [ self::meta( $post_id, 'venue_locality' ), $suffix ] ) );
 				$f['source_url']   = self::meta( $post_id, 'checkin_url' ) ?: self::meta( $post_id, 'source_url' );
 				$f['source_label'] = $f['source_url'] ? 'Swarm' : '';
 				$visit             = (int) self::meta( $post_id, 'venue_visit_number' );
@@ -179,6 +222,12 @@ final class Entry_Fields {
 				$f['watch_released'] = self::meta( $post_id, 'film_year' );
 				$watched             = self::meta( $post_id, 'watch_date' );
 				$f['watch_date']     = $watched ? (string) wp_date( 'j M Y', (int) strtotime( $watched ) ) : '';
+				$f['watch_director'] = self::meta( $post_id, 'film_director' );
+				$f['watch_genres']   = self::meta( $post_id, 'film_genres' );
+				$minutes             = (int) self::meta( $post_id, 'film_runtime' );
+				// "1h 16m", "52m".
+				$f['watch_runtime']  = $minutes ? ltrim( ( intdiv( $minutes, 60 ) ? intdiv( $minutes, 60 ) . 'h ' : '' ) . ( $minutes % 60 ? ( $minutes % 60 ) . 'm' : '' ) ) : '';
+				$f['watch_country']  = self::meta( $post_id, 'film_country' );
 				$f['source_url']     = self::meta( $post_id, 'source_url' );
 				$f['source_label']   = $f['source_url'] ? 'Letterboxd' : '';
 				break;
@@ -218,6 +267,19 @@ final class Entry_Fields {
 				$f['rsvp_image'] = self::meta( $post_id, 'rsvp_event_image' );
 				break;
 
+			case 'story':
+				// A story posted elsewhere first (Bluesky, Instagram): its source, named as the reader knows it.
+				$f['source_url']   = self::meta( $post_id, 'source_url' );
+				$host              = $f['source_url'] ? (string) preg_replace( '/^www\./', '', (string) wp_parse_url( $f['source_url'], PHP_URL_HOST ) ) : '';
+				$f['source_label'] = [ 'bsky.app' => 'Bluesky', 'instagram.com' => 'Instagram' ][ $host ] ?? $host;
+				break;
+
+			case 'photo':
+				$f['camera_line']  = self::camera_line( $post_id );
+				$f['source_url']   = self::meta( $post_id, 'source_url' );
+				$f['source_label'] = $f['source_url'] ? (string) preg_replace( '/^www\./', '', (string) wp_parse_url( $f['source_url'], PHP_URL_HOST ) ) : '';
+				break;
+
 			case 'bookmark':
 			case 'like':
 			case 'reply':
@@ -229,7 +291,9 @@ final class Entry_Fields {
 				$f['source_url']   = $url;
 				$f['source_label'] = $host;
 				if ( 'quote' === $kind ) {
-					[ $f['quote_text'], $f['quote_author'] ] = self::quote( $post_id );
+					[ $f['quote_text'], $f['quote_author'], $f['quote_work'] ] = self::quote( $post_id );
+					// The quotation without its marks, for a design that sets it apart some other way (size, a rule).
+					$f['quote_body'] = (string) preg_replace( '/^\x{201C}|\x{201D}$/u', '', $f['quote_text'] );
 					$f['detail'] = $f['quote_author'];
 					break;
 				}
@@ -244,6 +308,8 @@ final class Entry_Fields {
 				$f['cite_image']    = self::meta( $post_id, 'cite_image' );
 				$f['cite_author']   = self::meta( $post_id, 'cite_author_name' );
 				$f['cite_site']     = self::meta( $post_id, 'cite_site_name' ) ?: $host;
+				// "Cole Peters · adactio.com": who and where, for a link's preview.
+				$f['cite_byline']   = implode( ' · ', array_filter( [ $f['cite_author'], $f['cite_site'] ] ) );
 				// The kind label already says "Liked": the title is the thing itself.
 				$f['display_title'] = $cite ?: (string) preg_replace( '/^[^·]{2,16}\s·\s/u', '', $title );
 				$f['detail']        = $f['cite_site'];
@@ -256,26 +322,56 @@ final class Entry_Fields {
 	}
 
 	/**
-	 * A quote post's own Quote block: [ "the quotation", author ].
+	 * The first photo's camera settings as one line, from what WordPress read out of the file at upload
+	 * ("X100V · 23mm · f/2 · 1/250s · ISO 400"); '' when the file carried none (an imported photo usually doesn't).
+	 */
+	private static function camera_line( int $post_id ): string {
+		$ids = array_filter( array_map( 'absint', (array) get_post_meta( $post_id, 'nop_indieweb_photo_ids', true ) ) );
+		$id  = $ids ? (int) reset( $ids ) : (int) get_post_thumbnail_id( $post_id );
+		$m   = $id ? ( wp_get_attachment_metadata( $id )['image_meta'] ?? [] ) : [];
+		if ( ! $m ) {
+			return '';
+		}
+		$shutter = (float) ( $m['shutter_speed'] ?? 0 );
+		return implode(
+			' · ',
+			array_filter(
+				[
+					trim( (string) ( $m['camera'] ?? '' ) ),
+					(float) ( $m['focal_length'] ?? 0 ) ? round( (float) $m['focal_length'] ) . 'mm' : '',
+					(float) ( $m['aperture'] ?? 0 ) ? 'f/' . round( (float) $m['aperture'], 1 ) : '',
+					$shutter ? ( $shutter < 1 ? '1/' . round( 1 / $shutter ) : round( $shutter, 1 ) ) . 's' : '',
+					(int) ( $m['iso'] ?? 0 ) ? 'ISO ' . (int) $m['iso'] : '',
+				]
+			)
+		);
+	}
+
+	/**
+	 * A quote post's own Quote block: [ "the quotation", author, the work and year ].
 	 *
-	 * @return array{0:string,1:string}
+	 * @return array{0:string,1:string,2:string}
 	 */
 	private static function quote( int $post_id ): array {
 		foreach ( parse_blocks( (string) get_post_field( 'post_content', $post_id ) ) as $block ) {
 			if ( 'core/quote' !== $block['blockName'] ) {
 				continue;
 			}
+			// The cite reads "Author, Work, Year": the author, then the rest (the work and its year).
 			$author = '';
+			$work   = '';
 			if ( preg_match( '#<cite[^>]*>(.*?)</cite>#is', (string) $block['innerHTML'], $m ) ) {
-				$author = trim( explode( ',', trim( wp_strip_all_tags( $m[1] ) ) )[0] );
+				$parts  = array_map( 'trim', explode( ',', trim( wp_strip_all_tags( $m[1] ) ), 2 ) );
+				$author = $parts[0];
+				$work   = $parts[1] ?? '';
 			}
 			$text = '';
 			foreach ( $block['innerBlocks'] as $inner ) {
 				$text .= ' ' . wp_strip_all_tags( (string) $inner['innerHTML'] );
 			}
 			$text = trim( (string) preg_replace( '/\s+/', ' ', $text ) );
-			return [ $text ? "\u{201C}" . $text . "\u{201D}" : '', $author ];
+			return [ $text ? "\u{201C}" . $text . "\u{201D}" : '', $author, $work ];
 		}
-		return [ '', '' ];
+		return [ '', '', '' ];
 	}
 }
