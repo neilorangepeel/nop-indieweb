@@ -352,6 +352,26 @@ The "read" side of the IndieWeb — turn the site into a personal reader for h-f
 
 Extend the service-class pattern with `class-service-read.php` (books — Bookwyrm now federates over AP) and `class-service-listen.php` (Last.fm or ListenBrainz scrobbles). Slots into existing architecture cleanly.
 
+### Match kind (live commentary on Boro games)
+
+Play-by-play notes during a football match are good content, but posting each one as a separate note floods the feed and the silos. Instead: one **Match** post per game holds the fixture, the score and the key events. Each take is a short entry tied to it and stamped with the match minute, and the match page shows events and takes merged in minute order, like the BBC live-text page. The result is a record of the match you can come back to and relive.
+
+**Scope: Middlesbrough only.** One team means no fixture picker and no settings screen. Store Boro's team ID once, with a filter so another install can use its own team. On matchday the plugin looks up today's fixture and creates the match post, or offers a one-tap "Start match".
+
+**Data source: API-Football (api-sports.io).** It covers the Championship and also the Premier League and cups, so promotion or a cup run needs nothing new. `/fixtures` gives the live minute (`status.elapsed`) and `/fixtures/events` gives goals, cards, subs and VAR with minute, player and team. There is a free tier with a small daily request quota; check current quota and whether the free plan includes the current season at sign-up. Alternatives: football-data.org (free, but goal and booking detail is thinner) and ESPN's scoreboard JSON (unofficial and undocumented, so it could change or disappear).
+
+**Shape, least code first:**
+
+1. **Takes are ordinary notes** whose `in-reply-to` is the match post. They can be posted through the existing Micropub endpoint or the posting page, so no new interface is needed mid-match. Each keeps its own permalink, syndication and webmentions.
+2. **Minute stamping:** when a take is posted during a live match, ask the API for the current minute and save it on the take.
+3. **No polling cron:** fetch events whenever a take is posted, plus one scheduled sync after full time to fill gaps and set the final score. That is about 30 requests per match. Cache the events in post meta on the match post.
+4. **Syndication as one thread, not a flood:** the match opener goes out first and each take replies to the previous one, giving followers one thread they can mute. The Bluesky syndicator already threads replies natively (`record.reply` root/parent); it only needs to map "reply to my own post" to that post's syndicated copy. The Mastodon side works the same way, using `in_reply_to_id`.
+5. **Markup:** an h-entry with nested h-entries for the takes, plus schema.org `LiveBlogPosting` / `liveBlogUpdate`.
+
+**Open decision:** should auto-fetched events (goals, cards) also be posted to the social thread, or appear on the site only? The leaning is site only, so the thread stays in Neil's voice.
+
+**First step:** prototype the API side by fetching a recent Boro match and printing its events in minute order, to judge data quality before building any posting features. Needs a free api-sports.io key.
+
 ### Vouch (webmention extension)
 
 Spam-resistance extension to webmention — sender includes a `vouch` URL from a site the receiver already trusts. Quietly gaining traction as fediverse spam worsens. Small change to the webmention endpoint + sender.
