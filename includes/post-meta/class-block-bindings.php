@@ -102,6 +102,7 @@ class Block_Bindings {
 	public function register(): void {
 		add_action( 'init', [ $this, 'register_source' ] );
 		add_filter( 'render_block', [ $this, 'inject_mf2_classes' ], 10, 2 );
+		add_filter( 'render_block_core/paragraph', [ $this, 'mark_rsvp_answer' ], 10, 3 );
 		// WP 6.7+ gates the bindings editor UI behind a separate edit_block_binding
 		// cap. Map it to edit_blocks so anyone who can edit block content can also
 		// manage bindings — which matches the default behaviour WP intends but
@@ -454,6 +455,25 @@ class Block_Bindings {
 				return $this->inject_post_terms_mf2( $html, $block );
 		}
 
+		return $html;
+	}
+
+	/** A paragraph showing an RSVP's answer carries it as `nop-rsvp-{yes|went|maybe|no|interested}`, so a theme can stamp each one its own way. */
+	public function mark_rsvp_answer( string $html, array $block, WP_Block $instance ): string {
+		$binding = $block['attrs']['metadata']['bindings']['content'] ?? null;
+		if ( 'nop-indieweb/post-meta' !== ( $binding['source'] ?? '' ) || ! in_array( $binding['args']['field'] ?? '', [ 'rsvp_answer', 'subtitle', 'detail' ], true ) ) {
+			return $html;
+		}
+		$post_id = (int) ( $instance->context['postId'] ?? get_the_ID() );
+		$state   = $post_id && has_term( 'rsvp', \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY, $post_id ) ? Entry_Fields::rsvp_state( $post_id ) : '';
+		if ( '' === $state ) {
+			return $html;
+		}
+		$p = new \WP_HTML_Tag_Processor( $html );
+		if ( $p->next_tag() ) {
+			$p->add_class( 'nop-rsvp-' . sanitize_html_class( $state ) );
+			return $p->get_updated_html();
+		}
 		return $html;
 	}
 

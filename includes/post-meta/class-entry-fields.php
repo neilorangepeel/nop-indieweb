@@ -101,6 +101,25 @@ final class Entry_Fields {
 		return (string) get_post_meta( $post_id, 'nop_indieweb_' . $key, true );
 	}
 
+	/** An event's date as a timestamp, read in the site's timezone unless it carries its own offset; 0 when unreadable. */
+	private static function event_time( string $value ): int {
+		$date = '' !== $value ? date_create_immutable( $value, wp_timezone() ) : false;
+		return $date ? $date->getTimestamp() : 0;
+	}
+
+	/** The RSVP's answer, with a Yes to an event that has started read as 'went'. */
+	public static function rsvp_state( int $post_id ): string {
+		$answer = self::meta( $post_id, 'rsvp' );
+		$start  = self::meta( $post_id, 'rsvp_event_start' );
+		if ( 'yes' === $answer && $start ) {
+			$at = self::event_time( str_contains( $start, ':' ) ? $start : $start . ' 23:59' );
+			if ( $at && $at < time() ) {
+				return 'went';
+			}
+		}
+		return $answer;
+	}
+
 	private static function kind( int $post_id ): string {
 		$terms = get_the_terms( $post_id, \NOP\IndieWeb\Kind\Kind_Taxonomy::TAXONOMY );
 		return $terms && ! is_wp_error( $terms ) ? (string) $terms[0]->slug : '';
@@ -244,11 +263,12 @@ final class Entry_Fields {
 			case 'rsvp':
 				$answers           = [
 					'yes'        => __( 'Going', 'nop-indieweb' ),
+					'went'       => __( 'Went', 'nop-indieweb' ),
 					'maybe'      => __( 'Maybe', 'nop-indieweb' ),
 					'no'         => __( 'Not going', 'nop-indieweb' ),
 					'interested' => __( 'Interested', 'nop-indieweb' ),
 				];
-				$f['rsvp_answer']  = $answers[ self::meta( $post_id, 'rsvp' ) ] ?? '';
+				$f['rsvp_answer']  = $answers[ self::rsvp_state( $post_id ) ] ?? '';
 				$f['subtitle']     = $f['rsvp_answer'];
 				$f['detail']       = $f['rsvp_answer'];
 				$f['source_url']   = self::meta( $post_id, 'in_reply_to' );
@@ -256,11 +276,14 @@ final class Entry_Fields {
 				// The event, as its tile names it: its own name, else the title without the answer in front.
 				$f['rsvp_event']    = self::meta( $post_id, 'rsvp_event_name' ) ?: trim( str_contains( $title, '·' ) ? substr( $title, strpos( $title, '·' ) + 2 ) : $title );
 				$f['display_title'] = $f['rsvp_event'];
-				$start              = self::meta( $post_id, 'rsvp_event_start' ) ? (int) strtotime( self::meta( $post_id, 'rsvp_event_start' ) ) : 0;
-				$end                = self::meta( $post_id, 'rsvp_event_end' ) ? (int) strtotime( self::meta( $post_id, 'rsvp_event_end' ) ) : 0;
+				$start_raw          = self::meta( $post_id, 'rsvp_event_start' );
+				$start              = self::event_time( $start_raw );
+				$end                = self::event_time( self::meta( $post_id, 'rsvp_event_end' ) );
 				if ( $start ) {
-					$f['rsvp_when'] = wp_date( 'j M Y', $start ) . ( $end && wp_date( 'Y-m-d', $end ) !== wp_date( 'Y-m-d', $start ) ? ' – ' . wp_date( 'j M', $end ) : '' );
-					$f['rsvp_time'] = (string) wp_date( 'H:i', $start );
+					$multi_day      = $end && wp_date( 'Y-m-d', $end ) !== wp_date( 'Y-m-d', $start );
+					$has_time       = str_contains( $start_raw, ':' );
+					$f['rsvp_time'] = $has_time ? (string) wp_date( 'H:i', $start ) : '';
+					$f['rsvp_when'] = wp_date( 'j M Y', $start ) . ( $multi_day ? ' – ' . wp_date( 'j M', $end ) : ( $has_time ? ' · ' . $f['rsvp_time'] : '' ) );
 				}
 				$f['rsvp_where'] = self::meta( $post_id, 'rsvp_event_location' );
 				// The event's own photo, as parsed from its page (a remote URL, not an attachment).
