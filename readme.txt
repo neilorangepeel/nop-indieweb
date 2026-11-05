@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 7.2
 Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 0.10.0
+Stable tag: 0.10.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,10 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.10.1 =
+* Logbook: a count for searched words is no longer cached, so a visitor's search can't write rows to the options table.
+* Version bump so browsers pick up the block styles and scripts changed since 0.10.0.
 
 = 0.10.0 =
 * A story's video is its own player (Photos block): it starts muted and looping (with sound once the reader turns it on, for the visit; with reduced motion it waits), pauses on a tap or while a press is held, shows and seeks its time on a line across the top, and answers K or Space, M, J and L in the overlay.

@@ -157,7 +157,7 @@ final class Wall_Filters {
 
 	/**
 	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and
-	 * search. Kept for a day per combination and forgotten whenever a post is saved or deleted.
+	 * search. Kept for a day per combination without a search (forgotten whenever a post is saved or deleted); a search is counted afresh.
 	 *
 	 * @param string[] $kinds Kind slugs.
 	 * @param string[] $tags  Tag slugs.
@@ -192,7 +192,10 @@ final class Wall_Filters {
 			$args['s'] = $terms;
 		}
 		$count = (int) ( new \WP_Query( $args ) )->found_posts;
-		set_transient( $key, $count, DAY_IN_SECONDS );
+		// Searched words are free text from the address: storing them would let any visitor write rows at will.
+		if ( '' === $terms ) {
+			set_transient( $key, $count, DAY_IN_SECONDS );
+		}
 		return $seen[ $key ] = $count;
 	}
 
