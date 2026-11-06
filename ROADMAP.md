@@ -224,6 +224,15 @@ Today's syndicators run on every published post if globally enabled. New policy:
 
 **Status:** the per-post override slice now exists — a `nop_indieweb_skip_syndication` meta flag short-circuits `Syndication_Manager::syndicate()`, and Swarm sets it automatically for private check-ins (Micropub `visibility=private`). The provenance rule and the per-kind matrix are still to build.
 
+### WordPress tags as hashtags on Mastodon and Bluesky
+
+Add the post's WP tags to the end of syndicated Mastodon and Bluesky posts (e.g. `#Belfast #Photography`) so they turn up in hashtag searches. Tumblr already gets WP tags as native tags, and Bluesky already links any `#tag` typed into the body.
+
+- **Prototype:** branch `origin/claude/hashtag-inline-mastodon-bsky-jkoo4k` (June 2026, 2 commits). It adds `build_hashtag_string()` (strips odd characters, skips all-number tags) and a `$hashtags` argument to `compose_status()`. The branch is stale: syndication was rebuilt after it was cut ("one clean structure for every kind"), and it conflicts in `class-syndicator-base.php` and `class-mastodon-compatible-syndicator.php`. Rebuild it on main rather than merging.
+- **Decide first:** is this wanted? Tags use up the character budget, so long notes get cut short sooner. Maybe make it per kind (see Kind-aware syndication policy) or cap the number of tags.
+- **`#nobridge` (same branch):** adds `#nobridge` to Mastodon posts when Bluesky syndication is on, so Bridgy Fed doesn't make a second Bluesky copy. Only needed if the Mastodon account is bridged to Bluesky through Bridgy Fed. Checked 6 Nov 2026: no bridged copy exists (the only Bluesky account is `neilorangepeel.com`), so it's **not needed now**. Drop it unless bridging is switched on.
+- **Also seen 6 Nov:** `https://mastodon.ie/@neilorangepeel` returns 404 and the account lookup finds nothing. Check whether the account moved before working on Mastodon syndication; the footer's `rel=me` link points there.
+
 ### PESOS for original Mastodon and Bluesky posts
 
 Today, only engagement (replies, likes) comes in via Bridgy webmentions. Your own original toots and skeets — when you post directly on Mastodon or Bluesky — don't auto-import. The "never echo back" provenance rule only works if those posts arrive on the site with `nop_indieweb_platform` set correctly.
