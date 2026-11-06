@@ -5,12 +5,17 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## State (6 Nov 2026)
 
-- Version 0.10.1 is on GitHub `main`. Local `main` is **4 commits ahead
-  (unpushed)**: two ROADMAP.md entries, this file, and the Safari filter fix.
+- Version 0.10.1, pushed and deployed 6 Nov (CI + Deploy green; live serves
+  the Safari filter fix). The only local-only commit is this notes update.
 - Mastodon account: `https://mastodon.social/@neilorangepeel`.
 
 ## Changed
 
+- **6 Nov 2026:** deleted merged branches (local + GitHub): feat/entry-fields,
+  feat/flight-arcs, overlay-redesign, refactor/plugin-decomposition,
+  claude/nop-indieweb-rsvp-post-type-*, claude/post-location-refresh-*,
+  experiment/halftone-fixed-shadows, feature/interactivity-browsing,
+  pre-post-review. Only the unmerged hashtag branch remains.
 - **6 Nov 2026:** `assets/js/browse.js` `outsideFilters` ignores clicks on
   elements no longer in the page. In Safari, tapping a Logbook filter chip
   swapped the wall and left the filter drawer unable to reopen. Confirmed fixed
@@ -23,14 +28,9 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
-- Push `main` (needs your go-ahead).
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
 
 ## Open questions
 
 - Delete the stale hashtag branch once the roadmap entry is settled?
-- Other remote branches (`claude/nop-indieweb-rsvp-post-type-*`,
-  `claude/post-location-refresh-*`, `experiment/halftone-fixed-shadows`,
-  `pre-post-review`, `feature/interactivity-browsing`) are already merged into
-  main and could be deleted.
