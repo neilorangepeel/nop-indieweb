@@ -231,7 +231,7 @@ Add the post's WP tags to the end of syndicated Mastodon and Bluesky posts (e.g.
 - **Prototype:** branch `origin/claude/hashtag-inline-mastodon-bsky-jkoo4k` (June 2026, 2 commits). It adds `build_hashtag_string()` (strips odd characters, skips all-number tags) and a `$hashtags` argument to `compose_status()`. The branch is stale: syndication was rebuilt after it was cut ("one clean structure for every kind"), and it conflicts in `class-syndicator-base.php` and `class-mastodon-compatible-syndicator.php`. Rebuild it on main rather than merging.
 - **Decide first:** is this wanted? Tags use up the character budget, so long notes get cut short sooner. Maybe make it per kind (see Kind-aware syndication policy) or cap the number of tags.
 - **`#nobridge` (same branch):** adds `#nobridge` to Mastodon posts when Bluesky syndication is on, so Bridgy Fed doesn't make a second Bluesky copy. Only needed if the Mastodon account is bridged to Bluesky through Bridgy Fed. Checked 6 Nov 2026: no bridged copy exists (the only Bluesky account is `neilorangepeel.com`), so it's **not needed now**. Drop it unless bridging is switched on.
-- **Also seen 6 Nov:** `https://mastodon.ie/@neilorangepeel` returns 404 and the account lookup finds nothing. Check whether the account moved before working on Mastodon syndication; the footer's `rel=me` link points there.
+- **Mastodon account** is `https://mastodon.social/@neilorangepeel` (the theme linked mastodon.ie until 6 Nov 2026; fixed).
 
 ### PESOS for original Mastodon and Bluesky posts
 
