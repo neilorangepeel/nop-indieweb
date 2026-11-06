@@ -556,8 +556,10 @@ const { state, actions } = store( 'nop-indieweb/browse', {
 				state.filtersOpen = false;
 			}
 		},
+		// A target no longer in the page was swapped out with the wall: Safari runs this after a chip's swap, and the
+		// closed drawer then could not reopen, focus still being in the search.
 		outsideFilters( event ) {
-			if ( state.filtersOpen && ! event.target.closest?.( '.nop-wall-filters' ) ) {
+			if ( state.filtersOpen && event.target.isConnected && ! event.target.closest?.( '.nop-wall-filters' ) ) {
 				state.filtersOpen = false;
 			}
 		},
