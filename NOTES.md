@@ -11,6 +11,13 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
+  STRUCTURE.md): no kind→category defaults, services and `/post` stop filing
+  categories, settings lose the Category fields, old `/category/<slug>/`
+  addresses redirect. Local data cleaned with
+  `bin/retire-categories-except-work.php apply` (15 categories, 2,033 links;
+  backup `~/Studio/_backups/neilorangepeel-before-retire-categories-2026-11-07.sql`).
+  Deleted the finished `bin/migrate-topics.php` and `bin/retire-categories.php`.
 - **6 Nov 2026:** deleted merged branches (local + GitHub): feat/entry-fields,
   feat/flight-arcs, overlay-redesign, refactor/plugin-decomposition,
   claude/nop-indieweb-rsvp-post-type-*, claude/post-location-refresh-*,
@@ -28,6 +35,11 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
+- **Live, when Neil says go:** deploy 0.11.0, then on the server
+  `wp eval-file …/bin/retire-categories-except-work.php` (dry run, show Neil the
+  counts) and only then `… apply`. Back up the live DB first.
+- Structure steps 3–8 (see the theme's NOTES.md / STRUCTURE.md): next is 3,
+  Subjects (3+ rule in the filter, `#hashtag` in a post → tag).
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
 
