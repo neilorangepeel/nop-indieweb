@@ -35,7 +35,7 @@ final class Entry_Fields {
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
 		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
-		'match_board_score', 'match_home_name', 'match_away_name', 'match_home_goals', 'match_away_goals', 'match_kicker', 'match_status_line', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
+		'match_board_score', 'match_home_name', 'match_away_name', 'match_home_goals', 'match_away_goals', 'match_kicker', 'match_status_line', 'match_score_sep', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -249,6 +249,8 @@ final class Entry_Fields {
 				// Each side's goals for its scoreboard row: '' before a score is known, so the row shows just the team.
 				$goals                  = '' !== $score ? explode( '–', $score ) : [];
 				$f['match_home_goals']  = $goals[0] ?? '';
+				// What stands between the two goals: a dash once there is a score, "v" before.
+				$f['match_score_sep']   = '' !== $score ? '–' : 'v';
 				$f['match_away_goals']  = $goals[1] ?? '';
 				$ht                     = self::meta( $post_id, 'match_ht_score' );
 				/* translators: %s: half-time score, e.g. 0–1 */

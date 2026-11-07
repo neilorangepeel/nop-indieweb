@@ -11,6 +11,9 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** Entry_Fields `match_score_sep` ("–" with a score, "v"
+  before) for the theme's five-column score line.
+
 - **7 Nov 2026:** scorers set newspaper-style ("T. Conway 33, H. Hackney 71",
   "57 pen", "90+3 og"); new Entry_Fields `match_kicker` ("English Championship ·
   Wednesday 4 November") and `match_status_line` ("Full time · Half-time 0–1")
