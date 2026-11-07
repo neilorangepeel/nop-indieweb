@@ -63,6 +63,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/kind/class-exercise-type-taxonomy.php'
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-entry-fields.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-logbook.php';
+require_once NOP_INDIEWEB_DIR . 'includes/kind/class-hashtags.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-browse.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-wall-filters.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';

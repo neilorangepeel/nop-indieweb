@@ -93,6 +93,7 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 * Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.
 * Old /category/<slug>/ addresses redirect: photo and film sections to their kind's archive, check-in travel to /kind/checkin/, everything else to the Logbook (filter `nop_indieweb_retired_category_redirects`).
 * New `bin/retire-categories-except-work.php` removes the old categories from posts (dry run unless given `apply`).
+* A #hashtag typed in a post becomes its tag when the post is saved, however it was made (tags are only added; #boro joins an existing BORO). `bin/hashtags-to-tags.php` does the same for existing posts (dry run unless given `apply`).
 
 = 0.10.1 =
 * Logbook: a count for searched words is no longer cached, so a visitor's search can't write rows to the options table.
