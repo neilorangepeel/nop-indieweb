@@ -11,6 +11,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** Entry_Fields `match_home_short` / `match_away_short` /
+  `match_home_goals` / `match_away_goals` for the theme's scorecard (replacing
+  `match_line`).
+
 - **7 Nov 2026:** scoreboard as one line: `Match_Clock::short_name()` (tested;
   "Middlesbrough" → "Boro", club suffixes dropped, a few listed names; filter
   `nop_indieweb_match_short_names`) and Entry_Fields `match_line` ("Wrexham 1 2

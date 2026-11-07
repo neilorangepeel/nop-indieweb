@@ -35,7 +35,7 @@ final class Entry_Fields {
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
 		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
-		'match_line', 'match_kicker', 'match_status_line', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
+		'match_home_short', 'match_away_short', 'match_home_goals', 'match_away_goals', 'match_kicker', 'match_status_line', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -243,15 +243,13 @@ final class Entry_Fields {
 				$takes                  = count( \NOP\IndieWeb\Football\Match_Day::takes( $post_id ) );
 				/* translators: %d: number of takes posted during the match */
 				$f['match_takes']       = $takes ? sprintf( _n( '%d take', '%d takes', $takes, 'nop-indieweb' ), $takes ) : '';
-				// The scoreboard's one line, short names and the goals, fitted edge to edge by the theme: "Wrexham 1 2 Boro"
-				// ("Wrexham v Boro" before a score).
+				// The scorecard: each side's short name ("Boro") and goals, '' for the goals before a score is known.
 				$short                  = (array) apply_filters( 'nop_indieweb_match_short_names', \NOP\IndieWeb\Football\Match_Clock::SHORT_NAMES );
 				$goals                  = '' !== $score ? explode( '–', $score ) : [];
-				$f['match_line']        = implode( ' ', [
-					\NOP\IndieWeb\Football\Match_Clock::short_name( $home, $short ),
-					2 === count( $goals ) ? $goals[0] . ' ' . $goals[1] : 'v',
-					\NOP\IndieWeb\Football\Match_Clock::short_name( $away, $short ),
-				] );
+				$f['match_home_short']  = \NOP\IndieWeb\Football\Match_Clock::short_name( $home, $short );
+				$f['match_away_short']  = \NOP\IndieWeb\Football\Match_Clock::short_name( $away, $short );
+				$f['match_home_goals']  = 2 === count( $goals ) ? $goals[0] : '';
+				$f['match_away_goals']  = 2 === count( $goals ) ? $goals[1] : '';
 				$ht                    = self::meta( $post_id, 'match_ht_score' );
 				/* translators: %s: half-time score, e.g. 0–1 */
 				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';
