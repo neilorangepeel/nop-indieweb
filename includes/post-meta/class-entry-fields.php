@@ -243,11 +243,12 @@ final class Entry_Fields {
 				$takes                  = count( \NOP\IndieWeb\Football\Match_Day::takes( $post_id ) );
 				/* translators: %d: number of takes posted during the match */
 				$f['match_takes']       = $takes ? sprintf( _n( '%d take', '%d takes', $takes, 'nop-indieweb' ), $takes ) : '';
-				// The scorecard: each side's short name ("Boro") and goals, '' for the goals before a score is known.
+				// The scorecard: each side's short name ("Boro": one set on the match wins, else the list and rule in
+				// Match_Clock::short_name()) and goals, '' for the goals before a score is known.
 				$short                  = (array) apply_filters( 'nop_indieweb_match_short_names', \NOP\IndieWeb\Football\Match_Clock::SHORT_NAMES );
 				$goals                  = '' !== $score ? explode( '–', $score ) : [];
-				$f['match_home_short']  = \NOP\IndieWeb\Football\Match_Clock::short_name( $home, $short );
-				$f['match_away_short']  = \NOP\IndieWeb\Football\Match_Clock::short_name( $away, $short );
+				$f['match_home_short']  = self::meta( $post_id, 'match_home_short' ) ?: \NOP\IndieWeb\Football\Match_Clock::short_name( $home, $short );
+				$f['match_away_short']  = self::meta( $post_id, 'match_away_short' ) ?: \NOP\IndieWeb\Football\Match_Clock::short_name( $away, $short );
 				$f['match_home_goals']  = 2 === count( $goals ) ? $goals[0] : '';
 				$f['match_away_goals']  = 2 === count( $goals ) ? $goals[1] : '';
 				$ht                    = self::meta( $post_id, 'match_ht_score' );

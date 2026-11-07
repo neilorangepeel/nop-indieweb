@@ -332,6 +332,14 @@ class Registry {
 				'label'       => __( 'Away team', 'nop-indieweb' ),
 				'description' => 'Match post: the away team.',
 			] ),
+			'nop_indieweb_match_home_short'  => array_merge( $string, [
+				'label'       => __( 'Home team, short', 'nop-indieweb' ),
+				'description' => 'Match post: the home team\'s short name for the scorecard ("Boro"). Empty: worked out from the name.',
+			] ),
+			'nop_indieweb_match_away_short'  => array_merge( $string, [
+				'label'       => __( 'Away team, short', 'nop-indieweb' ),
+				'description' => 'Match post: the away team\'s short name for the scorecard. Empty: worked out from the name.',
+			] ),
 			'nop_indieweb_match_competition' => array_merge( $string, [
 				'label'       => __( 'Competition', 'nop-indieweb' ),
 				'description' => 'Match post: the league or cup.',

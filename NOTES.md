@@ -11,6 +11,15 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** short names (Neil: always use a team's short name where one
+  exists). API-Football's fixtures have no short-name field, so: a per-match
+  `nop_indieweb_match_home_short` / `_away_short` meta wins (editor: Custom
+  fields panel, or `wp post meta update`), else `Match_Clock::SHORT_NAMES`
+  (now also Palace, MK Dons) via `nop_indieweb_match_short_names`, else the rule
+  (leading AFC/FC and trailing club words dropped: "AFC Bournemouth" →
+  "Bournemouth"). Tested a long name ("Peterborough", 10–2) on the scorecard:
+  fits edge to edge on desktop and phone.
+
 - **7 Nov 2026:** Entry_Fields `match_home_short` / `match_away_short` /
   `match_home_goals` / `match_away_goals` for the theme's scorecard (replacing
   `match_line`).

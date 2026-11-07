@@ -70,6 +70,9 @@ final class MatchClockTest extends TestCase {
 		$this->assertSame( 'Man Utd', Match_Clock::short_name( 'Manchester United' ) );
 		$this->assertSame( 'Derby', Match_Clock::short_name( 'Derby County' ) );
 		$this->assertSame( 'United', Match_Clock::short_name( 'United' ) );
+		$this->assertSame( 'Bournemouth', Match_Clock::short_name( 'AFC Bournemouth' ) );
+		$this->assertSame( 'Palace', Match_Clock::short_name( 'Crystal Palace' ) );
+		$this->assertSame( 'Peterborough', Match_Clock::short_name( 'Peterborough United' ) );
 		$this->assertSame( 'Smoggies', Match_Clock::short_name( 'Middlesbrough', [ 'Middlesbrough' => 'Smoggies' ] ) );
 	}
 }

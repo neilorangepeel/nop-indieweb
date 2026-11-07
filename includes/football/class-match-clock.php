@@ -86,11 +86,17 @@ class Match_Clock {
 		'Sheffield Wednesday'     => 'Sheff Wed',
 		'Sheffield Utd'           => 'Sheff Utd',
 		'Sheffield United'        => 'Sheff Utd',
+		'Crystal Palace'          => 'Palace',
+		'Milton Keynes Dons'      => 'MK Dons',
+		'MK Dons'                 => 'MK Dons',
+		'Newcastle'               => 'Newcastle',
+		'Wycombe'                 => 'Wycombe',
 	];
 
 	/**
 	 * A team's short name for the scoreboard: "Middlesbrough" → "Boro", "Hull City" → "Hull", "Blackburn Rovers" →
-	 * "Blackburn". A listed name first, else a trailing club word dropped when a name is left.
+	 * "Blackburn", "AFC Bournemouth" → "Bournemouth". A listed name first, else a leading AFC/FC and a trailing club
+	 * word dropped when a name is left. (Match_Day stores a hand-set short name per match, which wins over this.)
 	 *
 	 * @param array<string,string> $names Overrides, as SHORT_NAMES.
 	 */
@@ -99,7 +105,7 @@ class Match_Clock {
 		if ( isset( $names[ $name ] ) ) {
 			return $names[ $name ];
 		}
-		$short = (string) preg_replace( '/\s+(?:City|Town|United|Utd|Rovers|Athletic|County|Wanderers|Albion|Argyle|Rangers|A?FC)$/u', '', $name );
+		$short = (string) preg_replace( [ '/^A?FC\s+/u', '/\s+(?:City|Town|United|Utd|Rovers|Athletic|County|Wanderers|Albion|Argyle|Rangers|Wednesday|A?FC)$/u' ], '', $name );
 		return '' !== $short ? $short : $name;
 	}
 
