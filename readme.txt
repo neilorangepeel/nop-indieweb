@@ -94,6 +94,8 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 * Filters: `nop_indieweb_match_team`, `nop_indieweb_match_leagues`, `nop_indieweb_match_hashtag`.
 * New `wp nop-indieweb match fixture|start [--date=]` to look up a fixture or start a match by hand.
 * A match goes out as one thread on Bluesky and Mastodon: the match post opens it ("Watford v Middlesbrough, English Championship, kick-off 3pm. Thoughts as it happens in the replies. #UTB") and each take replies to the previous one. A take whose parent hasn't gone out yet sends it first; one that failed is passed over, so the thread never breaks.
+* At full time the plugin posts a closing take that ends the thread: "Full time: Watford 1–2 Middlesbrough. Every take from the match: <link> #UTB" (once per match, only for a match in the last day).
+* Bluesky: bare web addresses in a post's text are now real links (Bluesky doesn't link them itself).
 
 = 0.11.0 =
 * Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.

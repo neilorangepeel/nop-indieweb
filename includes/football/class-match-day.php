@@ -68,7 +68,7 @@ class Match_Day {
 			if ( ! $fixture || $time < $fixture['kickoff'] - self::BEFORE || $time > $fixture['kickoff'] + self::AFTER ) {
 				return;
 			}
-			$match_id = self::create( $fixture );
+			$match_id = self::create( $fixture, (int) $post->post_author );
 			if ( ! $match_id ) {
 				return;
 			}
@@ -91,19 +91,54 @@ class Match_Day {
 		}
 	}
 
-	/** At full time: mark the match finished, and take openfootball's score if no take gave one. */
+	/**
+	 * At full time: mark the match finished, take openfootball's score if no take
+	 * gave one, and post the closing take, which ends the social thread with the
+	 * score and a link to the match page.
+	 */
 	public function full_time( int $match_id ): void {
 		if ( self::KIND !== get_post_meta( $match_id, 'nop_indieweb_post_kind', true ) ) {
 			return;
 		}
 		update_post_meta( $match_id, 'nop_indieweb_match_status', 'ft' );
-		if ( '' !== (string) get_post_meta( $match_id, 'nop_indieweb_match_score', true ) ) {
+		$kickoff = (int) get_post_meta( $match_id, 'nop_indieweb_match_kickoff', true );
+		$score   = (string) get_post_meta( $match_id, 'nop_indieweb_match_score', true );
+		if ( '' === $score ) {
+			$fixture = self::fixture_on( $kickoff );
+			if ( $fixture && '' !== $fixture['score'] ) {
+				$score = $fixture['score'];
+				update_post_meta( $match_id, 'nop_indieweb_match_score', $score );
+			}
+		}
+
+		// Once per match, and never for an old one (a test, or a late cron run).
+		if ( get_post_meta( $match_id, 'nop_indieweb_match_ft_take', true ) || time() - $kickoff > DAY_IN_SECONDS ) {
 			return;
 		}
-		$fixture = self::fixture_on( (int) get_post_meta( $match_id, 'nop_indieweb_match_kickoff', true ) );
-		if ( $fixture && '' !== $fixture['score'] ) {
-			update_post_meta( $match_id, 'nop_indieweb_match_score', $fixture['score'] );
+		$home = (string) get_post_meta( $match_id, 'nop_indieweb_match_home', true );
+		$away = (string) get_post_meta( $match_id, 'nop_indieweb_match_away', true );
+		$text = '' !== $score
+			/* translators: The closing take. 1: home team, 2: score, e.g. 2–1, 3: away team, 4: link to the match page. */
+			? sprintf( __( 'Full time: %1$s %2$s %3$s. Every take from the match: %4$s #UTB', 'nop-indieweb' ), $home, $score, $away, get_permalink( $match_id ) )
+			/* translators: The closing take when the score isn't known. 1: home team, 2: away team, 3: link to the match page. */
+			: sprintf( __( 'Full time: %1$s v %2$s. Every take from the match: %3$s #UTB', 'nop-indieweb' ), $home, $away, get_permalink( $match_id ) );
+
+		$take = wp_insert_post( [
+			'post_type'    => 'post',
+			'post_status'  => 'publish',
+			'post_author'  => (int) get_post_field( 'post_author', $match_id ),
+			'post_content' => '<!-- wp:paragraph -->' . "\n" . '<p>' . esc_html( $text ) . '</p>' . "\n" . '<!-- /wp:paragraph -->',
+			'meta_input'   => [
+				'nop_indieweb_match_id'     => $match_id,
+				'nop_indieweb_match_minute' => 'FT',
+			],
+		], true );
+		if ( is_wp_error( $take ) ) {
+			\NOP\IndieWeb\nop_indieweb_log( 'Match: could not post the full-time take', [ 'error' => $take->get_error_message() ] );
+			return;
 		}
+		wp_set_object_terms( $take, 'note', Kind_Taxonomy::TAXONOMY );
+		update_post_meta( $match_id, 'nop_indieweb_match_ft_take', $take );
 	}
 
 	/** The match post whose window covers a moment, or 0. */
@@ -151,7 +186,7 @@ class Match_Day {
 	}
 
 	/** Create the match post for a fixture. Returns its ID, or 0. */
-	public static function create( array $fixture ): int {
+	public static function create( array $fixture, int $author = 0 ): int {
 		$existing = self::match_at( $fixture['kickoff'] );
 		if ( $existing ) {
 			return $existing;
@@ -163,6 +198,7 @@ class Match_Day {
 		$id      = wp_insert_post( [
 			'post_type'     => 'post',
 			'post_status'   => 'publish',
+			'post_author'   => $author ? $author : get_current_user_id(),
 			/* translators: 1: home team, 2: away team. */
 			'post_title'    => sprintf( __( '%1$s v %2$s', 'nop-indieweb' ), $fixture['home'], $fixture['away'] ),
 			'post_content'  => '<!-- wp:paragraph -->' . "\n" . '<p>' . esc_html( $opener ) . '</p>' . "\n" . '<!-- /wp:paragraph -->',

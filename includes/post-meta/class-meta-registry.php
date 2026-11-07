@@ -352,6 +352,14 @@ class Registry {
 				'label'         => __( 'Kick-off', 'nop-indieweb' ),
 				'description'   => 'Match post: kick-off as a Unix timestamp (UTC).',
 			],
+			'nop_indieweb_match_ft_take'     => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Full-time take', 'nop-indieweb' ),
+				'description'   => 'Match post: the ID of the closing take posted at full time.',
+			],
 			'nop_indieweb_match_id'          => [
 				'type'          => 'integer',
 				'single'        => true,

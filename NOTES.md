@@ -28,6 +28,11 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   first attempt, skips failed ones. Bluesky threads through `build_reply_ref()`,
   Mastodon uses the stored status id. Tested locally with fake URLs only.
   Tumblr (if switched on) would still get takes as separate posts.
+- **7 Nov 2026:** full-time take: the full-time job (kick-off + 3h) posts a note
+  as the last take ("Full time: … Every take from the match: <link> #UTB"),
+  once per match (`nop_indieweb_match_ft_take`), skipped for matches over a day
+  old. Bluesky now facets bare URLs in the body (`build_url_facets()`), which
+  also fixes links in ordinary notes. Tested locally on today's fixture.
 
 - **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
   STRUCTURE.md): no kind→category defaults, services and `/post` stop filing

@@ -157,6 +157,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// each #tag and @handle the author typed needs an explicit facet.
 		$facets = array_merge(
 			$facet ? [ $facet ] : [],
+			$this->build_url_facets( $text, $facet ? (int) $facet['index']['byteStart'] : strlen( $text ) ),
 			$this->build_hashtag_facets( $text ),
 			$this->build_mention_facets( $text )
 		);
@@ -811,6 +812,29 @@ class Syndicator_Bluesky extends Syndicator_Base {
 				[ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ],
 			],
 		];
+	}
+
+	/**
+	 * Makes every bare web address in the body a link, since Bluesky (unlike
+	 * Mastodon) shows them as plain text otherwise. Stops at $before, where the
+	 * permalink label starts, which has its own facet.
+	 */
+	private function build_url_facets( string $text, int $before ): array {
+		if ( ! preg_match_all( '~https?://[^\s<>"]+[^\s<>".,;:!?)\]\'’]~u', $text, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return [];
+		}
+		$facets = [];
+		foreach ( $matches[0] as $match ) {
+			$end = $match[1] + strlen( $match[0] );
+			if ( $end > $before ) {
+				continue;
+			}
+			$facets[] = [
+				'index'    => [ 'byteStart' => $match[1], 'byteEnd' => $end ],
+				'features' => [ [ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $match[0] ] ],
+			];
+		}
+		return $facets;
 	}
 
 	/**
