@@ -35,6 +35,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
+- **7 Nov 2026 work is NOT on GitHub main** (main deploys to live). It is on
+  branch `wip/structure`; on another Mac: `git fetch && git switch main &&
+  git merge --ff-only origin/wip/structure`. Push main only when Neil says go
+  live. Look work: branch `park/look-filter`.
 - **Live, when Neil says go:** deploy 0.11.0, then on the server
   `wp eval-file …/bin/retire-categories-except-work.php` (dry run, show Neil the
   counts) and only then `… apply`. Back up the live DB first. **Do not deploy
