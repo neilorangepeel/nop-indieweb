@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * A note with the match hashtag (#UTB), posted within an hour of a Boro
  * kick-off, creates the match post from the openfootball fixture list. Every
- * note posted while that match is on becomes a take: it is linked to the match
- * and stamped with the minute. A take that starts with a minute ("67'") or a
+ * #UTB note posted while that match is on becomes a take: it is linked to the
+ * match and stamped with the minute. Notes without the hashtag are left alone. A take that starts with a minute ("67'") or a
  * score ("2-1") sets them. A scheduled job at full time marks the match done.
  *
  * Fixtures: openfootball/football.json (public domain, no key). It has no live
@@ -53,7 +53,7 @@ class Match_Day {
 		}
 
 		$post = get_post( $object_id );
-		if ( ! $post ) {
+		if ( ! $post || ! self::has_hashtag( $post->post_content ) ) {
 			return;
 		}
 		$time     = (int) get_post_time( 'U', true, $post );
@@ -61,7 +61,7 @@ class Match_Day {
 
 		if ( ! $match_id ) {
 			// Only a note posted now can start a match, never an imported old one.
-			if ( abs( time() - $time ) > 6 * HOUR_IN_SECONDS || ! self::has_hashtag( $post->post_content ) ) {
+			if ( abs( time() - $time ) > 6 * HOUR_IN_SECONDS ) {
 				return;
 			}
 			$fixture = self::fixture_on( $time );

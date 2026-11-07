@@ -19,7 +19,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   meta in the registry, `wp nop-indieweb match fixture|start`. Smoke-tested
   locally on Wrexham v Boro (4 Nov): match post created, takes stamped
   (pre-match, 26, HT, 88), score taken from "88' 1-1", nothing syndicated; test
-  posts deleted.
+  posts deleted. Neil decided: only #UTB notes become takes; others are left
+  alone. Retested.
 
 - **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
   STRUCTURE.md): no kind→category defaults, services and `/post` stop filing
@@ -73,7 +74,5 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Open questions
 
-- Match: does any note in the match window become a take (as built), or only
-  ones with #UTB? A non-football note posted mid-match would be attached today.
 
 - Delete the stale hashtag branch once the roadmap entry is settled?
