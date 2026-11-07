@@ -37,13 +37,16 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 - **Live, when Neil says go:** deploy 0.11.0, then on the server
   `wp eval-file …/bin/retire-categories-except-work.php` (dry run, show Neil the
-  counts) and only then `… apply`. Then `bin/hashtags-to-tags.php` the same way
-  (dry run, show Neil, apply). Back up the live DB first.
-- Structure steps 4–8 (see the theme's NOTES.md / STRUCTURE.md): next is 4,
-  the Look taxonomy + applying the tag sort. Step 3 (`Kind\Hashtags`, #hashtag →
-  tag, old posts backfilled locally) is done.
-- Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
-  If yes, rebuild on main (see ROADMAP.md).
+  counts) and only then `… apply`. Back up the live DB first. **Do not deploy
+  `Kind\Hashtags` or run `bin/hashtags-to-tags.php` on live as built**: it turns
+  every hashtag into a tag (thousands from the 11,977 imported tweets). Rework
+  it first (next item).
+- **Next: rework `Kind\Hashtags`** so a hashtag files a post only when it is one
+  of a subject's names (the subject table in the theme's STRUCTURE.md: `#UTB` →
+  Boro); any other hashtag stays a word. Then a merge script for the subject table
+  (dry run against live counts first). The theme's STRUCTURE.md has the new
+  steps (built from the live content on 7 Nov; the old Look work is parked on
+  `park/look-filter`).
 
 ## Open questions
 
