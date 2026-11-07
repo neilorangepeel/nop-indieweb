@@ -93,7 +93,7 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 * New Match kind for following a Boro game live. A note with #UTB posted within an hour of kick-off creates the match post from the openfootball fixture list (public domain, no key). Every #UTB note posted until 150 minutes after kick-off becomes a take (notes without it are left alone): linked to the match (`nop_indieweb_match_id`) and stamped with the minute (`nop_indieweb_match_minute`, from the clock unless the take starts with one, e.g. "67'"). A take that starts with a score ("2-1", home first) sets the match score. A job three hours after kick-off marks the match finished.
 * Filters: `nop_indieweb_match_team`, `nop_indieweb_match_leagues`, `nop_indieweb_match_hashtag`.
 * New `wp nop-indieweb match fixture|start [--date=]` to look up a fixture or start a match by hand.
-* The match post is not syndicated yet; the social thread is the next step.
+* A match goes out as one thread on Bluesky and Mastodon: the match post opens it ("Watford v Middlesbrough, English Championship, kick-off 3pm. Thoughts as it happens in the replies. #UTB") and each take replies to the previous one. A take whose parent hasn't gone out yet sends it first; one that failed is passed over, so the thread never breaks.
 
 = 0.11.0 =
 * Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.

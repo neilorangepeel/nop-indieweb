@@ -125,19 +125,47 @@ class Match_Day {
 		return $ids ? (int) $ids[0] : 0;
 	}
 
+	/**
+	 * The posts a take could reply to on social, nearest first: up to five
+	 * earlier takes of its match, then the match post. Empty for a non-take.
+	 *
+	 * @return int[]
+	 */
+	public static function thread_before( int $post_id ): array {
+		$match = (int) get_post_meta( $post_id, 'nop_indieweb_match_id', true );
+		if ( ! $match ) {
+			return [];
+		}
+		$ids = get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 5,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'post__not_in'   => [ $post_id ],
+			'meta_query'     => [ [ 'key' => 'nop_indieweb_match_id', 'value' => $match, 'type' => 'NUMERIC' ] ],
+			'date_query'     => [ [ 'column' => 'post_date_gmt', 'before' => get_post_field( 'post_date_gmt', $post_id ), 'inclusive' => true ] ],
+			'orderby'        => [ 'date' => 'DESC', 'ID' => 'DESC' ],
+		] );
+		return array_merge( array_map( 'intval', $ids ), [ $match ] );
+	}
+
 	/** Create the match post for a fixture. Returns its ID, or 0. */
 	public static function create( array $fixture ): int {
 		$existing = self::match_at( $fixture['kickoff'] );
 		if ( $existing ) {
 			return $existing;
 		}
-		$date = min( time(), $fixture['kickoff'] );
-		$id   = wp_insert_post( [
+		$date    = min( time(), $fixture['kickoff'] );
+		$kickoff = wp_date( '00' === wp_date( 'i', $fixture['kickoff'] ) ? 'ga' : 'g.ia', $fixture['kickoff'] );
+		/* translators: The match post, which opens the social thread. 1: home team, 2: away team, 3: competition, 4: kick-off time, e.g. 3pm. */
+		$opener  = sprintf( __( '%1$s v %2$s, %3$s, kick-off %4$s. Thoughts as it happens in the replies. #UTB', 'nop-indieweb' ), $fixture['home'], $fixture['away'], $fixture['competition'], $kickoff );
+		$id      = wp_insert_post( [
 			'post_type'     => 'post',
 			'post_status'   => 'publish',
 			/* translators: 1: home team, 2: away team. */
 			'post_title'    => sprintf( __( '%1$s v %2$s', 'nop-indieweb' ), $fixture['home'], $fixture['away'] ),
-			'post_content'  => '',
+			'post_content'  => '<!-- wp:paragraph -->' . "\n" . '<p>' . esc_html( $opener ) . '</p>' . "\n" . '<!-- /wp:paragraph -->',
 			'post_date'     => get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $date ) ),
 			'post_date_gmt' => gmdate( 'Y-m-d H:i:s', $date ),
 			'meta_input'    => [
@@ -146,8 +174,6 @@ class Match_Day {
 				'nop_indieweb_match_kickoff'     => $fixture['kickoff'],
 				'nop_indieweb_match_competition' => $fixture['competition'],
 				'nop_indieweb_match_status'      => 'live',
-				// The social thread is the next step; until then the match post stays on the site.
-				'nop_indieweb_skip_syndication'  => '1',
 			],
 		], true );
 		if ( is_wp_error( $id ) ) {

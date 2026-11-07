@@ -21,6 +21,13 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   (pre-match, 26, HT, 88), score taken from "88' 1-1", nothing syndicated; test
   posts deleted. Neil decided: only #UTB notes become takes; others are left
   alone. Retested.
+- **7 Nov 2026:** the match social thread. The match post now syndicates (opener
+  text written at creation, editable) and each take replies to the previous one:
+  `Syndicator_Base::thread_parent_url()` walks `Match_Day::thread_before()`
+  (5 earlier takes, then the match post), sends a parent still waiting for its
+  first attempt, skips failed ones. Bluesky threads through `build_reply_ref()`,
+  Mastodon uses the stored status id. Tested locally with fake URLs only.
+  Tumblr (if switched on) would still get takes as separate posts.
 
 - **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
   STRUCTURE.md): no kind→category defaults, services and `/post` stop filing
@@ -46,10 +53,9 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
-- **Match kind, next steps:** (1) the social thread: match post goes out first,
-  each take replies to the previous take's Bluesky/Mastodon copy (match post has
-  `nop_indieweb_skip_syndication` until then; takes still syndicate as standalone
-  notes); (2) keep takes off the Logbook wall; (3) a Match timeline block and a
+- **Match kind, next steps:** (1) watch the first real match thread on live
+  (only testable there: every platform is off locally); (2) keep takes off the
+  Logbook wall; (3) a Match timeline block and a
   Match template in the theme (design to be redone: Neil liked the mock-up's
   content, not its look); (4) a kind icon. Cup games aren't in openfootball's
   league files, so they need `match start` by hand (which also needs a fixture,
