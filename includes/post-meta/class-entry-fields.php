@@ -249,8 +249,8 @@ final class Entry_Fields {
 				// Each side's goals for its scoreboard row: '' before a score is known, so the row shows just the team.
 				$goals                  = '' !== $score ? explode( '–', $score ) : [];
 				$f['match_home_goals']  = $goals[0] ?? '';
-				// What stands between the two goals: a dash once there is a score, "v" before.
-				$f['match_score_sep']   = '' !== $score ? '–' : 'v';
+				// What stands between the two goals: "v" before there is a score; after, nothing, and the theme draws a rule there.
+				$f['match_score_sep']   = '' !== $score ? '' : 'v';
 				$f['match_away_goals']  = $goals[1] ?? '';
 				$ht                     = self::meta( $post_id, 'match_ht_score' );
 				/* translators: %s: half-time score, e.g. 0–1 */
