@@ -35,7 +35,7 @@ final class Entry_Fields {
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
 		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
-		'match_board_score', 'match_home_name', 'match_away_name', 'match_home_goals', 'match_away_goals', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
+		'match_board_score', 'match_home_name', 'match_away_name', 'match_home_goals', 'match_away_goals', 'match_kicker', 'match_status_line', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -254,6 +254,10 @@ final class Entry_Fields {
 				/* translators: %s: half-time score, e.g. 0–1 */
 				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';
 				$f['match_venue']       = self::meta( $post_id, 'match_venue' );
+				// The scoreboard's kicker and foot, as a programme sets them: "English Championship · Wednesday 4 November", "Full time · Half-time 0–1".
+				$f['match_kicker']      = implode( ' · ', array_filter( [ self::meta( $post_id, 'match_competition' ), $kickoff ? (string) wp_date( 'l j F', $kickoff ) : '' ] ) );
+				/* translators: %s: half-time score, e.g. 0–1 */
+				$f['match_status_line'] = implode( ' · ', array_filter( [ $f['match_result'], '' !== $ht ? sprintf( __( 'Half-time %s', 'nop-indieweb' ), $ht ) : '' ] ) );
 				$events                 = get_post_meta( $post_id, 'nop_indieweb_match_events', true );
 				$scorers                = \NOP\IndieWeb\Football\Match_Events::scorers( is_array( $events ) ? $events : [] );
 				$f['match_scorers_home'] = $scorers['home'];

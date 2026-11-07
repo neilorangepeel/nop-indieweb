@@ -52,8 +52,8 @@ final class MatchEventsTest extends TestCase {
 
 	public function test_scorers_per_side(): void {
 		$scorers = Match_Events::scorers( Match_Events::from_api( $this->response(), 1 ) );
-		$this->assertSame( 'S. Okafor 58′ (pen)', $scorers['home'] );
-		$this->assertSame( 'T. Conway 33′ · H. Hackney 71′ · P. Dyer 90+3′ (og)', $scorers['away'] );
+		$this->assertSame( 'S. Okafor 58 pen', $scorers['home'] );
+		$this->assertSame( 'T. Conway 33, H. Hackney 71, P. Dyer 90+3 og', $scorers['away'] );
 	}
 
 	public function test_same_player_twice_shares_a_name(): void {
@@ -61,7 +61,7 @@ final class MatchEventsTest extends TestCase {
 			[ 'minute' => '12', 'type' => 'goal', 'side' => 'home', 'player' => 'Conway', 'assist' => '', 'detail' => '' ],
 			[ 'minute' => '80', 'type' => 'penalty', 'side' => 'home', 'player' => 'Conway', 'assist' => '', 'detail' => '' ],
 		];
-		$this->assertSame( 'Conway 12′, 80′ (pen)', Match_Events::scorers( $events )['home'] );
+		$this->assertSame( 'Conway 12, 80 pen', Match_Events::scorers( $events )['home'] );
 	}
 
 	public function test_sort_key(): void {

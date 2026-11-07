@@ -11,6 +11,11 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** scorers set newspaper-style ("T. Conway 33, H. Hackney 71",
+  "57 pen", "90+3 og"); new Entry_Fields `match_kicker` ("English Championship ·
+  Wednesday 4 November") and `match_status_line` ("Full time · Half-time 0–1")
+  for the theme's programme-style scoreboard.
+
 - **7 Nov 2026:** timeline: automated rows (events and the full-time take,
   marked `is-automated` by its `nop_indieweb_match_ft_take` id) are bold
   instead of italic, Neil's call; the takes stay regular.

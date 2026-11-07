@@ -120,7 +120,8 @@ class Match_Events {
 	}
 
 	/**
-	 * The scorers under each team, as a scoreboard shows them: "Conway 34′, 71′ (pen)".
+	 * The scorers under each team, set as a newspaper results line does: "T. Conway 34, 71 pen" (a player's goals
+	 * together, minutes without marks, "pen" and "og" after the minute, players apart by commas).
 	 *
 	 * @param array<int,array<string,string>> $events Stored events, in minute order.
 	 * @return array{home:string,away:string}
@@ -131,12 +132,12 @@ class Match_Events {
 			if ( ! self::is_goal( $event ) ) {
 				continue;
 			}
-			$mark = [ 'penalty' => ' (pen)', 'own-goal' => ' (og)' ][ $event['type'] ] ?? '';
+			$mark = [ 'penalty' => ' pen', 'own-goal' => ' og' ][ $event['type'] ] ?? '';
 			$side = self::scoring_side( $event );
 			$name = '' !== $event['player'] ? $event['player'] : '?';
-			$names[ $side ][ $name ][] = $event['minute'] . '′' . $mark;
+			$names[ $side ][ $name ][] = $event['minute'] . $mark;
 		}
-		$line = fn( array $players ) => implode( ' · ', array_map( fn( $name, $minutes ) => $name . ' ' . implode( ', ', $minutes ), array_keys( $players ), $players ) );
+		$line = fn( array $players ) => implode( ', ', array_map( fn( $name, $minutes ) => $name . ' ' . implode( ', ', $minutes ), array_keys( $players ), $players ) );
 		return [ 'home' => $line( $names['home'] ), 'away' => $line( $names['away'] ) ];
 	}
 }
