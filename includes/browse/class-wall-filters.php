@@ -10,11 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use NOP\IndieWeb\Kind\Kind_Taxonomy;
 use NOP\IndieWeb\Kind\Logbook;
+use NOP\IndieWeb\Kind\Look_Taxonomy;
 
 /**
  * Filters on the Logbook, combined in its address so a view can be shared or
- * bookmarked: ?kind=photo,note (any of these kinds), ?tag=black-and-white,belfast
- * (core's tag query: any of these topics) and ?q=… (a search). They narrow the
+ * bookmarked: ?kind=photo,note (any of these kinds), ?look=grain,film (any of these
+ * looks), ?tag=darkroom+street (core's tag query: all of these topics) and ?q=… (a search). They narrow the
  * main query, so the theme's Query Loop (inherit) shows the result and core's
  * Query Total counts it.
  *
@@ -31,12 +32,13 @@ use NOP\IndieWeb\Kind\Logbook;
 final class Wall_Filters {
 
 	public const KIND   = 'kind';
+	public const LOOK   = 'look';
 	public const SEARCH = 'q';
 	// Words kept from earlier searches (Enter keeps what was typed): each a chip, all of them searched together.
 	public const WORDS  = 'words';
 
 	public function register(): void {
-		add_filter( 'query_vars', fn( $vars ) => array_merge( $vars, [ self::KIND, self::SEARCH, self::WORDS ] ) );
+		add_filter( 'query_vars', fn( $vars ) => array_merge( $vars, [ self::KIND, self::LOOK, self::SEARCH, self::WORDS ] ) );
 		add_action( 'pre_get_posts', [ $this, 'narrow' ], 20 );
 		add_filter( 'render_block_core/term-name', [ $this, 'toggle' ], 10, 3 );
 		add_filter( 'render_block_core/search', [ $this, 'search_form' ], 10, 2 );
@@ -54,6 +56,11 @@ final class Wall_Filters {
 	public static function kinds(): array {
 		$asked = array_filter( array_map( 'sanitize_key', explode( ',', (string) get_query_var( self::KIND ) ) ) );
 		return array_values( array_intersect( $asked, Logbook::kinds() ) );
+	}
+
+	/** @return string[] The looks chosen (slugs). */
+	public static function looks(): array {
+		return array_values( array_filter( array_map( 'sanitize_title', explode( ',', (string) get_query_var( self::LOOK ) ) ) ) );
 	}
 
 	/** @return string[] The topics (tag slugs) chosen. */
@@ -77,7 +84,7 @@ final class Wall_Filters {
 	}
 
 	public static function active(): bool {
-		return Logbook::is_logbook() && ( self::kinds() || self::tags() || '' !== self::terms() );
+		return Logbook::is_logbook() && ( self::kinds() || self::looks() || self::tags() || '' !== self::terms() );
 	}
 
 	/** The current view's address with one filter changed (and back to page one). */
@@ -86,6 +93,7 @@ final class Wall_Filters {
 			array_merge(
 				[
 					self::KIND   => implode( ',', self::kinds() ),
+					self::LOOK   => implode( ',', self::looks() ),
 					// Topics combine as all of them (core reads "a+b" as both): cross-referencing narrows.
 					'tag'        => implode( '+', self::tags() ),
 					self::WORDS  => implode( ',', self::words() ),
@@ -105,8 +113,8 @@ final class Wall_Filters {
 			return;
 		}
 		$kinds = self::kinds();
-		if ( $kinds ) {
-			$query->set( 'tax_query', [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ] ] );
+		if ( $kinds || self::looks() ) {
+			$query->set( 'tax_query', self::tax_query( $kinds, self::looks() ) );
 		}
 		if ( '' !== self::terms() ) {
 			// As ?q= and ?w=, not ?s=: a search would turn the Logbook into the search results page.
@@ -114,35 +122,56 @@ final class Wall_Filters {
 		}
 	}
 
-	/** A kind or topic in a Terms Query on the Logbook toggles that filter. */
+	/**
+	 * The Logbook's taxonomy filter: these kinds (any; none = every Logbook kind) and, when chosen, these looks (any).
+	 *
+	 * @param string[] $kinds Kind slugs.
+	 * @param string[] $looks Look slugs.
+	 */
+	private static function tax_query( array $kinds, array $looks ): array {
+		$query = [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ?: Logbook::kinds() ] ];
+		if ( $looks ) {
+			$query[]           = [ 'taxonomy' => Look_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $looks ];
+			$query['relation'] = 'AND';
+		}
+		return $query;
+	}
+
+	/** A kind, look or topic in a Terms Query on the Logbook toggles that filter. */
 	public function toggle( string $content, array $block, \WP_Block $instance ): string {
 		$taxonomy = (string) ( $instance->context['taxonomy'] ?? '' );
 		$term     = get_term( (int) ( $instance->context['termId'] ?? 0 ), $taxonomy );
-		if ( ! Logbook::is_logbook() || ! $term instanceof \WP_Term || ! in_array( $taxonomy, [ Kind_Taxonomy::TAXONOMY, 'post_tag' ], true ) ) {
+		if ( ! Logbook::is_logbook() || ! $term instanceof \WP_Term || ! in_array( $taxonomy, [ Kind_Taxonomy::TAXONOMY, Look_Taxonomy::TAXONOMY, 'post_tag' ], true ) ) {
 			return $content;
 		}
 		// A kind that has a section of its own (Photos, Blog) keeps its link there.
 		if ( Kind_Taxonomy::TAXONOMY === $taxonomy && ! in_array( $term->slug, Logbook::kinds(), true ) ) {
 			return $content;
 		}
-		$key    = Kind_Taxonomy::TAXONOMY === $taxonomy ? self::KIND : 'tag';
-		$chosen = Kind_Taxonomy::TAXONOMY === $taxonomy ? self::kinds() : self::tags();
-		$on     = in_array( $term->slug, $chosen, true );
-		$next   = $on ? array_diff( $chosen, [ $term->slug ] ) : array_merge( $chosen, [ $term->slug ] );
-		$p      = new \WP_HTML_Tag_Processor( $content );
+		[ $key, $chosen, $join ] = match ( $taxonomy ) {
+			Kind_Taxonomy::TAXONOMY => [ self::KIND, self::kinds(), ',' ],
+			Look_Taxonomy::TAXONOMY => [ self::LOOK, self::looks(), ',' ],
+			default                 => [ 'tag', self::tags(), '+' ],
+		};
+		$on   = in_array( $term->slug, $chosen, true );
+		$next = $on ? array_diff( $chosen, [ $term->slug ] ) : array_merge( $chosen, [ $term->slug ] );
+		$p    = new \WP_HTML_Tag_Processor( $content );
 		if ( ! $p->next_tag( [ 'tag_name' => 'a' ] ) ) {
 			return $content;
 		}
-		$p->set_attribute( 'href', self::url( [ $key => implode( Kind_Taxonomy::TAXONOMY === $taxonomy ? ',' : '+', $next ) ] ) );
+		$p->set_attribute( 'href', self::url( [ $key => implode( $join, $next ) ] ) );
 		$p->set_attribute( 'rel', 'nofollow' );
-		// How many entries this choice holds among the others: a kind, its own entries with the chosen topics; a topic, the
-		// wall with it added: a choice that would leave nothing is marked, so it can step back rather than lead to an empty wall.
+		// How many entries this choice holds among the others: a kind or look, its own entries with the other choices
+		// (kinds and looks each widen within themselves); a topic, the wall with it added: a choice that would leave nothing
+		// is marked, so it can step back rather than lead to an empty wall.
 		// Counted against the chips only, not what is still being typed: the pills are the next choices, and they are
 		// what typing points at (a typed "Exercise" finds no text, but must not fade the Exercise pill it names).
 		$words = implode( ' ', self::words() );
-		$count = Kind_Taxonomy::TAXONOMY === $taxonomy
-			? self::count( [ $term->slug ], self::tags(), $words )
-			: self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ), $words );
+		$count = match ( $taxonomy ) {
+			Kind_Taxonomy::TAXONOMY => self::count( [ $term->slug ], self::tags(), $words, self::looks() ),
+			Look_Taxonomy::TAXONOMY => self::count( self::kinds(), self::tags(), $words, [ $term->slug ] ),
+			default                 => self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ), $words, self::looks() ),
+		};
 		if ( $on ) {
 			$p->set_attribute( 'aria-current', 'true' );
 			$p->add_class( 'is-current' );
@@ -156,17 +185,20 @@ final class Wall_Filters {
 	}
 
 	/**
-	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and
-	 * search. Kept for a day per combination without a search (forgotten whenever a post is saved or deleted); a search is counted afresh.
+	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them), looks
+	 * (any of them) and search. Kept for a day per combination without a search (forgotten whenever a post is saved or
+	 * deleted); a search is counted afresh.
 	 *
 	 * @param string[] $kinds Kind slugs.
 	 * @param string[] $tags  Tag slugs.
 	 * @param string   $terms Words searched for, or none.
+	 * @param string[] $looks Look slugs.
 	 */
-	public static function count( array $kinds, array $tags, string $terms = '' ): int {
+	public static function count( array $kinds, array $tags, string $terms = '', array $looks = [] ): int {
 		sort( $kinds );
 		sort( $tags );
-		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, $terms, (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
+		sort( $looks );
+		$key = 'nop_wall_count_' . md5( wp_json_encode( [ $kinds, $tags, $terms, $looks, (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
 		static $seen = [];
 		if ( isset( $seen[ $key ] ) ) {
 			return $seen[ $key ];
@@ -183,7 +215,7 @@ final class Wall_Filters {
 			'ignore_sticky_posts'    => true,
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
-			'tax_query'              => [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ?: Logbook::kinds() ] ],
+			'tax_query'              => self::tax_query( $kinds, $looks ),
 		];
 		if ( $tags ) {
 			$args['tag_slug__and'] = $tags;
@@ -213,6 +245,10 @@ final class Wall_Filters {
 		foreach ( self::kinds() as $slug ) {
 			$term  = get_term_by( 'slug', $slug, Kind_Taxonomy::TAXONOMY );
 			$out  .= $this->chip( $term ? $term->name : $slug, self::url( [ self::KIND => implode( ',', array_diff( self::kinds(), [ $slug ] ) ) ] ) );
+		}
+		foreach ( self::looks() as $slug ) {
+			$term  = get_term_by( 'slug', $slug, Look_Taxonomy::TAXONOMY );
+			$out  .= $this->chip( $term ? $term->name : $slug, self::url( [ self::LOOK => implode( ',', array_diff( self::looks(), [ $slug ] ) ) ] ) );
 		}
 		foreach ( self::tags() as $slug ) {
 			$term  = get_term_by( 'slug', $slug, 'post_tag' );
@@ -255,13 +291,13 @@ final class Wall_Filters {
 				$p->set_attribute( 'value', self::search() );
 				$p->set_attribute( 'autocomplete', 'off' );
 				// With chips in the field, its placeholder says it takes more.
-				if ( self::kinds() || self::tags() || self::words() ) {
+				if ( self::kinds() || self::looks() || self::tags() || self::words() ) {
 					$p->set_attribute( 'placeholder', __( 'Add more…', 'nop-indieweb' ) );
 				}
 			}
 		}
 		$hidden = '';
-		foreach ( [ self::KIND => implode( ',', self::kinds() ), 'tag' => implode( '+', self::tags() ), self::WORDS => implode( ',', self::words() ) ] as $name => $value ) {
+		foreach ( [ self::KIND => implode( ',', self::kinds() ), self::LOOK => implode( ',', self::looks() ), 'tag' => implode( '+', self::tags() ), self::WORDS => implode( ',', self::words() ) ] as $name => $value ) {
 			if ( '' !== $value ) {
 				$hidden .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '">';
 			}
@@ -355,7 +391,7 @@ final class Wall_Filters {
 			return $p->get_updated_html();
 		}
 		// Clear all: only when there is more than one thing to clear (one chip's own × does the job).
-		if ( count( self::kinds() ) + count( self::tags() ) + count( self::words() ) + ( '' !== self::search() ? 1 : 0 ) < 2 ) {
+		if ( count( self::kinds() ) + count( self::looks() ) + count( self::tags() ) + count( self::words() ) + ( '' !== self::search() ? 1 : 0 ) < 2 ) {
 			return '';
 		}
 		while ( $p->next_tag( [ 'tag_name' => 'a' ] ) ) {
