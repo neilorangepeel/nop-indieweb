@@ -131,8 +131,7 @@ class Swarm extends Service_Base {
 			? ( $locality ? "{$venue}, {$locality}" : $venue )
 			: 'Checked in';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
-		$tags         = $this->tags_from_setting( $settings['post_tags'] ?? '' );
+		$tags = $this->tags_from_setting( $settings['post_tags'] ?? '' );
 
 		$note   = wp_kses_post( trim( $parsed['content'] ) );
 		$blocks = $note
@@ -149,9 +148,6 @@ class Swarm extends Service_Base {
 			'tags_input'   => $tags,
 		];
 
-		if ( $category_ids ) {
-			$args['post_category'] = $category_ids;
-		}
 		if ( $post_date ) {
 			$args['post_date']     = $post_date;
 			$args['post_date_gmt'] = $post_date_gmt;

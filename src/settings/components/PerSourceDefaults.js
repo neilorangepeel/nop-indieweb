@@ -16,18 +16,16 @@ function tokenString( tokens ) {
 }
 
 /**
- * Inbound defaults for one source (status, category, tags, sideload photo/poster).
+ * Inbound defaults for one source (status, tags, sideload photo/poster).
  *
  * @param {string}   value.post_status     'publish'|'draft'|'private'
- * @param {string}   value.post_category   comma-separated category name
  * @param {string}   value.post_tags        comma-separated tag names
  * @param {boolean}  value.sideload_photos  (or sideload_poster for Letterboxd)
  * @param {boolean}  showPhotos            whether to show the sideload toggle
  * @param {string}   photosLabel           label for the sideload toggle
  */
 export default function PerSourceDefaults( { value, onChange, showPhotos = true, photosLabel } ) {
-	const categories = window.nopIndieWebSettings?.categories ?? [];
-	const tags       = window.nopIndieWebSettings?.tags       ?? [];
+	const tags = window.nopIndieWebSettings?.tags ?? [];
 
 	const set = ( key, val ) => onChange( { ...value, [ key ]: val } );
 
@@ -42,15 +40,6 @@ export default function PerSourceDefaults( { value, onChange, showPhotos = true,
 				value={ value.post_status ?? 'publish' }
 				options={ STATUS_OPTIONS }
 				onChange={ ( val ) => set( 'post_status', val ) }
-				__nextHasNoMarginBottom
-			/>
-			<FormTokenField
-				label={ __( 'Category', 'nop-indieweb' ) }
-				value={ tokenList( value.post_category ?? '' ) }
-				suggestions={ categories }
-				maxLength={ 1 }
-				onChange={ ( tokens ) => set( 'post_category', tokenString( tokens ) ) }
-				__experimentalShowHowTo={ false }
 				__nextHasNoMarginBottom
 			/>
 			<FormTokenField

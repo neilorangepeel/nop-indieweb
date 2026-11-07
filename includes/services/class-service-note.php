@@ -75,7 +75,6 @@ class Note extends Service_Base {
 			'platform'    => $this->detect_platform( $source_url ),
 			'syndication' => $syndication,
 			'tags'        => $tags,
-			'categories'  => $this->categories_from_props( $props ),
 			// Photo/video entries may be a plain URL string (Micropub spec) or
 			// an array with { primary, fallback, size } shape from the Bluesky
 			// importer. sideload_photos/sideload_videos handle both shapes.
@@ -98,8 +97,7 @@ class Note extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . $inner . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->resolve_category_ids( $parsed['categories'] ?? null, $settings['post_category'] ?? '' );
-		$tags         = array_unique( array_merge(
+		$tags = array_unique( array_merge(
 			$this->tags_from_setting( $settings['post_tags'] ?? '' ),
 			$parsed['tags'] ?? [],
 		) );
@@ -113,9 +111,6 @@ class Note extends Service_Base {
 
 		if ( $tags ) {
 			$args['tags_input'] = array_values( $tags );
-		}
-		if ( $category_ids ) {
-			$args['post_category'] = $category_ids;
 		}
 		if ( $post_date ) {
 			$args['post_date']     = $post_date;

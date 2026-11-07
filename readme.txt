@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 7.2
 Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 0.10.1
+Stable tag: 0.11.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,11 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.11.0 =
+* Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.
+* Old /category/<slug>/ addresses redirect: photo and film sections to their kind's archive, check-in travel to /kind/checkin/, everything else to the Logbook (filter `nop_indieweb_retired_category_redirects`).
+* New `bin/retire-categories-except-work.php` removes the old categories from posts (dry run unless given `apply`).
 
 = 0.10.1 =
 * Logbook: a count for searched words is no longer cached, so a visitor's search can't write rows to the options table.

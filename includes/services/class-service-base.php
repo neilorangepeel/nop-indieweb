@@ -679,49 +679,6 @@ abstract class Service_Base {
 	}
 
 	/**
-	 * Resolves a comma-separated category setting string into an array of category IDs.
-	 * Categories that don't exist yet are created.
-	 */
-	protected function category_ids_from_setting( string $csv, string $default = '' ): array {
-		$names = array_filter( array_map( 'trim', explode( ',', $csv ?: $default ) ) );
-		return $this->category_ids_from_names( $names );
-	}
-
-	/**
-	 * Resolves an array of category names into category IDs, creating any that
-	 * don't exist yet.
-	 */
-	protected function category_ids_from_names( array $names ): array {
-		return array_values( array_filter( array_map( [ $this, 'ensure_category' ], $names ) ) );
-	}
-
-	/**
-	 * Resolves the post's category IDs: an explicit list parsed from the payload
-	 * (the composer's `post-category`, authoritative even when empty) wins over
-	 * the service's configured default.
-	 */
-	protected function resolve_category_ids( ?array $explicit, string $setting_csv ): array {
-		return is_array( $explicit )
-			? $this->category_ids_from_names( $explicit )
-			: $this->category_ids_from_setting( $setting_csv );
-	}
-
-	/**
-	 * Parses the composer's `post-category` property: a sanitised list of names
-	 * when the property was sent (even empty), null when it wasn't — so callers
-	 * can tell "no categories, on purpose" from "not a composer payload".
-	 */
-	protected function categories_from_props( array $props ): ?array {
-		if ( ! isset( $props['post-category'] ) ) {
-			return null;
-		}
-		return array_values( array_filter( array_map(
-			'sanitize_text_field',
-			(array) $props['post-category']
-		) ) );
-	}
-
-	/**
 	 * Resolves a comma-separated tags setting string into an array of tag names.
 	 */
 	protected function tags_from_setting( string $csv ): array {
@@ -735,19 +692,6 @@ abstract class Service_Base {
 
 	public function is_enabled(): bool {
 		return (bool) ( $this->get_settings()['enabled'] ?? true );
-	}
-
-	/**
-	 * Finds or creates a category by name and returns its term ID.
-	 */
-	protected function ensure_category( string $name ): int {
-		$slug = sanitize_title( $name );
-		$term = get_term_by( 'slug', $slug, 'category' );
-		if ( $term instanceof \WP_Term ) {
-			return $term->term_id;
-		}
-		$result = wp_insert_term( $name, 'category' );
-		return is_wp_error( $result ) ? 0 : (int) $result['term_id'];
 	}
 
 	/**

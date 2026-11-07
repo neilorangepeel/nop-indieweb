@@ -57,8 +57,6 @@ class Letterboxd extends Service_Base {
 			? "<!-- wp:paragraph -->\n<p>" . wp_kses_post( $parsed['content'] ) . "</p>\n<!-- /wp:paragraph -->"
 			: '';
 
-		$category_ids = $this->category_ids_from_setting( $settings['post_category'] ?? '' );
-
 		$args = [
 			'post_title'   => $parsed['film_title'] ?: 'Watched a film',
 			'post_content' => $blocks,
@@ -66,9 +64,6 @@ class Letterboxd extends Service_Base {
 			'post_type'    => 'post',
 		];
 
-		if ( $category_ids ) {
-			$args['post_category'] = $category_ids;
-		}
 		if ( $post_date ) {
 			$args['post_date']     = $post_date;
 			$args['post_date_gmt'] = $post_date_gmt;

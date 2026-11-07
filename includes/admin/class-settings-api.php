@@ -145,7 +145,6 @@ class Settings_API {
 				'import_enabled' => (bool)   ( $s['import_enabled'] ?? false ),
 				'import_last_at' => (string) ( $s['import_last_at'] ?? '' ),
 				'post_status'    => (string) ( $s['post_status']    ?? 'publish' ),
-				'post_category'  => (string) ( $s['post_category']  ?? '' ),
 				'post_tags'      => (string) ( $s['post_tags']      ?? '' ),
 				'sideload_photos' => (bool)  ( $s['sideload_photos'] ?? false ),
 			];
@@ -178,7 +177,6 @@ class Settings_API {
 		$out['entries'] = [
 			'enabled'         => (bool)   ( $e['enabled']         ?? true ),
 			'post_status'     => (string) ( $e['post_status']     ?? 'publish' ),
-			'post_category'   => (string) ( $e['post_category']   ?? '' ),
 			'post_tags'       => (string) ( $e['post_tags']       ?? '' ),
 			'sideload_photos' => (bool)   ( $e['sideload_photos'] ?? true ),
 		];
@@ -187,7 +185,6 @@ class Settings_API {
 		$out['swarm'] = [
 			'enabled'         => (bool)   ( $sw['enabled']         ?? false ),
 			'post_status'     => (string) ( $sw['post_status']     ?? 'publish' ),
-			'post_category'   => (string) ( $sw['post_category']   ?? '' ),
 			'post_tags'       => (string) ( $sw['post_tags']       ?? '' ),
 			'sideload_photos' => (bool)   ( $sw['sideload_photos'] ?? true ),
 		];
@@ -197,7 +194,6 @@ class Settings_API {
 			'import_enabled'  => (bool)   ( $lb['import_enabled']  ?? false ),
 			'username'        => (string) ( $lb['username']        ?? '' ),
 			'post_status'     => (string) ( $lb['post_status']     ?? 'publish' ),
-			'post_category'   => (string) ( $lb['post_category']   ?? '' ),
 			'post_tags'       => (string) ( $lb['post_tags']       ?? '' ),
 			'sideload_poster' => (bool)   ( $lb['sideload_poster'] ?? true ),
 		];
@@ -207,7 +203,6 @@ class Settings_API {
 			$out[ $kind ] = [
 				'enabled'       => (bool)   ( $k['enabled']       ?? true ),
 				'post_status'   => (string) ( $k['post_status']   ?? 'publish' ),
-				'post_category' => (string) ( $k['post_category'] ?? '' ),
 			];
 		}
 
@@ -407,7 +402,6 @@ class Settings_API {
 			if ( isset( $in['enabled'] ) )         $existing_slug['enabled']         = (bool) $in['enabled'];
 			if ( isset( $in['import_enabled'] ) )  $existing_slug['import_enabled']  = (bool) $in['import_enabled'];
 			if ( isset( $in['post_status'] ) )     $existing_slug['post_status']     = $this->sanitize_status( (string) $in['post_status'] );
-			if ( isset( $in['post_category'] ) )   $existing_slug['post_category']   = sanitize_text_field( (string) $in['post_category'] );
 			if ( isset( $in['post_tags'] ) )       $existing_slug['post_tags']       = sanitize_text_field( (string) $in['post_tags'] );
 			if ( isset( $in['sideload_photos'] ) ) $existing_slug['sideload_photos'] = (bool) $in['sideload_photos'];
 
@@ -443,7 +437,6 @@ class Settings_API {
 			$e = $clean['services']['entries'] ?? [];
 			if ( isset( $in['enabled'] ) )         $e['enabled']         = (bool) $in['enabled'];
 			if ( isset( $in['post_status'] ) )     $e['post_status']     = $this->sanitize_status( (string) $in['post_status'] );
-			if ( isset( $in['post_category'] ) )   $e['post_category']   = sanitize_text_field( (string) $in['post_category'] );
 			if ( isset( $in['post_tags'] ) )       $e['post_tags']       = sanitize_text_field( (string) $in['post_tags'] );
 			if ( isset( $in['sideload_photos'] ) ) $e['sideload_photos'] = (bool) $in['sideload_photos'];
 			$clean['services']['entries'] = $e;
@@ -455,7 +448,6 @@ class Settings_API {
 			$sw = $clean['services']['swarm'] ?? [];
 			if ( isset( $in['enabled'] ) )         $sw['enabled']         = (bool) $in['enabled'];
 			if ( isset( $in['post_status'] ) )     $sw['post_status']     = $this->sanitize_status( (string) $in['post_status'] );
-			if ( isset( $in['post_category'] ) )   $sw['post_category']   = sanitize_text_field( (string) $in['post_category'] );
 			if ( isset( $in['post_tags'] ) )       $sw['post_tags']       = sanitize_text_field( (string) $in['post_tags'] );
 			if ( isset( $in['sideload_photos'] ) ) $sw['sideload_photos'] = (bool) $in['sideload_photos'];
 			$clean['services']['swarm'] = $sw;
@@ -468,7 +460,6 @@ class Settings_API {
 			if ( isset( $in['import_enabled'] ) )  $lb['import_enabled']  = (bool) $in['import_enabled'];
 			if ( isset( $in['username'] ) )         $lb['username']        = sanitize_text_field( (string) $in['username'] );
 			if ( isset( $in['post_status'] ) )      $lb['post_status']     = $this->sanitize_status( (string) $in['post_status'] );
-			if ( isset( $in['post_category'] ) )    $lb['post_category']   = sanitize_text_field( (string) $in['post_category'] );
 			if ( isset( $in['post_tags'] ) )        $lb['post_tags']       = sanitize_text_field( (string) $in['post_tags'] );
 			if ( isset( $in['sideload_poster'] ) )  $lb['sideload_poster'] = (bool) $in['sideload_poster'];
 			$clean['services']['letterboxd'] = $lb;
@@ -483,7 +474,6 @@ class Settings_API {
 			$k = $clean['services'][ $kind ] ?? [];
 			if ( isset( $in['enabled'] ) )       $k['enabled']       = (bool) $in['enabled'];
 			if ( isset( $in['post_status'] ) )   $k['post_status']   = $this->sanitize_status( (string) $in['post_status'] );
-			if ( isset( $in['post_category'] ) ) $k['post_category'] = sanitize_text_field( (string) $in['post_category'] );
 			$clean['services'][ $kind ] = $k;
 		}
 

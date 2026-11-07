@@ -6,10 +6,10 @@
  * not a category. /logbook/ is the archive of the logbook kinds: it routes as
  * a kind archive, then the main query widens to every logbook kind, so the
  * filters (?kind=, ?tag=, ?s=) combine on it like on any archive. It renders
- * the `category-logbook` template (a theme's own, or the plugin's plain one),
- * has one canonical address, and the
- * old /category/logbook/ addresses redirect to it. A real Logbook category, if
- * a site has one, keeps its own archive.
+ * the `category-logbook` template (a theme's own, or the plugin's plain one;
+ * the name is historical) and has one canonical address. Categories are retired
+ * except Work, so old /category/<slug>/ addresses redirect to where those posts
+ * live now (the Logbook, or a kind's archive).
  *
  * Which kinds count: filter `nop_indieweb_logbook_kinds`. Page size: filter
  * `nop_indieweb_logbook_per_page`. Where another kind lives instead (a
@@ -34,18 +34,18 @@ final class Logbook {
 		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'reply', 'repost', 'quote', 'exercise', 'rsvp', 'story' ] );
 	}
 
-	/** The section a kind lives in: a category slug, or 'logbook'. */
+	/** The section a kind lives in: a section name ('photos', 'films', 'journal'), or 'logbook'. */
 	public static function section( string $kind ): string {
 		$map = (array) apply_filters( 'nop_indieweb_kind_sections', [ 'photo' => 'photos', 'video' => 'films', 'article' => 'journal' ] );
 		return (string) ( $map[ $kind ] ?? 'logbook' );
 	}
 
-	/** The Logbook archive: a real category, or the kinds standing in for one. */
+	/** The Logbook archive (/logbook/). */
 	public static function is_logbook(): bool {
-		return is_category( 'logbook' ) || self::is_routed();
+		return self::is_routed();
 	}
 
-	/** The routed Logbook (no real category). */
+	/** The routed Logbook. */
 	public static function is_routed(): bool {
 		return (bool) get_query_var( self::QUERY_VAR );
 	}
@@ -116,20 +116,35 @@ final class Logbook {
 			$query->set( 'taxonomy', '' );
 			$query->set( 'term', '' );
 			$query->set( 'tax_query', [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => self::kinds() ] ] );
-		}
-		if ( $query->get( self::QUERY_VAR ) || $query->is_category( 'logbook' ) ) {
 			$query->set( 'posts_per_page', (int) apply_filters( 'nop_indieweb_logbook_per_page', 24 ) );
 		}
 	}
 
-	/** The old address, /category/logbook/ (and its pages), moves to /logbook/, keeping any filter. */
+	/**
+	 * A retired category's old address (/category/<slug>/, any page) moves to where its posts live now:
+	 * a kind's archive for the photo and film sections, the Logbook for everything else. A category that
+	 * still exists (Work) keeps its archive. The map: filter `nop_indieweb_retired_category_redirects`.
+	 */
 	public function redirect(): void {
 		$path = trim( (string) wp_parse_url( add_query_arg( [] ), PHP_URL_PATH ), '/' );
-		if ( preg_match( '#^category/logbook(?:/page/(\d+))?$#', $path, $m ) && ! term_exists( 'logbook', 'category' ) ) {
-			$query = (string) wp_parse_url( add_query_arg( [] ), PHP_URL_QUERY );
-			wp_safe_redirect( self::url( (int) ( $m[1] ?? 1 ) ) . ( $query ? '?' . $query : '' ), 301 );
+		if ( ! preg_match( '#^category/([^/]+)(?:/page/(\d+))?$#', $path, $m ) || term_exists( $m[1], 'category' ) ) {
+			return;
+		}
+		$map = (array) apply_filters( 'nop_indieweb_retired_category_redirects', [
+			'photography'       => '/kind/photo/',
+			'photos'            => '/kind/photo/',
+			'film-photography'  => '/kind/video/',
+			'films'             => '/kind/video/',
+			'places-travel'     => '/kind/checkin/',
+			'travel'            => '/kind/checkin/',
+		] );
+		if ( isset( $map[ $m[1] ] ) ) {
+			wp_safe_redirect( home_url( $map[ $m[1] ] ), 301 );
 			exit;
 		}
+		$query = (string) wp_parse_url( add_query_arg( [] ), PHP_URL_QUERY );
+		wp_safe_redirect( self::url( (int) ( $m[2] ?? 1 ) ) . ( $query ? '?' . $query : '' ), 301 );
+		exit;
 	}
 
 	/** The Logbook's address, or one of its pages. */
