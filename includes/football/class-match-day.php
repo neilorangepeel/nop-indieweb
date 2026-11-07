@@ -161,6 +161,23 @@ class Match_Day {
 	}
 
 	/**
+	 * A match's takes, in the order they were posted (the full-time take last).
+	 *
+	 * @return int[]
+	 */
+	public static function takes( int $match_id ): array {
+		return array_map( 'intval', get_posts( [
+			'post_type'      => 'post',
+			'post_status'    => 'publish',
+			'posts_per_page' => 200,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => [ [ 'key' => 'nop_indieweb_match_id', 'value' => $match_id, 'type' => 'NUMERIC' ] ],
+			'orderby'        => [ 'date' => 'ASC', 'ID' => 'ASC' ],
+		] ) );
+	}
+
+	/**
 	 * The posts a take could reply to on social, nearest first: up to five
 	 * earlier takes of its match, then the match post. Empty for a non-take.
 	 *

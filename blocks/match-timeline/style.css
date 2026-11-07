@@ -1,0 +1,38 @@
+/* Structure only: each take a row, its minute in a narrow column beside the words. Type and colour come from the theme. */
+.nop-match-timeline {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nop-match-timeline__take {
+	display: grid;
+	grid-template-columns: 4.5em minmax(0, 1fr);
+	gap: var(--wp--preset--spacing--30, 1rem);
+	padding-block: var(--wp--preset--spacing--30, 1rem);
+	border-top: var(--wp--custom--line, 1px) solid color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.nop-match-timeline__minute {
+	font-variant-numeric: tabular-nums;
+	text-decoration: none;
+	color: inherit;
+}
+
+.nop-match-timeline__minute:hover,
+.nop-match-timeline__minute:focus-visible {
+	text-decoration: underline;
+}
+
+.nop-match-timeline__text {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.nop-match-timeline__text > :first-child {
+	margin-top: 0;
+}
+
+.nop-match-timeline__text > :last-child {
+	margin-bottom: 0;
+}

@@ -31,7 +31,7 @@ final class Logbook {
 
 	/** @return string[] Kind slugs that make up the Logbook (replies and reposts answer other people's posts, so they stay out). */
 	public static function kinds(): array {
-		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'reply', 'repost', 'quote', 'exercise', 'rsvp', 'story' ] );
+		return (array) apply_filters( 'nop_indieweb_logbook_kinds', [ 'checkin', 'note', 'photo', 'watch', 'listen', 'bookmark', 'like', 'reply', 'repost', 'quote', 'exercise', 'rsvp', 'story', 'match' ] );
 	}
 
 	/** The section a kind lives in: a section name ('photos', 'films', 'journal'), or 'logbook'. */
@@ -117,6 +117,8 @@ final class Logbook {
 			$query->set( 'term', '' );
 			$query->set( 'tax_query', [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => self::kinds() ] ] );
 			$query->set( 'posts_per_page', (int) apply_filters( 'nop_indieweb_logbook_per_page', 24 ) );
+			// A match's takes live on its page; the wall shows the match once.
+			$query->set( 'meta_query', [ self::not_a_take() ] );
 		}
 	}
 
@@ -145,6 +147,11 @@ final class Logbook {
 		$query = (string) wp_parse_url( add_query_arg( [] ), PHP_URL_QUERY );
 		wp_safe_redirect( self::url( (int) ( $m[2] ?? 1 ) ) . ( $query ? '?' . $query : '' ), 301 );
 		exit;
+	}
+
+	/** A meta query clause that leaves out match takes (notes that belong to a Match post). */
+	public static function not_a_take(): array {
+		return [ 'key' => 'nop_indieweb_match_id', 'compare' => 'NOT EXISTS' ];
 	}
 
 	/** The Logbook's address, or one of its pages. */

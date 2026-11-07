@@ -95,6 +95,8 @@ In the plugin's settings option, which is stored with autoloading disabled so th
 * New `wp nop-indieweb match fixture|start [--date=]` to look up a fixture or start a match by hand.
 * A match goes out as one thread on Bluesky and Mastodon: the match post opens it ("Watford v Middlesbrough, English Championship, kick-off 3pm. Thoughts as it happens in the replies. #UTB") and each take replies to the previous one. A take whose parent hasn't gone out yet sends it first; one that failed is passed over, so the thread never breaks.
 * At full time the plugin posts a closing take that ends the thread: "Full time: Watford 1–2 Middlesbrough. Every take from the match: <link> #UTB" (once per match, only for a match in the last day).
+* Match pages: new Match Timeline block (a match's takes, oldest first, each with its minute linking to the take), Entry_Fields for the score line, result, kick-off and take count (the tile's detail reads "1–2 · Full time"), the soccer-ball kind icon, an "Entry: match" template name, and `match` joins the Logbook kinds. Takes stay off the Logbook wall (`Logbook::not_a_take()`).
+* Match pages: new Match Timeline block (a match's takes, oldest first, each minute linking to its take); fields for the score line, result, kick-off and take count (the tile's detail reads "1–2 · Full time"); the soccer-ball kind icon; an "Entry: match" template name; `match` joins the Logbook kinds, and takes stay off the Logbook wall.
 * Bluesky: bare web addresses in a post's text are now real links (Bluesky doesn't link them itself).
 
 = 0.11.0 =

@@ -34,6 +34,7 @@ final class Entry_Fields {
 		'quote_text', 'quote_body', 'quote_author', 'quote_work',
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
+		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -226,6 +227,23 @@ final class Entry_Fields {
 				}
 				$f['display_title'] = $venue ?: $title;
 				$f['detail']        = $f['visit_label'] ?? '';
+				break;
+
+			case 'match':
+				$home    = self::meta( $post_id, 'match_home' );
+				$away    = self::meta( $post_id, 'match_away' );
+				$score   = self::meta( $post_id, 'match_score' );
+				$kickoff = (int) self::meta( $post_id, 'match_kickoff' );
+				// "Watford 1–2 Middlesbrough", or "Watford v Middlesbrough" before a score is known.
+				$f['match_score_line']  = '' !== $score ? "{$home} {$score} {$away}" : "{$home} v {$away}";
+				$f['match_result']      = 'ft' === self::meta( $post_id, 'match_status' ) ? __( 'Full time', 'nop-indieweb' ) : __( 'Live', 'nop-indieweb' );
+				$f['match_kickoff']     = $kickoff ? (string) wp_date( 'j M Y · H:i', $kickoff ) : '';
+				$f['match_competition'] = self::meta( $post_id, 'match_competition' );
+				$takes                  = count( \NOP\IndieWeb\Football\Match_Day::takes( $post_id ) );
+				/* translators: %d: number of takes posted during the match */
+				$f['match_takes']       = $takes ? sprintf( _n( '%d take', '%d takes', $takes, 'nop-indieweb' ), $takes ) : '';
+				$f['subtitle']          = $f['match_competition'];
+				$f['detail']            = implode( ' · ', array_filter( [ $score, $f['match_result'] ] ) );
 				break;
 
 			case 'exercise':

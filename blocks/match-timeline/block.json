@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "nop-indieweb/match-timeline",
+	"title": "Match Timeline",
+	"description": "A Match post's takes in the order they were posted, each with its minute. Renders nothing on any other post.",
+	"category": "nop-indieweb-meta",
+	"icon": "list-view",
+	"keywords": [ "match", "football", "takes", "live", "timeline" ],
+	"editorScript": "file:./editor.js",
+	"style": [ "file:./style.css", "nop-blocks-shared" ],
+	"render": "file:./render.php",
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"align": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalDefaultControls": { "fontSize": true }
+		},
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true,
+			"__experimentalDefaultControls": { "text": true }
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"interactivity": {
+			"clientNavigation": true
+		}
+	}
+}

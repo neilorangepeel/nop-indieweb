@@ -33,6 +33,12 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   once per match (`nop_indieweb_match_ft_take`), skipped for matches over a day
   old. Bluesky now facets bare URLs in the body (`build_url_facets()`), which
   also fixes links in ordinary notes. Tested locally on today's fixture.
+- **7 Nov 2026:** match page parts: `blocks/match-timeline` (SSR, structure CSS
+  only; the theme styles the minute), Entry_Fields `match_*` plus `detail` and
+  `subtitle` for matches, `Match_Day::takes()`, kind icon `kind-match.svg`
+  (Phosphor soccer-ball), `match` in the Logbook kinds, takes left out of the
+  Logbook main query (`Logbook::not_a_take()`). Tile, overlay and page are in
+  Orange Peel.
 
 - **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
   STRUCTURE.md): no kind→category defaults, services and `/post` stop filing
@@ -60,9 +66,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 - **Match kind, next steps:** (1) watch the first real match thread on live
   (only testable there: every platform is off locally); (2) keep takes off the
-  Logbook wall; (3) a Match timeline block and a
-  Match template in the theme (design to be redone: Neil liked the mock-up's
-  content, not its look); (4) a kind icon. Cup games aren't in openfootball's
+  Logbook wall, timeline block, templates and kind icon are done (7 Nov).
+  Cup games aren't in openfootball's
   league files, so they need `match start` by hand (which also needs a fixture,
   so a manual-fixture option is still to do).
 
