@@ -37,9 +37,11 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 - **Live, when Neil says go:** deploy 0.11.0, then on the server
   `wp eval-file …/bin/retire-categories-except-work.php` (dry run, show Neil the
-  counts) and only then `… apply`. Back up the live DB first.
-- Structure steps 3–8 (see the theme's NOTES.md / STRUCTURE.md): next is 3,
-  Subjects (3+ rule in the filter, `#hashtag` in a post → tag).
+  counts) and only then `… apply`. Then `bin/hashtags-to-tags.php` the same way
+  (dry run, show Neil, apply). Back up the live DB first.
+- Structure steps 4–8 (see the theme's NOTES.md / STRUCTURE.md): next is 4,
+  the Look taxonomy + applying the tag sort. Step 3 (`Kind\Hashtags`, #hashtag →
+  tag, old posts backfilled locally) is done.
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
 
