@@ -35,6 +35,7 @@ final class Entry_Fields {
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
 		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
+		'match_board_score', 'match_home_name', 'match_away_name', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -242,6 +243,17 @@ final class Entry_Fields {
 				$takes                  = count( \NOP\IndieWeb\Football\Match_Day::takes( $post_id ) );
 				/* translators: %d: number of takes posted during the match */
 				$f['match_takes']       = $takes ? sprintf( _n( '%d take', '%d takes', $takes, 'nop-indieweb' ), $takes ) : '';
+				$f['match_board_score'] = '' !== $score ? $score : 'v';
+				$f['match_home_name']   = $home;
+				$f['match_away_name']   = $away;
+				$ht                     = self::meta( $post_id, 'match_ht_score' );
+				/* translators: %s: half-time score, e.g. 0–1 */
+				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';
+				$f['match_venue']       = self::meta( $post_id, 'match_venue' );
+				$events                 = get_post_meta( $post_id, 'nop_indieweb_match_events', true );
+				$scorers                = \NOP\IndieWeb\Football\Match_Events::scorers( is_array( $events ) ? $events : [] );
+				$f['match_scorers_home'] = $scorers['home'];
+				$f['match_scorers_away'] = $scorers['away'];
 				$f['subtitle']          = $f['match_competition'];
 				$f['detail']            = implode( ' · ', array_filter( [ $score, $f['match_result'] ] ) );
 				break;

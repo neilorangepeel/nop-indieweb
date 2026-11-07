@@ -5,7 +5,8 @@
 	padding: 0;
 }
 
-.nop-match-timeline__take {
+.nop-match-timeline__take,
+.nop-match-timeline__event {
 	display: grid;
 	grid-template-columns: 4.5em minmax(0, 1fr);
 	gap: var(--wp--preset--spacing--30, 1rem);
@@ -35,4 +36,10 @@
 
 .nop-match-timeline__text > :last-child {
 	margin-bottom: 0;
+}
+
+/* Automated events (from the match data) read as a different voice from the takes. */
+.nop-match-timeline__event .nop-match-timeline__text {
+	font-style: italic;
+	margin: 0;
 }

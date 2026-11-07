@@ -49,17 +49,4 @@ final class MatchClockTest extends TestCase {
 		$this->assertNull( Match_Clock::typed_score( '4-4-2 again today' ) );
 		$this->assertNull( Match_Clock::typed_score( 'Conway makes it 1-0' ) );
 	}
-
-	public function test_team_name(): void {
-		$this->assertSame( 'Middlesbrough', Match_Clock::team_name( 'Middlesbrough FC' ) );
-		$this->assertSame( 'Wrexham', Match_Clock::team_name( 'Wrexham AFC' ) );
-		$this->assertSame( 'AFC Wimbledon', Match_Clock::team_name( 'AFC Wimbledon' ) );
-	}
-
-	public function test_season(): void {
-		$this->assertSame( '2026-27', Match_Clock::season( '2026-11-07' ) );
-		$this->assertSame( '2026-27', Match_Clock::season( '2027-05-02' ) );
-		$this->assertSame( '2026-27', Match_Clock::season( '2026-07-01' ) );
-		$this->assertSame( '1999-00', Match_Clock::season( '2000-03-01' ) );
-	}
 }

@@ -340,6 +340,45 @@ class Registry {
 				'label'       => __( 'Score', 'nop-indieweb' ),
 				'description' => 'Match post: the score, home first, e.g. 2–1. Empty until known.',
 			] ),
+			'nop_indieweb_match_ht_score'    => array_merge( $string, [
+				'label'       => __( 'Half-time score', 'nop-indieweb' ),
+				'description' => 'Match post: the half-time score, home first, from API-Football.',
+			] ),
+			'nop_indieweb_match_venue'       => array_merge( $string, [
+				'label'       => __( 'Venue', 'nop-indieweb' ),
+				'description' => 'Match post: the ground, from API-Football.',
+			] ),
+			'nop_indieweb_match_fixture_id'  => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'API-Football fixture', 'nop-indieweb' ),
+				'description'   => 'Match post: the fixture id at API-Football, which every sync reads.',
+			],
+			'nop_indieweb_match_events'      => [
+				'type'          => 'array',
+				'single'        => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Match events', 'nop-indieweb' ),
+				'description'   => 'Match post: goals, cards, subs and VAR from API-Football (Match_Events), in minute order.',
+				'show_in_rest'  => [
+					'schema' => [
+						'type'  => 'array',
+						'items' => [
+							'type'       => 'object',
+							'properties' => [
+								'minute' => [ 'type' => 'string' ],
+								'type'   => [ 'type' => 'string' ],
+								'side'   => [ 'type' => 'string' ],
+								'player' => [ 'type' => 'string' ],
+								'assist' => [ 'type' => 'string' ],
+								'detail' => [ 'type' => 'string' ],
+							],
+						],
+					],
+				],
+			],
 			'nop_indieweb_match_status'      => array_merge( $string, [
 				'label'       => __( 'Match status', 'nop-indieweb' ),
 				'description' => 'Match post: live, or ft once the full-time job has run.',

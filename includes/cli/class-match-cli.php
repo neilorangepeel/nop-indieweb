@@ -16,6 +16,7 @@ use NOP\IndieWeb\Football\Match_Day;
  *   wp nop-indieweb match fixture --date=2026-11-07
  *   wp nop-indieweb match start                    # today's fixture
  *   wp nop-indieweb match start --date=2026-11-04  # a past one, for testing
+ *   wp nop-indieweb match sync 5033                # refresh a match from the API now
  */
 class Match_CLI {
 
@@ -30,7 +31,7 @@ class Match_CLI {
 		if ( ! $fixture ) {
 			\WP_CLI::error( 'No fixture that day.' );
 		}
-		\WP_CLI::line( sprintf( '%s v %s, %s, kick-off %s, score %s', $fixture['home'], $fixture['away'], $fixture['competition'], wp_date( 'D j M Y H:i', $fixture['kickoff'] ), '' !== $fixture['score'] ? $fixture['score'] : 'not known' ) );
+		\WP_CLI::line( sprintf( '%s v %s, %s, %s, kick-off %s, score %s (fixture %d)', $fixture['home'], $fixture['away'], $fixture['competition'], $fixture['venue'], wp_date( 'D j M Y H:i', $fixture['kickoff'] ), '' !== $fixture['score'] ? $fixture['score'] : 'not known', $fixture['id'] ) );
 	}
 
 	/**
@@ -48,7 +49,21 @@ class Match_CLI {
 		if ( ! $id ) {
 			\WP_CLI::error( 'Could not create the match post.' );
 		}
+		Match_Day::sync( $id, true );
 		\WP_CLI::success( sprintf( 'Match post %d: %s', $id, get_permalink( $id ) ) );
+	}
+
+	/**
+	 * Refresh a match post's score, venue and events from the API now.
+	 *
+	 * <id>
+	 * : The match post ID.
+	 */
+	public function sync( array $args ): void {
+		$id = (int) ( $args[0] ?? 0 );
+		Match_Day::sync( $id, true );
+		$events = get_post_meta( $id, 'nop_indieweb_match_events', true );
+		\WP_CLI::success( sprintf( 'Score %s, half-time %s, %d events.', get_post_meta( $id, 'nop_indieweb_match_score', true ) ?: '–', get_post_meta( $id, 'nop_indieweb_match_ht_score', true ) ?: '–', is_array( $events ) ? count( $events ) : 0 ) );
 	}
 
 	private function time( array $assoc ): int {

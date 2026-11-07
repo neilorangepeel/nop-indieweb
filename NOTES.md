@@ -11,6 +11,18 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** match data moved from openfootball to API-Football, one
+  source (Neil's call: openfootball has no events, lags on results and has no
+  cups). `Match_Day::api()` / `fixture_on()` / `sync()` (the fixture-by-id call
+  includes the events, so one request a sync, at most once a minute, on every
+  take and at full time); `Match_Events` (pure, tested in
+  `tests/php/MatchEventsTest.php`) normalises the events and gives the running
+  score and scorers. New meta: `match_fixture_id`, `match_venue`,
+  `match_ht_score`, `match_events`. The timeline shows events in italics (goals
+  bold); the theme's scoreboard reads the new fields. Built against a
+  hand-made sample in the API's documented shape; not yet run against the real
+  API (no key yet). Removed `Match_Clock::season()` and `team_name()`.
+
 - **7 Nov 2026:** 0.12.0 adds the Match kind, data side only (ROADMAP "Match
   kind"; decided with Neil: openfootball fixtures, minute from the clock, score
   from the takes, API-Football as a later optional add-on). Code in
@@ -64,12 +76,14 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
-- **Match kind, next steps:** (1) watch the first real match thread on live
-  (only testable there: every platform is off locally); (2) keep takes off the
-  Logbook wall, timeline block, templates and kind icon are done (7 Nov).
-  Cup games aren't in openfootball's
-  league files, so they need `match start` by hand (which also needs a fixture,
-  so a manual-fixture option is still to do).
+- **Match kind, next steps:** (1) Neil is getting an API-Football key: add
+  `define( 'NOP_API_FOOTBALL_KEY', '…' );` to wp-config.php (local, then live),
+  then `wp nop-indieweb match start --date=2026-11-04` (or another past Boro
+  game) to test against real data: check the team id lookup, events, subs'
+  player/assist order and which team an own goal is filed under (assumed: the
+  player's own team, so it counts for the other side). Check the free plan
+  covers the 2026 season. (2) Watch the first real match thread on live (every
+  platform is off locally).
 
 - **7 Nov 2026 work is NOT on GitHub main** (main deploys to live). It is on
   branch `wip/structure`; on another Mac: `git fetch && git switch main &&

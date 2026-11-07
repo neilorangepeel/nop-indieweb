@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "nop-indieweb/match-timeline",
 	"title": "Match Timeline",
-	"description": "A Match post's takes in the order they were posted, each with its minute. Renders nothing on any other post.",
+	"description": "A Match post's takes and its automated events (goals, cards, subs, VAR) in minute order. Renders nothing on any other post.",
 	"category": "nop-indieweb-meta",
 	"icon": "list-view",
 	"keywords": [ "match", "football", "takes", "live", "timeline" ],

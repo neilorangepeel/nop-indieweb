@@ -65,6 +65,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-entry-fields.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-logbook.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-hashtags.php';
 require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-clock.php';
+require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-events.php';
 require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-day.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-browse.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-wall-filters.php';

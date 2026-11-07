@@ -70,19 +70,6 @@ class Match_Clock {
 		return null;
 	}
 
-	/** "Middlesbrough FC" → "Middlesbrough"; "Wrexham AFC" → "Wrexham". */
-	public static function team_name( string $name ): string {
-		return trim( (string) preg_replace( '/\s+A?FC$/', '', trim( $name ) ) );
-	}
-
-	/** The season a date belongs to, as openfootball names it: 2026-11-07 → "2026-27". */
-	public static function season( string $ymd ): string {
-		$y = (int) substr( $ymd, 0, 4 );
-		$m = (int) substr( $ymd, 5, 2 );
-		$start = $m >= 7 ? $y : $y - 1;
-		return sprintf( '%d-%02d', $start, ( $start + 1 ) % 100 );
-	}
-
 	private static function plain( string $text ): string {
 		return trim( html_entity_decode( strip_tags( $text ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}
