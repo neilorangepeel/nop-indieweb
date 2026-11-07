@@ -3,7 +3,8 @@
  * Match Timeline: a Match post's takes and its automated events (goals, cards,
  * subs, VAR from API-Football), merged in minute order from kick-off to full
  * time. Takes are h-entries with their own permalinks (the minute links to the
- * take); events are set apart as automated (italic), with no link.
+ * take); what the site posts by itself (the events, the full-time take) is set
+ * apart in bold, and events have no link.
  *
  * @var array    $attributes Block attributes.
  * @var WP_Block $block      Block instance.
@@ -34,17 +35,19 @@ $nop_minute_label = static function ( string $minute ): string {
 $nop_rows = [];
 
 // The takes: an event comes before a take stamped with the same minute (you react to it).
+$nop_ft_take = (int) get_post_meta( $nop_match_id, 'nop_indieweb_match_ft_take', true );
 foreach ( Match_Day::takes( $nop_match_id ) as $nop_i => $nop_take ) {
 	$nop_minute = (string) get_post_meta( $nop_take, 'nop_indieweb_match_minute', true );
 	$nop_rows[] = [
 		'key'  => Match_Events::sort_key( $nop_minute ) + 0.001,
 		'html' => sprintf(
-			'<li class="nop-match-timeline__take h-entry" id="take-%1$d"><a class="nop-match-timeline__minute u-url" href="%2$s"><time class="dt-published" datetime="%3$s">%4$s</time></a><div class="nop-match-timeline__text e-content">%5$s</div></li>',
+			'<li class="nop-match-timeline__take h-entry%6$s" id="take-%1$d"><a class="nop-match-timeline__minute u-url" href="%2$s"><time class="dt-published" datetime="%3$s">%4$s</time></a><div class="nop-match-timeline__text e-content">%5$s</div></li>',
 			$nop_take,
 			esc_url( (string) get_permalink( $nop_take ) ),
 			esc_attr( (string) get_post_time( 'c', true, $nop_take ) ),
 			esc_html( $nop_minute_label( $nop_minute ) ),
-			apply_filters( 'the_content', (string) get_post_field( 'post_content', $nop_take ) ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the post's own rendered content.
+			apply_filters( 'the_content', (string) get_post_field( 'post_content', $nop_take ) ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the post's own rendered content.
+			$nop_take === $nop_ft_take ? ' is-automated' : ''
 		),
 	];
 }
@@ -63,13 +66,13 @@ foreach ( Match_Events::with_score( is_array( $nop_events ) ? $nop_events : [] )
 	$nop_for    = esc_html( $nop_teams[ Match_Events::scoring_side( $nop_event ) ] ?? '' );
 	$nop_text   = match ( $nop_event['type'] ?? '' ) {
 		/* translators: 1: team, 2: score, e.g. 1–2, 3: scorer */
-		'goal'           => sprintf( __( '<strong>Goal!</strong> %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_team, $nop_score, $nop_player )
+		'goal'           => sprintf( __( 'Goal! %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_team, $nop_score, $nop_player )
 			/* translators: %s: the player who made the assist */
 			. ( '' !== $nop_assist ? sprintf( __( ', assisted by %s', 'nop-indieweb' ), $nop_assist ) : '' ),
 		/* translators: 1: team, 2: score, 3: scorer */
-		'penalty'        => sprintf( __( '<strong>Penalty scored!</strong> %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_team, $nop_score, $nop_player ),
+		'penalty'        => sprintf( __( 'Penalty scored! %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_team, $nop_score, $nop_player ),
 		/* translators: 1: team the goal counts for, 2: score, 3: the player who put it in his own net */
-		'own-goal'       => sprintf( __( '<strong>Own goal.</strong> %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_for, $nop_score, $nop_player ),
+		'own-goal'       => sprintf( __( 'Own goal. %1$s %2$s. %3$s', 'nop-indieweb' ), $nop_for, $nop_score, $nop_player ),
 		/* translators: 1: player, 2: team */
 		'missed-penalty' => sprintf( __( 'Penalty missed: %1$s (%2$s)', 'nop-indieweb' ), $nop_player, $nop_team ),
 		/* translators: 1: player, 2: team */
@@ -94,7 +97,7 @@ foreach ( Match_Events::with_score( is_array( $nop_events ) ? $nop_events : [] )
 			'<li class="nop-match-timeline__event is-%1$s"><span class="nop-match-timeline__minute">%2$s</span><p class="nop-match-timeline__text">%3$s</p></li>',
 			esc_attr( (string) $nop_event['type'] ),
 			esc_html( $nop_minute_label( $nop_minute ) ),
-			wp_kses( $nop_text, [ 'strong' => [] ] )
+			wp_kses( $nop_text, [] ) // Its parts are escaped above; this keeps a translation from adding markup.
 		),
 	];
 }

@@ -44,8 +44,12 @@
 	margin-bottom: 0;
 }
 
-/* Automated events (from the match data) read as a different voice from the takes. */
+/* What the site posts by itself (the events from the match data, the full-time take) is bold, apart from the takes. */
+.nop-match-timeline__event .nop-match-timeline__text,
+.nop-match-timeline__take.is-automated .nop-match-timeline__text {
+	font-weight: 700;
+}
+
 .nop-match-timeline__event .nop-match-timeline__text {
-	font-style: italic;
 	margin: 0;
 }
