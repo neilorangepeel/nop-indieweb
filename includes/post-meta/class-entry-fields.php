@@ -257,9 +257,16 @@ final class Entry_Fields {
 				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';
 				$f['match_venue']       = self::meta( $post_id, 'match_venue' );
 				// The scoreboard's kicker and foot, as a programme sets them: "English Championship · Wednesday 4 November", "Full time · Half-time 0–1".
-				$f['match_kicker']      = implode( ' · ', array_filter( [ self::meta( $post_id, 'match_competition' ), $kickoff ? (string) wp_date( 'l j F', $kickoff ) : '' ] ) );
-				/* translators: %s: half-time score, e.g. 0–1 */
-				$f['match_status_line'] = implode( ' · ', array_filter( [ $f['match_result'], '' !== $ht ? sprintf( __( 'Half-time %s', 'nop-indieweb' ), $ht ) : '' ] ) );
+				$f['match_kicker']      = implode( ' · ', array_filter( [ self::meta( $post_id, 'match_competition' ), $kickoff ? (string) wp_date( 'D j M', $kickoff ) : '' ] ) );
+				// The foot carries the facts too: "Full time · Half-time 0–1 · Racecourse Ground · KO 19:45".
+				$f['match_status_line'] = implode( ' · ', array_filter( [
+					$f['match_result'],
+					/* translators: %s: half-time score, e.g. 0–1 */
+					'' !== $ht ? sprintf( __( 'Half-time %s', 'nop-indieweb' ), $ht ) : '',
+					$f['match_venue'],
+					/* translators: %s: kick-off time, e.g. 19:45 */
+					$kickoff ? sprintf( __( 'KO %s', 'nop-indieweb' ), wp_date( 'H:i', $kickoff ) ) : '',
+				] ) );
 				$events                 = get_post_meta( $post_id, 'nop_indieweb_match_events', true );
 				$scorers                = \NOP\IndieWeb\Football\Match_Events::scorers( is_array( $events ) ? $events : [] );
 				$f['match_scorers_home'] = $scorers['home'];

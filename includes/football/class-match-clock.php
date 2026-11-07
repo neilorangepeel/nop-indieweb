@@ -70,6 +70,16 @@ class Match_Clock {
 		return null;
 	}
 
+	/**
+	 * A take's HTML without the minute and score typed at its start ("71' 1-2 HACKNEY." → "HACKNEY."), for the match
+	 * page, where the minute column and the events already say them. Only the start of the first paragraph is touched.
+	 */
+	public static function strip_typed_lead( string $html ): string {
+		$minute = '(?:\d{1,3}(?:\s*\+\s*\d{1,2})?\s*(?:[\'’′]|&#8217;|&#039;)|HT\b|FT\b)';
+		$score  = '\d{1,2}\s*[-–—]\s*\d{1,2}(?![\d\-–—])';
+		return (string) preg_replace( '~^(\s*(?:<!--[^>]*-->\s*)?(?:<p[^>]*>)?)\s*(?:' . $minute . '[.:,]?\s*)?(?:' . $score . '[.:,]?\s*)?~iu', '$1', $html, 1 );
+	}
+
 	private static function plain( string $text ): string {
 		return trim( html_entity_decode( strip_tags( $text ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 	}

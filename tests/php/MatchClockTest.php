@@ -49,4 +49,15 @@ final class MatchClockTest extends TestCase {
 		$this->assertNull( Match_Clock::typed_score( '4-4-2 again today' ) );
 		$this->assertNull( Match_Clock::typed_score( 'Conway makes it 1-0' ) );
 	}
+
+	public function test_strip_typed_lead(): void {
+		$this->assertSame( '<p>HACKNEY. From 25 yards.</p>', Match_Clock::strip_typed_lead( "<p>71' 1-2 HACKNEY. From 25 yards.</p>" ) );
+		$this->assertSame( '<p>Conway! Get in.</p>', Match_Clock::strip_typed_lead( '<p>0-1 Conway! Get in.</p>' ) );
+		$this->assertSame( '<p>Brilliant then not.</p>', Match_Clock::strip_typed_lead( '<p>HT. Brilliant then not.</p>' ) );
+		$this->assertSame( '<p class="x">Asleep.</p>', Match_Clock::strip_typed_lead( '<p class="x">58&#8217; 1-1. Asleep.</p>' ) );
+		$this->assertSame( "\n<p>Nine minutes left.</p>", Match_Clock::strip_typed_lead( "\n<p>Nine minutes left.</p>" ) );
+		$this->assertSame( "<!-- wp:paragraph -->\n<p>Conway!</p>", Match_Clock::strip_typed_lead( "<!-- wp:paragraph -->\n<p>0-1 Conway!</p>" ) );
+		$this->assertSame( '<p>4-4-2 again.</p>', Match_Clock::strip_typed_lead( '<p>4-4-2 again.</p>' ) );
+		$this->assertSame( '<p>Then 1-0 later.</p><p>67\' not here</p>', Match_Clock::strip_typed_lead( '<p>Then 1-0 later.</p><p>67\' not here</p>' ) );
+	}
 }

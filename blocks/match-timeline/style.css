@@ -26,6 +26,10 @@
 	color: inherit;
 }
 
+.nop-match-timeline__score {
+	display: block;
+}
+
 .nop-match-timeline__minute:hover,
 .nop-match-timeline__minute:focus-visible {
 	text-decoration: underline;
@@ -44,10 +48,17 @@
 	margin-bottom: 0;
 }
 
-/* What the site posts by itself (the events from the match data, the full-time take) is bold, apart from the takes. */
-.nop-match-timeline__event .nop-match-timeline__text,
+/* What the site posts by itself is set apart from the takes: goals and the full-time take bold, the other events
+   (cards, subs, VAR) in quieter capitals. */
+.nop-match-timeline__event:is(.is-goal, .is-penalty, .is-own-goal) .nop-match-timeline__text,
 .nop-match-timeline__take.is-automated .nop-match-timeline__text {
 	font-weight: 700;
+}
+
+.nop-match-timeline__event:not(.is-goal, .is-penalty, .is-own-goal) .nop-match-timeline__text {
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-size: 0.875em;
 }
 
 .nop-match-timeline__event .nop-match-timeline__text {

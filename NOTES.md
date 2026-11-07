@@ -11,6 +11,14 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** match page polish (Neil said yes to all): the timeline hides a
+  take's typed minute/score (`Match_Clock::strip_typed_lead()`, tested; social
+  copies keep them) and shows the full-time take as just "Full time: <result>."
+  (no link to itself); goals carry the running score under the minute and are
+  bold, other events (cards, subs, VAR) quieter caps; goal text no longer
+  repeats the score. `match_status_line` now also holds the ground and "KO
+  19:45" (the theme's facts list is gone), `match_kicker` uses "Wed 4 Nov".
+
 - **7 Nov 2026:** Entry_Fields `match_score_sep`: "v" before a score, empty
   after (the theme draws a rule in that cell) for the five-column score line.
 
