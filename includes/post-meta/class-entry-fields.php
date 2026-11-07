@@ -35,7 +35,7 @@ final class Entry_Fields {
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
 		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
-		'match_board_score', 'match_home_name', 'match_away_name', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
+		'match_board_score', 'match_home_name', 'match_away_name', 'match_home_goals', 'match_away_goals', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -246,6 +246,10 @@ final class Entry_Fields {
 				$f['match_board_score'] = '' !== $score ? $score : 'v';
 				$f['match_home_name']   = $home;
 				$f['match_away_name']   = $away;
+				// Each side's goals for its scoreboard row: '' before a score is known, so the row shows just the team.
+				$goals                  = '' !== $score ? explode( '–', $score ) : [];
+				$f['match_home_goals']  = $goals[0] ?? '';
+				$f['match_away_goals']  = $goals[1] ?? '';
 				$ht                     = self::meta( $post_id, 'match_ht_score' );
 				/* translators: %s: half-time score, e.g. 0–1 */
 				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';

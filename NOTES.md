@@ -11,6 +11,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** Entry_Fields `match_home_goals` / `match_away_goals` for the
+  theme's scoreboard rows; the timeline's minute aligns to the first line
+  (`align-items: baseline`) and its first row has no rule.
+
 - **7 Nov 2026:** match data moved from openfootball to API-Football, one
   source (Neil's call: openfootball has no events, lags on results and has no
   cups). `Match_Day::api()` / `fixture_on()` / `sync()` (the fixture-by-id call

@@ -9,9 +9,15 @@
 .nop-match-timeline__event {
 	display: grid;
 	grid-template-columns: 4.5em minmax(0, 1fr);
+	align-items: baseline; /* The minute sits on the first line of what it stamps, whatever their sizes. */
 	gap: var(--wp--preset--spacing--30, 1rem);
 	padding-block: var(--wp--preset--spacing--30, 1rem);
 	border-top: var(--wp--custom--line, 1px) solid color-mix(in srgb, currentColor 25%, transparent);
+}
+
+/* No rule above the first row: whatever comes before (a list of facts, a paragraph) ends the section itself. */
+.nop-match-timeline > :first-child {
+	border-top: 0;
 }
 
 .nop-match-timeline__minute {
