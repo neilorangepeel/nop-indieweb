@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 7.2
 Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 0.11.0
+Stable tag: 0.12.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,12 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.12.0 =
+* New Match kind for following a Boro game live. A note with #UTB posted within an hour of kick-off creates the match post from the openfootball fixture list (public domain, no key). Every note posted until 150 minutes after kick-off becomes a take: linked to the match (`nop_indieweb_match_id`) and stamped with the minute (`nop_indieweb_match_minute`, from the clock unless the take starts with one, e.g. "67'"). A take that starts with a score ("2-1", home first) sets the match score. A job three hours after kick-off marks the match finished.
+* Filters: `nop_indieweb_match_team`, `nop_indieweb_match_leagues`, `nop_indieweb_match_hashtag`.
+* New `wp nop-indieweb match fixture|start [--date=]` to look up a fixture or start a match by hand.
+* The match post is not syndicated yet; the social thread is the next step.
 
 = 0.11.0 =
 * Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.

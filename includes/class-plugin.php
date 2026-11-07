@@ -209,6 +209,7 @@ class Plugin {
 		( new \NOP\IndieWeb\Kind\Kind_Scoping() )->register();
 		( new \NOP\IndieWeb\Kind\Hashtags() )->register();
 		( new \NOP\IndieWeb\Kind\Logbook() )->register();
+		( new \NOP\IndieWeb\Football\Match_Day() )->register();
 		( new \NOP\IndieWeb\Browse\Browse() )->register();
 		( new \NOP\IndieWeb\Browse\Wall_Filters() )->register();
 		( new Registry() )->register();

@@ -11,6 +11,16 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** 0.12.0 adds the Match kind, data side only (ROADMAP "Match
+  kind"; decided with Neil: openfootball fixtures, minute from the clock, score
+  from the takes, API-Football as a later optional add-on). Code in
+  `includes/football/` (pure clock and text parsing in `class-match-clock.php`,
+  tested in `tests/php/MatchClockTest.php`; hooks in `class-match-day.php`),
+  meta in the registry, `wp nop-indieweb match fixture|start`. Smoke-tested
+  locally on Wrexham v Boro (4 Nov): match post created, takes stamped
+  (pre-match, 26, HT, 88), score taken from "88' 1-1", nothing syndicated; test
+  posts deleted.
+
 - **7 Nov 2026:** 0.11.0 retires categories except Work (step 2 of the theme's
   STRUCTURE.md): no kind→category defaults, services and `/post` stop filing
   categories, settings lose the Category fields, old `/category/<slug>/`
@@ -35,6 +45,15 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
+- **Match kind, next steps:** (1) the social thread: match post goes out first,
+  each take replies to the previous take's Bluesky/Mastodon copy (match post has
+  `nop_indieweb_skip_syndication` until then; takes still syndicate as standalone
+  notes); (2) keep takes off the Logbook wall; (3) a Match timeline block and a
+  Match template in the theme (design to be redone: Neil liked the mock-up's
+  content, not its look); (4) a kind icon. Cup games aren't in openfootball's
+  league files, so they need `match start` by hand (which also needs a fixture,
+  so a manual-fixture option is still to do).
+
 - **7 Nov 2026 work is NOT on GitHub main** (main deploys to live). It is on
   branch `wip/structure`; on another Mac: `git fetch && git switch main &&
   git merge --ff-only origin/wip/structure`. Push main only when Neil says go
@@ -53,5 +72,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   `park/look-filter`).
 
 ## Open questions
+
+- Match: does any note in the match window become a take (as built), or only
+  ones with #UTB? A non-football note posted mid-match would be attached today.
 
 - Delete the stale hashtag branch once the roadmap entry is settled?

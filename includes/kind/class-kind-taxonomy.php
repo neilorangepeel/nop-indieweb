@@ -37,6 +37,7 @@ class Kind_Taxonomy {
 		'quote'    => 'Quote',
 		'video'    => 'Video',
 		'story'    => 'Story',
+		'match'    => 'Match',
 	];
 
 	const KIND_DESCRIPTIONS = [
@@ -55,6 +56,7 @@ class Kind_Taxonomy {
 		'quote'      => 'A quotation from elsewhere, with attribution.',
 		'video'      => 'A post where a video is the primary content.',
 		'story'      => 'A short self-hosted video, featured for 24h then kept in the archive.',
+		'match'      => 'A football match followed live: the fixture, the score and my takes in minute order.',
 		'collection' => 'Ownership of a physical or digital media item.',
 		'music'      => 'A music album or release in the collection.',
 		'film'       => 'A film owned on physical or digital media.',
@@ -97,6 +99,7 @@ class Kind_Taxonomy {
 			'quote'      => __( 'Quote',       'nop-indieweb' ),
 			'video'      => __( 'Video',       'nop-indieweb' ),
 			'story'      => __( 'Story',       'nop-indieweb' ),
+			'match'      => __( 'Match',       'nop-indieweb' ),
 			'collection' => __( 'Collection',  'nop-indieweb' ),
 			'music'      => __( 'Music',       'nop-indieweb' ),
 			'film'       => __( 'Film',        'nop-indieweb' ),

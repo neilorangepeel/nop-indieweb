@@ -323,6 +323,48 @@ class Registry {
 				'description'   => 'Per-platform delivery journal (pending/sent/failed), keyed by syndicator slug. Written by Syndication_Manager.',
 			],
 
+			// ── Match (includes/football) ─────────────────────────────────────────
+			'nop_indieweb_match_home'        => array_merge( $string, [
+				'label'       => __( 'Home team', 'nop-indieweb' ),
+				'description' => 'Match post: the home team.',
+			] ),
+			'nop_indieweb_match_away'        => array_merge( $string, [
+				'label'       => __( 'Away team', 'nop-indieweb' ),
+				'description' => 'Match post: the away team.',
+			] ),
+			'nop_indieweb_match_competition' => array_merge( $string, [
+				'label'       => __( 'Competition', 'nop-indieweb' ),
+				'description' => 'Match post: the league or cup.',
+			] ),
+			'nop_indieweb_match_score'       => array_merge( $string, [
+				'label'       => __( 'Score', 'nop-indieweb' ),
+				'description' => 'Match post: the score, home first, e.g. 2–1. Empty until known.',
+			] ),
+			'nop_indieweb_match_status'      => array_merge( $string, [
+				'label'       => __( 'Match status', 'nop-indieweb' ),
+				'description' => 'Match post: live, or ft once the full-time job has run.',
+			] ),
+			'nop_indieweb_match_kickoff'     => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Kick-off', 'nop-indieweb' ),
+				'description'   => 'Match post: kick-off as a Unix timestamp (UTC).',
+			],
+			'nop_indieweb_match_id'          => [
+				'type'          => 'integer',
+				'single'        => true,
+				'show_in_rest'  => true,
+				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'label'         => __( 'Match', 'nop-indieweb' ),
+				'description'   => 'Take: the ID of the match post it belongs to.',
+			],
+			'nop_indieweb_match_minute'      => array_merge( $string, [
+				'label'       => __( 'Match minute', 'nop-indieweb' ),
+				'description' => "Take: the minute it was posted, e.g. 67, 45+2, HT, FT. Empty before kick-off.",
+			] ),
+
 			// ── Post kinds ──────────────────────────────────────────────────────────
 			'nop_indieweb_bookmark_of' => array_merge( $string, [
 				'label'       => __( 'Bookmark Of', 'nop-indieweb' ),
