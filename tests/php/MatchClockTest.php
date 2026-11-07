@@ -60,4 +60,16 @@ final class MatchClockTest extends TestCase {
 		$this->assertSame( '<p>4-4-2 again.</p>', Match_Clock::strip_typed_lead( '<p>4-4-2 again.</p>' ) );
 		$this->assertSame( '<p>Then 1-0 later.</p><p>67\' not here</p>', Match_Clock::strip_typed_lead( '<p>Then 1-0 later.</p><p>67\' not here</p>' ) );
 	}
+
+	public function test_short_name(): void {
+		$this->assertSame( 'Boro', Match_Clock::short_name( 'Middlesbrough' ) );
+		$this->assertSame( 'Hull', Match_Clock::short_name( 'Hull City' ) );
+		$this->assertSame( 'Blackburn', Match_Clock::short_name( 'Blackburn Rovers' ) );
+		$this->assertSame( 'Wrexham', Match_Clock::short_name( 'Wrexham' ) );
+		$this->assertSame( 'QPR', Match_Clock::short_name( 'Queens Park Rangers' ) );
+		$this->assertSame( 'Man Utd', Match_Clock::short_name( 'Manchester United' ) );
+		$this->assertSame( 'Derby', Match_Clock::short_name( 'Derby County' ) );
+		$this->assertSame( 'United', Match_Clock::short_name( 'United' ) );
+		$this->assertSame( 'Smoggies', Match_Clock::short_name( 'Middlesbrough', [ 'Middlesbrough' => 'Smoggies' ] ) );
+	}
 }

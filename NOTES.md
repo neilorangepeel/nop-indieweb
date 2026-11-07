@@ -11,6 +11,13 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **7 Nov 2026:** scoreboard as one line: `Match_Clock::short_name()` (tested;
+  "Middlesbrough" → "Boro", club suffixes dropped, a few listed names; filter
+  `nop_indieweb_match_short_names`) and Entry_Fields `match_line` ("Wrexham 1 2
+  Boro", "Wrexham v Boro" before a score). Removed the five-column fields
+  (`match_board_score`, `match_home_name`/`away_name`, `match_home_goals`/
+  `away_goals`, `match_score_sep`).
+
 - **7 Nov 2026:** match page polish (Neil said yes to all): the timeline hides a
   take's typed minute/score (`Match_Clock::strip_typed_lead()`, tested; social
   copies keep them) and shows the full-time take as just "Full time: <result>."

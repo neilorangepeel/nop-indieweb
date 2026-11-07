@@ -70,6 +70,39 @@ class Match_Clock {
 		return null;
 	}
 
+	/** Names a scoreboard shortens its own way. Anything else loses a club suffix (see short_name()). */
+	const SHORT_NAMES = [
+		'Middlesbrough'           => 'Boro',
+		'Queens Park Rangers'     => 'QPR',
+		'West Bromwich Albion'    => 'West Brom',
+		'Manchester United'       => 'Man Utd',
+		'Manchester City'         => 'Man City',
+		'Tottenham Hotspur'       => 'Spurs',
+		'Wolverhampton Wanderers' => 'Wolves',
+		'Nottingham Forest'       => 'Forest',
+		'Brighton & Hove Albion'  => 'Brighton',
+		'Brighton'                => 'Brighton',
+		'Preston North End'       => 'Preston',
+		'Sheffield Wednesday'     => 'Sheff Wed',
+		'Sheffield Utd'           => 'Sheff Utd',
+		'Sheffield United'        => 'Sheff Utd',
+	];
+
+	/**
+	 * A team's short name for the scoreboard: "Middlesbrough" → "Boro", "Hull City" → "Hull", "Blackburn Rovers" →
+	 * "Blackburn". A listed name first, else a trailing club word dropped when a name is left.
+	 *
+	 * @param array<string,string> $names Overrides, as SHORT_NAMES.
+	 */
+	public static function short_name( string $name, array $names = self::SHORT_NAMES ): string {
+		$name = trim( $name );
+		if ( isset( $names[ $name ] ) ) {
+			return $names[ $name ];
+		}
+		$short = (string) preg_replace( '/\s+(?:City|Town|United|Utd|Rovers|Athletic|County|Wanderers|Albion|Argyle|Rangers|A?FC)$/u', '', $name );
+		return '' !== $short ? $short : $name;
+	}
+
 	/**
 	 * A take's HTML without the minute and score typed at its start ("71' 1-2 HACKNEY." → "HACKNEY."), for the match
 	 * page, where the minute column and the events already say them. Only the start of the first paragraph is touched.
