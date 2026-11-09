@@ -11,6 +11,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 - Live version: 0.10.1.
 - Dev has live's content (copied 9 Nov with `bin/refresh-dev.sh`; refresh any
   time: `ssh neil.rocks 'bash -s' < bin/refresh-dev.sh`).
+- Dev runs the **Orange Peel** theme (switched 9 Nov), not `nop-dev`.
+  refresh-dev.sh keeps whatever theme dev has. Back to nop on dev: set
+  dev's `template`/`stylesheet` options to `nop-dev`, then delete the
+  `alloptions` cache.
 - On `develop`, not yet on main: deploys stop on a failed step (`set -e`);
   minimum WordPress lowered to 7.1. The live deploy and the dev deploy both
   read their workflow from `main`, so the `set -e` fix takes effect at the next release.
@@ -26,6 +30,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **9 Nov 2026:** dev switched to Orange Peel. `bin/refresh-dev.sh` keeps
+  dev's current theme (only maps live's nop Site Editor changes when dev
+  runs nop-dev) and clears dev's options cache at the end. A plain
+  `wp cache flush` left stale options twice today.
 - **9 Nov 2026:** deploy scripts get `set -e`, so a failed `cd`/`git pull`
   turns the run red. Minimum WordPress 7.2 → 7.1: the Icon API and bindings
   are core from 7.1; only the Icon block's `icon` binding needs 7.2 and is

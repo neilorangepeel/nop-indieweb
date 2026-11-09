@@ -24,6 +24,7 @@ q() { wp db query "$1" --skip-column-names 2>/dev/null; }
 echo "== Keep dev's own plugins"
 DEV_PLUGINS=$(q "SELECT option_value FROM ${D}options WHERE option_name='active_plugins'")
 case "$DEV_PLUGINS" in *nop-indieweb-dev*) ;; *) echo "STOP: dev's plugin list looks wrong: $DEV_PLUGINS" >&2; exit 1 ;; esac
+DEV_THEME=$(q "SELECT option_value FROM ${D}options WHERE option_name='stylesheet'")
 
 echo "== Copy live's tables"
 TABLES=""
@@ -38,7 +39,7 @@ rm "$DUMP"
 q "UPDATE ${D}options SET option_name='${D}user_roles' WHERE option_name='${L}user_roles'"
 # Before WordPress loads for dev again, so live's plugins (Jetpack) never run there.
 q "UPDATE ${D}options SET option_value='${DEV_PLUGINS}' WHERE option_name='active_plugins'"
-q "UPDATE ${D}options SET option_value='nop-dev' WHERE option_name IN ('template','stylesheet')"
+q "UPDATE ${D}options SET option_value='${DEV_THEME}' WHERE option_name IN ('template','stylesheet')"
 q "UPDATE ${D}options SET option_value='DEV — Neil Orange Peel' WHERE option_name='blogname'"
 q "UPDATE ${D}options SET option_value='0' WHERE option_name='blog_public'"
 # The object cache still holds dev's old options; without this, WordPress
@@ -57,10 +58,13 @@ echo "== Dev settings back"
 wp option update home "https://$DEV" --url=$DEV
 wp option update siteurl "https://$DEV" --url=$DEV
 wp option delete cron --url=$DEV || true
-# Site Editor changes and theme mods belong to the theme by slug: carry them to nop-dev.
-q "UPDATE ${D}terms t JOIN ${D}term_taxonomy tt ON tt.term_id=t.term_id SET t.slug='nop-dev', t.name='nop-dev' WHERE tt.taxonomy='wp_theme' AND t.slug='nop'"
-q "DELETE FROM ${D}options WHERE option_name='theme_mods_nop-dev'"
-q "UPDATE ${D}options SET option_name='theme_mods_nop-dev' WHERE option_name='theme_mods_nop'"
+# Site Editor changes and theme mods belong to the theme by slug: carry live's
+# nop ones to nop-dev (only when dev runs nop-dev; Orange Peel keeps its own).
+[ "$DEV_THEME" = nop-dev ] && q "UPDATE ${D}terms t JOIN ${D}term_taxonomy tt ON tt.term_id=t.term_id SET t.slug='nop-dev', t.name='nop-dev' WHERE tt.taxonomy='wp_theme' AND t.slug='nop'"
+if [ "$DEV_THEME" = nop-dev ]; then
+  q "DELETE FROM ${D}options WHERE option_name='theme_mods_nop-dev'"
+  q "UPDATE ${D}options SET option_name='theme_mods_nop-dev' WHERE option_name='theme_mods_nop'"
+fi
 
 echo "== Strip syndication credentials"
 wp eval '
@@ -80,6 +84,9 @@ echo count( $s ), " settings groups copied, credentials stripped\n";
 echo "== Check"
 wp rewrite flush --url=$DEV
 wp cache flush --url=$DEV 2>/dev/null || true
+# A full flush doesn't always clear dev's options cache; delete it directly.
+wp cache delete alloptions options --url=$DEV 2>/dev/null || true
+wp cache delete notoptions options --url=$DEV 2>/dev/null || true
 wp sg purge --url=$DEV 2>/dev/null | tail -1 || true
 echo "dev posts: $(wp post list --post_type=post --format=count --url=$DEV)  live posts: $(wp post list --post_type=post --format=count --url=$LIVE)"
 wp eval 'var_dump( \NOP\IndieWeb\nop_indieweb_is_production() );' --url=$DEV
