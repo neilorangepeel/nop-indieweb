@@ -89,6 +89,13 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+if ( ! function_exists( 'home_url' ) ) {
+	/** A test sets the site address it wants in $GLOBALS['nop_test_home_url']. */
+	function home_url() {
+		return $GLOBALS['nop_test_home_url'] ?? 'https://example.com';
+	}
+}
+
 if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
 	define( 'HOUR_IN_SECONDS', 3600 );
 }

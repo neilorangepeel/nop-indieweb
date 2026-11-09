@@ -170,6 +170,18 @@ class Syndication_Manager {
 	 * URL is stored, which is too late to stop two concurrent runs both posting.
 	 */
 	public function run_target( int $post_id, string $slug, int $attempt ): void {
+		// Every route to a network ends here, so this one check keeps a dev copy
+		// from posting to the real accounts; the journal shows why on the post.
+		if ( ! \NOP\IndieWeb\nop_indieweb_is_production() ) {
+			$this->update_status( $post_id, $slug, [
+				'state'   => 'skipped',
+				'reason'  => 'not_production',
+				'error'   => __( 'Skipped — this is not the live site.', 'nop-indieweb' ),
+				'updated' => time(),
+			] );
+			return;
+		}
+
 		if ( ! $this->claim_target( $post_id, $slug ) ) {
 			return;
 		}

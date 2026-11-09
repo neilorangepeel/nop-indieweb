@@ -19,6 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Webmention_Sender {
 
 	public function register(): void {
+		if ( ! \NOP\IndieWeb\nop_indieweb_is_production() ) {
+			return;
+		}
+
 		add_action( 'transition_post_status', [ $this, 'maybe_schedule' ], 10, 3 );
 		add_action( 'nop_indieweb_send_webmentions', [ $this, 'send_for_post' ] );
 

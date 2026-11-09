@@ -97,6 +97,17 @@ function nop_indieweb_redact_for_log( mixed $value ): mixed {
 	return $value;
 }
 
+// False on a dev or local copy, which must never syndicate, send webmentions or
+// ping the hub. Set NOP_INDIEWEB_LIVE_HOST in wp-config (it's shared across a
+// multisite, so it names the live host rather than flagging dev); unset means
+// every site is live, so nothing changes for a site that doesn't use it.
+function nop_indieweb_is_production(): bool {
+	if ( ! defined( 'NOP_INDIEWEB_LIVE_HOST' ) ) {
+		return true;
+	}
+	return wp_parse_url( home_url(), PHP_URL_HOST ) === NOP_INDIEWEB_LIVE_HOST;
+}
+
 // Writes to the error log only when debug mode is enabled in settings.
 // Context arrays are run through the redactor so secrets cannot leak.
 function nop_indieweb_log( string $message, mixed $context = null ): void {

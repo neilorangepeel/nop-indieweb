@@ -20,6 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WebSub {
 
 	public function register(): void {
+		if ( ! nop_indieweb_is_production() ) {
+			return;
+		}
+
 		add_action( 'transition_post_status', [ $this, 'maybe_ping' ], 10, 3 );
 	}
 
