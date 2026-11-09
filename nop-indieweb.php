@@ -4,7 +4,7 @@
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
  * Version:     0.10.1
- * Requires at least: 7.2
+ * Requires at least: 7.1
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
  * Author URI:  https://neilorangepeel.com

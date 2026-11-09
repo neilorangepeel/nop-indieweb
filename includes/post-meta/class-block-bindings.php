@@ -14,7 +14,7 @@ use WP_Block;
  * Registers the nop-indieweb/post-meta Block Bindings source and injects
  * microformat classes onto bound core blocks at render time.
  *
- * Requires WordPress 7.2 (the plugin's minimum: core/icon accepts an `icon` binding from there).
+ * Icon binding needs WordPress 7.2 (core/icon accepts it from there); on 7.1 it is simply ignored.
  *
  * Usage — two equivalent forms:
  *

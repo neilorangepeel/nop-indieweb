@@ -67,7 +67,7 @@ class Block_Registrar {
 		return $metadata;
 	}
 
-	/** The `phosphor` icon collection, for the core Icon block (WordPress 7.2 is the plugin's minimum). */
+	/** The `phosphor` icon collection, for the core Icon block (WordPress 7.1+, the plugin's minimum). */
 	public function register_icons(): void {
 		wp_register_icon_collection( 'phosphor', [
 			'label'       => 'Phosphor',
