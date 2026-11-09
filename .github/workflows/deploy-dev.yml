@@ -1,0 +1,45 @@
+name: Deploy to dev
+
+# Gate: deploy only after the CI workflow succeeds on develop. workflow_run fires
+# when CI completes; the job's `if` filters to successful runs on the develop
+# branch, so a red build (failing lint / PHPUnit / PHPStan) never reaches
+# dev.neilorangepeel.com. Manual redeploys are still possible via workflow_dispatch.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [develop]
+  workflow_dispatch:
+
+# Serialise deploys against SiteGround. Without this, rapid back-to-back
+# pushes fan out into N concurrent SSH sessions all resetting PHP-FPM's
+# opcache at overlapping times, which SiteGround responds to with 503s
+# (overloaded workers + WAF rate limits). cancel-in-progress=false lets
+# the running deploy finish cleanly, but only one new push is queued at
+# a time — if more arrive, the latest wins and the intermediate ones are
+# skipped, so a fast burst of 5 commits becomes 2 deploys not 5.
+concurrency:
+  group: deploy-siteground
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # workflow_dispatch has no workflow_run payload, so allow it through;
+    # otherwise require the upstream CI run to have concluded successfully.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/www/neil.rocks/public_html/wp-content/plugins/nop-indieweb-dev
+            git pull origin develop
+            echo '<?php opcache_reset(); echo "ok";' > ~/www/neilorangepeel.com/public_html/opcache-reset-tmp.php
+            curl -s https://neilorangepeel.com/opcache-reset-tmp.php
+            rm ~/www/neilorangepeel.com/public_html/opcache-reset-tmp.php

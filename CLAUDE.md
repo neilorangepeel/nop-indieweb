@@ -101,6 +101,12 @@ Notes:
 
 The following files exist on the production server but are intentionally outside this repo. Recreate them manually after a fresh server provision.
 
+**`NOP_INDIEWEB_LIVE_HOST` in wp-config.php**
+`define( 'NOP_INDIEWEB_LIVE_HOST', 'neilorangepeel.com' );` — only that host
+syndicates, sends webmentions or pings the hub, so the dev subsite
+(dev.neilorangepeel.com, running `plugins/nop-indieweb-dev` on `develop`) and
+local Studio never post to the real accounts. See `nop_indieweb_is_production()`.
+
 **`wp-content/mu-plugins/nop-session.php`**
 Extends the login session to one year for user ID 1 (neilhainsworth), network-wide including network admin. Safe in mu-plugins — never touched by WP core, plugin, or theme updates.
 
