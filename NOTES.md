@@ -11,9 +11,12 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 - Live version: 0.10.1.
 - Dev has live's content (copied 9 Nov with `bin/refresh-dev.sh`; refresh any
   time: `ssh neil.rocks 'bash -s' < bin/refresh-dev.sh`).
-- Mac crashed mid-session 9 Nov. Still to do from the dev list: make failed
-  deploys go red, decide the WP 7.2 requirement (server is 7.1.4), switch the
-  global CLAUDE.md to `develop` for these repos, tidy old merged branches.
+- On `develop`, not yet on main: deploys stop on a failed step (`set -e`);
+  minimum WordPress lowered to 7.1. The live deploy and the dev deploy both
+  read their workflow from `main`, so the `set -e` fix takes effect at the next release.
+- Unmerged branches kept for you to decide: `claude/activitypub-indieweb-integration-nvvnQ`
+  (local), and on GitHub `claude/hashtag-inline-mastodon-bsky-jkoo4k`,
+  `park/look-filter`, `wip/structure`.
 
 ## State (6 Nov 2026)
 
@@ -23,6 +26,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **9 Nov 2026:** deploy scripts get `set -e`, so a failed `cd`/`git pull`
+  turns the run red. Minimum WordPress 7.2 → 7.1: the Icon API and bindings
+  are core from 7.1; only the Icon block's `icon` binding needs 7.2 and is
+  ignored before then. Deleted 5 merged local branches.
 - **9 Nov 2026:** `bin/refresh-dev.sh` copies live (6) onto dev (28): core
   tables only, media hard-linked, addresses rewritten, dev keeps its own
   plugins/theme, title "DEV — Neil Orange Peel", noindex, syndication
@@ -57,14 +64,6 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Next
 
-- Dev content: write and run a copy script (live subsite 6 → dev 28 tables,
-  site address to dev but media left on live, clear API tokens on dev).
-- The header says `Requires at least: 7.2` but the server runs 7.1.4 (latest
-  stable), so WordPress refuses to *activate* the plugin there. Live and dev
-  run fine; on dev it was activated via the `active_plugins` option. Lower it
-  to 7.1, or leave it until 7.2 ships?
-- The deploy workflows don't stop on a failed `cd`/`git pull`, so a broken
-  deploy can still show green. Add `set -e` to the scripts?
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
 
