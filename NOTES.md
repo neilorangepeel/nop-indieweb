@@ -9,7 +9,11 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   live is 6). `main` is live; going live = the wp-deploy skill.
 - On dev but not live: nothing yet.
 - Live version: 0.10.1.
-- Next: copy live's content onto dev (dev is empty).
+- Dev has live's content (copied 9 Nov with `bin/refresh-dev.sh`; refresh any
+  time: `ssh neil.rocks 'bash -s' < bin/refresh-dev.sh`).
+- Mac crashed mid-session 9 Nov. Still to do from the dev list: make failed
+  deploys go red, decide the WP 7.2 requirement (server is 7.1.4), switch the
+  global CLAUDE.md to `develop` for these repos, tidy old merged branches.
 
 ## State (6 Nov 2026)
 
@@ -19,6 +23,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Changed
 
+- **9 Nov 2026:** `bin/refresh-dev.sh` copies live (6) onto dev (28): core
+  tables only, media hard-linked, addresses rewritten, dev keeps its own
+  plugins/theme, title "DEV — Neil Orange Peel", noindex, syndication
+  credentials stripped. Ran once: 18,000 posts on both, dev can't syndicate.
 - **9 Nov 2026:** dev.neilorangepeel.com is live as subsite 28: parked domain
   in SiteGround (wildcard cert covers it), `NOP_INDIEWEB_LIVE_HOST` in the
   server wp-config (backup `~/wp-config.php.bak-20261109`), `plugins/nop-indieweb-dev`
