@@ -38,6 +38,7 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            set -e
             cd ~/www/neil.rocks/public_html/wp-content/plugins/nop-indieweb
             git pull origin main
             echo '<?php opcache_reset(); echo "ok";' > ~/www/neilorangepeel.com/public_html/opcache-reset-tmp.php
