@@ -183,9 +183,17 @@ register_deactivation_hook( __FILE__, function () {
 
 add_action( 'plugins_loaded', function () {
 	\NOP\IndieWeb\IndieAuth\Token_Store::maybe_create_table();
-	\NOP\IndieWeb\maybe_migrate_profile_urls();
-	\NOP\IndieWeb\maybe_migrate_swarm_source_url();
-	\NOP\IndieWeb\maybe_flush_kind_rewrite_rules();
+	// The one-time migrations each keep a "done" flag that is not autoloaded, so checking them cost a query apiece on
+	// every request. One autoloaded flag stands in front of them all: the first request after this ships runs their
+	// checks once more, and autoloads the two small flags that are still read as pages render.
+	if ( ! get_option( 'nop_indieweb_migrations_done' ) ) {
+		\NOP\IndieWeb\maybe_migrate_profile_urls();
+		\NOP\IndieWeb\maybe_migrate_swarm_source_url();
+		\NOP\IndieWeb\maybe_flush_kind_rewrite_rules();
+		\NOP\IndieWeb\nop_indieweb_maybe_disable_settings_autoload();
+		wp_set_options_autoload( [ 'nop_indieweb_logbook_rewrite', 'nop_wall_counts_version' ], true );
+		update_option( 'nop_indieweb_migrations_done', 1, true );
+	}
 	\NOP\IndieWeb\Plugin::get_instance()->boot();
 } );
 

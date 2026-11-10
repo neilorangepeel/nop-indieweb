@@ -13,6 +13,14 @@ delete_option( 'nop_indieweb_settings' );
 delete_option( 'nop_indieweb_db_version' );
 delete_option( 'nop_indieweb_settings_autoload_off' );
 delete_option( 'nop_indieweb_profile_urls_migrated' );
+delete_option( 'nop_indieweb_swarm_source_migrated' );
+delete_option( 'nop_indieweb_kind_rewrite_flushed' );
+delete_option( 'nop_indieweb_migrations_done' );
+delete_option( 'nop_indieweb_logbook_rewrite' );
+delete_option( 'nop_indieweb_kind_seed' );
+delete_option( 'nop_indieweb_exercise_type_seed' );
+delete_option( 'nop_indieweb_health_status' );
+delete_option( 'nop_wall_counts_version' );
 
 // Legacy standalone options written by early versions of the plugin.
 delete_option( 'nop_indieweb_mastodon_profile_url' );

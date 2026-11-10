@@ -830,7 +830,7 @@ function nop_indieweb_wm_find_parent( int $post_id, array $urls ): int {
 
 /**
  * One-time migration: flip the existing settings option to autoload=false.
- * Idempotent and cheap — runs on plugins_loaded behind a version flag.
+ * Idempotent — runs on plugins_loaded with the other one-time migrations (nop-indieweb.php).
  */
 function nop_indieweb_maybe_disable_settings_autoload(): void {
 	if ( get_option( 'nop_indieweb_settings_autoload_off', false ) ) {
@@ -983,4 +983,13 @@ function nop_indieweb_with_post_meta_lock( int $post_id, string $name, callable 
  */
 function nop_indieweb_map_dimensions( int $width = 620 ): array {
 	return [ $width, (int) round( $width * 2 / 3 ) ];
+}
+
+/**
+ * The `loading` attribute for a post's map image. On the post's own page the map is at the top (often the largest
+ * thing on it), so it loads with the page; anywhere else (a list, the entry overlay, the last slide of the photos)
+ * it waits until it is near the screen.
+ */
+function nop_indieweb_map_loading( int $post_id ): string {
+	return is_singular() && get_queried_object_id() === $post_id && ! Browse\Browse::is_entry_request() ? 'eager' : 'lazy';
 }

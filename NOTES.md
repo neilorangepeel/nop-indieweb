@@ -34,6 +34,42 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   (local), and on GitHub `claude/hashtag-inline-mastodon-bsky-jkoo4k`,
   `park/look-filter`, `wip/structure`.
 
+## Audit (10 Nov 2026): core first, DRY, performance, accessibility, UX
+
+PHPUnit (58) and PHPStan clean before and after. Fixed (committed on
+`develop`, not pushed):
+- **Six fewer queries on every page view.** Four finished one-time
+  migrations each checked a "done" flag that was not autoloaded (a query
+  apiece per request), as did the Logbook rewrite flag and the wall counts
+  version. One autoloaded flag, `nop_indieweb_migrations_done`, now stands in
+  front of the migrations, and the other two are autoloaded
+  (`wp_set_options_autoload()`). Measured locally: 6 queries → 0. The first
+  request after a deploy runs the old checks once more, then never again.
+- **Maps load with their own page.** A check-in's or exercise's map was
+  `loading="lazy"` everywhere, including its own page where it is the main
+  picture. `nop_indieweb_map_loading()`: eager there, lazy in the overlay,
+  lists and the photo strip.
+- **uninstall.php** removes the eight options it used to leave behind.
+
+Open, your call:
+- **Wall count transients can be written at will.** `?tag=` slugs are not
+  checked against real tags, and every combination stores two or three
+  transients (the tag one holds ~1,600 counts). Search words are already
+  excluded for this reason. Smallest fix: only store views with no tag or one
+  real tag. Left until the new tagging system lands.
+- **The four migrations can simply be deleted** once you are sure every copy
+  (live, dev, both Macs) has run them: about 75 lines.
+- **Patterns:** `Pattern_Registrar` builds ten patterns from PHP strings on
+  every request (613 lines). `register_block_pattern()` takes a `filePath`
+  since 6.5, which loads the content only when it is used.
+- **Template contents** sit in one ~100 KB transient read on every request
+  to save 34 small file reads; with no object cache the files may be quicker.
+  Measure on the server before changing.
+
+Left by design: `permission_callback => '__return_true'` on the 14 routes
+that authenticate themselves; unprepared `$wpdb` calls have no variables in
+them; `posts_per_page => -1` only in migrations and the cached counts.
+
 ## State (6 Nov 2026)
 
 - Version 0.10.1, pushed and deployed 6 Nov (CI + Deploy green; live serves

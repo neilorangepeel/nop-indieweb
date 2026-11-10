@@ -255,7 +255,8 @@ final class Wall_Filters {
 
 	/** Saving or deleting a post forgets every count (a new version in the keys). */
 	public static function forget_counts(): void {
-		update_option( 'nop_wall_counts_version', (int) get_option( 'nop_wall_counts_version', 0 ) + 1, false );
+		// Autoloaded: every wall view reads it to build its cache keys.
+		update_option( 'nop_wall_counts_version', (int) get_option( 'nop_wall_counts_version', 0 ) + 1, true );
 	}
 
 	/** The kept words, chosen kinds and topics as chips (a Paragraph with the class nop-wall-chips): each a link that drops it. */

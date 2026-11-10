@@ -92,7 +92,7 @@ final class Logbook {
 		if ( '2' !== get_option( 'nop_indieweb_logbook_rewrite' ) ) {
 			add_action( 'wp_loaded', static function (): void {
 				flush_rewrite_rules( false );
-				update_option( 'nop_indieweb_logbook_rewrite', '2', false );
+				update_option( 'nop_indieweb_logbook_rewrite', '2', true );
 			} );
 		}
 	}

@@ -102,7 +102,7 @@ $wrapper_attrs = get_block_wrapper_attributes( [ 'class' => 'nop-exercise-map' ]
 			width="<?php echo esc_attr( (string) $map_w ); ?>"
 			height="<?php echo esc_attr( (string) $map_h ); ?>"
 			alt=""
-			loading="lazy" decoding="async" aria-hidden="true">
+			loading="<?php echo esc_attr( \NOP\IndieWeb\nop_indieweb_map_loading( (int) $post_id ) ); ?>" decoding="async" aria-hidden="true">
 	</a>
 	<?php endif; ?>
 
