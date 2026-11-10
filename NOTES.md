@@ -50,13 +50,13 @@ PHPUnit (58) and PHPStan clean before and after. Fixed (committed on
   picture. `nop_indieweb_map_loading()`: eager there, lazy in the overlay,
   lists and the photo strip.
 - **uninstall.php** removes the eight options it used to leave behind.
+- **Wall counts are stored for the plain views only** (`Wall_Filters::kept()`):
+  no search, and either no tag (any kinds) or one real tag with at most one
+  kind. Two or more tags, or a made-up tag, are counted afresh (about 0.5 s
+  locally) and write nothing, so the address can no longer fill the options
+  table.
 
 Open, your call:
-- **Wall count transients can be written at will.** `?tag=` slugs are not
-  checked against real tags, and every combination stores two or three
-  transients (the tag one holds ~1,600 counts). Search words are already
-  excluded for this reason. Smallest fix: only store views with no tag or one
-  real tag. Left until the new tagging system lands.
 - **The four migrations can simply be deleted** once you are sure every copy
   (live, dev, both Macs) has run them: about 75 lines.
 - **Patterns:** `Pattern_Registrar` builds ten patterns from PHP strings on

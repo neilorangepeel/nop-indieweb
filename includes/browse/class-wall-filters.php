@@ -160,7 +160,7 @@ final class Wall_Filters {
 
 	/**
 	 * How many Logbook entries match these kinds (any of them; none = every Logbook kind), topics (all of them) and
-	 * search. Kept for a day per combination without a search (forgotten whenever a post is saved or deleted); a search is counted afresh.
+	 * search. Kept for a day for the plain views (see kept(); forgotten whenever a post is saved or deleted); the rest are counted afresh.
 	 *
 	 * @param string[] $kinds Kind slugs.
 	 * @param string[] $tags  Tag slugs.
@@ -174,13 +174,13 @@ final class Wall_Filters {
 		if ( isset( $seen[ $key ] ) ) {
 			return $seen[ $key ];
 		}
-		$cached = get_transient( $key );
+		$kept   = self::kept( $kinds, $tags, $terms );
+		$cached = $kept ? get_transient( $key ) : false;
 		if ( false !== $cached ) {
 			return $seen[ $key ] = (int) $cached;
 		}
 		$count = (int) ( new \WP_Query( self::args( $kinds, $tags, $terms ) + [ 'posts_per_page' => 1 ] ) )->found_posts;
-		// Searched words are free text from the address: storing them would let any visitor write rows at will.
-		if ( '' === $terms ) {
+		if ( $kept ) {
 			set_transient( $key, $count, DAY_IN_SECONDS );
 		}
 		return $seen[ $key ] = $count;
@@ -205,7 +205,8 @@ final class Wall_Filters {
 		if ( isset( $seen[ $key ] ) ) {
 			return $seen[ $key ];
 		}
-		$cached = get_transient( $key );
+		$kept   = self::kept( $kinds, $tags, $terms );
+		$cached = $kept ? get_transient( $key ) : false;
 		if ( is_array( $cached ) ) {
 			return $seen[ $key ] = $cached;
 		}
@@ -227,10 +228,22 @@ final class Wall_Filters {
 				$counts[ (string) $row->slug ] = (int) $row->n;
 			}
 		}
-		if ( '' === $terms ) {
+		if ( $kept ) {
 			set_transient( $key, $counts, DAY_IN_SECONDS );
 		}
 		return $seen[ $key ] = $counts;
+	}
+
+	/**
+	 * Whether a view's counts are kept: the plain views, with no search (any kinds, a closed set; or one real topic with
+	 * at most one kind). Anything more is free combination or free text from the address, and storing each would let
+	 * any visitor write rows at will.
+	 */
+	private static function kept( array $kinds, array $tags, string $terms ): bool {
+		if ( '' !== $terms || count( $tags ) > 1 ) {
+			return false;
+		}
+		return ! $tags || ( count( $kinds ) < 2 && get_term_by( 'slug', $tags[0], 'post_tag' ) );
 	}
 
 	/** The WP_Query arguments for Logbook entries of these kinds (none = every Logbook kind), with all these topics, matching this search. */
