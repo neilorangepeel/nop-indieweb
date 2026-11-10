@@ -36,8 +36,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Audit (10 Nov 2026): core first, DRY, performance, accessibility, UX
 
-PHPUnit (58) and PHPStan clean before and after. Fixed (committed on
-`develop`, not pushed):
+PHPUnit (58) and PHPStan clean before and after. Fixed (pushed to
+`develop` 10 Nov, on dev; CI + Deploy green):
 - **Six fewer queries on every page view.** Four finished one-time
   migrations each checked a "done" flag that was not autoloaded (a query
   apiece per request), as did the Logbook rewrite flag and the wall counts
