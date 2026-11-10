@@ -12,11 +12,10 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   COUNT GROUP BY term slug), cached in a transient like count(). Local timings
   (Studio, cold cache): ?tag=belfast 16.9 s → 0.7 s, ?kind=note 8.9 s → 1.6 s,
   ?tag=belfast+film 20.5 s → 0.5 s; pill counts/empty states identical.
-  Next: (a) push develop and re-measure on dev; (b) then decide whether the
-  Tags drawer still needs trimming to top ~30 (it's 360 KB of HTML: all tags
-  as pills, orange-peel `inc/logbook-wall.php`, Terms Query perPage 0) — that
-  changes the UX, so Neil's call; (c) images (44 imgs, no fetchpriority) and
-  85 KB of inline styles.
+  Next: (a) push develop and re-measure on dev; (b) images (44 imgs, no
+  fetchpriority) and 85 KB of inline styles. Not trimming the Tags drawer
+  (360 KB, all tags as pills): the new tagging system in progress should
+  replace it (Neil, 10 Nov).
 
 - Work on `develop`. Pushing it deploys to dev.neilorangepeel.com (subsite 28,
   live is 6). `main` is live; going live = the wp-deploy skill.
