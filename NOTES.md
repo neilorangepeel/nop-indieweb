@@ -62,7 +62,7 @@ Open, your call:
 - **Patterns:** `Pattern_Registrar` builds ten patterns from PHP strings on
   every request (613 lines). `register_block_pattern()` takes a `filePath`
   since 6.5, which loads the content only when it is used.
-- **Template contents** sit in one ~100 KB transient read on every request
+- **Template contents** sit in one ~145 KB transient read on every request
   to save 34 small file reads; with no object cache the files may be quicker.
   Measure on the server before changing.
 
