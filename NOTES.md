@@ -5,19 +5,18 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Where we are (9 Nov 2026)
 
-- **RESUME HERE (10 Nov): Logbook is painfully slow on dev (Orange Peel).**
-  Measured from the server: /logbook/ 1.2 s (live on nop: 0.3 s); first view
-  of ?tag=facebook **93 s**, ?kind=note **40 s**, repeat ?tag 2.2 s, ?q= 1 s.
-  HTML is 671 KB, of which 360 KB is the Tags drawer: all 1,609 tags rendered
-  as pills (orange-peel `inc/logbook-wall.php`, Terms Query perPage 0).
-  Cause: `Wall_Filters::toggle()` (includes/browse/class-wall-filters.php)
-  calls `count()` per pill = one WP_Query per tag (~1,600) on every uncached
-  combination; transients are cleared on every post save (`forget_counts`).
-  Plan, not started: (1) only show top ~30 tags in the drawer + find the rest
-  by search; (2) compute all pill counts in ONE grouped SQL query per view
-  (COUNT GROUP BY term over the current result set) instead of per pill;
-  (3) then re-measure; check images (44 imgs, no fetchpriority) and the
-  85 KB of inline styles after.
+- **RESUME HERE (10 Nov): Logbook performance, step 2 DONE locally.**
+  Was: first ?tag view 93 s on dev, because `Wall_Filters::toggle()` ran one
+  count WP_Query per tag pill (1,609 tags). Now `Wall_Filters::counts()` gets
+  every pill's count for a view in ONE grouped SQL query (the wall's post IDs →
+  COUNT GROUP BY term slug), cached in a transient like count(). Local timings
+  (Studio, cold cache): ?tag=belfast 16.9 s → 0.7 s, ?kind=note 8.9 s → 1.6 s,
+  ?tag=belfast+film 20.5 s → 0.5 s; pill counts/empty states identical.
+  Next: (a) push develop and re-measure on dev; (b) then decide whether the
+  Tags drawer still needs trimming to top ~30 (it's 360 KB of HTML: all tags
+  as pills, orange-peel `inc/logbook-wall.php`, Terms Query perPage 0) — that
+  changes the UX, so Neil's call; (c) images (44 imgs, no fetchpriority) and
+  85 KB of inline styles.
 
 - Work on `develop`. Pushing it deploys to dev.neilorangepeel.com (subsite 28,
   live is 6). `main` is live; going live = the wp-deploy skill.

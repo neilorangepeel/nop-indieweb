@@ -140,9 +140,12 @@ final class Wall_Filters {
 		// Counted against the chips only, not what is still being typed: the pills are the next choices, and they are
 		// what typing points at (a typed "Exercise" finds no text, but must not fade the Exercise pill it names).
 		$words = implode( ' ', self::words() );
-		$count = Kind_Taxonomy::TAXONOMY === $taxonomy
-			? self::count( [ $term->slug ], self::tags(), $words )
-			: self::count( self::kinds(), $on ? self::tags() : array_merge( self::tags(), [ $term->slug ] ), $words );
+		// Every pill's count comes from one grouped count per view (see counts()), not a query per pill.
+		if ( Kind_Taxonomy::TAXONOMY === $taxonomy ) {
+			$count = self::counts( $taxonomy, [], self::tags(), $words )[ $term->slug ] ?? 0;
+		} else {
+			$count = $on ? self::count( self::kinds(), self::tags(), $words ) : ( self::counts( $taxonomy, self::kinds(), self::tags(), $words )[ $term->slug ] ?? 0 );
+		}
 		if ( $on ) {
 			$p->set_attribute( 'aria-current', 'true' );
 			$p->add_class( 'is-current' );
@@ -175,10 +178,66 @@ final class Wall_Filters {
 		if ( false !== $cached ) {
 			return $seen[ $key ] = (int) $cached;
 		}
+		$count = (int) ( new \WP_Query( self::args( $kinds, $tags, $terms ) + [ 'posts_per_page' => 1 ] ) )->found_posts;
+		// Searched words are free text from the address: storing them would let any visitor write rows at will.
+		if ( '' === $terms ) {
+			set_transient( $key, $count, DAY_IN_SECONDS );
+		}
+		return $seen[ $key ] = $count;
+	}
+
+	/**
+	 * How many of the entries matching these kinds, topics and search carry each term of a taxonomy, by slug: every pill's
+	 * count for a view in one grouped query (a topic pill's count is the wall with that topic added, which is the wall's
+	 * entries carrying it). Kept like count().
+	 *
+	 * @param string   $taxonomy post_tag or the kind taxonomy.
+	 * @param string[] $kinds    Kind slugs.
+	 * @param string[] $tags     Tag slugs.
+	 * @param string   $terms    Words searched for, or none.
+	 * @return array<string, int>
+	 */
+	public static function counts( string $taxonomy, array $kinds, array $tags, string $terms = '' ): array {
+		sort( $kinds );
+		sort( $tags );
+		$key = 'nop_wall_counts_' . md5( wp_json_encode( [ $taxonomy, $kinds, $tags, $terms, (int) get_option( 'nop_wall_counts_version', 0 ) ] ) );
+		static $seen = [];
+		if ( isset( $seen[ $key ] ) ) {
+			return $seen[ $key ];
+		}
+		$cached = get_transient( $key );
+		if ( is_array( $cached ) ) {
+			return $seen[ $key ] = $cached;
+		}
+		$ids    = ( new \WP_Query( self::args( $kinds, $tags, $terms ) + [ 'posts_per_page' => -1, 'no_found_rows' => true ] ) )->posts;
+		$counts = [];
+		if ( $ids ) {
+			global $wpdb;
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT t.slug, COUNT(*) AS n FROM {$wpdb->term_relationships} tr
+					INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+					INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+					WHERE tt.taxonomy = %s AND tr.object_id IN (" . implode( ',', array_map( 'intval', $ids ) ) . ')
+					GROUP BY t.slug',
+					$taxonomy
+				)
+			);
+			foreach ( $rows as $row ) {
+				$counts[ (string) $row->slug ] = (int) $row->n;
+			}
+		}
+		if ( '' === $terms ) {
+			set_transient( $key, $counts, DAY_IN_SECONDS );
+		}
+		return $seen[ $key ] = $counts;
+	}
+
+	/** The WP_Query arguments for Logbook entries of these kinds (none = every Logbook kind), with all these topics, matching this search. */
+	private static function args( array $kinds, array $tags, string $terms ): array {
 		$args = [
 			'post_type'              => 'post',
 			'post_status'            => 'publish',
-			'posts_per_page'         => 1,
 			'fields'                 => 'ids',
 			'ignore_sticky_posts'    => true,
 			'update_post_meta_cache' => false,
@@ -191,12 +250,7 @@ final class Wall_Filters {
 		if ( '' !== $terms ) {
 			$args['s'] = $terms;
 		}
-		$count = (int) ( new \WP_Query( $args ) )->found_posts;
-		// Searched words are free text from the address: storing them would let any visitor write rows at will.
-		if ( '' === $terms ) {
-			set_transient( $key, $count, DAY_IN_SECONDS );
-		}
-		return $seen[ $key ] = $count;
+		return $args;
 	}
 
 	/** Saving or deleting a post forgets every count (a new version in the keys). */
