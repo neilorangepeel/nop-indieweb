@@ -25,12 +25,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 - Work on `develop`. Pushing it deploys to dev.neilorangepeel.com (subsite 28,
   live is 6). `main` is live; going live = the wp-deploy skill.
-- On dev but not live (`git log --oneline origin/main..develop`): the
-  Logbook pill counts in one query, the audit fixes (six fewer option
-  queries, eager maps on their own page, uninstall, wall counts stored for
-  plain views only), `bin/refresh-dev.sh`, deploy `set -e`, minimum
-  WordPress 7.1.
-- Live version: 0.10.1.
+- On dev but not live: nothing.
+- Live version: 0.10.2 (released 11 Nov).
 - Dev has live's content (copied 9 Nov with `bin/refresh-dev.sh`; refresh any
   time: `ssh neil.rocks 'bash -s' < bin/refresh-dev.sh`).
 - Dev runs the **Orange Peel** theme (switched 9 Nov), not `nop-dev`.
@@ -88,6 +84,10 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Changed
 
+- **11 Nov 2026:** released 0.10.2 to live (develop merged into main):
+  Logbook pill counts in one query, wall counts stored for plain views only,
+  six fewer option queries, eager maps, uninstall, minimum WordPress 7.1,
+  deploy `set -e`. Checked on dev by Neil first.
 - **11 Nov 2026:** `bin/refresh-dev.sh` regenerates Orange Peel's tile crops
   at the end when dev runs Orange Peel: live's media records don't list them,
   so each refresh loses them. Not run yet since the change.

@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 7.1
 Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 0.10.1
+Stable tag: 0.10.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,14 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.10.2 =
+* Logbook: the count on every filter pill comes from one query per view instead of one per pill (a first tag view took over a minute with 1,600 tags).
+* Logbook: counts are stored for the plain views only (no search; no tag, or one real tag with at most one kind), so an address can't write rows to the options table.
+* Six fewer database queries on every page view: the finished one-time migrations sit behind one autoloaded flag.
+* A check-in's or exercise's map loads with its own page instead of lazily.
+* Uninstall removes every option the plugin wrote.
+* Requires WordPress 7.1 (was 7.2).
 
 = 0.10.1 =
 * Logbook: a count for searched words is no longer cached, so a visitor's search can't write rows to the options table.
