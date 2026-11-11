@@ -6,12 +6,13 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 ## Where we are (10 Nov 2026)
 
 - **RESUME HERE: Logbook performance and the audit fixes are pushed and on
-  dev (10 Nov, CI + Deploy green).** Next: (a) re-time the Logbook on dev
-  (`/logbook/`, `?tag=belfast`, `?kind=note`, `?tag=belfast+film`) against the
-  local numbers below; (b) with Neil's go-ahead (SSH), regenerate Orange
-  Peel's tile crops on the server: `wp media regenerate --only-missing
-  --image_size=orange-peel-tile`; (c) 85 KB of inline styles on the Logbook;
-  (d) the "Open, your call" list in the audit section.
+  dev (10 Nov, CI + Deploy green).** Timed on dev 11 Nov: `/logbook/`,
+  `?tag=belfast`, `?kind=note`, `?tag=belfast+film` each 1.1 to 1.3 s on a
+  first view after a cache purge, 0.27 s repeated. Orange Peel's tile crops
+  regenerated on dev the same day; `bin/refresh-dev.sh` wipes dev's record
+  of them, so re-run after a refresh (command in Orange Peel's NOTES).
+  Next: (a) 85 KB of inline styles on the Logbook; (b) the "Open, your
+  call" list in the audit section; (c) release to live (wp-deploy skill).
   Background: was first ?tag view 93 s on dev, because `Wall_Filters::toggle()` ran one
   count WP_Query per tag pill (1,609 tags). Now `Wall_Filters::counts()` gets
   every pill's count for a view in ONE grouped SQL query (the wall's post IDs →
@@ -133,7 +134,6 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Next
 
-- Re-time the Logbook on dev; tile crops on the server (see the top).
 - Go live with what's on dev when you're happy: the wp-deploy skill.
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
