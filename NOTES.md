@@ -3,23 +3,32 @@
 Read this first on any Mac. Newest entries at the top. Longer-term plans live
 in ROADMAP.md, how to work here in CLAUDE.md.
 
-## Where we are (9 Nov 2026)
+## Where we are (10 Nov 2026)
 
-- **RESUME HERE (10 Nov): Logbook performance, step 2 DONE locally.**
-  Was: first ?tag view 93 s on dev, because `Wall_Filters::toggle()` ran one
+- **RESUME HERE: Logbook performance and the audit fixes are pushed and on
+  dev (10 Nov, CI + Deploy green).** Next: (a) re-time the Logbook on dev
+  (`/logbook/`, `?tag=belfast`, `?kind=note`, `?tag=belfast+film`) against the
+  local numbers below; (b) with Neil's go-ahead (SSH), regenerate Orange
+  Peel's tile crops on the server: `wp media regenerate --only-missing
+  --image_size=orange-peel-tile`; (c) 85 KB of inline styles on the Logbook;
+  (d) the "Open, your call" list in the audit section.
+  Background: was first ?tag view 93 s on dev, because `Wall_Filters::toggle()` ran one
   count WP_Query per tag pill (1,609 tags). Now `Wall_Filters::counts()` gets
   every pill's count for a view in ONE grouped SQL query (the wall's post IDs →
   COUNT GROUP BY term slug), cached in a transient like count(). Local timings
   (Studio, cold cache): ?tag=belfast 16.9 s → 0.7 s, ?kind=note 8.9 s → 1.6 s,
   ?tag=belfast+film 20.5 s → 0.5 s; pill counts/empty states identical.
-  Next: (a) push develop and re-measure on dev; (b) images (44 imgs, no
-  fetchpriority) and 85 KB of inline styles. Not trimming the Tags drawer
+  Not trimming the Tags drawer
   (360 KB, all tags as pills): the new tagging system in progress should
   replace it (Neil, 10 Nov).
 
 - Work on `develop`. Pushing it deploys to dev.neilorangepeel.com (subsite 28,
   live is 6). `main` is live; going live = the wp-deploy skill.
-- On dev but not live: nothing yet.
+- On dev but not live (`git log --oneline origin/main..develop`): the
+  Logbook pill counts in one query, the audit fixes (six fewer option
+  queries, eager maps on their own page, uninstall, wall counts stored for
+  plain views only), `bin/refresh-dev.sh`, deploy `set -e`, minimum
+  WordPress 7.1.
 - Live version: 0.10.1.
 - Dev has live's content (copied 9 Nov with `bin/refresh-dev.sh`; refresh any
   time: `ssh neil.rocks 'bash -s' < bin/refresh-dev.sh`).
@@ -78,6 +87,10 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Changed
 
+- **10 Nov 2026:** audit (core first, DRY, performance, accessibility, UX),
+  see the audit section; and Logbook pill counts in one grouped query
+  (`Wall_Filters::counts()`). Pushed to `develop`, deployed to dev, dev's
+  Logbook returns 200. Not live.
 - **9 Nov 2026:** dev switched to Orange Peel. `bin/refresh-dev.sh` keeps
   dev's current theme (only maps live's nop Site Editor changes when dev
   runs nop-dev) and clears dev's options cache at the end. A plain
@@ -120,6 +133,8 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Next
 
+- Re-time the Logbook on dev; tile crops on the server (see the top).
+- Go live with what's on dev when you're happy: the wp-deploy skill.
 - Hashtags: decide whether you want WP tags on Mastodon/Bluesky posts at all.
   If yes, rebuild on main (see ROADMAP.md).
 
