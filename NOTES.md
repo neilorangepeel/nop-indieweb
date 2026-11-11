@@ -9,8 +9,8 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   dev (10 Nov, CI + Deploy green).** Timed on dev 11 Nov: `/logbook/`,
   `?tag=belfast`, `?kind=note`, `?tag=belfast+film` each 1.1 to 1.3 s on a
   first view after a cache purge, 0.27 s repeated. Orange Peel's tile crops
-  regenerated on dev the same day; `bin/refresh-dev.sh` wipes dev's record
-  of them, so re-run after a refresh (command in Orange Peel's NOTES).
+  regenerated on dev the same day; `bin/refresh-dev.sh` now does this itself
+  after each refresh when dev runs Orange Peel (adds about 25 minutes).
   Next: (a) 85 KB of inline styles on the Logbook; (b) the "Open, your
   call" list in the audit section; (c) release to live (wp-deploy skill).
   Background: was first ?tag view 93 s on dev, because `Wall_Filters::toggle()` ran one
@@ -88,6 +88,9 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Changed
 
+- **11 Nov 2026:** `bin/refresh-dev.sh` regenerates Orange Peel's tile crops
+  at the end when dev runs Orange Peel: live's media records don't list them,
+  so each refresh loses them. Not run yet since the change.
 - **10 Nov 2026:** audit (core first, DRY, performance, accessibility, UX),
   see the audit section; and Logbook pill counts in one grouped query
   (`Wall_Filters::counts()`). Pushed to `develop`, deployed to dev, dev's

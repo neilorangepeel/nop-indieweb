@@ -81,6 +81,13 @@ update_option( "nop_indieweb_settings", $s );
 echo count( $s ), " settings groups copied, credentials stripped\n";
 ' --url=$DEV
 
+# Live's media records don't list Orange Peel's tile crops, so make them again
+# (about 25 minutes; the files are written on dev only).
+if [ "$DEV_THEME" = orange-peel ]; then
+  echo "== Tile crops"
+  wp media regenerate --only-missing --image_size=orange-peel-tile --yes --url=$DEV 2>/dev/null | tail -1 || true
+fi
+
 echo "== Check"
 wp rewrite flush --url=$DEV
 wp cache flush --url=$DEV 2>/dev/null || true
