@@ -13,8 +13,19 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   rule (local dry run: 9 posts gain Boro, nothing else). PHPUnit 77 + PHPStan
   clean. Dev has been running the old every-hashtag rule since the 12 Nov push,
   so posts saved there may carry stray tags; the merge script will clear them.
-  **Next:** the subject merge script (merge each subject's tags into it, drop
-  the rest; dry run on live counts first), then release.
+- **12 Nov, subject merge script built: `bin/merge-subjects.php`** (dry run
+  unless given `apply`). A subject's names merge into its tag (BORO renamed
+  Boro, UTB merged in); place tags are KEPT until Place is built; the drop
+  list and tags on 2 posts or fewer are deleted; anything else on 3+ posts is
+  kept and listed for you to sort. Then `hashtags-to-tags.php apply` and
+  `wp transient delete --all`. Tested on local: second run finds nothing.
+  **Local's tags were changed by that test** (37 tags left, from 56; test
+  data). The `wp db export` before it failed and wasn't checked first, so
+  there is no copy of local's tags from before the test. Nearest copy:
+  `~/Studio/_backups/neilorangepeel-before-retire-categories-2026-11-07.sql`.
+  State after the test: `~/Studio/_backups/neilorangepeel-after-subject-merge-2026-11-12.ht.sqlite`.
+  **Next:** dry run on live (read-only SSH, ask first) and review the
+  "unsorted, 3+ posts" list; then release with the hashtag rework.
 
 - **12 Nov:** the 7 Nov work from the other Mac (0.11.0 categories retired
   except Work, #hashtag → tag, 0.12.0 Match kind) is merged into `develop` on
