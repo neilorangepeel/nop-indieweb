@@ -24,24 +24,24 @@ final class Hashtags {
 	 * A new subject is a decision: add it to STRUCTURE.md in the theme too. Filter: nop_indieweb_subjects.
 	 */
 	public const SUBJECTS = [
-		'Boro'        => [ 'UTB', 'BORO', 'Middlesbrough', 'Teestime', 'borolive', 'mfc', 'UTFB', 'RedArmy', 'YouAreMyBoro', 'borotweetup' ],
-		'Design'      => [ 'Design', 'Logo', 'colour', 'Colours', 'poster', 'icon', 'Icons', 'grid', 'minimal', 'geometric', 'circles', 'pixel', '8bit', 'rainbow', 'WIP', 'portfolio', 'Art' ],
-		'Ponydance'   => [ 'Ponydance', 'PonyPanto', 'poniesontour', 'pony', 'legopony', 'ponybois', 'poniesdontplayfootball', 'DanceMarathon' ],
-		'Web'         => [ 'WordPress', 'CSS', 'web', 'web design', 'webdesign', 'html', 'responsive', 'UX', 'a11y', 'accessibility', 'Open Source', 'Themes', 'block', 'website', 'Firefox', 'LazyWeb' ],
-		'Games'       => [ 'Nintendo', 'NintendoSwitch', '3DS', 'WiiU', 'ACNL', 'ACNH', 'AnimalCrossing', 'AnimalCrossingNewHorizons', 'BreathoftheWild', 'zelda', 'Pokemon', 'PokemonLetsGo', 'pokemongo', 'SmashBros', 'MarioKart', 'SuperMarioOdyssey', 'Miitomo', 'E3', 'skyrim', 'LANoire', 'Fable3', 'Fable3Kingmaker', 'Xbox', 'video game' ],
-		'Performance' => [ 'Dance', 'theatre', 'Comedy', 'ComedyKitchen', 'circus', 'tanzio', 'blindful', 'ADLFringe', 'EdinburghFringe', 'Fringe', 'afringe' ],
-		'Typography'  => [ 'type', 'Typography', 'futura', 'brandon text', 'brandon grotesque', 'Freefont' ],
-		'Cycling'     => [ 'Cycling', 'RideOnBelfast', 'TDF', 'LeTour', 'letour2016', 'letour2017', 'bikes', 'fixed', 'seesense', 'BucketSaddle', 'ChargeBike' ],
-		'Sport'       => [ 'Football', 'Spurs', 'World Cup 2026', 'EURO2016', 'ThreeLions', 'Wimbledon', 'Wimbledon2014', 'Wimbeldon2022', 'Murray', 'olymics2012', 'Rio2016', 'TeamGB' ],
+		'Boro'        => [ 'UTB', 'BORO', 'Middlesbrough', 'Teestime', 'borolive', 'mfc', 'UTFB', 'RedArmy', 'YouAreMyBoro', 'borotweetup', 'Middesbrough', 'MiddlesbroughFC', 'LoveMiddlesbrough' ],
+		'Design'      => [ 'Design', 'Logo', 'colour', 'Colours', 'poster', 'icon', 'Icons', 'grid', 'minimal', 'geometric', 'circles', 'pixel', '8bit', 'rainbow', 'WIP', 'portfolio', 'Art', 'circle', 'Designing', 'DesignThinking', 'DesignPackaging' ],
+		'Ponydance'   => [ 'Ponydance', 'PonyPanto', 'poniesontour', 'pony', 'legopony', 'ponybois', 'poniesdontplayfootball', 'DanceMarathon', 'poinesontour', 'ponieontour', 'pondance', 'ponydanceco', 'ponydanceoff', 'ponydancethemovie', 'ponydanceworlddomination' ],
+		'Web'         => [ 'WordPress', 'CSS', 'web', 'web design', 'webdesign', 'html', 'responsive', 'UX', 'a11y', 'accessibility', 'Open Source', 'Themes', 'block', 'website', 'Firefox', 'LazyWeb', 'WebDesignTrends2013', 'Websites' ],
+		'Games'       => [ 'Nintendo', 'NintendoSwitch', '3DS', 'WiiU', 'ACNL', 'ACNH', 'AnimalCrossing', 'AnimalCrossingNewHorizons', 'BreathoftheWild', 'zelda', 'Pokemon', 'PokemonLetsGo', 'pokemongo', 'SmashBros', 'MarioKart', 'SuperMarioOdyssey', 'Miitomo', 'E3', 'skyrim', 'LANoire', 'Fable3', 'Fable3Kingmaker', 'Xbox', 'video game', 'AnimalCros', 'AnimalCrossingDirect', 'AnimalCrossingNewHorizions', 'Fable', 'Fable3IGNUK', 'Mario', 'mariokartisnotreallife', 'MiitomoStyle', 'Nintendo3DSDay', 'NintendoDirect', 'NintendoUKStore', 'PokemonSwordShield', 'SmashBrosUltimate', 'videogamesarenotreallife' ],
+		'Performance' => [ 'Dance', 'theatre', 'Comedy', 'ComedyKitchen', 'circus', 'tanzio', 'blindful', 'ADLFringe', 'EdinburghFringe', 'Fringe', 'afringe', 'adfinge', 'adfringe', 'EdFringe', 'fringeclub', 'tazio' ],
+		'Typography'  => [ 'type', 'Typography', 'futura', 'brandon text', 'brandon grotesque', 'Freefont', 'futura rounded', 'typeography', 'typography art' ],
+		'Cycling'     => [ 'Cycling', 'RideOnBelfast', 'TDF', 'LeTour', 'letour2016', 'letour2017', 'bikes', 'fixed', 'seesense', 'BucketSaddle', 'ChargeBike', 'Bike', 'cyclinginhartlepool', 'CyclingRevolution', 'CyclingTips', 'SeeSenseICON2' ],
+		'Sport'       => [ 'Football', 'Spurs', 'World Cup 2026', 'EURO2016', 'ThreeLions', 'Wimbledon', 'Wimbledon2014', 'Wimbeldon2022', 'Murray', 'olymics2012', 'Rio2016', 'TeamGB', 'Euro2012', 'Euro2016Final', 'WimbledonFinal', 'WorldCup' ],
 		'WordCamp'    => [ 'WCBelfast', 'WordCamp', 'WCEU', 'WP15' ],
 		'PEELED'      => [ 'PEELED' ],
-		'Photography' => [ 'Photography', 'Film', 'bw', 'sunset', 'foodpic', 'Urban', 'Canon550D', 'NikonEM' ],
+		'Photography' => [ 'Photography', 'Film', 'bw', 'sunset', 'foodpic', 'Urban', 'Canon550D', 'NikonEM', 'photogrpahy', 'PhotographyForBeginners' ],
 		'Lego'        => [ 'Lego' ],
 		'Ding'        => [ 'Ding The Dachshund' ],
 		'Cats'        => [ 'cats', 'cat', 'catsofinstagram' ],
 		'Music'       => [ 'Music', 'thestrokes' ],
 		'TV & film'   => [ 'Ghostbusters', 'Hollyoaks', 'peepshow', 'Apprentice', 'ItStartedWithJasonDonovan', 'Animation' ],
-		'Charity'     => [ 'Movember', 'TyphoonAid', 'BacktheMAC', 'coke4lent' ],
+		'Charity'     => [ 'Movember', 'TyphoonAid', 'BacktheMAC', 'coke4lent', 'charitytuesday' ],
 	];
 
 	public function register(): void {

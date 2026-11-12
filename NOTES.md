@@ -32,8 +32,15 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   hprodeo, KyrgiosTsitsipas, lobo, Narable, Nature, NewYearsEve, picasso,
   retro, SINNEAD, Social Media, themac, THESLIDER, trex, Vault Artist Studios,
   Video. **Next:** Neil sorts those (subject name / place / drop) in
-  STRUCTURE.md + SUBJECTS; consider adding misspellings seen on 1-2 posts
-  (adfringe, AnimalCrossingNewHorizions…); then release + apply on live.
+  STRUCTURE.md + SUBJECTS; then release + apply on live.
+- **12 Nov, 50 variant names added** to SUBJECTS (and STRUCTURE.md) from live
+  tags on 1-2 posts (adfringe, AnimalCros, Middesbrough, ponydanceco…).
+  Re-run on live: 185 tags merge (1,324 links), 1,340 deleted, 42 kept.
+  Left for Neil, not added (too broad as hashtags): Canon, Nikon, Tees, theme,
+  coloursofnature, ponies, go busters.
+  **From is safe:** every post tagged twitter (11,977), Facebook (1,587) or
+  nikeplus (91) has `nop_indieweb_platform` on live. nikeplus posts are tweets,
+  so they'll show as From: Twitter; "Nike+" itself isn't kept anywhere.
 
 - **12 Nov:** the 7 Nov work from the other Mac (0.11.0 categories retired
   except Work, #hashtag → tag, 0.12.0 Match kind) is merged into `develop` on
