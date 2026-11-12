@@ -5,6 +5,17 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Where we are (12 Nov 2026)
 
+- **12 Nov, Kind\Hashtags reworked (on `develop`, not pushed):** a hashtag now
+  files a post only if it is one of a subject's names: `Hashtags::SUBJECTS`
+  holds the 18 subjects from the theme's STRUCTURE.md (#UTB → Boro, #WebDesign →
+  Web). Matching ignores case, spaces and punctuation; any other hashtag stays a
+  word. Filter `nop_indieweb_subjects`. `bin/hashtags-to-tags.php` uses the same
+  rule (local dry run: 9 posts gain Boro, nothing else). PHPUnit 77 + PHPStan
+  clean. Dev has been running the old every-hashtag rule since the 12 Nov push,
+  so posts saved there may carry stray tags; the merge script will clear them.
+  **Next:** the subject merge script (merge each subject's tags into it, drop
+  the rest; dry run on live counts first), then release.
+
 - **12 Nov:** the 7 Nov work from the other Mac (0.11.0 categories retired
   except Work, #hashtag → tag, 0.12.0 Match kind) is merged into `develop` on
   top of 0.10.2. Version is 0.12.0, minimum WordPress stays 7.1. Local `main`

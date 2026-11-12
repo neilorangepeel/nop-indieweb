@@ -29,4 +29,27 @@ final class HashtagsTest extends TestCase {
 	public function test_entities_are_read_as_text(): void {
 		$this->assertSame( [ 'Belfast' ], Hashtags::extract( 'Tom &amp; Jerry&#8217;s #Belfast' ) );
 	}
+
+	public function test_only_a_subjects_names_file_a_post(): void {
+		$content = "<p>FT – #BORO 2-2 #Cardiff #UTB</p>\n<p>#WebDesign and #OpenSource, #Belfast #nofilter</p>";
+		$this->assertSame( [ 'Boro', 'Web' ], Hashtags::subjects_in( $content, Hashtags::SUBJECTS ) );
+	}
+
+	public function test_names_match_without_case_spaces_or_punctuation(): void {
+		$this->assertSame( [ 'Sport', 'Ding', 'TV & film' ], Hashtags::subjects_in( '#worldcup2026 #DingTheDachshund #peepshow', Hashtags::SUBJECTS ) );
+	}
+
+	public function test_the_subject_itself_is_a_name(): void {
+		$this->assertSame( [ 'Cats' ], Hashtags::subjects_in( '#Cats', [ 'Cats' => [ 'cat' ] ] ) );
+	}
+
+	public function test_no_name_belongs_to_two_subjects(): void {
+		$seen = [];
+		foreach ( Hashtags::SUBJECTS as $subject => $names ) {
+			foreach ( array_unique( array_map( [ Hashtags::class, 'key' ], [ $subject, ...$names ] ) ) as $key ) {
+				$this->assertArrayNotHasKey( $key, $seen, "$key is in $subject and " . ( $seen[ $key ] ?? '' ) );
+				$seen[ $key ] = $subject;
+			}
+		}
+	}
 }

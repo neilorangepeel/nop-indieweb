@@ -4,7 +4,7 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	exit( 'This file may only be executed via WP-CLI.' );
 }
 /**
- * Give existing posts the tags their #hashtags name (new posts get them on save: Kind\Hashtags).
+ * Give existing posts the subject tags their #hashtags name, #UTB → Boro (new posts get them on save: Kind\Hashtags).
  *
  *   wp eval-file wp-content/plugins/nop-indieweb/bin/hashtags-to-tags.php          # dry run: counts only
  *   wp eval-file wp-content/plugins/nop-indieweb/bin/hashtags-to-tags.php apply    # add the tags
@@ -20,7 +20,8 @@ WP_CLI::line( $apply ? 'APPLYING changes.' : 'DRY RUN: nothing is changed. Add "
 $posts = 0;
 $added = [];
 foreach ( get_posts( [ 'post_type' => 'post', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids' ] ) as $post_id ) {
-	$names = array_diff( Hashtags::tag_names( (string) get_post_field( 'post_content', $post_id ) ), wp_get_post_tags( $post_id, [ 'fields' => 'names' ] ) );
+	$has   = wp_get_post_tags( $post_id, [ 'fields' => 'slugs' ] );
+	$names = array_filter( Hashtags::subjects_in( (string) get_post_field( 'post_content', $post_id ) ), static fn( string $s ): bool => ! in_array( sanitize_title( $s ), $has, true ) );
 	if ( ! $names ) {
 		continue;
 	}
