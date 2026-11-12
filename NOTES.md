@@ -24,8 +24,16 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   there is no copy of local's tags from before the test. Nearest copy:
   `~/Studio/_backups/neilorangepeel-before-retire-categories-2026-11-07.sql`.
   State after the test: `~/Studio/_backups/neilorangepeel-after-subject-merge-2026-11-12.ht.sqlite`.
-  **Next:** dry run on live (read-only SSH, ask first) and review the
-  "unsorted, 3+ posts" list; then release with the hashtag rework.
+- **12 Nov, live dry run (read-only; a self-contained copy piped over SSH with
+  apply hard-off, nothing uploaded):** 135 tags merge into the 18 subjects
+  (1,266 post links), 1,390 deleted (1,349 on 2 posts or fewer, 41 on the drop
+  list incl. twitter 11,977 and Facebook 1,587), 42 kept (23 places, 19
+  unsorted). Unsorted, for Neil: clayton, gif, Halloween, HolyJubilE3,
+  hprodeo, KyrgiosTsitsipas, lobo, Narable, Nature, NewYearsEve, picasso,
+  retro, SINNEAD, Social Media, themac, THESLIDER, trex, Vault Artist Studios,
+  Video. **Next:** Neil sorts those (subject name / place / drop) in
+  STRUCTURE.md + SUBJECTS; consider adding misspellings seen on 1-2 posts
+  (adfringe, AnimalCrossingNewHorizions…); then release + apply on live.
 
 - **12 Nov:** the 7 Nov work from the other Mac (0.11.0 categories retired
   except Work, #hashtag → tag, 0.12.0 Match kind) is merged into `develop` on
