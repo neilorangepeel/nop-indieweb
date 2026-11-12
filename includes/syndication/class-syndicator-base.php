@@ -67,10 +67,9 @@ abstract class Syndicator_Base {
 
 		// Dedup — if this platform already has a syndication URL on this post,
 		// return it so retries of an already-sent platform report success.
-		foreach ( $this->stored_urls( $post_id ) as $url ) {
-			if ( $this->owns_url( $url ) ) {
-				return $url;
-			}
+		$stored = $this->own_url( $post_id );
+		if ( '' !== $stored ) {
+			return $stored;
 		}
 
 		$url = $this->do_syndicate( $post_id );
@@ -236,6 +235,42 @@ abstract class Syndicator_Base {
 		}
 
 		return '' !== $body ? $body : $title;
+	}
+
+	/**
+	 * For a match take, this platform's copy of the post it should reply to, so
+	 * the match goes out as one thread: the previous take, or the match post for
+	 * the first. A post still waiting for its first attempt is sent now, so a take
+	 * never jumps ahead of it; one that failed or was skipped is passed over.
+	 * '' for anything that isn't a take, or when nothing earlier made it out.
+	 */
+	protected function thread_parent_url( int $post_id ): string {
+		$manager = \NOP\IndieWeb\Plugin::get_instance()->syndication_manager();
+		foreach ( \NOP\IndieWeb\Football\Match_Day::thread_before( $post_id ) as $id ) {
+			$url = $this->own_url( $id );
+			if ( '' === $url && $manager ) {
+				$status = get_post_meta( $id, Syndication_Manager::STATUS_META, true );
+				$entry  = is_array( $status ) ? ( $status[ $this->slug() ] ?? null ) : null;
+				if ( is_array( $entry ) && 'pending' === ( $entry['state'] ?? '' ) && 0 === (int) ( $entry['attempts'] ?? 0 ) ) {
+					$manager->run_target( $id, $this->slug(), 1 );
+					$url = $this->own_url( $id );
+				}
+			}
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+		return '';
+	}
+
+	/** This platform's syndicated copy of a post, or ''. */
+	private function own_url( int $post_id ): string {
+		foreach ( $this->stored_urls( $post_id ) as $url ) {
+			if ( $this->owns_url( (string) $url ) ) {
+				return (string) $url;
+			}
+		}
+		return '';
 	}
 
 	/**

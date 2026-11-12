@@ -80,7 +80,12 @@ abstract class Mastodon_Compatible_Syndicator extends Syndicator_Base {
 		// For a reply this instance can resolve to a status, thread natively
 		// (in_reply_to_id) and drop the link suffix — the parent is shown inline,
 		// so re-linking it is noise. Otherwise post standalone as before.
-		$in_reply_to = $this->resolve_reply_status_id( $post_id, $target, $instance, $token );
+		// A match take replies to the previous take's status: our own, on this
+		// instance, so its id is the last segment of the URL we stored.
+		$thread      = $this->thread_parent_url( $post_id );
+		$in_reply_to = '' !== $thread
+			? ( preg_match( '~/(\d+)/?$~', $thread, $m ) ? $m[1] : '' )
+			: $this->resolve_reply_status_id( $post_id, $target, $instance, $token );
 		$suffix      = '' !== $in_reply_to ? '' : $link;
 
 		// URLs count as a flat 23 chars on Mastodon-compatible APIs regardless of

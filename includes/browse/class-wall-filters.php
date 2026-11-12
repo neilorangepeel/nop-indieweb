@@ -256,6 +256,8 @@ final class Wall_Filters {
 			'update_post_meta_cache' => false,
 			'update_post_term_cache' => false,
 			'tax_query'              => [ [ 'taxonomy' => Kind_Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $kinds ?: Logbook::kinds() ] ],
+			// Match takes stay off the wall, so they stay out of its counts too.
+			'meta_query'             => [ Logbook::not_a_take() ],
 		];
 		if ( $tags ) {
 			$args['tag_slug__and'] = $tags;

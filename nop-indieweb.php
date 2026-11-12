@@ -3,7 +3,7 @@
  * Plugin Name: NOP IndieWeb
  * Plugin URI:  https://neilorangepeel.com
  * Description: POSSE/IndieWeb integration — Micropub endpoint, IndieAuth server, post meta, and syndication.
- * Version:     0.10.2
+ * Version:     0.12.0
  * Requires at least: 7.1
  * Requires PHP:      8.0
  * Author:      Neil Hainsworth
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NOP_INDIEWEB_VERSION', '0.10.2' );
+define( 'NOP_INDIEWEB_VERSION', '0.12.0' );
 define( 'NOP_INDIEWEB_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'NOP_INDIEWEB_URL',     plugin_dir_url( __FILE__ ) );
 
@@ -63,6 +63,10 @@ require_once NOP_INDIEWEB_DIR . 'includes/kind/class-exercise-type-taxonomy.php'
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-meta-registry.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-entry-fields.php';
 require_once NOP_INDIEWEB_DIR . 'includes/kind/class-logbook.php';
+require_once NOP_INDIEWEB_DIR . 'includes/kind/class-hashtags.php';
+require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-clock.php';
+require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-events.php';
+require_once NOP_INDIEWEB_DIR . 'includes/football/class-match-day.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-browse.php';
 require_once NOP_INDIEWEB_DIR . 'includes/browse/class-wall-filters.php';
 require_once NOP_INDIEWEB_DIR . 'includes/post-meta/class-block-bindings.php';
@@ -123,6 +127,7 @@ require_once NOP_INDIEWEB_DIR . 'includes/class-plugin.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-import-facebook-timeline.php';
+	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-match-cli.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-fix-twitter-titles.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-categories.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-venue-details.php';
@@ -145,6 +150,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-syndication-flag.php';
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-engagement.php';
 	\WP_CLI::add_command( 'nop-indieweb health-check',                \NOP\IndieWeb\Cli\Health_Check_CLI::class );
+	\WP_CLI::add_command( 'nop-indieweb match',                       \NOP\IndieWeb\Cli\Match_CLI::class );
 	\WP_CLI::add_command( 'nop-indieweb backfill-syndication-flag',   \NOP\IndieWeb\Cli\Backfill_Syndication_Flag::class );
 	require_once NOP_INDIEWEB_DIR . 'includes/cli/class-backfill-avatars.php';
 	\WP_CLI::add_command( 'nop-indieweb backfill-avatars',           \NOP\IndieWeb\Cli\Backfill_Avatars::class );

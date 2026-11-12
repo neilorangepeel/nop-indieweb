@@ -116,6 +116,7 @@ final class Browse {
 			'entry-rsvp'     => __( 'Entry: RSVP', 'nop-indieweb' ),
 			'entry-story'    => __( 'Entry: story', 'nop-indieweb' ),
 			'entry-photo'    => __( 'Entry: photo', 'nop-indieweb' ),
+			'entry-match'    => __( 'Entry: match', 'nop-indieweb' ),
 		];
 		foreach ( $names as $slug => $title ) {
 			$types[ $slug ] = [

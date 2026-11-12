@@ -79,7 +79,6 @@ class Settings {
 			'restUrl'    => rest_url( 'nop-indieweb/v1/settings' ),
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'adminUrl'   => admin_url(),
-			'categories' => array_values( array_map( fn( $c ) => $c->name, get_categories( [ 'hide_empty' => false ] ) ) ),
 			'tags'       => array_values( array_map( fn( $t ) => $t->name, get_tags( [ 'hide_empty' => false ] ) ) ),
 			'syncNonces' => [
 				'mastodon'   => wp_create_nonce( 'nop_indieweb_sync_mastodon' ),

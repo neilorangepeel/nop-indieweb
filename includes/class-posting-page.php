@@ -556,7 +556,6 @@ function matchAnyVersion( url ) {
 		$syndication_sent_url   = esc_url_raw( rest_url( 'nop-indieweb/v1/syndication/sent' ) );
 		$syndication_retry_url  = esc_url_raw( rest_url( 'nop-indieweb/v1/syndication/retry' ) );
 		$tags_url          = esc_url_raw( rest_url( 'wp/v2/tags' ) );
-		$cats_url          = esc_url_raw( rest_url( 'wp/v2/categories' ) );
 		// The REST URLs above are esc_url_raw, not esc_url: they're emitted through
 		// wp_json_encode into a script, where esc_url's &#038; would break a
 		// plain-permalink (?rest_route=) site. The site name is escaped at output.
@@ -566,18 +565,17 @@ function matchAnyVersion( url ) {
 
 		// The nine kinds the composer offers, in tile order — one list, so adding a kind
 		// is one line. `label` sits on the tile; `info` is the one-line gist revealed
-		// when the kind title is tapped; `cats` names the service setting that holds
-		// the kind's default categories.
+		// when the kind title is tapped.
 		$kinds = [
-			'note'     => [ 'label' => __( 'Note', 'nop-indieweb' ),     'cats' => 'entries',  'info' => __( 'A quick thought in your own words — no link.', 'nop-indieweb' ) ],
-			'photo'    => [ 'label' => __( 'Photo', 'nop-indieweb' ),    'cats' => 'entries',  'info' => __( 'Pictures with a caption, for your grid.', 'nop-indieweb' ) ],
-			'reply'    => [ 'label' => __( 'Reply', 'nop-indieweb' ),    'cats' => 'reply',    'info' => __( 'Reply to a post by its link.', 'nop-indieweb' ) ],
-			'like'     => [ 'label' => __( 'Like', 'nop-indieweb' ),     'cats' => 'like',     'info' => __( '♥ a post by its link — no words.', 'nop-indieweb' ) ],
-			'bookmark' => [ 'label' => __( 'Bookmark', 'nop-indieweb' ), 'cats' => 'bookmark', 'info' => __( 'Save a link for later, just for you.', 'nop-indieweb' ) ],
-			'repost'   => [ 'label' => __( 'Repost', 'nop-indieweb' ),   'cats' => 'repost',   'info' => __( 'Boost a post as-is — no comment.', 'nop-indieweb' ) ],
-			'quote'    => [ 'label' => __( 'Quote', 'nop-indieweb' ),    'cats' => 'quote',    'info' => __( 'A passage plus your take on it.', 'nop-indieweb' ) ],
-			'story'    => [ 'label' => __( 'Story', 'nop-indieweb' ),    'cats' => 'entries',  'info' => __( 'A vertical photo or clip — gone in 24h.', 'nop-indieweb' ) ],
-			'rsvp'     => [ 'label' => __( 'RSVP', 'nop-indieweb' ),     'cats' => 'rsvp',     'info' => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ) ],
+			'note'     => [ 'label' => __( 'Note', 'nop-indieweb' ),     'info' => __( 'A quick thought in your own words — no link.', 'nop-indieweb' ) ],
+			'photo'    => [ 'label' => __( 'Photo', 'nop-indieweb' ),    'info' => __( 'Pictures with a caption, for your grid.', 'nop-indieweb' ) ],
+			'reply'    => [ 'label' => __( 'Reply', 'nop-indieweb' ),    'info' => __( 'Reply to a post by its link.', 'nop-indieweb' ) ],
+			'like'     => [ 'label' => __( 'Like', 'nop-indieweb' ),     'info' => __( '♥ a post by its link — no words.', 'nop-indieweb' ) ],
+			'bookmark' => [ 'label' => __( 'Bookmark', 'nop-indieweb' ), 'info' => __( 'Save a link for later, just for you.', 'nop-indieweb' ) ],
+			'repost'   => [ 'label' => __( 'Repost', 'nop-indieweb' ),   'info' => __( 'Boost a post as-is — no comment.', 'nop-indieweb' ) ],
+			'quote'    => [ 'label' => __( 'Quote', 'nop-indieweb' ),    'info' => __( 'A passage plus your take on it.', 'nop-indieweb' ) ],
+			'story'    => [ 'label' => __( 'Story', 'nop-indieweb' ),    'info' => __( 'A vertical photo or clip — gone in 24h.', 'nop-indieweb' ) ],
+			'rsvp'     => [ 'label' => __( 'RSVP', 'nop-indieweb' ),     'info' => __( 'Yes, no or maybe to an event link.', 'nop-indieweb' ) ],
 		];
 		$kind_info = array_map( static fn( array $kind ): string => $kind['info'], $kinds );
 
@@ -631,31 +629,17 @@ function matchAnyVersion( url ) {
 			);
 		}
 
-		// Most-used tags and categories → one-tap chips beneath each field. Display
-		// convenience only; tapping seeds the client's chip list. Names keep their
-		// original case — tags are case-sensitive.
-		$top_terms = static function ( string $taxonomy ): array {
-			$terms = get_terms( [
-				'taxonomy'   => $taxonomy,
-				'orderby'    => 'count',
-				'order'      => 'DESC',
-				'number'     => 10,
-				'hide_empty' => true,
-			] );
-			return is_array( $terms ) ? wp_list_pluck( $terms, 'name' ) : [];
-		};
-		$top_tags = $top_terms( 'post_tag' );
-		$top_cats = $top_terms( 'category' );
-
-		// Per-kind default categories — the same service settings the server falls
-		// back to for a payload with no explicit categories. The composer pre-stamps
-		// them as removable chips, so what's shown is exactly what the post gets.
-		$services_opt = nop_indieweb_get_option( 'services', [] );
-		$cats_setting = static fn( string $slug ): array => array_values( array_filter( array_map(
-			'trim',
-			explode( ',', (string) ( $services_opt[ $slug ]['post_category'] ?? '' ) )
-		) ) );
-		$kind_cats    = array_map( static fn( array $kind ): array => $cats_setting( $kind['cats'] ), $kinds );
+		// Most-used tags → one-tap chips beneath the field. Display convenience only;
+		// tapping seeds the client's chip list. Names keep their original case — tags
+		// are case-sensitive.
+		$top_tags = get_terms( [
+			'taxonomy'   => 'post_tag',
+			'orderby'    => 'count',
+			'order'      => 'DESC',
+			'number'     => 10,
+			'hide_empty' => true,
+		] );
+		$top_tags = is_array( $top_tags ) ? wp_list_pluck( $top_tags, 'name' ) : [];
 		?>
 <!DOCTYPE html>
 <html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
@@ -1019,40 +1003,12 @@ foreach ( [ '700', '800' ] as $weight ) {
 					</div>
 				</div>
 
-				<!-- Categories (all kinds) — pre-stamped with the kind's default
-				     categories from settings, fully editable before posting. Shares
-				     the tag field's chip UI wholesale. -->
-				<div class="field-row field-row--ledger" id="fieldCats">
-					<label class="field-row__label" for="catInput"><?php esc_html_e( 'Categories', 'nop-indieweb' ); ?></label>
-					<div class="field-row__field">
-						<div class="tags-field" id="catsField">
-							<span id="catChips"></span>
-							<input
-								type="text"
-								id="catInput"
-								class="tag-input"
-								placeholder="<?php esc_attr_e( 'Add a category…', 'nop-indieweb' ); ?>"
-								autocomplete="off"
-								autocorrect="off"
-								autocapitalize="off"
-							>
-						</div>
-						<?php if ( $top_cats ) : ?>
-						<div class="quick-tags" id="quickCats" aria-label="<?php esc_attr_e( 'Most used categories', 'nop-indieweb' ); ?>">
-							<?php foreach ( $top_cats as $quick_cat ) : ?>
-							<button type="button" class="quick-tag" data-tag="<?php echo esc_attr( $quick_cat ); ?>" aria-pressed="false"><?php echo esc_html( $quick_cat ); ?></button>
-							<?php endforeach; ?>
-						</div>
-						<?php endif; ?>
-					</div>
-				</div>
-
 				<!-- Post options — where/how this goes out: opt-in geotag + cross-post
 				     targets. One divided block of consistent toggle rows; the :has()
 				     rule in style.scss collapses it (divider and all) when no group shows. -->
 				<div class="post-options" id="fieldOptions">
 
-					<!-- Order: Options · Post to (Tags/Categories live in their own rows
+					<!-- Order: Options · Post to (Tags live in their own row
 					     above this group). The :has()/~ ledger rules below adapt to this
 					     DOM order, so the last visible group always closes the ledger. -->
 
@@ -1218,8 +1174,6 @@ window.NOP = {
 		syndicationSentUrl: <?php echo wp_json_encode( $syndication_sent_url ); ?>,
 		syndicationRetryUrl: <?php echo wp_json_encode( $syndication_retry_url ); ?>,
 		tagsUrl:     <?php echo wp_json_encode( $tags_url ); ?>,
-		catsUrl:     <?php echo wp_json_encode( $cats_url ); ?>,
-		kindCats:    <?php echo wp_json_encode( $kind_cats ); ?>,
 		syndicateTo: <?php echo wp_json_encode( $syndicate_to ); ?>,
 		kindInfo:    <?php echo wp_json_encode( $kind_info ); ?>,
 		nextId:      <?php echo wp_json_encode( $next_id ); ?>,

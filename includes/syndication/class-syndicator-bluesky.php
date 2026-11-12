@@ -157,6 +157,7 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		// each #tag and @handle the author typed needs an explicit facet.
 		$facets = array_merge(
 			$facet ? [ $facet ] : [],
+			$this->build_url_facets( $text, $facet ? (int) $facet['index']['byteStart'] : strlen( $text ) ),
 			$this->build_hashtag_facets( $text ),
 			$this->build_mention_facets( $text )
 		);
@@ -367,7 +368,8 @@ class Syndicator_Bluesky extends Syndicator_Base {
 	 * record.reply.root; otherwise the parent IS the root (a top-level post).
 	 */
 	private function build_reply_ref( int $post_id ): ?array {
-		$post = $this->response_post_node( $post_id, 'reply' );
+		$thread = $this->thread_parent_url( $post_id );
+		$post   = '' !== $thread ? $this->post_node( $thread ) : $this->response_post_node( $post_id, 'reply' );
 		if ( null === $post ) {
 			return null;
 		}
@@ -408,7 +410,11 @@ class Syndicator_Bluesky extends Syndicator_Base {
 		if ( $kind !== (string) get_post_meta( $post_id, 'nop_indieweb_post_kind', true ) ) {
 			return null;
 		}
-		$target = $this->response_target_url( $post_id );
+		return $this->post_node( $this->response_target_url( $post_id ) );
+	}
+
+	/** A bsky.app post URL resolved to its thread node (uri, cid, record), or null. */
+	private function post_node( string $target ): ?array {
 		if ( '' === $target || ! $this->owns_url( $target ) ) {
 			return null;
 		}
@@ -806,6 +812,29 @@ class Syndicator_Bluesky extends Syndicator_Base {
 				[ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $url ],
 			],
 		];
+	}
+
+	/**
+	 * Makes every bare web address in the body a link, since Bluesky (unlike
+	 * Mastodon) shows them as plain text otherwise. Stops at $before, where the
+	 * permalink label starts, which has its own facet.
+	 */
+	private function build_url_facets( string $text, int $before ): array {
+		if ( ! preg_match_all( '~https?://[^\s<>"]+[^\s<>".,;:!?)\]\'’]~u', $text, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return [];
+		}
+		$facets = [];
+		foreach ( $matches[0] as $match ) {
+			$end = $match[1] + strlen( $match[0] );
+			if ( $end > $before ) {
+				continue;
+			}
+			$facets[] = [
+				'index'    => [ 'byteStart' => $match[1], 'byteEnd' => $end ],
+				'features' => [ [ '$type' => 'app.bsky.richtext.facet#link', 'uri' => $match[0] ] ],
+			];
+		}
+		return $facets;
 	}
 
 	/**

@@ -1,4 +1,4 @@
-import { ToggleControl, SelectControl, FormTokenField } from '@wordpress/components';
+import { ToggleControl, SelectControl } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 const STATUS_OPTIONS = [
@@ -15,16 +15,7 @@ const KINDS = [
 	{ slug: 'rsvp',     label: __( 'RSVP',     'nop-indieweb' ), prop: 'rsvp'        },
 ];
 
-function tokenList( str ) {
-	return str ? str.split( ',' ).map( ( s ) => s.trim() ).filter( Boolean ) : [];
-}
-function tokenString( tokens ) {
-	return tokens.join( ', ' );
-}
-
 export default function InteractionKindsTable( { services, onChange } ) {
-	const categories = window.nopIndieWebSettings?.categories ?? [];
-
 	const setKind = ( slug, key, val ) =>
 		onChange( { ...services, [ slug ]: { ...( services[ slug ] ?? {} ), [ key ]: val } } );
 
@@ -35,7 +26,6 @@ export default function InteractionKindsTable( { services, onChange } ) {
 					<th>{ __( 'Kind', 'nop-indieweb' ) }</th>
 					<th>{ __( 'Enable', 'nop-indieweb' ) }</th>
 					<th>{ __( 'Status', 'nop-indieweb' ) }</th>
-					<th>{ __( 'Category', 'nop-indieweb' ) }</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -64,17 +54,6 @@ export default function InteractionKindsTable( { services, onChange } ) {
 									value={ k.post_status ?? 'publish' }
 									options={ STATUS_OPTIONS }
 									onChange={ ( val ) => setKind( slug, 'post_status', val ) }
-									__nextHasNoMarginBottom
-								/>
-							</td>
-							<td>
-								<FormTokenField
-									label={ sprintf( __( '%s category', 'nop-indieweb' ), label ) }
-									__experimentalShowHowTo={ false }
-									value={ tokenList( k.post_category ?? '' ) }
-									suggestions={ categories }
-									maxLength={ 1 }
-									onChange={ ( tokens ) => setKind( slug, 'post_category', tokenString( tokens ) ) }
 									__nextHasNoMarginBottom
 								/>
 							</td>

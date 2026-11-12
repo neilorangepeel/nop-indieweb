@@ -37,6 +37,7 @@ class Kind_Taxonomy {
 		'quote'    => 'Quote',
 		'video'    => 'Video',
 		'story'    => 'Story',
+		'match'    => 'Match',
 	];
 
 	const KIND_DESCRIPTIONS = [
@@ -55,6 +56,7 @@ class Kind_Taxonomy {
 		'quote'      => 'A quotation from elsewhere, with attribution.',
 		'video'      => 'A post where a video is the primary content.',
 		'story'      => 'A short self-hosted video, featured for 24h then kept in the archive.',
+		'match'      => 'A football match followed live: the fixture, the score and my takes in minute order.',
 		'collection' => 'Ownership of a physical or digital media item.',
 		'music'      => 'A music album or release in the collection.',
 		'film'       => 'A film owned on physical or digital media.',
@@ -97,53 +99,13 @@ class Kind_Taxonomy {
 			'quote'      => __( 'Quote',       'nop-indieweb' ),
 			'video'      => __( 'Video',       'nop-indieweb' ),
 			'story'      => __( 'Story',       'nop-indieweb' ),
+			'match'      => __( 'Match',       'nop-indieweb' ),
 			'collection' => __( 'Collection',  'nop-indieweb' ),
 			'music'      => __( 'Music',       'nop-indieweb' ),
 			'film'       => __( 'Film',        'nop-indieweb' ),
 			'book'       => __( 'Book',        'nop-indieweb' ),
 		];
 	}
-
-	/**
-	 * The curated topic categories (slug => display name).
-	 * Categories answer "what's it about?"; kinds answer "what is it?".
-	 */
-	const TOPIC_CATEGORIES = [
-		'photography'     => 'Photography',
-		'performance'     => 'Performance',
-		'web-development' => 'Web & Development',
-		'places-travel'   => 'Places & Travel',
-		'media-diet'      => 'Media Diet',
-		'health-fitness'  => 'Health & Fitness',
-		'journal'         => 'Journal',
-	];
-
-	/**
-	 * Kind → default topic category. Applied by apply_default_category() only
-	 * when the author hasn't picked a category — an explicit choice always wins.
-	 * Kinds absent from this map (article) get no default: the author picks the
-	 * topic per-post.
-	 */
-	const KIND_DEFAULT_CATEGORIES = [
-		'photo'      => 'photography',
-		'video'      => 'photography',
-		'checkin'    => 'places-travel',
-		'exercise'   => 'health-fitness',
-		'watch'      => 'media-diet',
-		'listen'     => 'media-diet',
-		'collection' => 'media-diet',
-		'music'      => 'media-diet',
-		'film'       => 'media-diet',
-		'book'       => 'media-diet',
-		'note'       => 'journal',
-		'reply'      => 'journal',
-		'like'       => 'journal',
-		'repost'     => 'journal',
-		'bookmark'   => 'journal',
-		'rsvp'       => 'journal',
-		'quote'      => 'journal',
-		'story'      => 'journal',
-	];
 
 	// collection → {music, film, book}; format detail (vinyl, cd, dvd, etc.) goes on tags.
 	const HIERARCHICAL_KINDS = [
@@ -161,8 +123,8 @@ class Kind_Taxonomy {
 		add_action( 'init', [ $this, 'register_taxonomy' ] );
 		// Priority 10: fires after wp_set_object_terms() commits term associations.
 		add_action( 'set_object_terms', [ $this, 'mirror_kind_to_meta' ], 10, 6 );
-		// Priority 11: after the meta mirror, fill in the kind's default topic category.
-		add_action( 'set_object_terms', [ $this, 'apply_default_category' ], 11, 6 );
+		// Priority 11: after the meta mirror, drop the category WordPress assigns on insert.
+		add_action( 'set_object_terms', [ $this, 'strip_default_category' ], 11, 6 );
 		// Tag every post wrapper in a loop with its kind so themes/cards can colour
 		// or style by kind (reads the read-cache meta — no extra query).
 		add_filter( 'post_class', [ $this, 'add_kind_post_class' ], 10, 3 );
@@ -223,68 +185,18 @@ class Kind_Taxonomy {
 	}
 
 	/**
-	 * Fills in the kind's default topic category when the author hasn't picked one.
-	 *
-	 * "Hasn't picked" means the post has no categories, or only the WP default
-	 * category — which acts purely as a sentinel for "nothing chosen" (WordPress
-	 * auto-assigns it on insert). An explicit category choice is never overridden.
-	 *
-	 * Unmapped kinds (article) get the sentinel stripped instead, leaving the post
-	 * category-less until the author picks a topic.
+	 * Categories are retired except Work (STRUCTURE.md in the theme): a post has
+	 * no category unless Neil files it under Work. WordPress assigns the default
+	 * category on insert, so once a post has its kind, a lone default is removed.
 	 */
-	public function apply_default_category( int $object_id, array $terms, array $tt_ids, string $taxonomy, bool $append, array $old_tt_ids ): void {
+	public function strip_default_category( int $object_id, array $terms, array $tt_ids, string $taxonomy, bool $append, array $old_tt_ids ): void {
 		if ( self::TAXONOMY !== $taxonomy || 'post' !== get_post_type( $object_id ) ) {
 			return;
 		}
-
-		$assigned = wp_get_object_terms( $object_id, self::TAXONOMY, [ 'fields' => 'slugs', 'orderby' => 'term_id' ] );
-		$kind     = ! is_wp_error( $assigned ) && $assigned ? (string) $assigned[0] : '';
-		if ( ! $kind ) {
-			return;
-		}
-
 		$current = wp_get_object_terms( $object_id, 'category', [ 'fields' => 'ids' ] );
-		if ( is_wp_error( $current ) ) {
-			return;
+		if ( ! is_wp_error( $current ) && 1 === count( $current ) && (int) $current[0] === (int) get_option( 'default_category' ) ) {
+			wp_set_object_terms( $object_id, [], 'category' );
 		}
-		$current  = array_map( 'intval', $current );
-		$sentinel = (int) get_option( 'default_category' );
-
-		$only_sentinel = ! $current || ( 1 === count( $current ) && $current[0] === $sentinel );
-		if ( ! $only_sentinel ) {
-			return;
-		}
-
-		$mapped = (string) apply_filters(
-			'nop_indieweb_kind_default_category',
-			self::KIND_DEFAULT_CATEGORIES[ $kind ] ?? '',
-			$kind,
-			$object_id
-		);
-
-		if ( ! $mapped ) {
-			// Unmapped kind: strip the sentinel so the post stays category-less.
-			if ( $current ) {
-				wp_set_object_terms( $object_id, [], 'category' );
-			}
-			return;
-		}
-
-		$term_id = self::ensure_topic_category( $mapped );
-		if ( $term_id && $current !== [ $term_id ] ) {
-			wp_set_object_terms( $object_id, [ $term_id ], 'category' );
-		}
-	}
-
-	/** Returns the topic category's term ID, creating it on first use. 0 on failure. */
-	public static function ensure_topic_category( string $slug ): int {
-		$existing = get_term_by( 'slug', $slug, 'category' );
-		if ( $existing instanceof \WP_Term ) {
-			return (int) $existing->term_id;
-		}
-		$name   = self::TOPIC_CATEGORIES[ $slug ] ?? ucwords( str_replace( '-', ' ', $slug ) );
-		$result = wp_insert_term( $name, 'category', [ 'slug' => $slug ] );
-		return is_wp_error( $result ) ? 0 : (int) $result['term_id'];
 	}
 
 	/**

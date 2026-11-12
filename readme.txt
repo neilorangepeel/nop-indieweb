@@ -4,7 +4,7 @@ Tags: indieweb, micropub, webmention, indieauth, posse
 Requires at least: 7.1
 Tested up to: 7.2
 Requires PHP: 8.0
-Stable tag: 0.10.2
+Stable tag: 0.12.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,22 @@ Yes. It ships block templates for each post kind and registers its blocks for Fu
 In the plugin's settings option, which is stored with autoloading disabled so the credentials are not loaded into memory on every request.
 
 == Changelog ==
+
+= 0.12.0 =
+* New Match kind for following a Boro game live. A note with #UTB posted within an hour of kick-off creates the match post from API-Football's fixture (key in the `NOP_API_FOOTBALL_KEY` constant; with no key nothing starts). Every #UTB note posted until 150 minutes after kick-off becomes a take (notes without it are left alone): linked to the match (`nop_indieweb_match_id`) and stamped with the minute (`nop_indieweb_match_minute`, from the clock unless the take starts with one, e.g. "67'"). Each take syncs the match from API-Football (score, half-time score, venue, and the goals, cards, subs, penalties and VAR, stored on the match post); a take that starts with a score ("2-1", home first) sets it when the API has none. A job three hours after kick-off syncs once more and marks the match finished.
+* Filters: `nop_indieweb_match_team`, `nop_indieweb_match_team_id`, `nop_indieweb_match_api_key`, `nop_indieweb_match_hashtag`.
+* The Match Timeline merges the automated events (goals bold with the running score under the minute, cards, subs and VAR in quieter capitals; a take's typed minute and score are hidden there, and the full-time take reads just the result) with the takes by minute, and the scoreboard fields give each side's scorers ("T. Conway 33′ · H. Hackney 71′"), the half-time score and the venue. `wp nop-indieweb match sync <id>` refreshes a match from the API.
+* New `wp nop-indieweb match fixture|start [--date=]` to look up a fixture or start a match by hand.
+* A match goes out as one thread on Bluesky and Mastodon: the match post opens it ("Watford v Middlesbrough, English Championship, kick-off 3pm. Thoughts as it happens in the replies. #UTB") and each take replies to the previous one. A take whose parent hasn't gone out yet sends it first; one that failed is passed over, so the thread never breaks.
+* At full time the plugin posts a closing take that ends the thread: "Full time: Watford 1–2 Middlesbrough. Every take from the match: <link> #UTB" (once per match, only for a match in the last day).
+* Match pages: new Match Timeline block (a match's takes, oldest first, each minute linking to its take); fields for the score line, result, kick-off and take count (the tile's detail reads "1–2 · Full time"); the soccer-ball kind icon; an "Entry: match" template name; `match` joins the Logbook kinds, and takes stay off the Logbook wall.
+* Bluesky: bare web addresses in a post's text are now real links (Bluesky doesn't link them itself).
+
+= 0.11.0 =
+* Categories are retired except Work: posts no longer get a topic category from their kind, the services and the /post composer stop filing posts under categories, and the settings lose their Category fields. A lone default category is removed once a post has its kind.
+* Old /category/<slug>/ addresses redirect: photo and film sections to their kind's archive, check-in travel to /kind/checkin/, everything else to the Logbook (filter `nop_indieweb_retired_category_redirects`).
+* New `bin/retire-categories-except-work.php` removes the old categories from posts (dry run unless given `apply`).
+* A #hashtag typed in a post becomes its tag when the post is saved, however it was made (tags are only added; #boro joins an existing BORO). `bin/hashtags-to-tags.php` does the same for existing posts (dry run unless given `apply`).
 
 = 0.10.2 =
 * Logbook: the count on every filter pill comes from one query per view instead of one per pill (a first tag view took over a minute with 1,600 tags).

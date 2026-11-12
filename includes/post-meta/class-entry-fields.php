@@ -34,6 +34,8 @@ final class Entry_Fields {
 		'quote_text', 'quote_body', 'quote_author', 'quote_work',
 		'reply_count', 'reply_count_label', 'replies_label', 'repost_count',
 		'camera_line',
+		'match_score_line', 'match_result', 'match_kickoff', 'match_competition', 'match_takes',
+		'match_home_short', 'match_away_short', 'match_home_goals', 'match_away_goals', 'match_kicker', 'match_status_line', 'match_ht', 'match_venue', 'match_scorers_home', 'match_scorers_away',
 	];
 
 	/** @var array<int,array<string,string>> Values per post, worked out once a request. */
@@ -226,6 +228,50 @@ final class Entry_Fields {
 				}
 				$f['display_title'] = $venue ?: $title;
 				$f['detail']        = $f['visit_label'] ?? '';
+				break;
+
+			case 'match':
+				$home    = self::meta( $post_id, 'match_home' );
+				$away    = self::meta( $post_id, 'match_away' );
+				$score   = self::meta( $post_id, 'match_score' );
+				$kickoff = (int) self::meta( $post_id, 'match_kickoff' );
+				// "Watford 1–2 Middlesbrough", or "Watford v Middlesbrough" before a score is known.
+				$f['match_score_line']  = '' !== $score ? "{$home} {$score} {$away}" : "{$home} v {$away}";
+				$f['match_result']      = 'ft' === self::meta( $post_id, 'match_status' ) ? __( 'Full time', 'nop-indieweb' ) : __( 'Live', 'nop-indieweb' );
+				$f['match_kickoff']     = $kickoff ? (string) wp_date( 'j M Y · H:i', $kickoff ) : '';
+				$f['match_competition'] = self::meta( $post_id, 'match_competition' );
+				$takes                  = count( \NOP\IndieWeb\Football\Match_Day::takes( $post_id ) );
+				/* translators: %d: number of takes posted during the match */
+				$f['match_takes']       = $takes ? sprintf( _n( '%d take', '%d takes', $takes, 'nop-indieweb' ), $takes ) : '';
+				// The scorecard: each side's short name ("Boro": one set on the match wins, else the list and rule in
+				// Match_Clock::short_name()) and goals, '' for the goals before a score is known.
+				$short                  = (array) apply_filters( 'nop_indieweb_match_short_names', \NOP\IndieWeb\Football\Match_Clock::SHORT_NAMES );
+				$goals                  = '' !== $score ? explode( '–', $score ) : [];
+				$f['match_home_short']  = self::meta( $post_id, 'match_home_short' ) ?: \NOP\IndieWeb\Football\Match_Clock::short_name( $home, $short );
+				$f['match_away_short']  = self::meta( $post_id, 'match_away_short' ) ?: \NOP\IndieWeb\Football\Match_Clock::short_name( $away, $short );
+				$f['match_home_goals']  = 2 === count( $goals ) ? $goals[0] : '';
+				$f['match_away_goals']  = 2 === count( $goals ) ? $goals[1] : '';
+				$ht                    = self::meta( $post_id, 'match_ht_score' );
+				/* translators: %s: half-time score, e.g. 0–1 */
+				$f['match_ht']          = '' !== $ht ? sprintf( __( 'HT %s', 'nop-indieweb' ), $ht ) : '';
+				$f['match_venue']       = self::meta( $post_id, 'match_venue' );
+				// The scoreboard's kicker, as a programme sets it: "English Championship · Wed 4 Nov".
+				$f['match_kicker']      = implode( ' · ', array_filter( [ self::meta( $post_id, 'match_competition' ), $kickoff ? (string) wp_date( 'D j M', $kickoff ) : '' ] ) );
+				// The foot carries the facts too: "Full time · Half-time 0–1 · Racecourse Ground · KO 19:45".
+				$f['match_status_line'] = implode( ' · ', array_filter( [
+					$f['match_result'],
+					/* translators: %s: half-time score, e.g. 0–1 */
+					'' !== $ht ? sprintf( __( 'Half-time %s', 'nop-indieweb' ), $ht ) : '',
+					$f['match_venue'],
+					/* translators: %s: kick-off time, e.g. 19:45 */
+					$kickoff ? sprintf( __( 'KO %s', 'nop-indieweb' ), wp_date( 'H:i', $kickoff ) ) : '',
+				] ) );
+				$events                 = get_post_meta( $post_id, 'nop_indieweb_match_events', true );
+				$scorers                = \NOP\IndieWeb\Football\Match_Events::scorers( is_array( $events ) ? $events : [] );
+				$f['match_scorers_home'] = $scorers['home'];
+				$f['match_scorers_away'] = $scorers['away'];
+				$f['subtitle']          = $f['match_competition'];
+				$f['detail']            = implode( ' · ', array_filter( [ $score, $f['match_result'] ] ) );
 				break;
 
 			case 'exercise':

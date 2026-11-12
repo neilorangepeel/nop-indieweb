@@ -1190,11 +1190,10 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 	renderSyndicators();
 
-	// ── Tags & Categories ─────────────────────────────────────────────────────
-	// One chip-field implementation drives both ledger rows: solid chips plus a
-	// text input that adds on Enter/comma/blur and backspace-deletes, with a
-	// quick-chips panel showing most-used terms at rest and live REST matches
-	// (wp/v2/tags | wp/v2/categories) while typing.
+	// ── Tags ──────────────────────────────────────────────────────────────────
+	// The chip field: solid chips plus a text input that adds on Enter/comma/blur
+	// and backspace-deletes, with a quick-chips panel showing most-used terms at
+	// rest and live REST matches (wp/v2/tags) while typing.
 
 	function makeChipField( ids, searchUrl ) {
 		var input   = document.getElementById( ids.input );
@@ -1362,19 +1361,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	}
 
 	var tagField = makeChipField( { input: 'tagInput', field: 'tagsField', chips: 'tagChips', quick: 'quickTags' }, NOP.tagsUrl );
-	var catField = makeChipField( { input: 'catInput', field: 'catsField', chips: 'catChips', quick: 'quickCats' }, NOP.catsUrl );
-
-	// Per-kind default categories (mirrors the server's service settings). The
-	// composer pre-stamps them as removable chips; what's shown is exactly what
-	// the post gets — the server treats the sent list as authoritative.
-	function kindDefaultCats( type ) {
-		return ( NOP.kindCats || {} )[ type ] || [];
-	}
-	function catsDiffer() {
-		var d = kindDefaultCats( currentType ), c = catField.get();
-		return JSON.stringify( c.slice().sort() ) !== JSON.stringify( d.slice().sort() );
-	}
-	catField.set( kindDefaultCats( currentType ) );
 
 	// ── Type switching ────────────────────────────────────────────────────────
 
@@ -1405,10 +1391,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		var kindChanged = type !== currentType;
 		currentType = type;
 		var cfg = TYPE_CONFIG[ type ];
-
-		// Each kind files under its own default categories — re-stamp them on a
-		// real kind change (a draft restore overrides these right after).
-		if ( kindChanged ) { catField.set( kindDefaultCats( type ) ); }
 
 		app.dataset.type = type;
 		setInk( type );
@@ -1539,7 +1521,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( storyVideo || storyPhoto )    { return true; }
 		if ( selectedFiles.length )        { return true; }
 		if ( tagField.get().length )       { return true; }
-		if ( catsDiffer() )                { return true; }
 		if ( eventName && eventName.value.trim() )           { return true; }
 		if ( eventStartDate && eventStartDate.value )        { return true; }
 		if ( eventStartTime && eventStartTime.value )        { return true; }
@@ -2027,7 +2008,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				image:    eventImage ? eventImage.value.trim() : '',
 			},
 			tags:        tagField.get().slice(),
-			cats:        catField.get().slice(),
 			scheduledAt: getScheduledAt(),
 			location:    ( TYPE_CONFIG[ currentType ].hasLocation && includeLocation && geoLat != null )
 				? { lat: geoLat, lon: geoLon, locality: geoLocality, country: geoCountry }
@@ -2163,11 +2143,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 			} );
 		}
 		if ( cfg.hasTags && post.tags.length ) { props.category = post.tags.slice(); }
-
-		// Categories: authoritative when present — the server files the post under
-		// exactly these (empty = no explicit category), falling back to the per-kind
-		// setting only for payloads that predate the field (old queued posts).
-		if ( post.cats ) { props[ 'post-category' ] = post.cats.slice(); }
 
 		// Opt-in geotag: the coordinates as a geo: URI (the Micropub-standard simple
 		// location value) plus the reverse-geocoded place as flat companions the
@@ -2544,7 +2519,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	function clearFields() {
 		selectedFiles = []; photoAlts = [];
 		tagField.set( [] );
-		catField.set( kindDefaultCats( currentType ) );   // a fresh form re-stamps the kind's defaults
 		altWarningDismissed = false;   // a fresh form is re-checked for missing alt
 		contentInput.value = ''; urlInput.value = '';
 		if ( quoteComment )   { quoteComment.value   = ''; }
@@ -2698,7 +2672,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 				quoteLink: quoteLink ? quoteLink.value : '',
 				isPrivate: !! ( privateCheck && privateCheck.checked ),
 				tags:    tagField.get(),
-				cats:    catField.get(),
 				rsvp:    currentRsvp,
 				location: includeLocation,
 				event:   {
@@ -2734,7 +2707,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( quoteLink && typeof d.quoteLink === 'string' ) quoteLink.value = d.quoteLink;
 		if ( privateCheck ) { privateCheck.checked = !! d.isPrivate; }
 		if ( Array.isArray( d.tags ) ) { tagField.set( d.tags ); }
-		if ( Array.isArray( d.cats ) ) { catField.set( d.cats ); }
 		if ( d.rsvp ) {
 			currentRsvp = d.rsvp;
 			document.querySelectorAll( '.rsvp-btn' ).forEach( function (b) {
@@ -2790,9 +2762,6 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		if ( quoteLink )    { quoteLink.value    = p.quoteLink || ''; }
 		if ( privateCheck ) { privateCheck.checked = !! p.isPrivate; }
 		tagField.set( Array.isArray( p.tags ) ? p.tags : [] );
-		// Snapshots that predate the categories field keep the kind defaults
-		// switchType just stamped.
-		if ( Array.isArray( p.cats ) ) { catField.set( p.cats ); }
 		currentRsvp = p.rsvp || 'yes';
 		document.querySelectorAll( '.rsvp-btn' ).forEach( function ( b ) {
 			var on = b.dataset.rsvp === currentRsvp;
