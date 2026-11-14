@@ -2183,6 +2183,7 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 	// the Location header here: on the core media endpoint that's the REST
 	// resource URL (…/wp-json/wp/v2/media/<id>), which the server can't sideload.
 	async function uploadMedia( blob, name, type ) {
+		if ( /^image\/jpe?g$/i.test( type || '' ) ) { blob = await shrinkJpeg( blob ); }
 		var res = await fetch( NOP.mediaUrl, {
 			method:  'POST',
 			headers: {
@@ -2198,6 +2199,55 @@ import { ordinal, tkDur, parseShareParams } from './lib';
 		}
 		var body = await res.json().catch( function () { return {}; } );
 		return { source_url: body.source_url || '' };
+	}
+
+	// A phone photo is 5–9 MB at full size and the site keeps 2560px at most, so it
+	// is shrunk here before it goes (5–10× less to send). The original's EXIF block
+	// rides along, its orientation reset since the pixels are now upright, so the
+	// server still reads camera, lens, exposure and location (Media\Photo_Metadata),
+	// then takes it out of the file. Anything unexpected sends the original instead.
+	var MAX_EDGE = 2560;
+	async function shrinkJpeg( blob ) {
+		if ( ! window.createImageBitmap ) { return blob; }
+		try {
+			var bmp   = await createImageBitmap( blob, { imageOrientation: 'from-image' } );
+			var scale = MAX_EDGE / Math.max( bmp.width, bmp.height );
+			if ( scale >= 1 ) { bmp.close(); return blob; }
+			var c = document.createElement( 'canvas' );
+			c.width  = Math.round( bmp.width * scale );
+			c.height = Math.round( bmp.height * scale );
+			var ctx = c.getContext( '2d', { colorSpace: 'display-p3' } ) || c.getContext( '2d' );
+			ctx.imageSmoothingQuality = 'high';
+			ctx.drawImage( bmp, 0, 0, c.width, c.height );
+			bmp.close();
+			var small = await new Promise( function ( r ) { c.toBlob( r, 'image/jpeg', 0.9 ); } );
+			if ( ! small ) { return blob; }
+			var exif = exifUpright( new Uint8Array( await blob.arrayBuffer() ) );
+			var out  = exif ? new Blob( [ small.slice( 0, 2 ), exif, small.slice( 2 ) ], { type: 'image/jpeg' } ) : small;
+			return out.size < blob.size ? out : blob;
+		} catch ( e ) {
+			return blob;
+		}
+	}
+
+	// The JPEG's EXIF segment (APP1 "Exif"), copied, with IFD0's Orientation set to 1.
+	function exifUpright( b ) {
+		if ( b[0] !== 0xFF || b[1] !== 0xD8 ) { return null; }
+		for ( var p = 2; p + 10 < b.length && b[ p ] === 0xFF; p += 2 + ( ( b[ p + 2 ] << 8 ) | b[ p + 3 ] ) ) {
+			var marker = b[ p + 1 ];
+			if ( marker === 0xDA ) { return null; }
+			if ( marker === 0xE1 && String.fromCharCode( b[ p + 4 ], b[ p + 5 ], b[ p + 6 ], b[ p + 7 ] ) === 'Exif' ) {
+				var seg = b.slice( p, p + 2 + ( ( b[ p + 2 ] << 8 ) | b[ p + 3 ] ) );
+				var dv  = new DataView( seg.buffer );
+				var le  = seg[10] === 0x49; // "II" little-endian, "MM" big
+				var ifd = 10 + dv.getUint32( 14, le );
+				for ( var i = 0, n = dv.getUint16( ifd, le ); i < n; i++ ) {
+					if ( dv.getUint16( ifd + 2 + i * 12, le ) === 0x0112 ) { dv.setUint16( ifd + 2 + i * 12 + 8, 1, le ); }
+				}
+				return seg;
+			}
+		}
+		return null;
 	}
 
 	// ── Offline queue (IndexedDB) + replay ───────────────────────────────────────

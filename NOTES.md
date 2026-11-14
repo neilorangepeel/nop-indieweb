@@ -5,6 +5,25 @@ in ROADMAP.md, how to work here in CLAUDE.md.
 
 ## Where we are (12 Nov 2026)
 
+- **14 Nov, photos: shrink on the phone, keep the details, no location in files**
+  (on `develop`, not pushed). `/post` shrinks JPEGs to 2560px before upload
+  (`shrinkJpeg()` in uploadMedia: ~5 MB → ~1 MB), carrying the EXIF block across
+  with orientation reset. New `Media\Photo_Metadata`: on upload adds make, lens,
+  35mm focal length, exposure compensation/mode, metering, flash, white balance,
+  time zone, software to `image_meta` (core already has camera, aperture, focal
+  length, ISO, shutter, date, credit, copyright); location goes to protected meta
+  `_nop_indieweb_photo_location` (not in REST); deletes the full-size original;
+  strips EXIF/XMP/IPTC from every JPEG losslessly, ICC kept. Applies to every
+  upload route (REST, Micropub media, importers). Tested: headless Chrome shrink
+  (orientation 6 photo comes out upright) + local import of both sizes. Not yet
+  tested on the iPhone's Safari. Live check 12 Nov: phone uploads arrive full
+  size (up to 9 MB); one original (#24934) has GPS in a public file.
+  **Open:** (1) a dry-run script for live's existing photos (pull the details
+  and location into meta, strip, delete originals); (2) GD drops the colour
+  profile on every size WordPress makes, so Display P3 phone photos show a
+  little flat; a full-size Shortcut upload loses it on the main file too;
+  (3) the Shortcut still sends full size (fine: the server does the rest).
+
 - **12 Nov, Kind\Hashtags reworked (on `develop`, not pushed):** a hashtag now
   files a post only if it is one of a subject's names: `Hashtags::SUBJECTS`
   holds the 18 subjects from the theme's STRUCTURE.md (#UTB → Boro, #WebDesign →

@@ -213,6 +213,7 @@ class Plugin {
 		( new Block_Bindings() )->register();
 		( new Endpoint( $services, $syndication_manager ) )->register();
 		( new Media_Endpoint() )->register();
+		( new \NOP\IndieWeb\Media\Photo_Metadata() )->register();
 		( new Token_Endpoint() )->register();
 		( new Auth_Endpoint() )->register();
 		( new Webmention_Endpoint() )->register();
