@@ -3,7 +3,17 @@
 Read this first on any Mac. Newest entries at the top. Longer-term plans live
 in ROADMAP.md, how to work here in CLAUDE.md.
 
-## Where we are (12 Nov 2026)
+## Where we are (14 Nov 2026)
+
+- **RESUME HERE (14 Nov):** everything below is on `develop` and on dev
+  (pushed 14 Nov); live is still 0.10.2. On dev, not live: 0.11.0 categories,
+  0.12.0 Match, the subject hashtag rule + `bin/merge-subjects.php`, the photo
+  work (phone shrink, Photo_Metadata, colour profiles, Bluesky 2048px).
+  Waiting on Neil: (1) OK to change SiteGround Optimizer on dev: image
+  compression off, backups off, WebP kept; then post a photo and compare with
+  #24946; (2) the 19 unsorted tags + 7 left-out names (list below) before the
+  merge runs on live; (3) whether to write the dry-run script that cleans
+  live's existing photo originals (#24934 has GPS in a public file).
 
 - **14 Nov, photos: shrink on the phone, keep the details, no location in files**
   (on `develop`, not pushed). `/post` shrinks JPEGs to 2560px before upload
@@ -160,6 +170,10 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Changed
 
+- **14 Nov 2026:** subjects (hashtag rule, merge script, 50 variant names,
+  live dry run) and photos (shrink before upload, EXIF kept as data, location
+  private, originals deleted, files stripped, colour profile restored, Bluesky
+  2048px). Details in "Where we are".
 - **12 Nov 2026:** Logbook pill counts leave out match takes (`Wall_Filters::args()`
   adds `Logbook::not_a_take()`), so a filter's count matches the wall, which
   already hid them. Gap from the 7 Nov Match work, found while merging.
@@ -308,6 +322,9 @@ them; `posts_per_page => -1` only in migrations and the cached counts.
 
 ## Next
 
+- See RESUME HERE (14 Nov) at the top: SiteGround settings on dev, the
+  unsorted tags, the existing-photos script; then release 0.12.0 (wp-deploy)
+  and run `bin/merge-subjects.php` (dry run, then apply) on live.
 - **Match kind, next steps:** (1) Neil is getting an API-Football key: add
   `define( 'NOP_API_FOOTBALL_KEY', '…' );` to wp-config.php (local, then live),
   then `wp nop-indieweb match start --date=2026-11-04` (or another past Boro
