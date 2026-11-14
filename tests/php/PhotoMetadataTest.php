@@ -75,6 +75,28 @@ final class PhotoMetadataTest extends TestCase {
 		$this->assertSame( "\xFF\xD8" . $app0 . $icc . $dqt . $scan, Photo_Metadata::strip_jpeg( $jpeg ) );
 	}
 
+	public function test_reads_the_colour_profile_but_not_mpf(): void {
+		$icc1 = self::segment( 0xE2, "ICC_PROFILE\0\x01\x02p3-part-1" );
+		$icc2 = self::segment( 0xE2, "ICC_PROFILE\0\x02\x02p3-part-2" );
+		$jpeg = "\xFF\xD8" . self::segment( 0xE0, 'JFIF' ) . $icc1 . self::segment( 0xE2, "MPF\0offsets" ) . $icc2 . "\xFF\xDA\x00\x02data";
+		$this->assertSame( $icc1 . $icc2, Photo_Metadata::icc( $jpeg ) );
+		$this->assertSame( '', Photo_Metadata::icc( 'not a jpeg' ) );
+	}
+
+	public function test_puts_the_profile_back_after_jfif(): void {
+		$app0 = self::segment( 0xE0, 'JFIF' );
+		$icc  = self::segment( 0xE2, "ICC_PROFILE\0\x01\x01p3" );
+		$rest = self::segment( 0xDB, 'q' ) . "\xFF\xDA\x00\x02data\xFF\xD9";
+		$this->assertSame( "\xFF\xD8" . $app0 . $icc . $rest, Photo_Metadata::with_icc( "\xFF\xD8" . $app0 . $rest, $icc ) );
+		$this->assertSame( "\xFF\xD8" . $icc . $rest, Photo_Metadata::with_icc( "\xFF\xD8" . $rest, $icc ) );
+	}
+
+	public function test_keeps_a_profile_that_is_already_there(): void {
+		$own  = "\xFF\xD8" . self::segment( 0xE2, "ICC_PROFILE\0\x01\x01srgb" ) . "\xFF\xDA\x00\x02data";
+		$this->assertSame( $own, Photo_Metadata::with_icc( $own, self::segment( 0xE2, "ICC_PROFILE\0\x01\x01p3" ) ) );
+		$this->assertSame( $own, Photo_Metadata::with_icc( $own, '' ) );
+	}
+
 	public function test_leaves_anything_it_cannot_read(): void {
 		$this->assertSame( 'not a jpeg', Photo_Metadata::strip_jpeg( 'not a jpeg' ) );
 		$broken = "\xFF\xD8\xFF\xE1\x00\x01";

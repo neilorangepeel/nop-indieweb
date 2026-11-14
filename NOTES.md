@@ -19,10 +19,18 @@ in ROADMAP.md, how to work here in CLAUDE.md.
   tested on the iPhone's Safari. Live check 12 Nov: phone uploads arrive full
   size (up to 9 MB); one original (#24934) has GPS in a public file.
   **Open:** (1) a dry-run script for live's existing photos (pull the details
-  and location into meta, strip, delete originals); (2) GD drops the colour
-  profile on every size WordPress makes, so Display P3 phone photos show a
-  little flat; a full-size Shortcut upload loses it on the main file too;
-  (3) the Shortcut still sends full size (fine: the server does the rest).
+  and location into meta, strip, delete originals); (2) the Shortcut still
+  sends full size (fine: the server does the rest).
+- **14 Nov, iPhone test on dev passed** (post #24946: 1920×2560, 929 KB
+  uploaded, details saved, files clean). Found: SiteGround Optimizer keeps a
+  `.bak` of each upload (with EXIF) and re-compresses lossy (929 → 223 KB;
+  dev settings: compression_level 2, quality_type lossy, backup_media 1,
+  webp 85). **Then, for quality:** every size gets back the colour profile of
+  the photo it was made from (GD drops it but keeps the pixel values, so P3
+  showed flat); `.bak` copies are stripped too; Bluesky tries the 2048px size
+  before 1000px (it shows up to 2000px). Proposed to Neil, not done: SG image
+  compression off and backups off on dev, keep its WebP (85); pages already
+  load the srcset sizes (GD q82) and WebP, so the 2560 main can stay q90.
 
 - **12 Nov, Kind\Hashtags reworked (on `develop`, not pushed):** a hashtag now
   files a post only if it is one of a subject's names: `Hashtags::SUBJECTS`

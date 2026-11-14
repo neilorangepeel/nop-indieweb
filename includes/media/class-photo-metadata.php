@@ -9,7 +9,9 @@
  *
  * Then the files: the full-size original WordPress keeps beside its 2560px copy is deleted, and
  * every remaining JPEG has its EXIF, XMP and IPTC blocks taken out without re-compressing, so no
- * public file carries a location. The colour profile stays.
+ * public file carries a location (SiteGround Optimizer's .bak copies included). Each size also gets
+ * back the colour profile of the photo it was made from: GD drops the profile but keeps the pixel
+ * values as they were, so a Display P3 phone photo otherwise shows flat.
  */
 declare( strict_types=1 );
 
@@ -58,10 +60,12 @@ final class Photo_Metadata {
 			unset( $metadata['image_meta']['nop_location'] );
 		}
 
-		$main = (string) get_attached_file( (int) $attachment_id );
-		$dir  = dirname( $main );
-		if ( ! empty( $metadata['original_image'] ) ) {
-			wp_delete_file( $dir . '/' . $metadata['original_image'] );
+		$main   = (string) get_attached_file( (int) $attachment_id );
+		$dir    = dirname( $main );
+		$source = ! empty( $metadata['original_image'] ) ? $dir . '/' . $metadata['original_image'] : $main;
+		$icc    = is_file( $source ) && preg_match( '/\.jpe?g$/i', $source ) ? self::icc( (string) file_get_contents( $source ) ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local upload
+		if ( $source !== $main ) {
+			wp_delete_file( $source );
 			unset( $metadata['original_image'] );
 		}
 		$files = [ $main ];
@@ -71,7 +75,8 @@ final class Photo_Metadata {
 			}
 		}
 		foreach ( $files as $path ) {
-			self::strip_file( $path );
+			self::strip_file( $path, $icc );
+			self::strip_file( (string) preg_replace( '/\.(jpe?g)$/i', '.bak.$1', $path ), '' );
 		}
 		if ( is_file( $main ) ) {
 			$metadata['filesize'] = (int) filesize( $main );
@@ -79,12 +84,12 @@ final class Photo_Metadata {
 		return $metadata;
 	}
 
-	private static function strip_file( string $path ): void {
+	private static function strip_file( string $path, string $icc ): void {
 		if ( ! preg_match( '/\.jpe?g$/i', $path ) || ! is_file( $path ) ) {
 			return;
 		}
 		$jpeg  = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local upload
-		$clean = self::strip_jpeg( $jpeg );
+		$clean = self::with_icc( self::strip_jpeg( $jpeg ), $icc );
 		if ( $clean !== $jpeg ) {
 			file_put_contents( $path, $clean ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local upload
 		}
@@ -121,6 +126,53 @@ final class Photo_Metadata {
 			$pos += 2 + $size;
 		}
 		return $jpeg;
+	}
+
+	/** A JPEG's colour profile: its APP2 "ICC_PROFILE" segments, in order, as they are ('' when it has none). */
+	public static function icc( string $jpeg ): string {
+		$icc = '';
+		foreach ( self::segments( $jpeg ) as [ $marker, $segment ] ) {
+			if ( 0xE2 === $marker && "ICC_PROFILE\0" === substr( $segment, 4, 12 ) ) {
+				$icc .= $segment;
+			}
+		}
+		return $icc;
+	}
+
+	/** The JPEG with $icc put in after its opening segments, unless it already has a profile. */
+	public static function with_icc( string $jpeg, string $icc ): string {
+		if ( '' === $icc || "\xFF\xD8" !== substr( $jpeg, 0, 2 ) || '' !== self::icc( $jpeg ) ) {
+			return $jpeg;
+		}
+		$at = 2;
+		foreach ( self::segments( $jpeg ) as [ $marker, $segment ] ) {
+			if ( 0xE0 !== $marker ) { // After JFIF (APP0), before everything else.
+				break;
+			}
+			$at += strlen( $segment );
+		}
+		return substr( $jpeg, 0, $at ) . $icc . substr( $jpeg, $at );
+	}
+
+	/**
+	 * The segments before the image data, as [ marker, bytes ]; stops at the first thing it can't read.
+	 *
+	 * @return list<array{0: int, 1: string}>
+	 */
+	private static function segments( string $jpeg ): array {
+		$out = [];
+		$pos = 2;
+		$end = strlen( $jpeg );
+		while ( "\xFF\xD8" === substr( $jpeg, 0, 2 ) && $pos + 4 <= $end && "\xFF" === $jpeg[ $pos ] ) {
+			$marker = ord( $jpeg[ $pos + 1 ] );
+			$size   = (int) unpack( 'n', substr( $jpeg, $pos + 2, 2 ) )[1];
+			if ( 0xDA === $marker || 0xFF === $marker || $size < 2 ) {
+				break;
+			}
+			$out[] = [ $marker, substr( $jpeg, $pos, 2 + $size ) ];
+			$pos  += 2 + $size;
+		}
+		return $out;
 	}
 
 	/**

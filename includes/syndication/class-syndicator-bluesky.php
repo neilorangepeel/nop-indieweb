@@ -563,14 +563,18 @@ class Syndicator_Bluesky extends Syndicator_Base {
 
 	/**
 	 * Uploads a single image as a Bluesky blob. Bluesky's 1MB blob limit kicks
-	 * in often — when the 'large' URL is over budget, try the 'medium' size for
-	 * known attachments before giving up.
+	 * in often — when the full image is over budget, try the 2048px size (Bluesky
+	 * shows up to 2000px, so it stays crisp), then 'medium', for known attachments.
 	 */
 	private function upload_image_blob( array $image, array $session ): ?array {
 		$candidates = [ (string) $image['url'] ];
 
 		$id = (int) ( $image['attachment_id'] ?? 0 );
 		if ( $id > 0 ) {
+			$big = wp_get_attachment_image_src( $id, '2048x2048' );
+			if ( $big && (string) $big[0] !== (string) $image['url'] ) {
+				$candidates[] = (string) $big[0];
+			}
 			$medium = wp_get_attachment_image_src( $id, 'medium' );
 			if ( $medium && (string) $medium[0] !== (string) $image['url'] ) {
 				$candidates[] = (string) $medium[0];
